@@ -15,7 +15,10 @@ Technology is prohibited.
 #include "pch.h"
 #include "GameStateManager.h"
 #include "Level1.h"
+#include "Player.h"
 #include "Utils.h"
+
+static Player lv1Player;
 
 AEGfxVertexList* squareMesh;
 
@@ -35,6 +38,12 @@ void Level1_Load()
 void Level1_Initialize()
 {
 	squareMesh = util::CreateSquareMesh();
+	
+	// Player Initialization
+	float ground = -350.0f;
+	Player_Init(lv1Player, 0.0f, ground);
+	lv1Player.grounded = 1;
+
 	std::cout << "Level1:Initialize" << std::endl;
 }
 
@@ -48,7 +57,22 @@ void Level1_Update()
 	AESysFrameStart();
 	AEGfxSetBackgroundColor(.7f, .7f, .7f);
 	AEGfxSetRenderMode(AE_GFX_RM_COLOR); //to render colours (change if using texture)
-	util::DrawSquare(squareMesh, 0, 0, 100, 100);
+	
+	// Player Update
+	float dt = (float)AEFrameRateControllerGetFrameTime();
+	Player_Update(lv1Player, dt);
+	float ground = -350.0f;
+	//lv1Player.grounded = 0;
+
+	if (lv1Player.pos.y - lv1Player.height <= ground)
+	{
+		lv1Player.pos.y = ground + lv1Player.height;
+		lv1Player.vel.y = 0.0f;
+		lv1Player.grounded = 1;
+	}
+
+	util::DrawSquare(squareMesh, 0.0f, ground, 1600.0f, 50.0f, 0, 0, 0); // Draw Ground (Texture TBA?)
+	Player_Draw(lv1Player);
 	std::cout << "Level1:Update" << std::endl;
 	AESysFrameEnd();
 }

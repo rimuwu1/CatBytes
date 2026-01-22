@@ -17,6 +17,7 @@
     <ClCompile Include="..\Source\Level2.cpp" />
     <ClCompile Include="..\Source\main.cpp" />
     <ClCompile Include="..\Source\pch.cpp" />
+    <ClCompile Include="..\Source\Player.cpp" />
     <ClCompile Include="..\Source\System.cpp" />
     <ClCompile Include="..\Source\Utils.cpp" />
   </ItemGroup>
@@ -27,6 +28,7 @@
     <ClInclude Include="..\Source\Level1.h" />
     <ClInclude Include="..\Source\Level2.h" />
     <ClInclude Include="..\Source\pch.h" />
+    <ClInclude Include="..\Source\Player.h" />
     <ClInclude Include="..\Source\System.h" />
     <ClInclude Include="..\Source\Utils.h" />
   </ItemGroup>
