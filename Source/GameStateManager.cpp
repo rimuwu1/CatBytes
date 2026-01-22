@@ -1,3 +1,19 @@
+/* Start Header ************************************************************************/
+/*!
+\file GameStateManager.cpp
+\author Joash ng, joash.ng, 2502780
+\par joash.ng@digipen.edu
+\date 21/01/2026
+\brief  This file implements the functions for the Game State Manager.
+		The GSM is responsible for managing the flow of different game states and
+		associated functions, such as loading, updating, and drawing for each state.
+
+Copyright (C) 2026 DigiPen Institute of Technology.
+Reproduction or disclosure of this file or its contents
+without the prior written consent of DigiPen Institute of
+Technology is prohibited.
+*/
+/* End Header **************************************************************************/
 #include "pch.h"
 #include "GameStateManager.h"
 #include "Level1.h"
@@ -5,7 +21,7 @@
 
 int current = 0, previous = 0, next = 0;
 
-FP fpLoad = nullptr, fpInitialize = nullptr, fpUpdate = nullptr, fpDraw = nullptr, f
+FP fpLoad = nullptr, fpInitialize = nullptr, fpUpdate = nullptr, fpDraw = nullptr, fpFree = nullptr, fpUnload = nullptr;
 
 // ----------------------------------------------------------------------------
 // Initializes the Game State Manager with a starting state
@@ -14,7 +30,7 @@ FP fpLoad = nullptr, fpInitialize = nullptr, fpUpdate = nullptr, fpDraw = nullpt
 // ----------------------------------------------------------------------------
 void GSM_Initialize(int startingState)
 {
-	current = previous = next = startingState; // Set all state trackers to the star
+	current = previous = next = startingState; // Set all state trackers to the starting state
 
 	std::cout << "GSM:Initialize" << std::endl;
 }
