@@ -1,6 +1,5 @@
 #include "pch.h"
 #include "Player.h"
-#include "Input.h"
 #include "Utils.h"
 
 static AEGfxVertexList* playerMesh = nullptr;
@@ -23,32 +22,12 @@ void Player_Init(Player& player, float startX, float startY)
 
 void Player_Update(Player& player, float dt)
 {
-	const float MOVE_SPEED = 400.0f;
-	const float GRAVITY	   = -1200.0f;
-	const float JUMP_FORCE = 650.0f;
-
-	player.vel.x = 0.0f;
-
-	// Player Movement
-	if (AEInputCheckCurr('A')) {
-		player.vel.x -= MOVE_SPEED;
-	}
-	if (AEInputCheckCurr('D')) {
-		player.vel.x += MOVE_SPEED;
-	}
-
-	// Player Jumping
-	//static int isPressedSpace = 0;
-	//int spacePressed = AEInputCheckCurr(AEVK_SPACE);
-	if (player.grounded && AEInputCheckCurr(AEVK_SPACE))
-	{
-		player.vel.y = JUMP_FORCE;
-		player.grounded = 0;
-	}
+	const float GRAVITY = -1200.0f;
 
 	// Gravity
 	player.vel.y += GRAVITY * dt;
 
+	// Integrate velocity to position
 	player.pos.x += player.vel.x * dt;
 	player.pos.y += player.vel.y * dt;
 }

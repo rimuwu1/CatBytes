@@ -14,6 +14,15 @@ Technology is prohibited.
 /* End Header **************************************************************************/
 #include "pch.h"
 #include "GameStateManager.h"
+#include "Input.h"
+#include "AEEngine.h"
+
+static Player* s_CurrentPlayer = nullptr;
+
+void Input_SetPlayer(Player* player)
+{
+	s_CurrentPlayer = player;
+}
 
 // ----------------------------------------------------------------------------
 // Handles all user input processing for the current frame
@@ -25,5 +34,31 @@ void Input_Handle() {
 	if (AEInputCheckTriggered(AEVK_ESCAPE) || 0 == AESysDoesWindowExist()) {
 	    next = GS_QUIT;
     }
+
+	// Process player movement input if a player is bound
+	if (s_CurrentPlayer)
+	{
+		const float MOVE_SPEED = 400.0f;
+		const float JUMP_FORCE = 650.0f;
+
+		// Reset horizontal velocity each frame; input determines movement
+		s_CurrentPlayer->vel.x = 0.0f;
+
+		// Horizontal movement (A/D)
+		if (AEInputCheckCurr('A')) {
+			s_CurrentPlayer->vel.x -= MOVE_SPEED;
+		}
+		if (AEInputCheckCurr('D')) {
+			s_CurrentPlayer->vel.x += MOVE_SPEED;
+		}
+
+		// Jumping (Space) - only when grounded
+		if (s_CurrentPlayer->grounded && AEInputCheckCurr(AEVK_SPACE))
+		{
+			s_CurrentPlayer->vel.y = JUMP_FORCE;
+			s_CurrentPlayer->grounded = 0;
+		}
+	}
+
 	std::cout << "Input:Handle" << std::endl;
 }

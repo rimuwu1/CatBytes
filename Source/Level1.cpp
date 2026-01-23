@@ -17,10 +17,12 @@ Technology is prohibited.
 #include "Level1.h"
 #include "Player.h"
 #include "Utils.h"
+#include "Input.h"
 
 static Player lv1Player;
 
 AEGfxVertexList* squareMesh;
+float ground;
 
 // ----------------------------------------------------------------------------
 // Loads Level 1 resources and initial data
@@ -40,9 +42,12 @@ void Level1_Initialize()
 	squareMesh = util::CreateSquareMesh();
 	
 	// Player Initialization
-	float ground = -350.0f;
+	ground = -350.0f;
 	Player_Init(lv1Player, 0.0f, ground);
 	lv1Player.grounded = 1;
+
+	// Bind the level player to the input system
+	Input_SetPlayer(&lv1Player);
 
 	std::cout << "Level1:Initialize" << std::endl;
 }
@@ -53,15 +58,12 @@ void Level1_Initialize()
 // ----------------------------------------------------------------------------
 void Level1_Update()
 {
-	// Informing the system about the loop's start
-	AESysFrameStart();
 	AEGfxSetBackgroundColor(.7f, .7f, .7f);
 	AEGfxSetRenderMode(AE_GFX_RM_COLOR); //to render colours (change if using texture)
 	
 	// Player Update
 	float dt = (float)AEFrameRateControllerGetFrameTime();
 	Player_Update(lv1Player, dt);
-	float ground = -350.0f;
 	//lv1Player.grounded = 0;
 
 	if (lv1Player.pos.y - lv1Player.height <= ground)
@@ -70,11 +72,8 @@ void Level1_Update()
 		lv1Player.vel.y = 0.0f;
 		lv1Player.grounded = 1;
 	}
-
-	util::DrawSquare(squareMesh, 0.0f, ground, 1600.0f, 50.0f, 0, 0, 0); // Draw Ground (Texture TBA?)
-	Player_Draw(lv1Player);
 	std::cout << "Level1:Update" << std::endl;
-	AESysFrameEnd();
+	
 }
 
 // ----------------------------------------------------------------------------
@@ -83,7 +82,12 @@ void Level1_Update()
 // ----------------------------------------------------------------------------
 void Level1_Draw()
 {
+	// Informing the system about the loop's start
+	AESysFrameStart();
+	util::DrawSquare(squareMesh, 0.0f, ground, 1600.0f, 50.0f, 0, 0, 0); // Draw Ground (Texture TBA?)
+	Player_Draw(lv1Player);
 	std::cout << "Level1:Draw" << std::endl;
+	AESysFrameEnd();
 }
 
 // ----------------------------------------------------------------------------

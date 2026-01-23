@@ -13,4 +13,7 @@ Technology is prohibited.
 */
 /* End Header **************************************************************************/
 #pragma once
+#include "Player.h"
+
 void Input_Handle();
+void Input_SetPlayer(Player* player);
