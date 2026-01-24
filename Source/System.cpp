@@ -24,8 +24,9 @@ void System_Initialize(HINSTANCE hInstance, int nCmdShow)
 {
 	AESysInit(hInstance, nCmdShow, 1600, 900, 1, 60, true, NULL);
 	AESysSetWindowTitle("CatBytes Game");
+	
 	AESysReset();
-
+	AESysSetWindowIcon("Assets/Images/icon.ico", 32, 32);
 	Fonts_Load();
 
 	std::cout << "System:Initialize" << std::endl;  // Log system initialization
