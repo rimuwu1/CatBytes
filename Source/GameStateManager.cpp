@@ -16,8 +16,10 @@ Technology is prohibited.
 /* End Header **************************************************************************/
 #include "pch.h"
 #include "GameStateManager.h"
+#include "GameStateList.h"
 #include "Level1.h"
 #include "Level2.h"
+#include "MainMenu.h"
 
 int current = 0, previous = 0, next = 0;
 
@@ -31,7 +33,6 @@ FP fpLoad = nullptr, fpInitialize = nullptr, fpUpdate = nullptr, fpDraw = nullpt
 void GSM_Initialize(int startingState)
 {
 	current = previous = next = startingState; // Set all state trackers to the starting state
-
 	std::cout << "GSM:Initialize" << std::endl;
 }
 
@@ -46,6 +47,14 @@ void GSM_Update()
 	// Determine which set of state functions to use based on the current state
 	switch (current)
 	{
+	case GS_MAINMENU:  // Main Menu state
+		fpLoad = MainMenu_Load;
+		fpInitialize = MainMenu_Initialize;
+		fpUpdate = MainMenu_Update;
+		fpDraw = MainMenu_Draw;
+		fpFree = MainMenu_Free;
+		fpUnload = MainMenu_Unload;
+		break;
 	case GS_LEVEL1: // Level 1 game state
 		fpLoad = Level1_Load;
 		fpInitialize = Level1_Initialize;

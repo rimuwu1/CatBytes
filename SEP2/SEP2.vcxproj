@@ -11,6 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\Source\Fonts.cpp" />
     <ClCompile Include="..\Source\GameStateManager.cpp" />
     <ClCompile Include="..\Source\Input.cpp" />
     <ClCompile Include="..\Source\Level1.cpp" />
@@ -18,15 +19,18 @@
     <ClCompile Include="..\Source\main.cpp" />
     <ClCompile Include="..\Source\pch.cpp" />
     <ClCompile Include="..\Source\Player.cpp" />
+    <ClCompile Include="..\Source\MainMenu.cpp" />
     <ClCompile Include="..\Source\System.cpp" />
     <ClCompile Include="..\Source\Utils.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\Source\Fonts.h" />
     <ClInclude Include="..\Source\GameStateList.h" />
     <ClInclude Include="..\Source\GameStateManager.h" />
     <ClInclude Include="..\Source\Input.h" />
     <ClInclude Include="..\Source\Level1.h" />
     <ClInclude Include="..\Source\Level2.h" />
+    <ClInclude Include="..\Source\MainMenu.h" />
     <ClInclude Include="..\Source\pch.h" />
     <ClInclude Include="..\Source\Player.h" />
     <ClInclude Include="..\Source\System.h" />

@@ -20,8 +20,9 @@ Technology is prohibited.
 // ----------------------------------------------------------------------------
 enum GS_STATES
 {
-	GS_LEVEL1 = 0,  // Level 1 game state (value 0)
-	GS_LEVEL2,      // Level 2 game state (value 1)
-	GS_QUIT,        // Quit state to exit the game (value 2)
-	GS_RESTART      // Restart state to reload current level (value 3)
+	GS_MAINMENU,    // Main Menu state
+	GS_LEVEL1,		// Level 1 game state 
+	GS_LEVEL2,      // Level 2 game state 
+	GS_QUIT,        // Quit state to exit the game
+	GS_RESTART      // Restart state to reload current level 
 };

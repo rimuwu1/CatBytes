@@ -16,10 +16,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(lpCmdLine);
+
 	// Initialize system components
 	System_Initialize(hInstance, nCmdShow);
 
-	GSM_Initialize(current);
+	GSM_Initialize(0);
 
 	// Main game loop - runs until quit state is reached
 	while (current != GS_QUIT)

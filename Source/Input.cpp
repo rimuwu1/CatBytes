@@ -31,9 +31,19 @@ void Input_SetPlayer(Player* player)
 // ----------------------------------------------------------------------------
 void Input_Handle() {
 	// check if forcing the application to quit
-	if (AEInputCheckTriggered(AEVK_ESCAPE) || 0 == AESysDoesWindowExist()) {
+	if (0 == AESysDoesWindowExist()) {
 	    next = GS_QUIT;
     }
+
+	// ESC goes back to main menu
+	if (AEInputCheckTriggered(AEVK_ESCAPE)) {
+		next = GS_MAINMENU;  
+	}
+
+	// Q to quit the game
+	if (AEInputCheckTriggered('Q')) {
+		next = GS_QUIT;
+	}
 
 	// Process player movement input if a player is bound
 	if (s_CurrentPlayer)
