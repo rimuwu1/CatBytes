@@ -35,16 +35,9 @@ void Input_Handle() {
 	    next = GS_QUIT;
     }
 
-	// ESC goes to main menu
-	if (current == GS_SPLASHSCREEN && AEInputCheckTriggered(AEVK_ESCAPE)) {
-		next = GS_MAINMENU;  
-	}
-
-	if(current == GS_LEVEL1 || current == GS_LEVEL2)
-	{
-		if (AEInputCheckTriggered(AEVK_ESCAPE)) {
-			next = GS_MAINMENU;  
-		}
+	// ESC goes back to main menu (from anywhere)
+	if (AEInputCheckTriggered(AEVK_ESCAPE)) {
+		next = GS_MAINMENU;
 	}
 
 	// Q to quit the game
