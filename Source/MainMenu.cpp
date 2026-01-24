@@ -98,7 +98,7 @@ void MainMenu_Draw()
         AEGfxSetBlendMode(AE_GFX_BM_BLEND);
 
         // awesome title #noproblem
-        AEGfxPrint(g_FontLarge, "POGMA", BUTTON_X, 0.3f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f);
+        AEGfxPrint(g_FontLarge, "POGBA", BUTTON_X, 0.3f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f);
 
         // PLAY - white if hovered, grey otherwise
         float playR = (g_hoveredButton == 1) ? 1.0f : 0.6f;
