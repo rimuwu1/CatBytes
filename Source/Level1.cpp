@@ -20,6 +20,7 @@ Technology is prohibited.
 #include "Input.h"
 
 static Player lv1Player;
+AEGfxVertexList* lvl1mesh;
 
 float ground;
 
@@ -39,6 +40,7 @@ void Level1_Load()
 void Level1_Initialize()
 {
 	// Player Initialization
+	lvl1mesh = util::CreateSquareMesh();
 	ground = -350.0f;
 	Player_Init(lv1Player, 0.0f, ground);
 	lv1Player.grounded = 1;
@@ -80,7 +82,7 @@ void Level1_Draw()
 {
 	// Informing the system about the loop's start
 	AESysFrameStart();
-	util::DrawSquare(squareMesh, 0.0f, ground, 1600.0f, 50.0f, 0, 0, 0); // Draw Ground (Texture TBA?)
+	util::DrawSquare(lvl1mesh, 0.0f, ground, 1600.0f, 50.0f, 0, 0, 0); // Draw Ground (Texture TBA?)
 	Player_Draw(lv1Player);
 	std::cout << "Level1:Draw" << std::endl;
 	AESysFrameEnd();
@@ -101,5 +103,6 @@ void Level1_Free()
 // ----------------------------------------------------------------------------
 void Level1_Unload()
 {
+	AEGfxMeshFree(lvl1mesh);
 	std::cout << "Level1:Unload" << std::endl;
 }
