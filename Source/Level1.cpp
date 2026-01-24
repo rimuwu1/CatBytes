@@ -21,7 +21,6 @@ Technology is prohibited.
 
 static Player lv1Player;
 
-AEGfxVertexList* squareMesh;
 float ground;
 
 // ----------------------------------------------------------------------------
@@ -39,8 +38,6 @@ void Level1_Load()
 // ----------------------------------------------------------------------------
 void Level1_Initialize()
 {
-	squareMesh = util::CreateSquareMesh();
-	
 	// Player Initialization
 	ground = -350.0f;
 	Player_Init(lv1Player, 0.0f, ground);
@@ -59,7 +56,6 @@ void Level1_Initialize()
 void Level1_Update()
 {
 	AEGfxSetBackgroundColor(.7f, .7f, .7f);
-	AEGfxSetRenderMode(AE_GFX_RM_COLOR); //to render colours (change if using texture)
 	
 	// Player Update
 	float dt = (float)AEFrameRateControllerGetFrameTime();

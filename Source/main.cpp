@@ -20,7 +20,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	// Initialize system components
 	System_Initialize(hInstance, nCmdShow);
 
-	GSM_Initialize(0);
+	GSM_Initialize(current);
 
 	// Main game loop - runs until quit state is reached
 	while (current != GS_QUIT)

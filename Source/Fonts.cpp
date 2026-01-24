@@ -23,9 +23,9 @@ s8 g_FontSmall = -1;
 
 void Fonts_Load()
 {
-    g_FontLarge = AEGfxCreateFont("../../Extern/Fonts/Lora-Bold.ttf", 72);
-    g_FontMedium = AEGfxCreateFont("../../Extern/Fonts/Lora-Medium.ttf", 48);
-    g_FontSmall = AEGfxCreateFont("../../Extern/Fonts/WalterTurncoat-Regular.ttf", 24);
+    g_FontLarge = AEGfxCreateFont("Assets/Fonts/Lora-Bold.ttf", 72);
+    g_FontMedium = AEGfxCreateFont("Assets/Fonts/Lora-Medium.ttf", 48);
+    g_FontSmall = AEGfxCreateFont("Assets/Fonts/WalterTurncoat-Regular.ttf", 24);
 }
 
 void Fonts_Unload()

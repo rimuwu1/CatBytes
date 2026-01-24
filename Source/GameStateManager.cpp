@@ -20,6 +20,7 @@ Technology is prohibited.
 #include "Level1.h"
 #include "Level2.h"
 #include "MainMenu.h"
+#include "SplashScreen.h"
 
 int current = 0, previous = 0, next = 0;
 
@@ -47,6 +48,14 @@ void GSM_Update()
 	// Determine which set of state functions to use based on the current state
 	switch (current)
 	{
+	case GS_SPLASHSCREEN:  // Splash Screen state
+		fpLoad = SplashScreen_Load;
+		fpInitialize = SplashScreen_Initialize;
+		fpUpdate = SplashScreen_Update;
+		fpDraw = SplashScreen_Draw;
+		fpFree = SplashScreen_Free;
+		fpUnload = SplashScreen_Unload;
+		break;
 	case GS_MAINMENU:  // Main Menu state
 		fpLoad = MainMenu_Load;
 		fpInitialize = MainMenu_Initialize;

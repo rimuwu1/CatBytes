@@ -1,3 +1,17 @@
+/* Start Header ************************************************************************/
+/*!
+\file Utils.cpp
+\author Joash ng, joash.ng, 2502780
+\par joash.ng@digipen.edu
+\date 21/01/2026
+\brief This file implements util functions to create mesh and draw mesh.
+
+Copyright (C) 2026 DigiPen Institute of Technology.
+Reproduction or disclosure of this file or its contents
+without the prior written consent of DigiPen Institute of
+Technology is prohibited.
+*/
+/* End Header **************************************************************************/
 
 #include "Utils.h"
 
@@ -22,6 +36,7 @@ namespace util {
 		float red = static_cast<float> (r / 255.0f);
 		float green = static_cast<float> (g / 255.0f);
 		float blue = static_cast<float> (b / 255.0f);
+		AEGfxSetRenderMode(AE_GFX_RM_COLOR);
 		AEGfxSetColorToMultiply(red, green, blue, 1.0f);
 		AEGfxSetColorToAdd(0.0f, 0.0f, 0.0f, 0.0f);
 
@@ -30,6 +45,25 @@ namespace util {
 		AEMtx33Trans(&translate, x, y);
 		AEMtx33Concat(&transform, &translate, &scale);
 
+		//draw
+		AEGfxSetTransform(transform.m);
+		AEGfxMeshDraw(mesh, AE_GFX_MDM_TRIANGLES);
+	}
+
+	void DrawTexturedSquare(AEGfxVertexList* mesh, AEGfxTexture* texture, float x, float y, float width, float height, float opacity) {
+		AEMtx33 scale, translate, transform;
+		//texture settings
+		AEGfxSetRenderMode(AE_GFX_RM_TEXTURE);
+		AEGfxSetColorToMultiply(1.0f, 1.0f, 1.0f, 1.0f);
+		AEGfxSetColorToAdd(0.0f, 0.0f, 0.0f, 0.0f);
+		AEGfxSetBlendMode(AE_GFX_BM_BLEND);
+		AEGfxSetTransparency(opacity);
+		AEGfxTextureSet(texture, 0, 0);
+
+		//transformations
+		AEMtx33Scale(&scale, width, height);
+		AEMtx33Trans(&translate, x, y);
+		AEMtx33Concat(&transform, &translate, &scale);
 		//draw
 		AEGfxSetTransform(transform.m);
 		AEGfxMeshDraw(mesh, AE_GFX_MDM_TRIANGLES);

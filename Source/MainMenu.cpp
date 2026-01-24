@@ -1,7 +1,6 @@
 ﻿#include "pch.h"
 #include "MainMenu.h"
 #include "GameStateManager.h"
-#include "AEEngine.h"
 #include "Fonts.h"
 
 extern int current;
@@ -20,11 +19,13 @@ const float BUTTON_HEIGHT = 0.1f;
 
 void MainMenu_Load()
 {
+	std::cout << "Main Menu:Load" << std::endl;
 }
 
 void MainMenu_Initialize()
 {
     frameCounter = 0;
+    std::cout << "Main Menu:Initialize" << std::endl;
 }
 
 void MainMenu_Update()
@@ -84,6 +85,7 @@ void MainMenu_Update()
             next = GS_QUIT;
         }
     }
+    std::cout << "Main Menu:Update" << std::endl;
 }
 
 void MainMenu_Draw()
@@ -124,12 +126,15 @@ void MainMenu_Draw()
     }
 
     AESysFrameEnd();
+    std::cout << "Main Menu:Draw" << std::endl;
 }
 
 void MainMenu_Free()
 {
+	std::cout << "Main Menu:Free" << std::endl;
 }
 
 void MainMenu_Unload()
 {
+	std::cout << "Main Menu:Unload" << std::endl;
 }

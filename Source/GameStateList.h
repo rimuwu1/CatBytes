@@ -20,6 +20,7 @@ Technology is prohibited.
 // ----------------------------------------------------------------------------
 enum GS_STATES
 {
+	GS_SPLASHSCREEN, // Splash Screen state
 	GS_MAINMENU,    // Main Menu state
 	GS_LEVEL1,		// Level 1 game state 
 	GS_LEVEL2,      // Level 2 game state 
