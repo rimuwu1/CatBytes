@@ -3,6 +3,7 @@
 #include "Utils.h"
 
 static AEGfxVertexList* playerMesh = nullptr;
+static AEGfxTexture* playerTexture = nullptr;//player image
 
 void Player_Init(Player& player, float startX, float startY)
 {
@@ -18,6 +19,13 @@ void Player_Init(Player& player, float startX, float startY)
 	{
 		playerMesh = util::CreateSquareMesh();
 	}
+
+	//load player texture 
+	if (!playerTexture)
+	{
+		playerTexture = AEGfxTextureLoad("Assets/Images/player.jpg");
+	}
+
 }
 
 void Player_Update(Player& player, float dt)
@@ -34,12 +42,47 @@ void Player_Update(Player& player, float dt)
 
 void Player_Draw(const Player& player)
 {
-	util::DrawSquare(
+	/*util::DrawSquare(
 		playerMesh,
 		player.pos.x,
 		player.pos.y,
 		player.width,
 		player.height,
 		0, 0, 255
+	);*/
+
+	//test for drawing image instead
+
+	//draw the player using a textured square
+	util::DrawTexturedSquare(
+		playerMesh,
+		playerTexture,
+		player.pos.x,
+		player.pos.y,
+		player.width,
+		player.height,
+		1.0f//fully opaque
 	);
+
+}
+
+// ----------------------------------------------------------------------------
+// Releases all dynamically allocated resources used by the player
+// this includes the player's mesh and texture, which are shared static resources
+// ----------------------------------------------------------------------------
+void Player_Free()
+{
+	//unload the player texture if it was loaded
+	if (playerTexture)
+	{
+		AEGfxTextureUnload(playerTexture);
+		playerTexture = nullptr; //prevent accidental reuse 
+	}
+
+	//free the player mesh if it exists
+	if (playerMesh)
+	{
+		AEGfxMeshFree(playerMesh);
+		playerMesh = nullptr;//mark as freed
+	}
 }

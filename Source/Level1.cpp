@@ -18,8 +18,10 @@ Technology is prohibited.
 #include "Player.h"
 #include "Utils.h"
 #include "Input.h"
+#include "enemy.h"//Enemy
 
 static Player lv1Player;
+static Enemy EasyEnemy; //Enemy
 AEGfxVertexList* lvl1mesh;
 
 float ground;
@@ -48,6 +50,9 @@ void Level1_Initialize()
 	// Bind the level player to the input system
 	Input_SetPlayer(&lv1Player);
 
+	//enemy Initialization
+	Enemy_Init(EasyEnemy, 200.0f, ground + 50.0f);//Enemy
+
 	std::cout << "Level1:Initialize" << std::endl;
 }
 
@@ -70,6 +75,30 @@ void Level1_Update()
 		lv1Player.vel.y = 0.0f;
 		lv1Player.grounded = 1;
 	}
+
+	//enemy update
+	Enemy_Update(EasyEnemy, dt);//Enemy
+
+	//Enemy
+	// TEMPORARY collision test
+	float collisionDistX = lv1Player.width / 2 + EasyEnemy.width / 2;
+	float collisionDistY = lv1Player.height / 2 + EasyEnemy.height / 2;
+
+	bool currentlyColliding =
+		fabs(lv1Player.pos.x - EasyEnemy.pos.x) < collisionDistX &&
+		fabs(lv1Player.pos.y - EasyEnemy.pos.y) < collisionDistY;
+
+	if (currentlyColliding && !EasyEnemy.isPlayerColliding)
+	{
+		Enemy_OnHit(EasyEnemy); // hit only once per collision
+		EasyEnemy.isPlayerColliding = true;
+	}
+	else if (!currentlyColliding)
+	{
+		EasyEnemy.isPlayerColliding = false; //reset for next collision
+	}
+	//Enemy
+
 	std::cout << "Level1:Update" << std::endl;
 	
 }
@@ -84,6 +113,7 @@ void Level1_Draw()
 	AESysFrameStart();
 	util::DrawSquare(lvl1mesh, 0.0f, ground, 1600.0f, 50.0f, 0, 0, 0); // Draw Ground (Texture TBA?)
 	Player_Draw(lv1Player);
+	Enemy_Draw(EasyEnemy);//Enemy
 	std::cout << "Level1:Draw" << std::endl;
 	AESysFrameEnd();
 }
@@ -94,6 +124,7 @@ void Level1_Draw()
 // ----------------------------------------------------------------------------
 void Level1_Free()
 {
+	Enemy_Free();//Enemy
 	std::cout << "Level1:Free" << std::endl;
 }
 

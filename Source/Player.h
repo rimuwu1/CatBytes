@@ -13,3 +13,4 @@ struct Player
 void Player_Init(Player& player, float startX, float startY);
 void Player_Update(Player& player, float dt);
 void Player_Draw(const Player& player);
+void Player_Free();

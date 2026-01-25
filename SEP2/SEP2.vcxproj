@@ -11,6 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\Source\enemy.cpp" />
     <ClCompile Include="..\Source\Fonts.cpp" />
     <ClCompile Include="..\Source\GameStateManager.cpp" />
     <ClCompile Include="..\Source\Input.cpp" />
@@ -25,6 +26,7 @@
     <ClCompile Include="..\Source\Utils.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\Source\enemy.h" />
     <ClInclude Include="..\Source\Fonts.h" />
     <ClInclude Include="..\Source\GameStateList.h" />
     <ClInclude Include="..\Source\GameStateManager.h" />
