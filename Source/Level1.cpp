@@ -35,7 +35,8 @@ struct Platform {
 static Platform platforms[] = {
 	{ -400.0f, -200.0f, 300.0f, 40.0f },
 	{ -250.0f, -120.0f, 250.0f, 40.0f },
-	{ -150.0f,	 20.0f, 220.0f, 40.0f }
+	{ -150.0f,	 20.0f, 220.0f, 40.0f },
+	{  100.0f,	150.0f, 150.0f, 40.0f }
 };
 
 static const int platformCount = sizeof(platforms) / sizeof(platforms[0]);
@@ -67,14 +68,15 @@ void Level1_Initialize()
 	// Player Initialization
 	lv1mesh = util::CreateSquareMesh();
 	ground = -350.0f;
-	Player_Init(lv1Player, 0.0f, ground);
+	const float groundHeight = 50.0f;
+	Player_Init(lv1Player, 0.0f, ground + groundHeight);
 	lv1Player.grounded = 1;
 
 	// Bind the level player to the input system
 	Input_SetPlayer(&lv1Player);
 
 	//enemy Initialization
-	Enemy_Init(EasyEnemy, 200.0f, ground + 50.0f);//Enemy
+	Enemy_Init(EasyEnemy, 200.0f, ground + groundHeight);//Enemy
 
 	std::cout << "Level1:Initialize" << std::endl;
 }
@@ -91,21 +93,22 @@ void Level1_Update()
 
 	float dt = (float)AEFrameRateControllerGetFrameTime();
 	Player_Update(lv1Player, dt);
-	//lv1Player.grounded = 0;
 
-	if (lv1Player.pos.y - lv1Player.height <= ground)
+	const float groundHeight = 50.0f;
+	float groundTop = ground + groundHeight * 0.5f;
+
+	if (lv1Player.pos.y - lv1Player.height * 0.5f <= groundTop)
 	{
-		lv1Player.pos.y = ground + lv1Player.height;
+		lv1Player.pos.y = groundTop + lv1Player.height * 0.5f;
 		lv1Player.vel.y = 0.0f;
 		lv1Player.grounded = 1;
-
 		playerPrevY = lv1Player.pos.y;
 	}
 
 	if (lv1Player.vel.y <= 0.0f)
 	{
-		float playerPrevBottom = playerPrevY - lv1Player.height;
-		float playerCurrBottom = lv1Player.pos.y - lv1Player.height;
+		float playerPrevBottom = playerPrevY - lv1Player.height * 0.5f;
+		float playerCurrBottom = lv1Player.pos.y - lv1Player.height * 0.5f;
 
 		for (int i = 0; i < platformCount; ++i)
 		{
@@ -113,17 +116,17 @@ void Level1_Update()
 
 			float pfLeft = pf.x - pf.w * 0.5f;
 			float pfRight = pf.x + pf.w * 0.5f;
+			float pfTop = pf.y + pf.h * 0.5f;
 
 			float playerLeft = lv1Player.pos.x - lv1Player.width * 0.5f;
 			float playerRight = lv1Player.pos.x + lv1Player.width * 0.5f;
 
 			bool overlapX = (playerRight >= pfLeft) && (playerLeft <= pfRight);
+			bool landOnPlatform = (playerPrevBottom >= pfTop) && (playerCurrBottom <= pfTop);
 
-			bool crossedTop = (playerPrevBottom >= pf.y) && (playerCurrBottom <= pf.y);
-
-			if (overlapX && crossedTop)
+			if (overlapX && landOnPlatform)
 			{
-				lv1Player.pos.y = pf.y + lv1Player.height;
+				lv1Player.pos.y = pfTop + lv1Player.height * 0.5f;
 				lv1Player.vel.y = 0.0f;
 				lv1Player.grounded = 1;
 
@@ -215,6 +218,13 @@ void Level1_Draw()
 
 	// draw background
 	Background_Draw();
+
+	// Draw platforms
+	for (int i = 0; i < platformCount; ++i)
+	{
+		const Platform& pf = platforms[i];
+		util::DrawSquare(lv1mesh, pf.x, pf.y, pf.w, pf.h, 60, 60, 60);
+	}
 
 	util::DrawSquare(lv1mesh, 0.0f, ground, 1600.0f, 50.0f, 0, 0, 0); // Draw Ground (Texture TBA?)
 	Player_Draw(lv1Player);
