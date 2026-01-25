@@ -19,6 +19,8 @@ Technology is prohibited.
 #include "Utils.h"
 #include "Input.h"
 #include "enemy.h"//Enemy
+#include "Background.h"
+#include "LevelIndicator.h"
 
 static Player lv1Player;
 static Enemy EasyEnemy; //Enemy
@@ -53,6 +55,15 @@ void Level1_Load()
 // ----------------------------------------------------------------------------
 void Level1_Initialize()
 {
+	// !! remove once cam in
+	fakeCamY = 0.0f;
+
+	// initialise background
+	Background_Initialise();
+
+	// initialise level indicator
+	LevelIndicator_Initialize();
+
 	// Player Initialization
 	lv1mesh = util::CreateSquareMesh();
 	ground = -350.0f;
@@ -73,9 +84,7 @@ void Level1_Initialize()
 // Decrements the counter and checks for level completion
 // ----------------------------------------------------------------------------
 void Level1_Update()
-{
-	AEGfxSetBackgroundColor(.7f, .7f, .7f);
-	
+{	
 	// Player Update
 	static float playerPrevY = 0.0f;
 	playerPrevY = lv1Player.pos.y;
@@ -150,6 +159,47 @@ void Level1_Update()
 	}
 	//Enemy
 
+	// Background Update
+	const float camSpeed = 100.0f;
+
+	// !! MANUAL KEYBOARD INPUT FOR CAM; TO BE REMOVED ONCE CAM IS IN !!
+		// W key: up, S key: down
+	if (AEInputCheckCurr(AEVK_UP)) {
+
+		fakeCamY += camSpeed * dt;
+
+	}
+
+	if (AEInputCheckCurr(AEVK_DOWN)) {
+
+		fakeCamY -= camSpeed * dt;
+
+	}
+
+	Background_Update(fakeCamY);
+
+	// check for section change
+	int currentSection = Background_CurrentSection();
+
+	if (currentSection == 0 && currentSection != previousSection) {
+
+		LevelIndicator_Show(currentSection);
+		previousSection = currentSection;
+
+	}
+
+	// exit level 1 & goes to level 2
+	const float endOfLevel1 = sectionHeight[0];
+
+	if (fakeCamY >= endOfLevel1) {
+
+		next = GS_LEVEL2;
+
+	}
+
+	// update when section changes
+	LevelIndicator_Update(dt);
+
 	std::cout << "Level1:Update" << std::endl;
 	
 }
@@ -163,22 +213,17 @@ void Level1_Draw()
 	// Informing the system about the loop's start
 	AESysFrameStart();
 
-	// Draw platforms
-	for (int i = 0; i < platformCount; ++i)
-	{
-		util::DrawSquare(
-			lv1mesh,
-			platforms[i].x,
-			platforms[i].y - platforms[i].h * 0.5f,
-			platforms[i].w,
-			platforms[i].h,
-			60, 60, 60
-		);
-	}
+	// draw background
+	Background_Draw();
 
 	util::DrawSquare(lv1mesh, 0.0f, ground, 1600.0f, 50.0f, 0, 0, 0); // Draw Ground (Texture TBA?)
 	Player_Draw(lv1Player);
+
 	Enemy_Draw(EasyEnemy);//Enemy
+
+	// draw text for level indicator
+	LevelIndicator_Draw();
+
 	std::cout << "Level1:Draw" << std::endl;
 	AESysFrameEnd();
 }
