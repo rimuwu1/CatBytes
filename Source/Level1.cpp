@@ -69,14 +69,15 @@ void Level1_Initialize()
 	lv1mesh = util::CreateSquareMesh();
 	ground = -350.0f;
 	const float groundHeight = 50.0f;
-	Player_Init(lv1Player, 0.0f, ground + groundHeight);
+	float groundTop = ground + groundHeight * 0.5f;
+	Player_Init(lv1Player, 0.0f, groundTop);
 	lv1Player.grounded = 1;
 
 	// Bind the level player to the input system
 	Input_SetPlayer(&lv1Player);
 
 	//enemy Initialization
-	Enemy_Init(EasyEnemy, 200.0f, ground + groundHeight);//Enemy
+	Enemy_Init(EasyEnemy, 200.0f, groundTop);//Enemy
 
 	std::cout << "Level1:Initialize" << std::endl;
 }
