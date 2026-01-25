@@ -64,17 +64,17 @@ void Level2_Update()
 		// W key: up, S key: down
 	if (AEInputCheckCurr(AEVK_UP)) {
 
-		fakeCamY += camSpeed * dt;
+		debugCamY += camSpeed * dt;
 
 	}
 
 	if (AEInputCheckCurr(AEVK_DOWN)) {
 
-		fakeCamY -= camSpeed * dt;
+		debugCamY -= camSpeed * dt;
 
 	}
 
-	Background_Update(fakeCamY);
+	Background_Update(debugCamY);
 
 	// check for section change
 	int currentSection = Background_CurrentSection();
@@ -89,7 +89,7 @@ void Level2_Update()
 	// exit level 2 & goes to level 3
 	const float endOfLevel2 = sectionHeight[1];
 
-	if (fakeCamY >= endOfLevel2) {
+	if (debugCamY >= endOfLevel2) {
 
 		next = GS_LEVEL3;
 

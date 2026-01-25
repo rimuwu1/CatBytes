@@ -1,3 +1,18 @@
+/* Start Header ************************************************************************/
+/*!
+\file Player.cpp
+\author Kerwin Wong Jia Jie, kerwinjiajie.wong, 2502740
+\par kerwinajijie.wong@digipen.edu
+\date January, 23, 2026
+\brief This file contains the function definitions for the Player movements, physics,
+		input handling, and rendering.
+
+Copyright (C) 2026 DigiPen Institute of Technology.
+Reproduction or disclosure of this file or its contents
+without the prior written consent of DigiPen Institute of
+Technology is prohibited.
+*/
+/* End Header **************************************************************************/
 #include "pch.h"
 #include "Player.h"
 #include "Utils.h"

@@ -22,7 +22,7 @@ Technology is prohibited.
 static float minY = 0.0f;
 static float maxY = 800.0;
 
-float fakeCamY = 0.0f;
+float debugCamY = 0.0f;
 int previousSection = -1;
 
 // --------------------------------------------------BACKGROUND SECTIONS START--------------------------------------------------

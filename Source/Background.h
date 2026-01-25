@@ -19,7 +19,7 @@ constexpr int backgroundSections = 4;
 
 extern float sectionHeight[];
 
-extern float fakeCamY;
+extern float debugCamY;
 
 extern int previousSection;
 

@@ -28,6 +28,7 @@
     <ClCompile Include="..\Source\SplashScreen.cpp" />
     <ClCompile Include="..\Source\System.cpp" />
     <ClCompile Include="..\Source\Utils.cpp" />
+    <ClCompile Include="Camera.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Source\Background.h" />
@@ -47,6 +48,7 @@
     <ClInclude Include="..\Source\SplashScreen.h" />
     <ClInclude Include="..\Source\System.h" />
     <ClInclude Include="..\Source\Utils.h" />
+    <ClInclude Include="Camera.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

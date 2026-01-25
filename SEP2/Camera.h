@@ -1,11 +1,11 @@
 /* Start Header ************************************************************************/
 /*!
-\file Player.h
+\file Camera.h
 \author Kerwin Wong Jia Jie, kerwinjiajie.wong, 2502740
 \par kerwinajijie.wong@digipen.edu
-\date January, 23, 2026
-\brief This file contains the function declarations for the Player movements, physics,
-		input handling, and rendering.
+\date January, 25, 2026
+\brief This file contains the function declarations for Camera Handling, which is used
+		to control the view position in the game.
 
 Copyright (C) 2026 DigiPen Institute of Technology.
 Reproduction or disclosure of this file or its contents
@@ -14,18 +14,13 @@ Technology is prohibited.
 */
 /* End Header **************************************************************************/
 #pragma once
-#include "AEEngine.h"
 
-struct Player
+struct Camera
 {
-	AEVec2 pos;
-	AEVec2 vel;
-	float width;
-	float height;
-	int grounded;
+	float x;
+	float y;
 };
 
-void Player_Init(Player& player, float startX, float startY);
-void Player_Update(Player& player, float dt);
-void Player_Draw(const Player& player);
-void Player_Free();
+void Camera_Init(Camera& cam, float startX, float startY);
+void Camera_FollowPlayer(Camera& cam, float playerX, float playerY, float dt);
+void Camera_Apply(const Camera& cam);
