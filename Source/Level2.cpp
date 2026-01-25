@@ -15,8 +15,6 @@ Technology is prohibited.
 #include "pch.h"
 #include "GameStateManager.h"
 #include "Level2.h"
-#include "Background.h"
-#include "LevelIndicator.h"
 
 // Global variables for tracking Level 2 game state
 int Level2_Counter;  // Tracks remaining updates before checking lives
@@ -28,7 +26,8 @@ int Level2_Lives;    // Tracks remaining player lives in Level 2
 // ----------------------------------------------------------------------------
 void Level2_Load()
 {
-	
+	// Log that loading is complete
+	std::cout << "Level2:Load" << std::endl;
 }
 
 // ----------------------------------------------------------------------------
@@ -37,10 +36,8 @@ void Level2_Load()
 // ----------------------------------------------------------------------------
 void Level2_Initialize()
 {
-	
-	// initialise level indicator
-	LevelIndicator_Initialize();
-
+	// Log that initialization is complete
+	std::cout << "Level2:Initialize" << std::endl;
 }
 
 // ----------------------------------------------------------------------------
@@ -49,52 +46,7 @@ void Level2_Initialize()
 // ----------------------------------------------------------------------------
 void Level2_Update()
 {
-
-	AEGfxSetRenderMode(AE_GFX_RM_COLOR);
-
-	float dt = (float)AEFrameRateControllerGetFrameTime();
-
-	// Background Update
-	const float camSpeed = 100.0f;
-
-	// !! MANUAL KEYBOARD INPUT FOR CAM; TO BE REMOVED ONCE CAM IS IN !!
-		// W key: up, S key: down
-	if (AEInputCheckCurr(AEVK_W)) {
-
-		fakeCamY += camSpeed * dt;
-
-	}
-
-	if (AEInputCheckCurr(AEVK_S)) {
-
-		fakeCamY -= camSpeed * dt;
-
-	}
-
-	Background_Update(fakeCamY);
-
-	// check for section change
-	int currentSection = Background_CurrentSection();
-
-	if (currentSection == 1 && currentSection != previousSection) {
-
-		LevelIndicator_Show(currentSection);
-		previousSection = currentSection;
-
-	}
-
-	// exit level 2 & goes to level 3
-	const float endOfLevel2 = sectionHeight[1];
-
-	if (fakeCamY >= endOfLevel2) {
-
-		next = GS_LEVEL3;
-
-	}
-
-	// update when section changes
-	LevelIndicator_Update(dt);
-
+	std::cout << "Level2:Update" << std::endl;
 }
 
 // ----------------------------------------------------------------------------
@@ -103,17 +55,7 @@ void Level2_Update()
 // ----------------------------------------------------------------------------
 void Level2_Draw()
 {
-
-	// Informing the system about the loop's start
-	AESysFrameStart();
-
-	// draw background
-	Background_Draw();
-
-	// draw text for level indicator
-	LevelIndicator_Draw();
-
-	AESysFrameEnd();
+	std::cout << "Level2:Draw" << std::endl;
 }
 
 // ----------------------------------------------------------------------------
@@ -122,7 +64,7 @@ void Level2_Draw()
 // ----------------------------------------------------------------------------
 void Level2_Free()
 {
-	
+	std::cout << "Level2:Free" << std::endl;
 }
 
 // ----------------------------------------------------------------------------
@@ -131,5 +73,5 @@ void Level2_Free()
 // ----------------------------------------------------------------------------
 void Level2_Unload()
 {
-	
+	std::cout << "Level2:Unload" << std::endl;
 }
