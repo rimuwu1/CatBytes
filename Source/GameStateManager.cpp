@@ -19,8 +19,6 @@ Technology is prohibited.
 #include "GameStateList.h"
 #include "Level1.h"
 #include "Level2.h"
-#include "Level3.h"
-#include "Level4.h"
 #include "MainMenu.h"
 #include "SplashScreen.h"
 
@@ -81,22 +79,6 @@ void GSM_Update()
 		fpDraw = Level2_Draw;
 		fpFree = Level2_Free;
 		fpUnload = Level2_Unload;
-		break;
-	case GS_LEVEL3: // Level 3 game state
-		fpLoad = Level3_Load;
-		fpInitialize = Level3_Initialize;
-		fpUpdate = Level3_Update;
-		fpDraw = Level3_Draw;
-		fpFree = Level3_Free;
-		fpUnload = Level3_Unload;
-		break;
-	case GS_LEVEL4: // Level 3 game state
-		fpLoad = Level4_Load;
-		fpInitialize = Level4_Initialize;
-		fpUpdate = Level4_Update;
-		fpDraw = Level4_Draw;
-		fpFree = Level4_Free;
-		fpUnload = Level4_Unload;
 		break;
 	case GS_RESTART: // State indicating the game should restart
 		break;
