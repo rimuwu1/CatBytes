@@ -22,9 +22,21 @@ Technology is prohibited.
 
 static Player lv1Player;
 static Enemy EasyEnemy; //Enemy
-AEGfxVertexList* lvl1mesh;
+AEGfxVertexList* lv1mesh;
 
 float ground;
+
+struct Platform {
+	float x, y, w, h;
+};
+
+static Platform platforms[] = {
+	{ -400.0f, -200.0f, 300.0f, 40.0f },
+	{ -250.0f, -120.0f, 250.0f, 40.0f },
+	{ -150.0f,	 20.0f, 220.0f, 40.0f }
+};
+
+static const int platformCount = sizeof(platforms) / sizeof(platforms[0]);
 
 // ----------------------------------------------------------------------------
 // Loads Level 1 resources and initial data
@@ -42,7 +54,7 @@ void Level1_Load()
 void Level1_Initialize()
 {
 	// Player Initialization
-	lvl1mesh = util::CreateSquareMesh();
+	lv1mesh = util::CreateSquareMesh();
 	ground = -350.0f;
 	Player_Init(lv1Player, 0.0f, ground);
 	lv1Player.grounded = 1;
@@ -65,6 +77,9 @@ void Level1_Update()
 	AEGfxSetBackgroundColor(.7f, .7f, .7f);
 	
 	// Player Update
+	static float playerPrevY = 0.0f;
+	playerPrevY = lv1Player.pos.y;
+
 	float dt = (float)AEFrameRateControllerGetFrameTime();
 	Player_Update(lv1Player, dt);
 	//lv1Player.grounded = 0;
@@ -74,6 +89,42 @@ void Level1_Update()
 		lv1Player.pos.y = ground + lv1Player.height;
 		lv1Player.vel.y = 0.0f;
 		lv1Player.grounded = 1;
+
+		playerPrevY = lv1Player.pos.y;
+	}
+
+	if (lv1Player.vel.y <= 0.0f)
+	{
+		float playerPrevBottom = playerPrevY - lv1Player.height;
+		float playerCurrBottom = lv1Player.pos.y - lv1Player.height;
+
+		for (int i = 0; i < platformCount; ++i)
+		{
+			const Platform& pf = platforms[i];
+
+			float pfLeft = pf.x - pf.w * 0.5f;
+			float pfRight = pf.x + pf.w * 0.5f;
+
+			float playerLeft = lv1Player.pos.x - lv1Player.width * 0.5f;
+			float playerRight = lv1Player.pos.x + lv1Player.width * 0.5f;
+
+			bool overlapX = (playerRight >= pfLeft) && (playerLeft <= pfRight);
+
+			bool crossedTop = (playerPrevBottom >= pf.y) && (playerCurrBottom <= pf.y);
+
+			if (overlapX && crossedTop)
+			{
+				lv1Player.pos.y = pf.y + lv1Player.height;
+				lv1Player.vel.y = 0.0f;
+				lv1Player.grounded = 1;
+
+				playerPrevY = lv1Player.pos.y;
+
+				break;
+			}
+
+		}
+
 	}
 
 	//enemy update
@@ -111,7 +162,21 @@ void Level1_Draw()
 {
 	// Informing the system about the loop's start
 	AESysFrameStart();
-	util::DrawSquare(lvl1mesh, 0.0f, ground, 1600.0f, 50.0f, 0, 0, 0); // Draw Ground (Texture TBA?)
+
+	// Draw platforms
+	for (int i = 0; i < platformCount; ++i)
+	{
+		util::DrawSquare(
+			lv1mesh,
+			platforms[i].x,
+			platforms[i].y - platforms[i].h * 0.5f,
+			platforms[i].w,
+			platforms[i].h,
+			60, 60, 60
+		);
+	}
+
+	util::DrawSquare(lv1mesh, 0.0f, ground, 1600.0f, 50.0f, 0, 0, 0); // Draw Ground (Texture TBA?)
 	Player_Draw(lv1Player);
 	Enemy_Draw(EasyEnemy);//Enemy
 	std::cout << "Level1:Draw" << std::endl;
@@ -134,6 +199,6 @@ void Level1_Free()
 // ----------------------------------------------------------------------------
 void Level1_Unload()
 {
-	AEGfxMeshFree(lvl1mesh);
+	AEGfxMeshFree(lv1mesh);
 	std::cout << "Level1:Unload" << std::endl;
 }
