@@ -11,12 +11,19 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+<<<<<<< Updated upstream
     <ClCompile Include="..\Source\enemy.cpp" />
+=======
+    <ClCompile Include="..\Source\Background.cpp" />
+>>>>>>> Stashed changes
     <ClCompile Include="..\Source\Fonts.cpp" />
     <ClCompile Include="..\Source\GameStateManager.cpp" />
     <ClCompile Include="..\Source\Input.cpp" />
     <ClCompile Include="..\Source\Level1.cpp" />
     <ClCompile Include="..\Source\Level2.cpp" />
+    <ClCompile Include="..\Source\Level3.cpp" />
+    <ClCompile Include="..\Source\Level4.cpp" />
+    <ClCompile Include="..\Source\LevelIndicator.cpp" />
     <ClCompile Include="..\Source\main.cpp" />
     <ClCompile Include="..\Source\pch.cpp" />
     <ClCompile Include="..\Source\Player.cpp" />
@@ -26,13 +33,20 @@
     <ClCompile Include="..\Source\Utils.cpp" />
   </ItemGroup>
   <ItemGroup>
+<<<<<<< Updated upstream
     <ClInclude Include="..\Source\enemy.h" />
+=======
+    <ClInclude Include="..\Source\Background.h" />
+>>>>>>> Stashed changes
     <ClInclude Include="..\Source\Fonts.h" />
     <ClInclude Include="..\Source\GameStateList.h" />
     <ClInclude Include="..\Source\GameStateManager.h" />
     <ClInclude Include="..\Source\Input.h" />
     <ClInclude Include="..\Source\Level1.h" />
     <ClInclude Include="..\Source\Level2.h" />
+    <ClInclude Include="..\Source\Level3.h" />
+    <ClInclude Include="..\Source\Level4.h" />
+    <ClInclude Include="..\Source\LevelIndicator.h" />
     <ClInclude Include="..\Source\MainMenu.h" />
     <ClInclude Include="..\Source\pch.h" />
     <ClInclude Include="..\Source\Player.h" />

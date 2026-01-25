@@ -1,10 +1,10 @@
 /* Start Header ************************************************************************/
 /*!
-\file Level2.cpp
-\author Joash ng, joash.ng, 2502780
-\par joash.ng@digipen.edu
-\date 21/01/2026
-\brief This file implements the functions for Level 2 of the game.
+\file       Level3.cpp
+\author     Peh Yu Xuan, Lovette, p.yuxuanlovette, 2502079
+\par        p.yuxuanlovette@digipen.edu
+\date       January 24 2026
+\brief
 
 Copyright (C) 2026 DigiPen Institute of Technology.
 Reproduction or disclosure of this file or its contents
@@ -14,19 +14,15 @@ Technology is prohibited.
 /* End Header **************************************************************************/
 #include "pch.h"
 #include "GameStateManager.h"
-#include "Level2.h"
+#include "Level3.h"
 #include "Background.h"
 #include "LevelIndicator.h"
-
-// Global variables for tracking Level 2 game state
-int Level2_Counter;  // Tracks remaining updates before checking lives
-int Level2_Lives;    // Tracks remaining player lives in Level 2
 
 // ----------------------------------------------------------------------------
 // Loads Level 2 resources and initial data
 // Reads the initial number of lives from a text file
 // ----------------------------------------------------------------------------
-void Level2_Load()
+void Level3_Load()
 {
 	
 }
@@ -35,7 +31,7 @@ void Level2_Load()
 // Initializes Level 2 game state
 // Called after loading to set up initial level conditions
 // ----------------------------------------------------------------------------
-void Level2_Initialize()
+void Level3_Initialize()
 {
 	
 	// initialise level indicator
@@ -47,7 +43,7 @@ void Level2_Initialize()
 // Updates Level 2 logic every frame
 // Decrements the counter and manages lives/level progression
 // ----------------------------------------------------------------------------
-void Level2_Update()
+void Level3_Update()
 {
 
 	AEGfxSetRenderMode(AE_GFX_RM_COLOR);
@@ -76,19 +72,19 @@ void Level2_Update()
 	// check for section change
 	int currentSection = Background_CurrentSection();
 
-	if (currentSection == 1 && currentSection != previousSection) {
+	if (currentSection == 2 && currentSection != previousSection) {
 
 		LevelIndicator_Show(currentSection);
 		previousSection = currentSection;
 
 	}
 
-	// exit level 2 & goes to level 3
-	const float endOfLevel2 = sectionHeight[1];
+	// exit level 3 & goes to level 4
+	const float endOfLevel3 = sectionHeight[2];
 
-	if (fakeCamY >= endOfLevel2) {
+	if (fakeCamY >= endOfLevel3) {
 
-		next = GS_LEVEL3;
+		next = GS_LEVEL4;
 
 	}
 
@@ -101,9 +97,9 @@ void Level2_Update()
 // Renders Level 2 graphics every frame
 // Called after Update to draw the current game state
 // ----------------------------------------------------------------------------
-void Level2_Draw()
+void Level3_Draw()
 {
-
+	
 	// Informing the system about the loop's start
 	AESysFrameStart();
 
@@ -120,7 +116,7 @@ void Level2_Draw()
 // Frees dynamic resources used by Level 2
 // Called before unloading to release runtime-allocated resources
 // ----------------------------------------------------------------------------
-void Level2_Free()
+void Level3_Free()
 {
 	
 }
@@ -129,7 +125,7 @@ void Level2_Free()
 // Unloads Level 2 persistent resources
 // Called when level is completely finished to clean up loaded assets
 // ----------------------------------------------------------------------------
-void Level2_Unload()
+void Level3_Unload()
 {
 	
 }

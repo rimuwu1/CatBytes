@@ -18,7 +18,12 @@ Technology is prohibited.
 #include "Player.h"
 #include "Utils.h"
 #include "Input.h"
+<<<<<<< Updated upstream
 #include "enemy.h"//Enemy
+=======
+#include "Background.h"
+#include "LevelIndicator.h"
+>>>>>>> Stashed changes
 
 static Player lv1Player;
 static Enemy EasyEnemy; //Enemy
@@ -32,7 +37,7 @@ float ground;
 // ----------------------------------------------------------------------------
 void Level1_Load()
 {
-	std::cout << "Level1:Load" << std::endl;
+	
 }
 
 // ----------------------------------------------------------------------------
@@ -50,10 +55,21 @@ void Level1_Initialize()
 	// Bind the level player to the input system
 	Input_SetPlayer(&lv1Player);
 
+<<<<<<< Updated upstream
 	//enemy Initialization
 	Enemy_Init(EasyEnemy, 200.0f, ground + 50.0f);//Enemy
 
 	std::cout << "Level1:Initialize" << std::endl;
+=======
+	// !! remove once cam in
+	fakeCamY = 0.0f;
+
+	// initialise background
+	Background_Initialise();
+
+	// initialise level indicator
+	LevelIndicator_Initialize();
+>>>>>>> Stashed changes
 }
 
 // ----------------------------------------------------------------------------
@@ -62,7 +78,11 @@ void Level1_Initialize()
 // ----------------------------------------------------------------------------
 void Level1_Update()
 {
+<<<<<<< Updated upstream
 	AEGfxSetBackgroundColor(.7f, .7f, .7f);
+=======
+	AEGfxSetRenderMode(AE_GFX_RM_COLOR); //to render colours (change if using texture)
+>>>>>>> Stashed changes
 	
 	// Player Update
 	float dt = (float)AEFrameRateControllerGetFrameTime();
@@ -76,6 +96,7 @@ void Level1_Update()
 		lv1Player.grounded = 1;
 	}
 
+<<<<<<< Updated upstream
 	//enemy update
 	Enemy_Update(EasyEnemy, dt);//Enemy
 
@@ -101,6 +122,49 @@ void Level1_Update()
 
 	std::cout << "Level1:Update" << std::endl;
 	
+=======
+	// Background Update
+	const float camSpeed = 100.0f;
+
+	// !! MANUAL KEYBOARD INPUT FOR CAM; TO BE REMOVED ONCE CAM IS IN !!
+		// W key: up, S key: down
+	if (AEInputCheckCurr(AEVK_W)) {
+
+		fakeCamY += camSpeed * dt;
+
+	}
+
+	if (AEInputCheckCurr(AEVK_S)) {
+
+		fakeCamY -= camSpeed * dt;
+
+	}
+
+	Background_Update(fakeCamY);
+
+	// check for section change
+	int currentSection = Background_CurrentSection();
+
+	if (currentSection == 0 && currentSection != previousSection) {
+
+		LevelIndicator_Show(currentSection);
+		previousSection = currentSection;
+
+	}
+
+	// exit level 1 & goes to level 2
+	const float endOfLevel1 = sectionHeight[0];
+
+	if (fakeCamY >= endOfLevel1) {
+
+		next = GS_LEVEL2;
+
+	}
+
+	// update when section changes
+	LevelIndicator_Update(dt);
+
+>>>>>>> Stashed changes
 }
 
 // ----------------------------------------------------------------------------
@@ -111,11 +175,25 @@ void Level1_Draw()
 {
 	// Informing the system about the loop's start
 	AESysFrameStart();
+<<<<<<< Updated upstream
 	util::DrawSquare(lvl1mesh, 0.0f, ground, 1600.0f, 50.0f, 0, 0, 0); // Draw Ground (Texture TBA?)
 	Player_Draw(lv1Player);
 	Enemy_Draw(EasyEnemy);//Enemy
 	std::cout << "Level1:Draw" << std::endl;
+=======
+
+	// draw background
+	Background_Draw();
+
+	util::DrawSquare(squareMesh, 0.0f, ground, 1600.0f, 50.0f, 0, 0, 0); // Draw Ground (Texture TBA?)
+	Player_Draw(lv1Player);
+
+	// draw text for level indicator
+	LevelIndicator_Draw();
+
+>>>>>>> Stashed changes
 	AESysFrameEnd();
+
 }
 
 // ----------------------------------------------------------------------------
@@ -124,8 +202,12 @@ void Level1_Draw()
 // ----------------------------------------------------------------------------
 void Level1_Free()
 {
+<<<<<<< Updated upstream
 	Enemy_Free();//Enemy
 	std::cout << "Level1:Free" << std::endl;
+=======
+	
+>>>>>>> Stashed changes
 }
 
 // ----------------------------------------------------------------------------
@@ -134,6 +216,10 @@ void Level1_Free()
 // ----------------------------------------------------------------------------
 void Level1_Unload()
 {
+<<<<<<< Updated upstream
 	AEGfxMeshFree(lvl1mesh);
 	std::cout << "Level1:Unload" << std::endl;
+=======
+	
+>>>>>>> Stashed changes
 }
