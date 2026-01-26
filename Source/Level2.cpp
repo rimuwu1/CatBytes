@@ -17,10 +17,17 @@ Technology is prohibited.
 #include "Level2.h"
 #include "Background.h"
 #include "LevelIndicator.h"
+#include "Platforms.h"
 
 // Global variables for tracking Level 2 game state
 int Level2_Counter;  // Tracks remaining updates before checking lives
 int Level2_Lives;    // Tracks remaining player lives in Level 2
+
+// platforms array
+static std::vector<Platform> level2Platforms = {
+	{ 0.0f, 600.0f, 300.0f, 40.0f },
+	
+};
 
 // ----------------------------------------------------------------------------
 // Loads Level 2 resources and initial data
@@ -41,8 +48,14 @@ void Level2_Initialize()
 	// Log that initialization is complete
 	std::cout << "Level2:Initialize" << std::endl;
 
+	// reset background
+	Background_Reset(sectionHeight[0], 1);
+
 	// initialise level indicator
 	LevelIndicator_Initialize();
+
+	// initialise platforms
+	Platforms_Initialize();
 }
 
 // ----------------------------------------------------------------------------
@@ -76,6 +89,8 @@ void Level2_Update()
 
 	Background_Update(debugCamY);
 
+	AEGfxSetCamPosition(0.0f, debugCamY);
+
 	// check for section change
 	int currentSection = Background_CurrentSection();
 
@@ -87,6 +102,19 @@ void Level2_Update()
 	}
 
 	// exit level 2 & goes to level 3
+	float lvl2HighestPlatform = level2Platforms[0].y + level2Platforms[0].h / 2;
+
+	for (const auto& pf : level2Platforms) {
+
+		float platformMax = pf.y + pf.h / 2;
+
+		if (platformMax > lvl2HighestPlatform) {
+
+			lvl2HighestPlatform = platformMax;
+
+		}
+
+	}
 	const float endOfLevel2 = sectionHeight[1];
 
 	if (debugCamY >= endOfLevel2) {
@@ -116,6 +144,9 @@ void Level2_Draw()
 	// draw text for level indicator
 	LevelIndicator_Draw();
 
+	// draw platforms
+	Platforms_Draw(level2Platforms);
+
 	AESysFrameEnd();
 }
 
@@ -134,5 +165,6 @@ void Level2_Free()
 // ----------------------------------------------------------------------------
 void Level2_Unload()
 {
+	AEGfxMeshFree(platformMesh);
 	std::cout << "Level2:Unload" << std::endl;
 }

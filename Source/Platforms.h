@@ -13,16 +13,18 @@ Technology is prohibited.
 */
 /* End Header **************************************************************************/
 #pragma once
-/*
-void Platforms_Load();
+
+#include <vector>
+
+struct Platform {
+	float x, y, w, h;
+};
+
+// global platform mesh
+extern AEGfxVertexList* platformMesh;
 
 void Platforms_Initialize();
 
-void Platforms_Update();
+void Platforms_Draw(const std::vector<Platform> &platform);
 
-void Platforms_Draw();
-
-void Platforms_Free();
-
-void Platforms_Unload();
-*/
+float Get_Highest_Platform_YPos(const std::vector<Platform>& platforms);

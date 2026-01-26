@@ -173,6 +173,15 @@ void Background_Free() {
 
 }
 
+void Background_Reset(float startCamY, int startSection) {
+
+	debugCamY = startCamY;
+	currentSection = startSection;
+	previousSection = -1;
+	currentColour = backgroundColours[startSection];
+
+}
+
 // get current section
 int Background_CurrentSection() {
 

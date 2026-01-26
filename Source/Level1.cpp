@@ -26,6 +26,7 @@ Technology is prohibited.
 #include "rapidjson/filereadstream.h"
 #include "rapidjson/istreamwrapper.h"
 #include <fstream>
+#include "Platforms.h"
 
 static Player lv1Player;
 static Enemy EasyEnemy; //Enemy
@@ -41,18 +42,18 @@ AEGfxVertexList* lv1mesh;
 
 float ground;
 
-struct Platform {
-	float x, y, w, h;
+// platforms array
+static std::vector<Platform> level1Platforms = {
+	{    0.0f, -200.0f, 500.0f, 40.0f },
+	{ -450.0f,  -50.0f, 250.0f, 40.0f },
+	{  100.0f,	 85.0f, 450.0f, 40.0f },
+	{  600.0f,	190.0f, 300.0f, 40.0f },
+	{  175.0f,	300.0f, 250.0f, 40.0f },
+	{ -300.0f,	450.0f, 520.0f, 40.0f },
+	
 };
 
-static Platform platforms[] = {
-	{ -400.0f, -200.0f, 300.0f, 40.0f },
-	{ -250.0f, -120.0f, 250.0f, 40.0f },
-	{ -150.0f,	 20.0f, 220.0f, 40.0f },
-	{  100.0f,	150.0f, 150.0f, 40.0f },
-};
-
-static const int platformCount = sizeof(platforms) / sizeof(platforms[0]);
+static const int platformCount = sizeof(level1Platforms) / sizeof(level1Platforms[0]);
 
 // ----------------------------------------------------------------------------
 // Loads Level 1 resources and initial data
@@ -74,6 +75,9 @@ void Level1_Initialize()
 {
 	// initialise background
 	Background_Initialise();
+
+	// reset background
+	Background_Reset(0.0f, 0);
 
 	// initialise level indicator
 	LevelIndicator_Initialize();
@@ -97,6 +101,13 @@ void Level1_Initialize()
 	float enemyX = enemies[0]["x"].GetFloat(); //initialise enemy position from json
 	float enemyY = enemies[0]["y"].GetFloat(); //currently only 1 enemy (in level 1)need to update enemy code)
 	Enemy_Init(EasyEnemy, enemyX, enemyY);//Enemy
+
+	// initialise platforms
+	Platforms_Initialize();
+
+	float level1Top = Get_Highest_Platform_YPos(level1Platforms);
+	const float levelGap = 100.0f;
+	float level2Start = level1Top + levelGap;
 
 	// Camera starting position
 	camX = lv1Player.pos.x;
@@ -142,7 +153,7 @@ void Level1_Update()
 
 		for (int i = 0; i < platformCount; ++i)
 		{
-			const Platform& pf = platforms[i];
+			const Platform& pf = level1Platforms[i];
 
 			float pfLeft = pf.x - pf.w * 0.5f;
 			float pfRight = pf.x + pf.w * 0.5f;
@@ -267,12 +278,8 @@ void Level1_Draw()
 	// draw background
 	Background_Draw();
 
-	// Draw platforms
-	for (int i = 0; i < platformCount; ++i)
-	{
-		const Platform& pf = platforms[i];
-		util::DrawSquare(lv1mesh, pf.x, pf.y, pf.w, pf.h, 60, 60, 60);
-	}
+	// draw platforms
+	Platforms_Draw(level1Platforms);
 
 	util::DrawSquare(lv1mesh, 0.0f, ground, 1600.0f, 50.0f, 0, 0, 0); // Draw Ground (Texture TBA?)
 	Player_Draw(lv1Player);
@@ -303,5 +310,6 @@ void Level1_Free()
 void Level1_Unload()
 {
 	AEGfxMeshFree(lv1mesh);
+	AEGfxMeshFree(platformMesh);
 	std::cout << "Level1:Unload" << std::endl;
 }
