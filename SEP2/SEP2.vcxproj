@@ -23,6 +23,7 @@
     <ClCompile Include="..\Source\LevelIndicator.cpp" />
     <ClCompile Include="..\Source\main.cpp" />
     <ClCompile Include="..\Source\pch.cpp" />
+    <ClCompile Include="..\Source\Platforms.cpp" />
     <ClCompile Include="..\Source\Player.cpp" />
     <ClCompile Include="..\Source\MainMenu.cpp" />
     <ClCompile Include="..\Source\SplashScreen.cpp" />
@@ -44,6 +45,7 @@
     <ClInclude Include="..\Source\LevelIndicator.h" />
     <ClInclude Include="..\Source\MainMenu.h" />
     <ClInclude Include="..\Source\pch.h" />
+    <ClInclude Include="..\Source\Platforms.h" />
     <ClInclude Include="..\Source\Player.h" />
     <ClInclude Include="..\Source\SplashScreen.h" />
     <ClInclude Include="..\Source\System.h" />

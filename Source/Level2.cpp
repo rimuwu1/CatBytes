@@ -58,7 +58,7 @@ void Level2_Update()
 	float dt = (float)AEFrameRateControllerGetFrameTime();
 
 	// Background Update
-	const float camSpeed = 100.0f;
+	const float camSpeed = 800.0f;
 
 	// !! MANUAL KEYBOARD INPUT FOR CAM; TO BE REMOVED ONCE CAM IS IN !!
 		// W key: up, S key: down

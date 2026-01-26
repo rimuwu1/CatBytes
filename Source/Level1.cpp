@@ -44,7 +44,7 @@ static Platform platforms[] = {
 	{ -400.0f, -200.0f, 300.0f, 40.0f },
 	{ -250.0f, -120.0f, 250.0f, 40.0f },
 	{ -150.0f,	 20.0f, 220.0f, 40.0f },
-	{  100.0f,	150.0f, 150.0f, 40.0f }
+	{  100.0f,	150.0f, 150.0f, 40.0f },
 };
 
 static const int platformCount = sizeof(platforms) / sizeof(platforms[0]);
@@ -178,7 +178,7 @@ void Level1_Update()
 	//Enemy
 
 	// Background Update (Debug Cam)
-	const float camSpeed = 100.0f;
+	const float camSpeed = 800.0f;
 
 	// !! MANUAL KEYBOARD INPUT FOR CAM; TO BE REMOVED ONCE CAM IS IN !!
 		// W key: up, S key: down
