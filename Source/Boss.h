@@ -14,14 +14,14 @@ Technology is prohibited.
 /* End Header **************************************************************************/
 #pragma once
 
-void Level4_Load();
+void Boss_Load();
 
-void Level4_Initialize();
+void Boss_Initialize();
 
-void Level4_Update();
+void Boss_Update();
 
-void Level4_Draw();
+void Boss_Draw();
 
-void Level4_Free();
+void Boss_Free();
 
-void Level4_Unload();
+void Boss_Unload();

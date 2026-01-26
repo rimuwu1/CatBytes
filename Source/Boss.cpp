@@ -14,7 +14,7 @@ Technology is prohibited.
 /* End Header **************************************************************************/
 #include "pch.h"
 #include "GameStateManager.h"
-#include "Level4.h"
+#include "Boss.h"
 #include "Background.h"
 #include "LevelIndicator.h"
 
@@ -22,7 +22,7 @@ Technology is prohibited.
 // Loads Level 2 resources and initial data
 // Reads the initial number of lives from a text file
 // ----------------------------------------------------------------------------
-void Level4_Load()
+void Boss_Load()
 {
 	
 }
@@ -31,7 +31,7 @@ void Level4_Load()
 // Initializes Level 2 game state
 // Called after loading to set up initial level conditions
 // ----------------------------------------------------------------------------
-void Level4_Initialize()
+void Boss_Initialize()
 {
 	
 	// initialise level indicator
@@ -43,7 +43,7 @@ void Level4_Initialize()
 // Updates Level 2 logic every frame
 // Decrements the counter and manages lives/level progression
 // ----------------------------------------------------------------------------
-void Level4_Update()
+void Boss_Update()
 {
 
 	AEGfxSetRenderMode(AE_GFX_RM_COLOR);
@@ -88,7 +88,7 @@ void Level4_Update()
 // Renders Level 2 graphics every frame
 // Called after Update to draw the current game state
 // ----------------------------------------------------------------------------
-void Level4_Draw()
+void Boss_Draw()
 {
 
 	// Informing the system about the loop's start
@@ -107,7 +107,7 @@ void Level4_Draw()
 // Frees dynamic resources used by Level 2
 // Called before unloading to release runtime-allocated resources
 // ----------------------------------------------------------------------------
-void Level4_Free()
+void Boss_Free()
 {
 	
 }
@@ -116,7 +116,7 @@ void Level4_Free()
 // Unloads Level 2 persistent resources
 // Called when level is completely finished to clean up loaded assets
 // ----------------------------------------------------------------------------
-void Level4_Unload()
+void Boss_Unload()
 {
 	
 }
