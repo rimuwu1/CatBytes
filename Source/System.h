@@ -13,5 +13,5 @@ Technology is prohibited.
 */
 /* End Header **************************************************************************/
 #pragma once
-void System_Initialize(HINSTANCE hInstance, int nCmdShow);
+void System_Initialize(HINSTANCE hInstance, int nCmdShow, bool showConsole);
 void System_Exit();

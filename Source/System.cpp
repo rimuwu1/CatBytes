@@ -20,9 +20,9 @@ Technology is prohibited.
 // Initializes the game system and its subsystems
 // Called once at the start of the game to set up the application
 // ----------------------------------------------------------------------------
-void System_Initialize(HINSTANCE hInstance, int nCmdShow)
+void System_Initialize(HINSTANCE hInstance, int nCmdShow, bool createConsole)
 {
-	AESysInit(hInstance, nCmdShow, 1600, 900, 1, 60, true, NULL);
+	AESysInit(hInstance, nCmdShow, 1600, 900, createConsole, 60, true, NULL);
 	AESysSetWindowTitle("CatBytes Game");
 	
 	AESysReset();

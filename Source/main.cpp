@@ -18,7 +18,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	UNREFERENCED_PARAMETER(lpCmdLine);
 
 	// Initialize system components
-	System_Initialize(hInstance, nCmdShow);
+	System_Initialize(hInstance, nCmdShow, true);
 
 	GSM_Initialize(current);
 
