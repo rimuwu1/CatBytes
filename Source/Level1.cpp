@@ -22,9 +22,14 @@ Technology is prohibited.
 #include "Camera.h"
 #include "Background.h"
 #include "LevelIndicator.h"
+#include "rapidjson/document.h"
+#include "rapidjson/filereadstream.h"
+#include "rapidjson/istreamwrapper.h"
+#include <fstream>
 
 static Player lv1Player;
 static Enemy EasyEnemy; //Enemy
+rapidjson::Document level1Config;
 
 static float debugCamY = 0.0f;
 static float camX = 0.0f;
@@ -55,6 +60,9 @@ static const int platformCount = sizeof(platforms) / sizeof(platforms[0]);
 // ----------------------------------------------------------------------------
 void Level1_Load()
 {
+	std::ifstream ifs("Assets/Data/GameSave.json");
+	rapidjson::IStreamWrapper isw(ifs);
+	level1Config.ParseStream(isw);
 	std::cout << "Level1:Load" << std::endl;
 }
 
@@ -74,14 +82,21 @@ void Level1_Initialize()
 	lv1mesh = util::CreateSquareMesh();
 	ground = -350.0f;
 	const float groundHeight = 50.0f;
-	Player_Init(lv1Player, 0.0f, ground + groundHeight);
+	float playerX = level1Config["level_1"]["player"]["x"].GetFloat(); //test json file structure
+	float playerY = level1Config["level_1"]["player"]["y"].GetFloat();
+	Player_Init(lv1Player, playerX, playerY);
 	lv1Player.grounded = 1;
 
 	// Bind the level player to the input system
 	Input_SetPlayer(&lv1Player);
 
 	//enemy Initialization
-	Enemy_Init(EasyEnemy, 200.0f, ground + groundHeight);//Enemy
+	const rapidjson::Value& enemies = level1Config["level_1"]["enemies"];
+
+	// Access index 0 (the first enemy)
+	float enemyX = enemies[0]["x"].GetFloat(); //initialise enemy position from json
+	float enemyY = enemies[0]["y"].GetFloat(); //currently only 1 enemy (in level 1)need to update enemy code)
+	Enemy_Init(EasyEnemy, enemyX, enemyY);//Enemy
 
 	// Camera starting position
 	camX = lv1Player.pos.x;

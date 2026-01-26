@@ -14,6 +14,16 @@ Technology is prohibited.
 /* End Header **************************************************************************/
 
 #include "Utils.h"
+#include "Player.h"
+#include "enemy.h"
+#include "rapidjson/filereadstream.h"
+#include "rapidjson/filewritestream.h"
+#include "rapidjson/prettywriter.h"
+#include "rapidjson/document.h"
+#include <cstdio>
+#include <iostream>
+#include <vector>
+
 
 namespace util {
 	AEGfxVertexList* CreateSquareMesh() {

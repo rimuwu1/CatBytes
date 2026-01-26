@@ -16,6 +16,8 @@ Technology is prohibited.
 #include "GameStateManager.h"
 #include "Input.h"
 #include "AEEngine.h"
+#include "Utils.h"
+#include <vector>
 
 static Player* s_CurrentPlayer = nullptr;
 
@@ -23,6 +25,7 @@ void Input_SetPlayer(Player* player)
 {
 	s_CurrentPlayer = player;
 }
+
 
 // ----------------------------------------------------------------------------
 // Handles all user input processing for the current frame
