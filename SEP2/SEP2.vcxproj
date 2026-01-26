@@ -19,7 +19,7 @@
     <ClCompile Include="..\Source\Level1.cpp" />
     <ClCompile Include="..\Source\Level2.cpp" />
     <ClCompile Include="..\Source\Level3.cpp" />
-    <ClCompile Include="..\Source\Level4.cpp" />
+    <ClCompile Include="..\Source\Boss.cpp" />
     <ClCompile Include="..\Source\LevelIndicator.cpp" />
     <ClCompile Include="..\Source\main.cpp" />
     <ClCompile Include="..\Source\pch.cpp" />
@@ -40,7 +40,7 @@
     <ClInclude Include="..\Source\Level1.h" />
     <ClInclude Include="..\Source\Level2.h" />
     <ClInclude Include="..\Source\Level3.h" />
-    <ClInclude Include="..\Source\Level4.h" />
+    <ClInclude Include="..\Source\Boss.h" />
     <ClInclude Include="..\Source\LevelIndicator.h" />
     <ClInclude Include="..\Source\MainMenu.h" />
     <ClInclude Include="..\Source\pch.h" />

@@ -20,7 +20,7 @@ Technology is prohibited.
 #include "Level1.h"
 #include "Level2.h"
 #include "Level3.h"
-#include "Level4.h"
+#include "Boss.h"
 #include "MainMenu.h"
 #include "SplashScreen.h"
 
@@ -91,12 +91,12 @@ void GSM_Update()
 		fpUnload = Level3_Unload;
 		break;
 	case GS_LEVEL4: // Level 3 game state
-		fpLoad = Level4_Load;
-		fpInitialize = Level4_Initialize;
-		fpUpdate = Level4_Update;
-		fpDraw = Level4_Draw;
-		fpFree = Level4_Free;
-		fpUnload = Level4_Unload;
+		fpLoad = Boss_Load;
+		fpInitialize = Boss_Initialize;
+		fpUpdate = Boss_Update;
+		fpDraw = Boss_Draw;
+		fpFree = Boss_Free;
+		fpUnload = Boss_Unload;
 		break;
 	case GS_RESTART: // State indicating the game should restart
 		break;
