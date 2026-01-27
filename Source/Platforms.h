@@ -27,4 +27,6 @@ struct Platform {
 
 void Platforms_Draw(AEGfxVertexList* mesh, const std::vector<Platform> &platform);
 
+void Platforms_OffsetY(std::vector<Platform>& platforms, float offsetY);
+
 float Get_Highest_Platform_YPos(const std::vector<Platform>& platforms);

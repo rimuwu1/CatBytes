@@ -39,6 +39,7 @@ static Enemy HardEnemy;
 rapidjson::Document level1Config;
 
 static int previousSelection = -1;
+const float LEVEL2_START_Y = sectionHeight[0];
 
 AEGfxVertexList* lv1mesh;
 std::ifstream ifs;
@@ -58,6 +59,10 @@ static std::vector<Platform> level1Platforms = {
 */
 // platforms array - will be loaded from JSON
 static std::vector<Platform> level1Platforms;
+static std::vector<Platform> level2Platforms = {
+	{   0.0f, LEVEL2_START_Y + 100.0f, 300.0f, 40.0f },
+	{ 200.0f, LEVEL2_START_Y + 250.0f, 200.0f, 40.0f }
+};
 
 //static const int platformCount = sizeof(level1Platforms) / sizeof(level1Platforms[0]);
 
@@ -164,6 +169,7 @@ void Level1_Update()
 
 	float dt = (float)AEFrameRateControllerGetFrameTime();
 	Player_Update(lv1Player, dt);
+	lv1Player.grounded = 0;
 
 	const float groundHeight = 50.0f;
 	float groundTop = ground + groundHeight * 0.5f;
@@ -206,6 +212,7 @@ void Level1_Update()
 				break;
 			}
 			*/
+		/*
 		for (const Platform& pf : level1Platforms) {
 			float pfLeft = pf.x - pf.w * 0.5f;
 			float pfRight = pf.x + pf.w * 0.5f;
@@ -226,8 +233,41 @@ void Level1_Update()
 				playerPrevY = lv1Player.pos.y;
 
 				break;
-		}
+			}
 
+		}
+		*/
+
+		auto CheckPlatformLanding = [&](const std::vector<Platform>& platforms)->bool
+			{
+				for (const Platform& pf : platforms)
+				{
+					float pfLeft = pf.x - pf.w * 0.5f;
+					float pfRight = pf.x + pf.w * 0.5f;
+					float pfTop = pf.y + pf.h * 0.5f;
+
+					float playerLeft = lv1Player.pos.x - lv1Player.width * 0.5f;
+					float playerRight = lv1Player.pos.x + lv1Player.width * 0.5f;
+
+					bool overlapX = (playerRight >= pfLeft) && (playerLeft <= pfRight);
+					bool landedThisFrame = (playerPrevBottom >= pfTop) && (playerCurrBottom <= pfTop);
+
+					if (overlapX && landedThisFrame)
+					{
+						lv1Player.pos.y = pfTop + lv1Player.height * 0.5f;
+						lv1Player.vel.y = 0.0f;
+						lv1Player.grounded = 1;
+
+						playerPrevY = lv1Player.pos.y;
+						return true;
+					}
+				}
+				return false;
+			};
+
+		if (!CheckPlatformLanding(level1Platforms))
+		{
+			CheckPlatformLanding(level2Platforms);
 		}
 
 	}
@@ -389,21 +429,21 @@ void Level1_Update()
 	// check for section change
 	int currentSection = Background_CurrentSection();
 
-	if (currentSection == 0 && currentSection != previousSection) {
+	if (currentSection != previousSection) {
 
 		LevelIndicator_Show(currentSection);
 		previousSection = currentSection;
 
 	}
 
-	// exit level 1 & goes to level 2
-	const float endOfLevel1 = sectionHeight[0];
+	//// exit level 1 & goes to level 2
+	//const float endOfLevel1 = sectionHeight[0];
 
-	if (globalCam.y >= endOfLevel1) {
+	//if (globalCam.y >= endOfLevel1) {
 
-		next = GS_LEVEL2;
+	//	next = GS_LEVEL2;
 
-	}
+	//}
 
 	// update when section changes
 	LevelIndicator_Update(dt);
@@ -426,6 +466,7 @@ void Level1_Draw()
 
 	// draw platforms
 	Platforms_Draw(lv1mesh, level1Platforms);
+	Platforms_Draw(lv1mesh, level2Platforms);
 
 	util::DrawSquare(lv1mesh, 0.0f, ground, 1600.0f, 50.0f, 0, 0, 0); // Draw Ground (Texture TBA?)
 	Player_Draw(lv1Player);
