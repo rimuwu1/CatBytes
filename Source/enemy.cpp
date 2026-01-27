@@ -18,6 +18,7 @@ Technology is prohibited.
 #include "enemy.h"
 #include "Utils.h"
 #include "Player.h"
+#include "Level1.h"
 #include <fstream>
 #include <iostream>
 #include "rapidjson/document.h"

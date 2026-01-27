@@ -18,10 +18,13 @@ Technology is prohibited.
 #include "Background.h"
 #include "LevelIndicator.h"
 #include "Platforms.h"
+#include "Utils.h"
 
 // Global variables for tracking Level 2 game state
 int Level2_Counter;  // Tracks remaining updates before checking lives
 int Level2_Lives;    // Tracks remaining player lives in Level 2
+
+AEGfxVertexList* lv2mesh;
 
 // platforms array
 static std::vector<Platform> level2Platforms = {
@@ -45,8 +48,7 @@ void Level2_Load()
 // ----------------------------------------------------------------------------
 void Level2_Initialize()
 {
-	// Log that initialization is complete
-	std::cout << "Level2:Initialize" << std::endl;
+	lv2mesh = util::CreateSquareMesh();
 
 	// reset background
 	Background_Reset(sectionHeight[0], 1);
@@ -55,7 +57,10 @@ void Level2_Initialize()
 	LevelIndicator_Initialize();
 
 	// initialise platforms
-	Platforms_Initialize();
+	//Platforms_Initialize();
+
+	// Log that initialization is complete
+	std::cout << "Level2:Initialize" << std::endl;
 }
 
 // ----------------------------------------------------------------------------
@@ -145,7 +150,7 @@ void Level2_Draw()
 	LevelIndicator_Draw();
 
 	// draw platforms
-	Platforms_Draw(level2Platforms);
+	Platforms_Draw(lv2mesh,level2Platforms);
 
 	AESysFrameEnd();
 }
@@ -165,6 +170,6 @@ void Level2_Free()
 // ----------------------------------------------------------------------------
 void Level2_Unload()
 {
-	AEGfxMeshFree(platformMesh);
+	AEGfxMeshFree(lv2mesh);
 	std::cout << "Level2:Unload" << std::endl;
 }

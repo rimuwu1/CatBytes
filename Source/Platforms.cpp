@@ -17,28 +17,28 @@ Technology is prohibited.
 #include "Platforms.h"
 #include "Utils.h"
 
-AEGfxVertexList* platformMesh = nullptr;
+//AEGfxVertexList* platformMesh = nullptr;
 
-void Platforms_Initialize() {
+//void Platforms_Initialize() {
 
 	// initialise platform mesh
-	platformMesh = util::CreateSquareMesh();
+	//platformMesh = util::CreateSquareMesh();
 
-}
+//}
 
-void Platforms_Draw(const std::vector<Platform>& platform) {
+void Platforms_Draw(AEGfxVertexList* mesh, const std::vector<Platform>& platform) {
 
 	// for each Platform named pf in container platform
 	for (const Platform& pf : platform) {
 
-		util::DrawSquare(platformMesh, pf.x, pf.y, pf.w, pf.h, 60, 60, 60);
+		util::DrawSquare(mesh, pf.x, pf.y, pf.w, pf.h, 60, 60, 60);
 
 	}
 
 }
 
 float Get_Highest_Platform_YPos(const std::vector<Platform>& platforms) {
-
+	if (platforms.empty()) return -INFINITY;
 	float highestPlatform = platforms[0].y + platforms[0].h / 2;
 
 	for (const auto& pf : platforms) {

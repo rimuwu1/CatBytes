@@ -13,6 +13,7 @@ Technology is prohibited.
 */
 /* End Header **************************************************************************/
 #include "pch.h"
+#include "FileManager.h"
 #include "GameStateManager.h"
 #include "Level1.h"
 #include "Player.h"
@@ -25,6 +26,7 @@ Technology is prohibited.
 #include "rapidjson/document.h"
 #include "rapidjson/filereadstream.h"
 #include "rapidjson/istreamwrapper.h"
+#include "rapidjson/stringbuffer.h"
 #include <fstream>
 #include "Platforms.h"
 #include "EnemyBullet.h"
@@ -43,9 +45,10 @@ static bool useDebugCam = true; // true = debug cam, false = player cam
 static int previousSelection = -1;
 
 AEGfxVertexList* lv1mesh;
-
+std::ifstream ifs;
 float ground;
 
+/*
 // platforms array
 static std::vector<Platform> level1Platforms = {
 	{    0.0f, -200.0f, 500.0f, 40.0f },
@@ -56,8 +59,11 @@ static std::vector<Platform> level1Platforms = {
 	{ -300.0f,	450.0f, 520.0f, 40.0f },
 	
 };
+*/
+// platforms array - will be loaded from JSON
+static std::vector<Platform> level1Platforms;
 
-static const int platformCount = sizeof(level1Platforms) / sizeof(level1Platforms[0]);
+//static const int platformCount = sizeof(level1Platforms) / sizeof(level1Platforms[0]);
 
 // ----------------------------------------------------------------------------
 // Loads Level 1 resources and initial data
@@ -65,10 +71,15 @@ static const int platformCount = sizeof(level1Platforms) / sizeof(level1Platform
 // ----------------------------------------------------------------------------
 void Level1_Load()
 {
-	std::ifstream ifs("Assets/Data/GameSave.json");
-	rapidjson::IStreamWrapper isw(ifs);
-	level1Config.ParseStream(isw);
-	std::cout << "Level1:Load" << std::endl;
+    
+	ifs.open("Assets/Data/GameSave.json");
+	if (!ifs.is_open()) {
+		ifs.clear(); // Clear the fail bit from the first attempt
+		ifs.open("Assets/Data/Config.json");
+	}
+    rapidjson::IStreamWrapper isw(ifs);
+    level1Config.ParseStream(isw);
+    std::cout << "Level1:Load" << std::endl;
 }
 
 // ----------------------------------------------------------------------------
@@ -90,7 +101,8 @@ void Level1_Initialize()
 	lv1mesh = util::CreateSquareMesh();
 	ground = -350.0f;
 	const float groundHeight = 50.0f;
-	float playerX = level1Config["level_1"]["player"]["x"].GetFloat(); //test json file structure
+
+	float playerX = level1Config["level_1"]["player"]["x"].GetFloat();
 	float playerY = level1Config["level_1"]["player"]["y"].GetFloat();
 	Player_Init(lv1Player, playerX, playerY);
 	lv1Player.grounded = 1;
@@ -98,20 +110,42 @@ void Level1_Initialize()
 	// Bind the level player to the input system
 	Input_SetPlayer(&lv1Player);
 
-	//enemy Initialization
+	// Enemy Initialization from JSON
 	const rapidjson::Value& enemies = level1Config["level_1"]["enemies"];
+	if (enemies.IsArray() && enemies.Size() > 0) {
+		float enemyX = enemies[0]["x"].GetFloat();
+		float enemyY = enemies[0]["y"].GetFloat();
+		Enemy_Init(EasyEnemy, enemyX, enemyY);
 
-	// Access index 0 (the first enemy)
-	float enemyX = enemies[0]["x"].GetFloat(); //initialise enemy position from json
-	float enemyY = enemies[0]["y"].GetFloat(); //currently only 1 enemy (in level 1)need to update enemy code)
-	Enemy_Init(EasyEnemy, enemyX, enemyY);//Enemy
+		float hardEnemyX = enemies[1]["x"].GetFloat(); //JSON index 1 for HardEnemy
+		float hardEnemyY = enemies[1]["y"].GetFloat();
+		HardEnemy_Init(HardEnemy, hardEnemyX, hardEnemyY);
+	}
 
-	float hardEnemyX = enemies[1]["x"].GetFloat(); // Assuming JSON index 1 for HardEnemy
-	float hardEnemyY = enemies[1]["y"].GetFloat();
-	HardEnemy_Init(HardEnemy, hardEnemyX, hardEnemyY);
+	// Platform Initialization from JSON
+	const rapidjson::Value& platforms = level1Config["level_1"]["platforms"];
+	level1Platforms.clear(); // Clear any existing data
 
-	// initialise platforms
-	Platforms_Initialize();
+	if (platforms.IsArray()) {
+		for (rapidjson::SizeType i = 0; i < platforms.Size(); i++) {
+			const rapidjson::Value& platform = platforms[i];
+
+			if (platform.HasMember("x") && platform.HasMember("y") &&
+				platform.HasMember("width") && platform.HasMember("height")) {
+
+				Platform newPlatform{};
+				newPlatform.x = platform["x"].GetFloat();
+				newPlatform.y = platform["y"].GetFloat();
+				newPlatform.w = platform["width"].GetFloat();
+				newPlatform.h = platform["height"].GetFloat();
+
+				level1Platforms.push_back(newPlatform);
+			}
+		}
+	}
+
+	// initialise platforms (for drawing)
+	//Platforms_Initialize();
 
 	float level1Top = Get_Highest_Platform_YPos(level1Platforms);
 	const float levelGap = 100.0f;
@@ -158,7 +192,7 @@ void Level1_Update()
 	{
 		float playerPrevBottom = playerPrevY - lv1Player.height * 0.5f;
 		float playerCurrBottom = lv1Player.pos.y - lv1Player.height * 0.5f;
-
+		/*
 		for (int i = 0; i < platformCount; ++i)
 		{
 			const Platform& pf = level1Platforms[i];
@@ -183,6 +217,28 @@ void Level1_Update()
 
 				break;
 			}
+			*/
+		for (const Platform& pf : level1Platforms) {
+			float pfLeft = pf.x - pf.w * 0.5f;
+			float pfRight = pf.x + pf.w * 0.5f;
+			float pfTop = pf.y + pf.h * 0.5f;
+
+			float playerLeft = lv1Player.pos.x - lv1Player.width * 0.5f;
+			float playerRight = lv1Player.pos.x + lv1Player.width * 0.5f;
+
+			bool overlapX = (playerRight >= pfLeft) && (playerLeft <= pfRight);
+			bool landOnPlatform = (playerPrevBottom >= pfTop) && (playerCurrBottom <= pfTop);
+
+			if (overlapX && landOnPlatform)
+			{
+				lv1Player.pos.y = pfTop + lv1Player.height * 0.5f;
+				lv1Player.vel.y = 0.0f;
+				lv1Player.grounded = 1;
+
+				playerPrevY = lv1Player.pos.y;
+
+				break;
+		}
 
 		}
 
@@ -238,7 +294,7 @@ void Level1_Update()
 		if (EasyEnemy.shootTimer <= 0.0f)
 		{
 			//Spawn a bullet
-			EnemyBullet bullet;
+			EnemyBullet bullet{};
 			bullet.pos = EasyEnemy.pos;
 
 			//line up bullet Y with player(test)
@@ -393,7 +449,7 @@ void Level1_Draw()
 	Background_Draw();
 
 	// draw platforms
-	Platforms_Draw(level1Platforms);
+	Platforms_Draw(lv1mesh, level1Platforms);
 
 	util::DrawSquare(lv1mesh, 0.0f, ground, 1600.0f, 50.0f, 0, 0, 0); // Draw Ground (Texture TBA?)
 	Player_Draw(lv1Player);
@@ -434,6 +490,7 @@ void Level1_Free()
 void Level1_Unload()
 {
 	AEGfxMeshFree(lv1mesh);
-	AEGfxMeshFree(platformMesh);
+	level1Platforms.clear();
+	ifs.close();
 	std::cout << "Level1:Unload" << std::endl;
 }

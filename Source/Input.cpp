@@ -71,6 +71,31 @@ void Input_Handle() {
 			s_CurrentPlayer->vel.y = JUMP_FORCE;
 			s_CurrentPlayer->grounded = 0;
 		}
+
+		//Weapon equip / unequip toggle
+	//press F to switch melee weapon on/off
+		if (AEInputCheckTriggered(AEVK_F))
+		{
+			s_CurrentPlayer->weaponEquipped = !s_CurrentPlayer->weaponEquipped;
+
+			if (s_CurrentPlayer->weaponEquipped)
+			{
+				s_CurrentPlayer->weapon = PlayerWeapon::MELEE;
+			}
+			else
+			{
+				s_CurrentPlayer->weapon = PlayerWeapon::NONE;
+			}
+		}
+
+
+		// Melee attack (LMB)
+		if (s_CurrentPlayer->weapon == PlayerWeapon::MELEE &&
+			AEInputCheckTriggered(AEVK_LBUTTON))
+		{
+			s_CurrentPlayer->isAttacking = true;
+			s_CurrentPlayer->attackTimer = 0.4f; //short attack window
+		}
 	}
 
 	std::cout << "Input:Handle" << std::endl;

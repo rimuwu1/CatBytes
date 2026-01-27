@@ -17,6 +17,7 @@ Technology is prohibited.
 #include "Player.h"
 #include "Utils.h"
 #include "Fonts.h"
+#include "Level1.h"
 #include <fstream>
 #include "GameStateManager.h"//for mainmenu test
 #include "rapidjson/document.h"
@@ -105,32 +106,6 @@ void Player_Update(Player& player, float dt)
 
 	// Gravity
 	player.vel.y += GRAVITY * dt;
-
-
-	//Weapon equip / unequip toggle
-	//press F to switch melee weapon on/off
-	if (AEInputCheckTriggered(AEVK_F))
-	{
-		player.weaponEquipped = !player.weaponEquipped;
-
-		if (player.weaponEquipped)
-		{
-			player.weapon = PlayerWeapon::MELEE;
-		}
-		else
-		{
-			player.weapon = PlayerWeapon::NONE;
-		}
-	}
-
-
-	// Melee attack (LMB)
-	if (player.weapon == PlayerWeapon::MELEE &&
-		AEInputCheckTriggered(AEVK_LBUTTON))
-	{
-		player.isAttacking = true;
-		player.attackTimer = 0.4f; //short attack window
-	}
 
 
 	// Integrate velocity to position

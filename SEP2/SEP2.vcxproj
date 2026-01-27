@@ -14,6 +14,7 @@
     <ClCompile Include="..\Source\Background.cpp" />
     <ClCompile Include="..\Source\enemy.cpp" />
     <ClCompile Include="..\Source\EnemyBullet.cpp" />
+    <ClCompile Include="..\Source\FileManager.cpp" />
     <ClCompile Include="..\Source\Fonts.cpp" />
     <ClCompile Include="..\Source\GameStateManager.cpp" />
     <ClCompile Include="..\Source\Input.cpp" />
@@ -36,6 +37,7 @@
     <ClInclude Include="..\Source\Background.h" />
     <ClInclude Include="..\Source\enemy.h" />
     <ClInclude Include="..\Source\EnemyBullet.h" />
+    <ClInclude Include="..\Source\FileManager.h" />
     <ClInclude Include="..\Source\Fonts.h" />
     <ClInclude Include="..\Source\GameStateList.h" />
     <ClInclude Include="..\Source\GameStateManager.h" />
@@ -106,6 +108,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>false</ConformanceMode>
       <AdditionalIncludeDirectories>$(SolutionDir)Extern\rapidjson\include</AdditionalIncludeDirectories>
+      <LanguageStandard>Default</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -128,6 +131,7 @@ xcopy "$(SolutionDir)Extern\AlphaEngine\lib\fmodL.dll" "$(OutDir)" /s /r /y /q</
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>false</ConformanceMode>
       <AdditionalIncludeDirectories>$(SolutionDir)Extern\rapidjson\include</AdditionalIncludeDirectories>
+      <LanguageStandard>Default</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

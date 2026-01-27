@@ -21,10 +21,10 @@ struct Platform {
 };
 
 // global platform mesh
-extern AEGfxVertexList* platformMesh;
+//extern AEGfxVertexList* platformMesh;
 
-void Platforms_Initialize();
+//void Platforms_Initialize();
 
-void Platforms_Draw(const std::vector<Platform> &platform);
+void Platforms_Draw(AEGfxVertexList* mesh, const std::vector<Platform> &platform);
 
 float Get_Highest_Platform_YPos(const std::vector<Platform>& platforms);

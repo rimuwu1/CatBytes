@@ -1,17 +1,12 @@
 {
     "metadata": {
         "game_version": "1.0",
-        "save_date": "27-01-2026 00:00:00",
-        "current_level": 1,
-        "total_levels": 4,
-        "levels_completed": 0,
-        "player_lives": 3
+        "total_levels": 4
     },
     "level_1": {
-        "completed": false,
         "player": {
             "x": 0.0,
-            "y": -300.0,
+            "y": -290.0,
             "hp": 20.0,
             "melee_damage": 5
         },
@@ -24,14 +19,6 @@
                 "speed": 90.0,
                 "bullet_speed": 50.0,
                 "bullet_damage": 1.5
-            },
-            {
-                "type": "hard",
-                "x": 400.0,
-                "y": -290.0,
-                "hp": 10.0,
-                "speed": 150.0,
-                "damage": 5.0
             }
         ],
         "platforms": [
@@ -44,7 +31,6 @@
         ]
     },
     "level_2": {
-        "completed": false,
         "player": {
             "x": 0.0,
             "y": -300.0,
@@ -61,26 +47,34 @@
                 "bullet_speed": 40.0,
                 "bullet_damage": 2.0
             }
+        ],
+        "platforms": [
+            { "x": 0.0, "y": -200.0, "width": 500.0, "height": 40.0 },
+            { "x": -450.0, "y": -50.0, "width": 250.0, "height": 40.0 },
+            { "x": 100.0, "y": 85.0, "width": 450.0, "height": 40.0 },
+            { "x": 600.0, "y": 190.0, "width": 300.0, "height": 40.0 },
+            { "x": 175.0, "y": 300.0, "width": 250.0, "height": 40.0 },
+            { "x": -300.0, "y": 450.0, "width": 520.0, "height": 40.0 }
         ]
     },
     "level_3": {
-        "completed": false,
         "player": {
             "x": 0.0,
             "y": -300.0,
             "hp": 20.0,
             "melee_damage": 5
         },
-        "enemies": []
+        "enemies": [],
+        "platforms": []
     },
     "level_4": {
-        "completed": false,
         "player": {
             "x": 0.0,
             "y": -300.0,
             "hp": 20.0,
             "melee_damage": 5
         },
-        "enemies": []
+        "enemies": [],
+        "platforms": []
     }
 }

@@ -13,7 +13,7 @@ Technology is prohibited.
 */
 /* End Header **************************************************************************/
 #pragma once
-extern AEGfxVertexList* squareMesh;
+//extern AEGfxVertexList* squareMesh;
 void Level1_Load();
 
 void Level1_Initialize();
