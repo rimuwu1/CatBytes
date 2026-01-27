@@ -51,7 +51,6 @@ static AEGfxTexture* playerTexture = nullptr;//no weapon
 static AEGfxTexture* playerMeleeTexture = nullptr;//melee equipped
 static AEGfxTexture* playerMeleeAttackTexture = nullptr;
 
-
 void Player_Init(Player& player, float startX, float startY)
 {
 	player.pos.x = startX;

@@ -17,6 +17,22 @@ Technology is prohibited.
 #include "Level3.h"
 #include "Background.h"
 #include "LevelIndicator.h"
+#include "Platforms.h"
+#include "Camera.h"
+#include "Player.h"
+#include "Utils.h"
+
+static Player lv3Player;
+
+AEGfxVertexList* lv3mesh;
+
+// platforms array
+static std::vector<Platform> level3Platforms = {
+	{ -300.0f, 450.0f, 520.0f, 40.0f },
+	{ -100.0f, 550.0f, 300.0f, 40.0f },
+	{  300.0f, 750.0f, 500.0f, 40.0f },
+
+};
 
 // ----------------------------------------------------------------------------
 // Loads Level 2 resources and initial data
@@ -37,6 +53,9 @@ void Level3_Initialize()
 	// initialise level indicator
 	LevelIndicator_Initialize();
 
+	// initialise camera
+	Camera_Init(globalCam, lv3Player.pos.x, lv3Player.pos.y);
+
 }
 
 // ----------------------------------------------------------------------------
@@ -50,24 +69,30 @@ void Level3_Update()
 
 	float dt = (float)AEFrameRateControllerGetFrameTime();
 
-	// Background Update
-	const float camSpeed = 800.0f;
+	// toggle use debug cam
+		if (AEInputCheckTriggered(AEVK_1)) {
 
-	// !! MANUAL KEYBOARD INPUT FOR CAM; TO BE REMOVED ONCE CAM IS IN !!
-		// W key: up, S key: down
-	if (AEInputCheckCurr(AEVK_UP)) {
+			globalCam.debugCam = !globalCam.debugCam;
 
-		debugCamY += camSpeed * dt;
+		}
+
+	if (globalCam.debugCam) {
+
+		Camera_Debug(globalCam);
+
+	}
+	else {
+
+		// camera follows player
+		Camera_FollowPlayer(globalCam, lv3Player.pos.x, lv3Player.pos.y, dt);
+
+		// apply camera
+		Camera_Apply(globalCam);
 
 	}
 
-	if (AEInputCheckCurr(AEVK_DOWN)) {
-
-		debugCamY -= camSpeed * dt;
-
-	}
-
-	Background_Update(debugCamY);
+	// update background based on y axis
+	Background_Update(globalCam.y);
 
 	// check for section change
 	int currentSection = Background_CurrentSection();
@@ -79,14 +104,15 @@ void Level3_Update()
 
 	}
 
-	// exit level 3 & goes to level 4
+	// exit level 3 & goes to boss level
 	const float endOfLevel3 = sectionHeight[2];
 
-	if (debugCamY >= endOfLevel3) {
+	if (globalCam.y >= endOfLevel3) {
 
 		next = GS_LEVEL4;
 
 	}
+
 
 	// update when section changes
 	LevelIndicator_Update(dt);
@@ -108,6 +134,9 @@ void Level3_Draw()
 
 	// draw text for level indicator
 	LevelIndicator_Draw();
+
+	// draw platforms
+	Platforms_Draw(lv3mesh, level3Platforms);
 
 	AESysFrameEnd();
 }

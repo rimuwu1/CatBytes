@@ -19,8 +19,6 @@ constexpr int backgroundSections = 4;
 
 extern float sectionHeight[];
 
-extern float debugCamY;
-
 extern int previousSection;
 
 struct Colour {
@@ -40,9 +38,6 @@ void Background_Draw();
 
 // free background resources
 void Background_Free();
-
-// reset background
-void Background_Reset(float startCamY, int startSection);
 
 // get current section
 int Background_CurrentSection();

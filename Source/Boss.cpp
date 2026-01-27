@@ -17,6 +17,17 @@ Technology is prohibited.
 #include "Boss.h"
 #include "Background.h"
 #include "LevelIndicator.h"
+#include "Player.h"
+#include "Camera.h"
+#include "Platforms.h"
+
+static Player bossPlayer;
+
+// platforms array
+static std::vector<Platform> bossPlatforms = {
+	{ 0.0f, 0.0f, 0.0f, 0.0f },
+
+};
 
 // ----------------------------------------------------------------------------
 // Loads Level 2 resources and initial data
@@ -37,6 +48,9 @@ void Boss_Initialize()
 	// initialise level indicator
 	LevelIndicator_Initialize();
 
+	// initialise camera
+	Camera_Init(globalCam, bossPlayer.pos.x, bossPlayer.pos.y);
+
 }
 
 // ----------------------------------------------------------------------------
@@ -50,24 +64,21 @@ void Boss_Update()
 
 	float dt = (float)AEFrameRateControllerGetFrameTime();
 
-	// Background Update
-	const float camSpeed = 800.0f;
+	// toggle use debug cam
+	if (AEInputCheckTriggered(AEVK_1)) {
 
-	// !! MANUAL KEYBOARD INPUT FOR CAM; TO BE REMOVED ONCE CAM IS IN !!
-		// W key: up, S key: down
-	if (AEInputCheckCurr(AEVK_UP)) {
-
-		debugCamY += camSpeed * dt;
+		Camera_Debug(globalCam);
 
 	}
 
-	if (AEInputCheckCurr(AEVK_DOWN)) {
+	// camera follows player
+	Camera_FollowPlayer(globalCam, bossPlayer.pos.x, bossPlayer.pos.y, dt);
 
-		debugCamY -= camSpeed * dt;
+	// apply camera
+	Camera_Apply(globalCam);
 
-	}
-
-	Background_Update(debugCamY);
+	// update background based on y axis
+	Background_Update(globalCam.y);
 
 	// check for section change
 	int currentSection = Background_CurrentSection();

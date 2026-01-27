@@ -18,17 +18,23 @@ Technology is prohibited.
 #include "Background.h"
 #include "LevelIndicator.h"
 #include "Platforms.h"
+#include "Camera.h"
+#include "Player.h"
 #include "Utils.h"
 
-// Global variables for tracking Level 2 game state
-int Level2_Counter;  // Tracks remaining updates before checking lives
-int Level2_Lives;    // Tracks remaining player lives in Level 2
+static Player lv2Player;
 
 AEGfxVertexList* lv2mesh;
 
 // platforms array
 static std::vector<Platform> level2Platforms = {
-	{ 0.0f, 600.0f, 300.0f, 40.0f },
+	{ -300.0f,	450.0f, 520.0f, 40.0f }, // level's 1 last platform
+	{  255.0f,  575.0f, 670.0f, 40.0f },
+	{ -280.0f,  695.0f, 300.0f, 40.0f },
+	{  650.0f,  695.0f, 200.0f, 40.0f },
+	{  190.0f,  840.0f, 500.0f, 40.0f },
+	{ -190.0f,  950.0f, 200.0f, 40.0f },
+	{  500.0f,  999.0f, 300.0f, 40.0f }
 	
 };
 
@@ -50,14 +56,14 @@ void Level2_Initialize()
 {
 	lv2mesh = util::CreateSquareMesh();
 
-	// reset background
-	Background_Reset(sectionHeight[0], 1);
-
 	// initialise level indicator
 	LevelIndicator_Initialize();
 
 	// initialise platforms
 	//Platforms_Initialize();
+
+	// initialise camera
+	Camera_Init(globalCam, lv2Player.pos.x, lv2Player.pos.y);
 
 	// Log that initialization is complete
 	std::cout << "Level2:Initialize" << std::endl;
@@ -75,26 +81,30 @@ void Level2_Update()
 
 	float dt = (float)AEFrameRateControllerGetFrameTime();
 
-	// Background Update
-	const float camSpeed = 800.0f;
+	// toggle use debug cam
+	if (AEInputCheckTriggered(AEVK_1)) {
 
-	// !! MANUAL KEYBOARD INPUT FOR CAM; TO BE REMOVED ONCE CAM IS IN !!
-		// W key: up, S key: down
-	if (AEInputCheckCurr(AEVK_UP)) {
-
-		debugCamY += camSpeed * dt;
+		globalCam.debugCam = !globalCam.debugCam;
 
 	}
 
-	if (AEInputCheckCurr(AEVK_DOWN)) {
+	if (globalCam.debugCam) {
 
-		debugCamY -= camSpeed * dt;
+		Camera_Debug(globalCam);
+
+	}
+	else {
+
+		// camera follows player
+		Camera_FollowPlayer(globalCam, lv2Player.pos.x, lv2Player.pos.y, dt);
+
+		// apply camera
+		Camera_Apply(globalCam);
 
 	}
 
-	Background_Update(debugCamY);
-
-	AEGfxSetCamPosition(0.0f, debugCamY);
+	// update background based on y axis
+	Background_Update(globalCam.y);
 
 	// check for section change
 	int currentSection = Background_CurrentSection();
@@ -107,22 +117,9 @@ void Level2_Update()
 	}
 
 	// exit level 2 & goes to level 3
-	float lvl2HighestPlatform = level2Platforms[0].y + level2Platforms[0].h / 2;
-
-	for (const auto& pf : level2Platforms) {
-
-		float platformMax = pf.y + pf.h / 2;
-
-		if (platformMax > lvl2HighestPlatform) {
-
-			lvl2HighestPlatform = platformMax;
-
-		}
-
-	}
 	const float endOfLevel2 = sectionHeight[1];
 
-	if (debugCamY >= endOfLevel2) {
+	if (globalCam.y >= endOfLevel2) {
 
 		next = GS_LEVEL3;
 

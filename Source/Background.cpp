@@ -22,7 +22,6 @@ Technology is prohibited.
 static float minY = 0.0f;
 static float maxY = 800.0;
 
-float debugCamY = 0.0f;
 int previousSection = -1;
 
 // --------------------------------------------------BACKGROUND SECTIONS START--------------------------------------------------
@@ -117,9 +116,6 @@ void Background_Initialise() {
 // update background based on camera panning's y-axis
 void Background_Update(float cameraYAxis) {
 
-	// !!	FAKE "CAMERA"; TO BE EDITED ONCE CAMERA IS IN !!
-	static float fakeCam = minY;
-
 	// find current section based on cam
 	int index = 0;
 
@@ -170,15 +166,6 @@ void Background_Draw() {
 
 // free background resources
 void Background_Free() {
-
-}
-
-void Background_Reset(float startCamY, int startSection) {
-
-	debugCamY = startCamY;
-	currentSection = startSection;
-	previousSection = -1;
-	currentColour = backgroundColours[startSection];
 
 }
 

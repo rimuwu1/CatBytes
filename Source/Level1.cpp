@@ -20,7 +20,6 @@ Technology is prohibited.
 #include "Utils.h"
 #include "Input.h"
 #include "enemy.h"//Enemy
-#include "Camera.h"
 #include "Background.h"
 #include "LevelIndicator.h"
 #include "rapidjson/document.h"
@@ -31,6 +30,7 @@ Technology is prohibited.
 #include "Platforms.h"
 #include "EnemyBullet.h"
 #include <iostream>
+#include "Camera.h"
 
 static Player lv1Player;
 static Enemy EasyEnemy; //Enemy
@@ -38,10 +38,6 @@ static std::vector<EnemyBullet> enemyBullets;//Enemy
 static Enemy HardEnemy;
 rapidjson::Document level1Config;
 
-static float debugCamY = 0.0f;
-static float camX = 0.0f;
-static float camY = 0.0f;
-static bool useDebugCam = true; // true = debug cam, false = player cam
 static int previousSelection = -1;
 
 AEGfxVertexList* lv1mesh;
@@ -90,9 +86,6 @@ void Level1_Initialize()
 {
 	// initialise background
 	Background_Initialise();
-
-	// reset background
-	Background_Reset(0.0f, 0);
 
 	// initialise level indicator
 	LevelIndicator_Initialize();
@@ -147,17 +140,12 @@ void Level1_Initialize()
 	// initialise platforms (for drawing)
 	//Platforms_Initialize();
 
+	// initialise camera
+	Camera_Init(globalCam, lv1Player.pos.x, lv1Player.pos.y);
+
 	float level1Top = Get_Highest_Platform_YPos(level1Platforms);
 	const float levelGap = 100.0f;
 	float level2Start = level1Top + levelGap;
-
-	// Camera starting position
-	camX = lv1Player.pos.x;
-	camY = lv1Player.pos.y;
-	AEGfxSetCamPosition(camX, camY);
-
-	// !! remove once cam in
-	debugCamY = 0.0f;
 
 	previousSelection = -1;
 
@@ -373,42 +361,30 @@ void Level1_Update()
 		HardEnemy_OnCollision(HardEnemy, lv1Player);
 	}
 
-	// Background Update (Debug Cam)
-	const float camSpeed = 800.0f;
+	// toggle use debug cam
+	if (AEInputCheckTriggered(AEVK_1)) {
 
-	// !! MANUAL KEYBOARD INPUT FOR CAM; TO BE REMOVED ONCE CAM IS IN !!
-		// W key: up, S key: down
-	if (AEInputCheckCurr(AEVK_UP)) {
-
-		debugCamY += camSpeed * dt;
+		globalCam.debugCam = !globalCam.debugCam;
 
 	}
 
-	if (AEInputCheckCurr(AEVK_DOWN)) {
+	if (globalCam.debugCam) {
 
-		debugCamY -= camSpeed * dt;
+		Camera_Debug(globalCam);
+
+	}
+	else {
+
+		// camera follows player
+		Camera_FollowPlayer(globalCam, lv1Player.pos.x, lv1Player.pos.y, dt);
+
+		// apply camera
+		Camera_Apply(globalCam);
 
 	}
 
-	if (AEInputCheckTriggered(AEVK_1))
-	{
-		useDebugCam = !useDebugCam;
-	}
-
-	if (useDebugCam)
-	{
-		camY = debugCamY;
-	}
-	else
-	{
-		const float followSpeed = 10.0f;
-		camY += (lv1Player.pos.y - camY) * followSpeed * dt;
-	}
-
-	camX = lv1Player.pos.x;
-
-	AEGfxSetCamPosition(camX, camY);
-	Background_Update(camY);
+	// update background based on y axis
+	Background_Update(globalCam.y);
 
 	// check for section change
 	int currentSection = Background_CurrentSection();
@@ -423,7 +399,7 @@ void Level1_Update()
 	// exit level 1 & goes to level 2
 	const float endOfLevel1 = sectionHeight[0];
 
-	if (debugCamY >= endOfLevel1) {
+	if (globalCam.y >= endOfLevel1) {
 
 		next = GS_LEVEL2;
 
