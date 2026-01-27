@@ -1,6 +1,9 @@
 #pragma once
 #include "AEEngine.h"
 
+float LoadFloatFromFile(const char* filename);
+int   LoadIntFromFile(const char* filename);
+
 namespace util {
 	AEGfxVertexList* CreateSquareMesh();
 	void DrawSquare(AEGfxVertexList* mesh, float x, float y, float width, float height, int r = 255, int g = 0, int b = 0);

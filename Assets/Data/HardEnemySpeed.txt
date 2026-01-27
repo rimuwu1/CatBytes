@@ -1,0 +1,6 @@
+200
+/*
+Do not Delete this text
+This is the Hard Enemy's Speed
+Any int/float is fine to input, an example when you want 10Speed, '10.0' or '10'(excluding quotes) is acceptable for input.
+*/

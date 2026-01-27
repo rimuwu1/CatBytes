@@ -17,34 +17,12 @@ Technology is prohibited.
 #include "pch.h"
 #include "enemy.h"
 #include "Utils.h"
+#include "Player.h"
 #include <fstream>
 #include <iostream>
 
 static AEGfxVertexList* enemyMesh = nullptr;
-static AEGfxTexture* enemyTexture = nullptr;
 static AEGfxTexture* lowHpOverlayTexture = nullptr;
-
-// ----------------------------------------------------------------------------
-// load a float value from a text file
-// ----------------------------------------------------------------------------
-static float LoadFloatFromFile(const char* filename)
-{
-    std::ifstream file(filename);
-    float value = 0.0f;
-    file >> value;
-    return value;
-}
-
-// ----------------------------------------------------------------------------
-// load an int value from a text file
-// ----------------------------------------------------------------------------
-static int LoadIntFromFile(const char* filename)
-{
-    std::ifstream file(filename);
-    int value = 1;
-    file >> value;
-    return value;
-}
 
 // -----------------------------------------------------------------------------
 // initialize enemy
@@ -53,16 +31,19 @@ static int LoadIntFromFile(const char* filename)
 void Enemy_Init(Enemy& enemy, float startX, float startY)
 {
     enemy.pos = { startX, startY };// set position
-    enemy.width = 50.0f;//enemy width
-    enemy.height = 50.0f;//enemy height
+    enemy.width = 80.0f;//enemy width
+    enemy.height = 80.0f;//enemy height
 
     //load movement speed from file; default to 100 if file missing or invalid
     enemy.moveSpeed = LoadFloatFromFile("Assets/Data/EasyEnemySpeed.txt");
     if (enemy.moveSpeed <= 0.0f) enemy.moveSpeed = 100.0f;
 
-    //load hit points from file; default to 3
-    enemy.hitPoints = LoadIntFromFile("Assets/Data/EasyEnemyHitCount.txt");
-    if (enemy.hitPoints <= 0) enemy.hitPoints = 3;
+    enemy.shootCooldown = 1.5f;//shoots every 1.5 seconds
+    enemy.shootTimer = enemy.shootCooldown;
+
+    //load hit points from file; default to 3.0
+    enemy.hitPoints = LoadFloatFromFile("Assets/Data/EasyEnemyHP.txt");
+    if (enemy.hitPoints <= 0.0f) enemy.hitPoints = 3.0f;
 
     enemy.direction = 1;//start moving right
     enemy.isAlive = 1;
@@ -74,11 +55,12 @@ void Enemy_Init(Enemy& enemy, float startX, float startY)
         enemyMesh = util::CreateSquareMesh();
 
     //load enemy texture if not already loaded
-    if (!enemyTexture)
-        enemyTexture = AEGfxTextureLoad("Assets/Images/easyenemy.jpg");
+    if (!enemy.texture)  // per-enemy texture
+        enemy.texture = AEGfxTextureLoad("Assets/Images/easyenemy.jpg");
 
     if (!lowHpOverlayTexture)
         lowHpOverlayTexture = AEGfxTextureLoad("Assets/Images/LowHpOverlay.jpg");
+
 }
 
 // -----------------------------------------------------------------------------
@@ -92,8 +74,15 @@ void Enemy_Update(Enemy& enemy, float dt)
     if (enemy.hitStunTimer > 0.0f)
     {
         enemy.hitStunTimer -= dt;
-        if (enemy.hitStunTimer < 0.0f) enemy.hitStunTimer = 0.0f;
+        if (enemy.hitStunTimer <= 0.0f) enemy.hitStunTimer = 0.0f;
         return; // do not move while stunned
+    }
+
+    //time to shoot
+    if (enemy.shootTimer <= 0.0f)
+    {
+        //tell the level to spawn a bullet(not here)
+        enemy.shootTimer = enemy.shootCooldown;
     }
 
     //move horizontally based on direction and speed
@@ -119,7 +108,7 @@ void Enemy_Draw(const Enemy& enemy)
 
     util::DrawTexturedSquare(
         enemyMesh,
-        enemyTexture,
+        enemy.texture,
         enemy.pos.x,
         enemy.pos.y,
         enemy.width,
@@ -163,17 +152,99 @@ void Enemy_OnHit(Enemy& enemy)
         enemy.isAlive = 0;
 }
 
+
+
+void HardEnemy_Init(Enemy& enemy, float startX, float startY)
+{
+    enemy.pos = { startX, startY };
+    enemy.width = 80.0f;
+    enemy.height = 80.0f;
+
+    //load speed and HP from files; fallback if missing
+    enemy.moveSpeed = LoadFloatFromFile("Assets/Data/HardEnemySpeed.txt");
+    if (enemy.moveSpeed <= 0.0f) enemy.moveSpeed = 100.0f;
+
+    enemy.hitPoints = LoadFloatFromFile("Assets/Data/HardEnemyHP.txt");
+    if (enemy.hitPoints <= 0.0f) enemy.hitPoints = 5.0f;
+
+    enemy.shootCooldown = 0.0f;//HardEnemy does collision damage instead
+    enemy.shootTimer = 0.0f;
+    enemy.direction = 1;
+    enemy.isAlive = 1;
+    enemy.hitStunTimer = 0.0f;
+    enemy.isPlayerColliding = false;
+    enemy.damage = LoadFloatFromFile("Assets/Data/HardEnemyDamage.txt");
+    if (enemy.damage <= 0.0f) enemy.damage = 3.0f;//default damage for ahrd enemy
+
+    //Create mesh if needed
+    if (!enemyMesh)
+        enemyMesh = util::CreateSquareMesh();
+
+    //Load textures
+    if(!enemy.texture)
+        enemy.texture = AEGfxTextureLoad("Assets/Images/HardEnemy.jpg");
+
+    if (!enemy.attackTexture)
+        enemy.attackTexture = AEGfxTextureLoad("Assets/Images/HardEnemyAttack.jpg");
+
+}
+
+
+void HardEnemy_Update(Enemy& enemy, float dt)
+{
+    if (!enemy.isAlive) return;
+
+    //handle hit stun/attack pause
+    if (enemy.hitStunTimer > 0.0f)
+    {
+        enemy.hitStunTimer -= dt;
+
+        //wheb stun finishes
+        if (enemy.hitStunTimer <= 0.0f)
+        {
+            enemy.hitStunTimer = 0.0f;
+
+            //switch back to normal texture
+            enemy.texture = AEGfxTextureLoad("Assets/Images/HardEnemy.jpg");
+        }
+
+        return; // do not move while stunned
+    }
+
+    // patrol movement (only when NOT stunned)
+    enemy.pos.x += enemy.direction * enemy.moveSpeed * dt;
+
+    //patrol bounds
+    float patrolMinX = -400.0f;
+    float patrolMaxX = 400.0f;
+
+    if (enemy.pos.x >= patrolMaxX)
+        enemy.direction = -1;
+    else if (enemy.pos.x <= patrolMinX)
+        enemy.direction = 1;
+}
+
+
+void HardEnemy_OnCollision(Enemy& enemy, Player& player)
+{
+    // prevent repeated hits every frame
+    if (!enemy.isAlive||enemy.hitStunTimer > 0.0f)
+        return;
+
+    // apply damage
+    Player_ApplyDamage(player, enemy.damage);
+
+    // switch to attack state
+    enemy.hitStunTimer = 0.3f;
+    enemy.texture = enemy.attackTexture;
+}
+
+
 // -----------------------------------------------------------------------------
 // Free static resources (mesh and texture)
 // -----------------------------------------------------------------------------
 void Enemy_Free()
 {
-    if (enemyTexture)
-    {
-        AEGfxTextureUnload(enemyTexture);
-        enemyTexture = nullptr;
-    }
-
     if (lowHpOverlayTexture)
     {
         AEGfxTextureUnload(lowHpOverlayTexture);

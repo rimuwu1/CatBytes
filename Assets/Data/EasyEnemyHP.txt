@@ -1,0 +1,5 @@
+5.0
+/*
+Do not delete this text
+For the Health Points of the Easy Enemy
+*/

@@ -1,0 +1,5 @@
+10
+/*
+Do not delete this text
+For the Health Points of the hard enemy, float/int values are ok
+*/

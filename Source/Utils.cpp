@@ -23,6 +23,7 @@ Technology is prohibited.
 #include <cstdio>
 #include <iostream>
 #include <vector>
+#include <fstream>
 
 
 namespace util {
@@ -141,4 +142,28 @@ namespace util {
 		return 0;
 	}
 
+}
+
+
+// ----------------------------------------------------------------------------
+// load a float value from a text file
+// ----------------------------------------------------------------------------
+float LoadFloatFromFile(const char* filename)
+{
+	std::ifstream file(filename);
+	float value = 0.0f;
+	file >> value;
+	return value;
+}
+
+// ----------------------------------------------------------------------------
+// load an int value from a text file
+// ----------------------------------------------------------------------------
+
+int LoadIntFromFile(const char* filename)
+{
+	std::ifstream file(filename);
+	int value = 1;
+	file >> value;
+	return value;
 }

@@ -27,9 +27,13 @@ Technology is prohibited.
 #include "rapidjson/istreamwrapper.h"
 #include <fstream>
 #include "Platforms.h"
+#include "EnemyBullet.h"
+#include <iostream>
 
 static Player lv1Player;
 static Enemy EasyEnemy; //Enemy
+static std::vector<EnemyBullet> enemyBullets;//Enemy
+static Enemy HardEnemy;
 rapidjson::Document level1Config;
 
 static float debugCamY = 0.0f;
@@ -101,6 +105,10 @@ void Level1_Initialize()
 	float enemyX = enemies[0]["x"].GetFloat(); //initialise enemy position from json
 	float enemyY = enemies[0]["y"].GetFloat(); //currently only 1 enemy (in level 1)need to update enemy code)
 	Enemy_Init(EasyEnemy, enemyX, enemyY);//Enemy
+
+	float hardEnemyX = enemies[1]["x"].GetFloat(); // Assuming JSON index 1 for HardEnemy
+	float hardEnemyY = enemies[1]["y"].GetFloat();
+	HardEnemy_Init(HardEnemy, hardEnemyX, hardEnemyY);
 
 	// initialise platforms
 	Platforms_Initialize();
@@ -180,28 +188,134 @@ void Level1_Update()
 
 	}
 
+
+	//player melee vs EasyEnemy hashtag evil
+	if (lv1Player.isAttacking && EasyEnemy.isAlive)
+	{
+		float playerHalfW = lv1Player.width * 0.5f;
+		float playerHalfH = lv1Player.height * 0.5f;
+		float enemyHalfW = EasyEnemy.width * 0.5f;
+		float enemyHalfH = EasyEnemy.height * 0.5f;
+
+		bool overlapX = fabs(lv1Player.pos.x - EasyEnemy.pos.x) < (playerHalfW + enemyHalfW);
+		bool overlapY = fabs(lv1Player.pos.y - EasyEnemy.pos.y) < (playerHalfH + enemyHalfH);
+
+		if (overlapX && overlapY)
+		{
+			Enemy_OnHit(EasyEnemy);
+		}
+	}
+
+
+	//Player melee vs HardEnemy
+	if (lv1Player.isAttacking && HardEnemy.isAlive)
+	{
+		float playerHalfW = lv1Player.width * 0.5f;
+		float playerHalfH = lv1Player.height * 0.5f;
+		float enemyHalfW = HardEnemy.width * 0.5f;
+		float enemyHalfH = HardEnemy.height * 0.5f;
+
+		bool overlapX = fabs(lv1Player.pos.x - HardEnemy.pos.x) < (playerHalfW + enemyHalfW);
+		bool overlapY = fabs(lv1Player.pos.y - HardEnemy.pos.y) < (playerHalfH + enemyHalfH);
+
+		if (overlapX && overlapY)
+		{
+			Enemy_OnHit(HardEnemy);
+		}
+	}
+
+
 	//enemy update
 	Enemy_Update(EasyEnemy, dt);//Enemy
+	HardEnemy_Update(HardEnemy, dt);
 
-	//Enemy
-	// TEMPORARY collision test
-	float collisionDistX = lv1Player.width / 2 + EasyEnemy.width / 2;
-	float collisionDistY = lv1Player.height / 2 + EasyEnemy.height / 2;
-
-	bool currentlyColliding =
-		fabs(lv1Player.pos.x - EasyEnemy.pos.x) < collisionDistX &&
-		fabs(lv1Player.pos.y - EasyEnemy.pos.y) < collisionDistY;
-
-	if (currentlyColliding && !EasyEnemy.isPlayerColliding)
+	// Enemy shooting
+	if (EasyEnemy.isAlive)
 	{
-		Enemy_OnHit(EasyEnemy); // hit only once per collision
-		EasyEnemy.isPlayerColliding = true;
+		//Count down the shooting timer
+		EasyEnemy.shootTimer -= dt;
+
+		if (EasyEnemy.shootTimer <= 0.0f)
+		{
+			//Spawn a bullet
+			EnemyBullet bullet;
+			bullet.pos = EasyEnemy.pos;
+
+			//line up bullet Y with player(test)
+			//bullet.pos.y = lv1Player.pos.y; 
+
+			bullet.startPos = bullet.pos;
+			bullet.direction = EasyEnemy.direction;
+
+			bullet.speed = LoadFloatFromFile("Assets/Data/EasyEnemyBulletSpeed.txt");
+			if (bullet.speed <= 0.0f) bullet.speed = 50.0f;
+
+			bullet.damage = LoadFloatFromFile("Assets/Data/EasyEnemyBulletDamage.txt");
+			bullet.maxRange = 400.0f;
+			bullet.active = true;
+
+			enemyBullets.push_back(bullet);
+
+
+			//reset shoot timer only when shooting
+			EasyEnemy.shootTimer = EasyEnemy.shootCooldown;
+		}
 	}
-	else if (!currentlyColliding)
+
+	//update bullets
+	for (auto& bullet : enemyBullets)
 	{
-		EasyEnemy.isPlayerColliding = false; //reset for next collision
+		if (!bullet.active) continue;
+
+		bullet.pos.x += bullet.direction * bullet.speed * dt;
+
+		float traveled = fabs(bullet.pos.x - bullet.startPos.x);
+		if (traveled >= bullet.maxRange)
+			bullet.active = false;
 	}
-	//Enemy
+
+	// bullet collisions
+	for (auto& bullet : enemyBullets)
+	{
+		if (!bullet.active) continue;
+
+		//bullet and player size
+		float bulletHalfW = 20.0f;
+		float bulletHalfH = 20.0f;
+		float playerHalfW = lv1Player.width * 0.5f;
+		float playerHalfH = lv1Player.height * 0.5f;
+
+		bool overlapX = fabs(bullet.pos.x - lv1Player.pos.x) < (bulletHalfW + playerHalfW);
+		bool overlapY = fabs(bullet.pos.y - lv1Player.pos.y) < (bulletHalfH + playerHalfH);
+
+		if (overlapX && overlapY)
+		{
+			Player_ApplyDamage(lv1Player, bullet.damage);
+			bullet.active = false;
+			/*
+			//debug print to verify collision
+			std::cout << "Player hit! HP: " << lv1Player.hp
+				<< " Bullet pos: (" << bullet.pos.x << "," << bullet.pos.y << ") "
+				<< " Player pos: (" << lv1Player.pos.x << "," << lv1Player.pos.y << ")"
+				<< std::endl;
+				*/
+		}
+	}
+
+	//Hard enemy
+	// HardEnemy collision with player
+	float playerHalfW = lv1Player.width * 0.5f;
+	float playerHalfH = lv1Player.height * 0.5f;
+	float enemyHalfW = HardEnemy.width * 0.5f;
+	float enemyHalfH = HardEnemy.height * 0.5f;
+
+	bool overlapX = fabs(HardEnemy.pos.x - lv1Player.pos.x) < (enemyHalfW + playerHalfW);
+	bool overlapY = fabs(HardEnemy.pos.y - lv1Player.pos.y) < (enemyHalfH + playerHalfH);
+
+	if (overlapX && overlapY)
+	{
+		HardEnemy_OnCollision(HardEnemy, lv1Player);
+	}
 
 	// Background Update (Debug Cam)
 	const float camSpeed = 800.0f;
@@ -285,6 +399,15 @@ void Level1_Draw()
 	Player_Draw(lv1Player);
 
 	Enemy_Draw(EasyEnemy);//Enemy
+	for (const auto& bullet : enemyBullets)
+	{
+		if (!bullet.active) continue;
+
+		EnemyBullet_Draw(bullet);
+	}
+
+	Enemy_Draw(HardEnemy);
+
 
 	// draw text for level indicator
 	LevelIndicator_Draw();
@@ -300,6 +423,7 @@ void Level1_Draw()
 void Level1_Free()
 {
 	Enemy_Free();//Enemy
+	EnemyBullet_Free();
 	std::cout << "Level1:Free" << std::endl;
 }
 

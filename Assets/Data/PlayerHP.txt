@@ -1,0 +1,6 @@
+20
+/*
+Do not Delete this text
+This is the players Health Points
+Any int/float is fine to input, an example when you want 10HP, '10.0' or '10'(excluding quotes) is acceptable for input.
+*/

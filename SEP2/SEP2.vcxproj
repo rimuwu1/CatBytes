@@ -13,6 +13,7 @@
   <ItemGroup>
     <ClCompile Include="..\Source\Background.cpp" />
     <ClCompile Include="..\Source\enemy.cpp" />
+    <ClCompile Include="..\Source\EnemyBullet.cpp" />
     <ClCompile Include="..\Source\Fonts.cpp" />
     <ClCompile Include="..\Source\GameStateManager.cpp" />
     <ClCompile Include="..\Source\Input.cpp" />
@@ -34,6 +35,7 @@
   <ItemGroup>
     <ClInclude Include="..\Source\Background.h" />
     <ClInclude Include="..\Source\enemy.h" />
+    <ClInclude Include="..\Source\EnemyBullet.h" />
     <ClInclude Include="..\Source\Fonts.h" />
     <ClInclude Include="..\Source\GameStateList.h" />
     <ClInclude Include="..\Source\GameStateManager.h" />
