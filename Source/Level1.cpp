@@ -247,10 +247,10 @@ void Level1_Update()
 			bullet.startPos = bullet.pos;
 			bullet.direction = EasyEnemy.direction;
 
-			bullet.speed = LoadFloatFromFile("Assets/Data/EasyEnemyBulletSpeed.txt");
+			bullet.speed = level1Config["level_1"]["enemies"][0]["bullet_speed"].GetFloat();
 			if (bullet.speed <= 0.0f) bullet.speed = 50.0f;
 
-			bullet.damage = LoadFloatFromFile("Assets/Data/EasyEnemyBulletDamage.txt");
+			bullet.damage = level1Config["level_1"]["enemies"][0]["bullet_damage"].GetFloat();
 			bullet.maxRange = 400.0f;
 			bullet.active = true;
 

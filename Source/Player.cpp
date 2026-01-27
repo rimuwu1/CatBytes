@@ -19,6 +19,12 @@ Technology is prohibited.
 #include "Fonts.h"
 #include <fstream>
 #include "GameStateManager.h"//for mainmenu test
+#include "rapidjson/document.h"
+#include "rapidjson/filereadstream.h"
+#include "rapidjson/istreamwrapper.h"
+#include <iostream>
+
+extern rapidjson::Document level1Config;
 
 //small helper to load a  float from a text file(For Player HP)
 static float LoadFloatFromFile(const char* filename)
@@ -35,7 +41,7 @@ static float LoadFloatFromFile(const char* filename)
 //loads melee damage from file (Player melee attack)
 static float LoadMeleeDamage()
 {
-	float dmg = LoadFloatFromFile("Assets/Data/PlayerDamageMelee.txt");
+	float dmg = level1Config["level_1"]["player"]["melee_damage"].GetFloat();
 	return (dmg > 0.0f)? dmg:5.0f; //fallback to 5 ifnone
 }
 
@@ -56,7 +62,7 @@ void Player_Init(Player& player, float startX, float startY)
 	player.grounded = 1;
 
 	//load player hp from file, fallback to 5.0f if file fails
-	player.hp = LoadFloatFromFile("Assets/Data/PlayerHP.txt");
+	player.hp = level1Config["level_1"]["player"]["hp"].GetFloat();
 	if (player.hp <= 0.0f)
 		player.hp = 5.0f;//default hp
 

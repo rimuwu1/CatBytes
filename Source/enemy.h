@@ -36,7 +36,7 @@ struct Enemy
     int direction;//current movement direction: -1 = left, 1 = right
     int isAlive;//status: 1=alive, 0=dead
 
-    int hitPoints; // number of hits left
+    float hitPoints; // number of hits left
     float hitStunTimer; // time remaining frozen after hit
     bool isPlayerColliding; // prevents multiple hits per frame
 

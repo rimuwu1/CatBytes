@@ -20,6 +20,11 @@ Technology is prohibited.
 #include "Player.h"
 #include <fstream>
 #include <iostream>
+#include "rapidjson/document.h"
+#include "rapidjson/filereadstream.h"
+#include "rapidjson/istreamwrapper.h"
+
+extern rapidjson::Document level1Config;
 
 static AEGfxVertexList* enemyMesh = nullptr;
 static AEGfxTexture* lowHpOverlayTexture = nullptr;
@@ -35,14 +40,14 @@ void Enemy_Init(Enemy& enemy, float startX, float startY)
     enemy.height = 80.0f;//enemy height
 
     //load movement speed from file; default to 100 if file missing or invalid
-    enemy.moveSpeed = LoadFloatFromFile("Assets/Data/EasyEnemySpeed.txt");
+    enemy.moveSpeed = level1Config["level_1"]["enemies"][0]["speed"].GetFloat();
     if (enemy.moveSpeed <= 0.0f) enemy.moveSpeed = 100.0f;
 
     enemy.shootCooldown = 1.5f;//shoots every 1.5 seconds
     enemy.shootTimer = enemy.shootCooldown;
 
     //load hit points from file; default to 3.0
-    enemy.hitPoints = LoadFloatFromFile("Assets/Data/EasyEnemyHP.txt");
+    enemy.hitPoints = level1Config["level_1"]["enemies"][0]["hp"].GetFloat();
     if (enemy.hitPoints <= 0.0f) enemy.hitPoints = 3.0f;
 
     enemy.direction = 1;//start moving right
@@ -161,10 +166,10 @@ void HardEnemy_Init(Enemy& enemy, float startX, float startY)
     enemy.height = 80.0f;
 
     //load speed and HP from files; fallback if missing
-    enemy.moveSpeed = LoadFloatFromFile("Assets/Data/HardEnemySpeed.txt");
+    enemy.moveSpeed = level1Config["level_1"]["enemies"][1]["speed"].GetFloat();
     if (enemy.moveSpeed <= 0.0f) enemy.moveSpeed = 100.0f;
 
-    enemy.hitPoints = LoadFloatFromFile("Assets/Data/HardEnemyHP.txt");
+    enemy.hitPoints = level1Config["level_1"]["enemies"][1]["hp"].GetFloat();
     if (enemy.hitPoints <= 0.0f) enemy.hitPoints = 5.0f;
 
     enemy.shootCooldown = 0.0f;//HardEnemy does collision damage instead
@@ -173,7 +178,7 @@ void HardEnemy_Init(Enemy& enemy, float startX, float startY)
     enemy.isAlive = 1;
     enemy.hitStunTimer = 0.0f;
     enemy.isPlayerColliding = false;
-    enemy.damage = LoadFloatFromFile("Assets/Data/HardEnemyDamage.txt");
+    enemy.damage = level1Config["level_1"]["enemies"][1]["damage"].GetFloat();
     if (enemy.damage <= 0.0f) enemy.damage = 3.0f;//default damage for ahrd enemy
 
     //Create mesh if needed

@@ -3,21 +3,27 @@
         "player": {
             "x": 0.0,
             "y": -300.0,
-            "hp": 3
+            "hp": 20.0,
+            "melee_damage": 5
         },
         "enemies": [
-            {
-                "x": 200.0,
-                "y": -300.0,
-                "hp": 3,
-                "speed": 3.0
-            },
-            {
-                "x": 400.0,
-                "y": -300.0,
-                "hp": 3,
-                "speed": 3.0
-            }
+          {
+            "type": "easy",
+            "x": 200.0,
+            "y": -300.0,
+            "hp": 5.0,
+            "speed": 90.0,
+            "bullet_speed": 50.0,
+            "bullet_damage": 1.5
+          },
+          {
+            "type": "hard",
+            "x": 400.0,
+            "y": -300.0,
+            "hp": 10.0,
+            "speed": 150.0,
+            "damage": 5.0
+          }
         ],
         "enemy_count": 2,
         "completed": false
