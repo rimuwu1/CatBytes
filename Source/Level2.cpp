@@ -35,7 +35,6 @@ static std::vector<Platform> level2Platforms = {
 	{  190.0f,  840.0f, 500.0f, 40.0f },
 	{ -190.0f,  950.0f, 200.0f, 40.0f },
 	{  500.0f,  999.0f, 300.0f, 40.0f }
-	
 };
 
 // ----------------------------------------------------------------------------
@@ -90,7 +89,7 @@ void Level2_Update()
 
 	if (globalCam.debugCam) {
 
-		Camera_Debug(globalCam);
+		Camera_Debug(globalCam, dt);
 
 	}
 	else {

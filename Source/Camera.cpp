@@ -39,31 +39,31 @@ void Camera_Apply(const Camera& cam)
 	AEGfxSetCamPosition(cam.x, cam.y);
 }
 
-void Camera_Debug(Camera& cam) {
+void Camera_Debug(Camera& cam, float dt) {
 
-	const float debugJump = 150.0f;
+	const float camSpeed = 500.0f;
 
-	if (AEInputCheckTriggered(AEVK_UP)) {
+	if (AEInputCheckCurr(AEVK_UP)) {
 
-		cam.y += debugJump;
-
-	}
-
-	if (AEInputCheckTriggered(AEVK_DOWN)) {
-
-		cam.y -= debugJump;
+		cam.y += camSpeed * dt;
 
 	}
 
-	if (AEInputCheckTriggered(AEVK_LEFT)) {
+	if (AEInputCheckCurr(AEVK_DOWN)) {
 
-		cam.x -= debugJump;
+		cam.y -= camSpeed * dt;
 
 	}
 
-	if (AEInputCheckTriggered(AEVK_RIGHT)) {
+	if (AEInputCheckCurr(AEVK_LEFT)) {
 
-		cam.x += debugJump;
+		cam.x -= camSpeed * dt;
+
+	}
+
+	if (AEInputCheckCurr(AEVK_RIGHT)) {
+
+		cam.x += camSpeed * dt;
 
 	}
 

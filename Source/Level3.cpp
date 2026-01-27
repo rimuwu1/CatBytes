@@ -4,7 +4,7 @@
 \author     Peh Yu Xuan, Lovette, p.yuxuanlovette, 2502079
 \par        p.yuxuanlovette@digipen.edu
 \date       January 24 2026
-\brief
+\brief		This file implements the functions for Level 3 of the game.
 
 Copyright (C) 2026 DigiPen Institute of Technology.
 Reproduction or disclosure of this file or its contents
@@ -28,10 +28,8 @@ AEGfxVertexList* lv3mesh;
 
 // platforms array
 static std::vector<Platform> level3Platforms = {
-	{ -300.0f, 450.0f, 520.0f, 40.0f },
-	{ -100.0f, 550.0f, 300.0f, 40.0f },
-	{  300.0f, 750.0f, 500.0f, 40.0f },
-
+	{  500.0f,  999.0f, 300.0f, 40.0f }, // level 2's last platform
+	{  500.0f,  999.0f, 300.0f, 40.0f }
 };
 
 // ----------------------------------------------------------------------------
@@ -78,7 +76,7 @@ void Level3_Update()
 
 	if (globalCam.debugCam) {
 
-		Camera_Debug(globalCam);
+		Camera_Debug(globalCam, dt);
 
 	}
 	else {

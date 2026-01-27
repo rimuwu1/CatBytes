@@ -54,7 +54,6 @@ static std::vector<Platform> level1Platforms = {
 	{  600.0f,	190.0f, 300.0f, 40.0f },
 	{  175.0f,	300.0f, 250.0f, 40.0f },
 	{ -300.0f,	450.0f, 520.0f, 40.0f },
-	
 };
 */
 // platforms array - will be loaded from JSON
@@ -410,7 +409,7 @@ void Level1_Update()
 
 	if (globalCam.debugCam) {
 
-		Camera_Debug(globalCam);
+		Camera_Debug(globalCam, dt);
 
 	}
 	else {

@@ -31,4 +31,4 @@ void Camera_FollowPlayer(Camera& cam, float playerX, float playerY, float dt);
 void Camera_Apply(const Camera& cam);
 
 // for debug
-void Camera_Debug(Camera& cam);
+void Camera_Debug(Camera& cam, float dt);

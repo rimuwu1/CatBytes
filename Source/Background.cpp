@@ -4,7 +4,7 @@
 \author     Peh Yu Xuan, Lovette, p.yuxuanlovette, 2502079
 \par        p.yuxuanlovette@digipen.edu
 \date       January 24 2026
-\brief      
+\brief		This file implements the functions for the game's background.
 
 Copyright (C) 2026 DigiPen Institute of Technology.
 Reproduction or disclosure of this file or its contents

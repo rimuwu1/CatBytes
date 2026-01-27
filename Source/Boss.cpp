@@ -1,10 +1,10 @@
 /* Start Header ************************************************************************/
 /*!
-\file       Level4.cpp
+\file       Boss.cpp
 \author     Peh Yu Xuan, Lovette, p.yuxuanlovette, 2502079
 \par        p.yuxuanlovette@digipen.edu
 \date       January 24 2026
-\brief
+\brief		This file implements the functions for the game's boss level.
 
 Copyright (C) 2026 DigiPen Institute of Technology.
 Reproduction or disclosure of this file or its contents
@@ -67,7 +67,7 @@ void Boss_Update()
 	// toggle use debug cam
 	if (AEInputCheckTriggered(AEVK_1)) {
 
-		Camera_Debug(globalCam);
+		Camera_Debug(globalCam, dt);
 
 	}
 
