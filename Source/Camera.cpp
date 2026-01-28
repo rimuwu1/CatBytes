@@ -29,7 +29,8 @@ void Camera_FollowPlayer(Camera& cam, float playerX, float playerY, float dt)
 {
 	float followSpeed = 10.0f;
 	
-	cam.x += (playerX - cam.x) * followSpeed * dt;
+	//cam.x += (playerX - cam.x) * followSpeed * dt;
+	cam.x = 0.0f; // Fixed player cam.x
 	cam.y += (playerY - cam.y) * followSpeed * dt;
 	
 }
