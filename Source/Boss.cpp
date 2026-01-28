@@ -25,8 +25,9 @@ static Player bossPlayer;
 
 // platforms array
 static std::vector<Platform> bossPlatforms = {
-	{ 0.0f, 0.0f, 0.0f, 0.0f },
-
+	{  600.0f,  1650.0f, 250.0f, 40.0f },
+	{ -600.0f,  1650.0f, 250.0f, 40.0f },
+	{    0.0f,  1800.0f, 1000.0f, 40.0f }
 };
 
 // ----------------------------------------------------------------------------

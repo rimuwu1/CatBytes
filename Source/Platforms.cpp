@@ -31,7 +31,7 @@ void Platforms_Draw(AEGfxVertexList* mesh, const std::vector<Platform>& platform
 	// for each Platform named pf in container platform
 	for (const Platform& pf : platform) {
 
-		util::DrawSquare(mesh, pf.x, pf.y, pf.w, pf.h, 60, 60, 60);
+		util::DrawSquare(mesh, pf.x, pf.y, pf.w, pf.h, 255, 178, 102);
 
 	}
 
@@ -43,24 +43,4 @@ void Platforms_OffsetY(std::vector<Platform>& platforms, float offsetY)
 	{
 		pf.y += offsetY;
 	}
-}
-
-float Get_Highest_Platform_YPos(const std::vector<Platform>& platforms) {
-	if (platforms.empty()) return -INFINITY;
-	float highestPlatform = platforms[0].y + platforms[0].h / 2;
-
-	for (const auto& pf : platforms) {
-
-		float platformTop = pf.y + pf.h / 2;
-
-		if (platformTop > highestPlatform) {
-
-			highestPlatform = platformTop;
-
-		}
-
-	}
-
-	return highestPlatform;
-
 }

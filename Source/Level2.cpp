@@ -21,21 +21,35 @@ Technology is prohibited.
 #include "Camera.h"
 #include "Player.h"
 #include "Utils.h"
+#include "FileManager.h"
+#include "rapidjson/document.h"
+#include "rapidjson/filereadstream.h"
+#include "rapidjson/istreamwrapper.h"
+#include "rapidjson/stringbuffer.h"
+#include <iostream>
+#include <fstream>
 
 static Player lv2Player;
 
 AEGfxVertexList* lv2mesh;
 
+rapidjson::Document level2Config;
+
+std::ifstream ifs2;
+
 // platforms array
 static std::vector<Platform> level2Platforms = {
-	{ -300.0f,	450.0f, 520.0f, 40.0f }, // level's 1 last platform
-	{  255.0f,  575.0f, 670.0f, 40.0f },
-	{ -280.0f,  695.0f, 300.0f, 40.0f },
-	{  650.0f,  695.0f, 200.0f, 40.0f },
+	{  255.0f,  610.0f, 400.0f, 40.0f },
+	{ -350.0f,  700.0f, 300.0f, 40.0f },
+	{  650.0f,  700.0f, 200.0f, 40.0f },
 	{  190.0f,  840.0f, 500.0f, 40.0f },
-	{ -190.0f,  950.0f, 200.0f, 40.0f },
+	{ -240.0f,  950.0f, 200.0f, 40.0f },
 	{  500.0f,  999.0f, 300.0f, 40.0f }
 };
+
+
+// platforms array - loaded from JSON
+//std::vector<Platform> level2Platforms;
 
 // ----------------------------------------------------------------------------
 // Loads Level 2 resources and initial data
@@ -43,6 +57,14 @@ static std::vector<Platform> level2Platforms = {
 // ----------------------------------------------------------------------------
 void Level2_Load()
 {
+	ifs2.open("Assets/Data/GameSave.json");
+	if (!ifs2.is_open()) {
+		ifs2.clear(); // Clear the fail bit from the first attempt
+		ifs2.open("Assets/Data/Config.json");
+	}
+	rapidjson::IStreamWrapper isw(ifs2);
+	level2Config.ParseStream(isw);
+
 	// Log that loading is complete
 	std::cout << "Level2:Load" << std::endl;
 }
@@ -60,6 +82,30 @@ void Level2_Initialize()
 
 	// initialise platforms
 	//Platforms_Initialize();
+
+	// initialise platforms from JSON
+	/*
+	const rapidjson::Value& platforms = level2Config["level_2"]["platforms"];
+	level2Platforms.clear(); // Clear any existing data
+
+	if (platforms.IsArray()) {
+		for (rapidjson::SizeType i = 0; i < platforms.Size(); i++) {
+			const rapidjson::Value& platform = platforms[i];
+
+			if (platform.HasMember("x") && platform.HasMember("y") &&
+				platform.HasMember("width") && platform.HasMember("height")) {
+
+				Platform newPlatform{};
+				newPlatform.x = platform["x"].GetFloat();
+				newPlatform.y = platform["y"].GetFloat();
+				newPlatform.w = platform["width"].GetFloat();
+				newPlatform.h = platform["height"].GetFloat();
+
+				level2Platforms.push_back(newPlatform);
+			}
+		}
+	}
+	*/
 
 	// initialise camera
 	Camera_Init(globalCam, lv2Player.pos.x, lv2Player.pos.y);

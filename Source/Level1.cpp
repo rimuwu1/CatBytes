@@ -53,15 +53,33 @@ static std::vector<Platform> level1Platforms = {
 	{  100.0f,	 85.0f, 450.0f, 40.0f },
 	{  600.0f,	190.0f, 300.0f, 40.0f },
 	{  175.0f,	300.0f, 250.0f, 40.0f },
-	{ -300.0f,	450.0f, 520.0f, 40.0f },
+	{ -300.0f,	450.0f, 520.0f, 40.0f }
 };
 */
 // platforms array - will be loaded from JSON
 static std::vector<Platform> level1Platforms;
 static std::vector<Platform> level2Platforms = {
-	{   0.0f, LEVEL2_START_Y + 100.0f, 300.0f, 40.0f },
-	{ 200.0f, LEVEL2_START_Y + 250.0f, 200.0f, 40.0f }
+	{  255.0f,  610.0f, 400.0f, 40.0f },
+	{ -350.0f,  700.0f, 300.0f, 40.0f },
+	{  650.0f,  700.0f, 200.0f, 40.0f },
+	{  190.0f,  840.0f, 500.0f, 40.0f },
+	{ -240.0f,  950.0f, 200.0f, 40.0f },
+	{  500.0f,  999.0f, 300.0f, 40.0f }
 };
+static std::vector<Platform> level3Platforms = {
+	{    0.0f,  1100.0f, 200.0f, 40.0f },
+	{  300.0f,  1250.0f, 325.0f, 40.0f },
+	{ -300.0f,  1250.0f, 325.0f, 40.0f },
+	{    0.0f,  1390.5f, 150.0f, 40.0f },
+	{  300.0f,  1499.9f, 250.0f, 40.0f },
+	{ -300.0f,  1499.9f, 250.0f, 40.0f }
+};
+static std::vector<Platform> bossPlatforms = {
+	{  600.0f,  1650.0f, 250.0f, 40.0f },
+	{ -600.0f,  1650.0f, 250.0f, 40.0f },
+	{    0.0f,  1800.0f, 1000.0f, 40.0f }
+};
+
 
 //static const int platformCount = sizeof(level1Platforms) / sizeof(level1Platforms[0]);
 
@@ -146,10 +164,6 @@ void Level1_Initialize()
 
 	// initialise camera
 	Camera_Init(globalCam, lv1Player.pos.x, lv1Player.pos.y);
-
-	float level1Top = Get_Highest_Platform_YPos(level1Platforms);
-	const float levelGap = 100.0f;
-	float level2Start = level1Top + levelGap;
 
 	previousSelection = -1;
 
@@ -267,6 +281,16 @@ void Level1_Update()
 		if (!CheckPlatformLanding(level1Platforms))
 		{
 			CheckPlatformLanding(level2Platforms);
+		}
+		
+		if (!CheckPlatformLanding(level2Platforms))
+		{
+			CheckPlatformLanding(level3Platforms);
+		}
+
+		if (!CheckPlatformLanding(level3Platforms))
+		{
+			CheckPlatformLanding(bossPlatforms);
 		}
 
 	}
@@ -466,6 +490,8 @@ void Level1_Draw()
 	// draw platforms
 	Platforms_Draw(lv1mesh, level1Platforms);
 	Platforms_Draw(lv1mesh, level2Platforms);
+	Platforms_Draw(lv1mesh, level3Platforms);
+	Platforms_Draw(lv1mesh, bossPlatforms);
 
 	util::DrawSquare(lv1mesh, 0.0f, ground, 1600.0f, 50.0f, 0, 0, 0); // Draw Ground (Texture TBA?)
 	Player_Draw(lv1Player);

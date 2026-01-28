@@ -38,7 +38,7 @@ float sectionHeight[backgroundSections]{
 	1500.0f,
 
 	// level 4 height limit
-	2000.0f
+	3000.0f
 
 };
 
