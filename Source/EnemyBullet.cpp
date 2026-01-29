@@ -22,8 +22,8 @@ void EnemyBullet_Draw(const EnemyBullet& bullet)
         bulletTexture,
         bullet.pos.x,
         bullet.pos.y,
-        20.0f,//bullet width
-        20.0f,// bullet height
+        30.0f,//bullet width
+        10.0f,// bullet height
         1.0f// fully opaque
     );
 }

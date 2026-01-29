@@ -1,8 +1,8 @@
 /* Start Header ************************************************************************/
 /*!
 \file Player.cpp
-\author Kerwin Wong Jia Jie, kerwinjiajie.wong, 2502740
-\par kerwinajijie.wong@digipen.edu
+\author Kerwin Wong Jia Jie, kerwinjiajie.wong, 2502740 pogbamoneysniper
+\par [kerwinajijie.wong@digipen.edu]
 \date January, 23, 2026
 \brief This file contains the function definitions for the Player movements, physics,
 		input handling, and rendering.

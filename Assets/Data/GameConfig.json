@@ -17,7 +17,7 @@
                 "y": -290.0,
                 "hp": 5.0,
                 "speed": 90.0,
-                "bullet_speed": 50.0,
+                "bullet_speed": 1000.0,
                 "bullet_damage": 1.5
             }
         ],
@@ -31,12 +31,12 @@
         ]
     },
     "level_2": {
-        "player": {
-            "x": 0.0,
-            "y": -300.0,
-            "hp": 20.0,
-            "melee_damage": 5
-        },
+      "player": {
+        "x": 255.0,
+        "y": 610.0,
+        "hp": 20.0,
+        "melee_damage": 5
+      },
         "enemies": [
             {
                 "type": "easy",

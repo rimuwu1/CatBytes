@@ -22,7 +22,7 @@
                 "y": -290.0,
                 "hp": 5.0,
                 "speed": 90.0,
-                "bullet_speed": 50.0,
+                "bullet_speed": 1000.0,
                 "bullet_damage": 1.5
             },
             {

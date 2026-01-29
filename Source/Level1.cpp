@@ -358,7 +358,7 @@ void Level1_Update()
 			if (bullet.speed <= 0.0f) bullet.speed = 50.0f;
 
 			bullet.damage = level1Config["level_1"]["enemies"][0]["bullet_damage"].GetFloat();
-			bullet.maxRange = 400.0f;
+			bullet.maxRange = 1600.0f;
 			bullet.active = true;
 
 			enemyBullets.push_back(bullet);
