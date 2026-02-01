@@ -17,7 +17,7 @@ Technology is prohibited.
 #pragma once
 
 #include "AEEngine.h"
-#include "Player.h"
+//#include "Player.h"
 
 //forward declare Player
 struct Player;
@@ -28,6 +28,8 @@ struct Player;
 // ----------------------------------------------------------------------------
 struct Enemy
 {
+    bool facesLeft; // for flipping images whille they're patrolling
+
     AEVec2 pos;//enemy position in world coordinates
     float width; //enemy width
     float height;

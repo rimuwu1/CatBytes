@@ -2,7 +2,9 @@
 /*!
 \file       Platforms.h
 \author     Peh Yu Xuan, Lovette, p.yuxuanlovette, 2502079
+			Sim Hui Min, Huimin, s.huimin, 2503506
 \par        p.yuxuanlovette@digipen.edu
+			s.huimin@digipen.edu
 \date       January 26 2026
 \brief
 
@@ -18,12 +20,21 @@ Technology is prohibited.
 
 struct Platform {
 	float x, y, w, h;
+	bool active = true;
 };
 
 // global platform mesh
 //extern AEGfxVertexList* platformMesh;
 
 //void Platforms_Initialize();
+
+struct PlatformButton {
+	float x, y, w, h;
+	int platformIndex;  // which index in the platform array this toggles
+	bool wasPressed = false;
+};
+
+void PlatformButton_Draw(AEGfxVertexList* mesh, const std::vector<PlatformButton>& buttons, const std::vector<Platform>& platforms);
 
 void Platforms_Draw(AEGfxVertexList* mesh, const std::vector<Platform> &platform);
 

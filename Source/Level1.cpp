@@ -2,7 +2,9 @@
 /*!
 \file Level1.cpp
 \author Joash ng, joash.ng, 2502780
+		Sim Hui Min, s.huimin, 2503506
 \par joash.ng@digipen.edu
+	 s.huimin@digipen.edu
 \date 21/01/2026
 \brief This file implements the functions for Level 1 of the game.
 
@@ -29,14 +31,20 @@ Technology is prohibited.
 #include <fstream>
 #include "Platforms.h"
 #include "EnemyBullet.h"
+#include "PlayerBullet.h"
 #include <iostream>
 #include "Camera.h"
+#include "WinLose.h"
+#include "Boss.h"
 
 static Player lv1Player;
 static Enemy EasyEnemy; //Enemy
 static std::vector<EnemyBullet> enemyBullets;//Enemy
 static Enemy HardEnemy;
 rapidjson::Document level1Config;
+
+static Enemy BossEnemy;  // boss - temporary for demo as everything's in this file..
+static std::vector<PlayerBullet> playerBullets; // player gun pool // player bullets
 
 static int previousSelection = -1;
 const float LEVEL2_START_Y = sectionHeight[0];
@@ -59,12 +67,16 @@ static std::vector<Platform> level1Platforms = {
 // platforms array - will be loaded from JSON
 static std::vector<Platform> level1Platforms;
 static std::vector<Platform> level2Platforms = {
-	{  255.0f,  610.0f, 400.0f, 40.0f },
-	{ -350.0f,  700.0f, 300.0f, 40.0f },
-	{  650.0f,  700.0f, 200.0f, 40.0f },
-	{  190.0f,  840.0f, 500.0f, 40.0f },
-	{ -240.0f,  950.0f, 200.0f, 40.0f },
-	{  500.0f,  999.0f, 300.0f, 40.0f }
+	{  255.0f,  610.0f, 400.0f, 40.0f, true},
+	{ -350.0f,  700.0f, 300.0f, 40.0f, true },
+	{  650.0f,  700.0f, 200.0f, 40.0f, true },
+	{  190.0f,  840.0f, 500.0f, 40.0f, false }, // toggled by button
+	{ -240.0f,  950.0f, 200.0f, 40.0f, false}, // toggled by button
+	{  500.0f,  999.0f, 300.0f, 40.0f, true }
+};
+static std::vector<PlatformButton> level2Buttons = {
+	{ 255.0f, 640.0f, 60.0f, 20.0f, 3 },   // on platform 0, toggles platform index 3
+	{ -350.0f, 730.0f, 60.0f, 20.0f, 4 },   // on platform 1 (y=700, top=720, button center=730)
 };
 static std::vector<Platform> level3Platforms = {
 	{    0.0f,  1100.0f, 200.0f, 40.0f },
@@ -79,7 +91,6 @@ static std::vector<Platform> bossPlatforms = {
 	{ -600.0f,  1650.0f, 250.0f, 40.0f },
 	{    0.0f,  1800.0f, 1000.0f, 40.0f }
 };
-
 
 //static const int platformCount = sizeof(level1Platforms) / sizeof(level1Platforms[0]);
 
@@ -135,6 +146,11 @@ void Level1_Initialize()
 		float hardEnemyX = enemies[1]["x"].GetFloat(); //JSON index 1 for HardEnemy
 		float hardEnemyY = enemies[1]["y"].GetFloat();
 		HardEnemy_Init(HardEnemy, hardEnemyX, hardEnemyY);
+
+		// boss
+		float bossX = level1Config["level_4"]["enemies"][0]["x"].GetFloat();
+		float bossY = level1Config["level_4"]["enemies"][0]["y"].GetFloat();
+		BossEnemy_Init(BossEnemy, bossX, bossY);
 	}
 
 	// Platform Initialization from JSON
@@ -182,6 +198,18 @@ void Level1_Update()
 
 	float dt = (float)AEFrameRateControllerGetFrameTime();
 	Player_Update(lv1Player, dt);
+
+	Player_CheckBulletCollisions(EasyEnemy);
+	Player_CheckBulletCollisions(HardEnemy);
+	Player_CheckBulletCollisions(BossEnemy);
+	
+	// boss killed -> win
+	if (!BossEnemy.isAlive)
+	{
+		textScreenMessage = "You Win";
+		next = GS_WINLOSE;
+	}
+
 	lv1Player.grounded = 0;
 
 	const float groundHeight = 50.0f;
@@ -255,6 +283,8 @@ void Level1_Update()
 			{
 				for (const Platform& pf : platforms)
 				{
+					if (!pf.active) continue;  //
+
 					float pfLeft = pf.x - pf.w * 0.5f;
 					float pfRight = pf.x + pf.w * 0.5f;
 					float pfTop = pf.y + pf.h * 0.5f;
@@ -292,7 +322,31 @@ void Level1_Update()
 		{
 			CheckPlatformLanding(bossPlatforms);
 		}
+	}
 
+	// level 2 button toggle
+	for (auto& btn : level2Buttons)
+	{
+		float btnLeft = btn.x - btn.w * 0.5f;
+		float btnRight = btn.x + btn.w * 0.5f;
+		float btnTop = btn.y + btn.h * 0.5f;
+		float btnBottom = btn.y - btn.h * 0.5f;
+
+		float playerLeft = lv1Player.pos.x - lv1Player.width * 0.5f;
+		float playerRight = lv1Player.pos.x + lv1Player.width * 0.5f;
+		float playerBottom = lv1Player.pos.y - lv1Player.height * 0.5f;
+
+		bool overlapX = (playerRight >= btnLeft) && (playerLeft <= btnRight);
+		bool landedOnButton = (playerBottom <= btnTop) && (playerBottom >= btnBottom);
+		bool isPressed = overlapX && landedOnButton && lv1Player.grounded;
+
+		// only toggle on the frame it becomes pressed
+		if (isPressed && !btn.wasPressed)
+		{
+			level2Platforms[btn.platformIndex].active = !level2Platforms[btn.platformIndex].active;
+		}
+
+		btn.wasPressed = isPressed;
 	}
 
 
@@ -335,6 +389,7 @@ void Level1_Update()
 	//enemy update
 	Enemy_Update(EasyEnemy, dt);//Enemy
 	HardEnemy_Update(HardEnemy, dt);
+	BossEnemy_Update(BossEnemy, dt);
 
 	// Enemy shooting
 	if (EasyEnemy.isAlive)
@@ -424,6 +479,21 @@ void Level1_Update()
 		HardEnemy_OnCollision(HardEnemy, lv1Player);
 	}
 
+	// Boss enemy
+	// Boss collision with player
+	float bossHalfW = BossEnemy.width * 0.5f;
+	float bossHalfH = BossEnemy.height * 0.5f;
+	float playerHalfW_b = lv1Player.width * 0.5f;
+	float playerHalfH_b = lv1Player.height * 0.5f;
+
+	bool bossOverlapX = fabs(BossEnemy.pos.x - lv1Player.pos.x) < (bossHalfW + playerHalfW_b);
+	bool bossOverlapY = fabs(BossEnemy.pos.y - lv1Player.pos.y) < (bossHalfH + playerHalfH_b);
+
+	if (bossOverlapX && bossOverlapY)
+	{
+		BossEnemy_OnCollision(BossEnemy, lv1Player);
+	}
+
 	// toggle use debug cam
 	if (AEInputCheckTriggered(AEVK_1)) {
 
@@ -472,6 +542,25 @@ void Level1_Update()
 	LevelIndicator_Update(dt);
 
 	std::cout << "Level1:Update" << std::endl;
+
+	// DEBUG: teleport to boss platform
+	// we can't be manualy climbing everytiem guys this is painful </3
+	if (AEInputCheckTriggered(AEVK_6))
+	{
+		lv1Player.pos.x = 0.0f;
+		lv1Player.pos.y = 1900.0f;
+		lv1Player.vel.x = 0.0f;
+		lv1Player.vel.y = 0.0f;
+	}
+
+	// DEBUG: back to bottom platform
+	if (AEInputCheckTriggered(AEVK_7))
+	{
+		lv1Player.pos.x = 0.0f;
+		lv1Player.pos.y = -300.0f;
+		lv1Player.vel.x = 0.0f;
+		lv1Player.vel.y = 0.0f;
+	}
 	
 }
 
@@ -492,6 +581,7 @@ void Level1_Draw()
 	Platforms_Draw(lv1mesh, level2Platforms);
 	Platforms_Draw(lv1mesh, level3Platforms);
 	Platforms_Draw(lv1mesh, bossPlatforms);
+	PlatformButton_Draw(lv1mesh, level2Buttons, level2Platforms);
 
 	util::DrawSquare(lv1mesh, 0.0f, ground, 1600.0f, 50.0f, 0, 0, 0); // Draw Ground (Texture TBA?)
 	Player_Draw(lv1Player);
@@ -505,6 +595,13 @@ void Level1_Draw()
 	}
 
 	Enemy_Draw(HardEnemy);
+	BossEnemy_Draw(BossEnemy);
+
+	// player bullets
+	for (const auto& b : playerBullets)
+	{
+		PlayerBullet_Draw(b);
+	}
 
 
 	// draw text for level indicator

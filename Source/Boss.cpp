@@ -20,8 +20,20 @@ Technology is prohibited.
 #include "Player.h"
 #include "Camera.h"
 #include "Platforms.h"
+#include "enemy.h"
+#include "Utils.h"
+#include "rapidjson/document.h"
+#include "rapidjson/filereadstream.h"
+#include "rapidjson/istreamwrapper.h"
+
+//extern rapidjson::Document level4Config;
+extern rapidjson::Document level1Config;
 
 static Player bossPlayer;
+
+static Enemy bossEnemy;
+static AEGfxVertexList* bossMesh = nullptr;
+static AEGfxTexture* bossTexture = nullptr;
 
 // platforms array
 static std::vector<Platform> bossPlatforms = {
@@ -29,6 +41,125 @@ static std::vector<Platform> bossPlatforms = {
 	{ -600.0f,  1650.0f, 250.0f, 40.0f },
 	{    0.0f,  1800.0f, 1000.0f, 40.0f }
 };
+
+// -----------------------------------------------------------------------------
+// Initialize the boss enemy
+// Loads position, HP, speed, and damage from level_4 config; creates mesh and texture
+// -----------------------------------------------------------------------------
+void BossEnemy_Init(Enemy& enemy, float startX, float startY)
+{
+	enemy.pos = { startX, startY };
+	enemy.width = 120.0f;   // boss is bigger than regular enemies
+	enemy.height = 120.0f;
+
+	// load speed from config; fallback to 120
+	enemy.moveSpeed = level1Config["level_4"]["enemies"][0]["speed"].GetFloat();
+	if (enemy.moveSpeed <= 0.0f) enemy.moveSpeed = 120.0f;
+
+	// load HP from config; fallback to 30
+	enemy.hitPoints = level1Config["level_4"]["enemies"][0]["hp"].GetFloat();
+	if (enemy.hitPoints <= 0.0f) enemy.hitPoints = 30.0f;
+
+	// load collision damage from config; fallback to 8
+	enemy.damage = level1Config["level_4"]["enemies"][0]["damage"].GetFloat();
+	if (enemy.damage <= 0.0f) enemy.damage = 8.0f;
+
+	enemy.shootCooldown = 0.0f;
+	enemy.shootTimer = 0.0f;
+	enemy.direction = 1;     // start moving right
+	enemy.isAlive = 1;
+	enemy.hitStunTimer = 0.0f;
+	enemy.isPlayerColliding = false;
+
+	// create mesh if needed
+	if (!bossMesh)
+		bossMesh = util::CreateSquareMesh();
+
+	// load boss texture if not already loaded
+	if (!enemy.texture)
+		enemy.texture = AEGfxTextureLoad("Assets/Images/Boss.jpg");
+}
+
+// -----------------------------------------------------------------------------
+// Update boss enemy each frame
+// Patrols left and right within a wider range than regular enemies
+// Freezes briefly on hit stun
+// -----------------------------------------------------------------------------
+void BossEnemy_Update(Enemy& enemy, float dt)
+{
+	if (!enemy.isAlive) return;
+
+	// handle hit stun (freeze)
+	if (enemy.hitStunTimer > 0.0f)
+	{
+		enemy.hitStunTimer -= dt;
+		if (enemy.hitStunTimer <= 0.0f)
+			enemy.hitStunTimer = 0.0f;
+		return; // do not move while stunned
+	}
+
+	// patrol movement
+	enemy.pos.x += enemy.direction * enemy.moveSpeed * dt;
+
+	// wider patrol bounds for the boss arena
+	float patrolMinX = -400.0f;
+	float patrolMaxX = 400.0f;
+
+	if (enemy.pos.x >= patrolMaxX)
+		enemy.direction = -1;   // move left
+	else if (enemy.pos.x <= patrolMinX)
+		enemy.direction = 1;    // move right
+}
+
+// -----------------------------------------------------------------------------
+// Draw the boss enemy on screen
+// -----------------------------------------------------------------------------
+void BossEnemy_Draw(const Enemy& enemy)
+{
+	if (!enemy.isAlive) return;
+
+	// flip horizontally when moving right (original image faces left)
+	float scaleX = (enemy.direction == 1) ? -enemy.width : enemy.width;
+
+	AEGfxSetRenderMode(AE_GFX_RM_TEXTURE);
+	util::DrawTexturedSquare(
+		bossMesh,
+		enemy.texture,
+		enemy.pos.x,
+		enemy.pos.y,
+		scaleX,
+		enemy.height,
+		1.0f
+	);
+}
+
+// -----------------------------------------------------------------------------
+// Free boss-specific static resources (mesh and texture)
+// -----------------------------------------------------------------------------
+void BossEnemy_Free()
+{
+	if (bossEnemy.texture)
+	{
+		AEGfxTextureUnload(bossEnemy.texture);
+		bossEnemy.texture = nullptr;
+	}
+
+	if (bossMesh)
+	{
+		AEGfxMeshFree(bossMesh);
+		bossMesh = nullptr;
+	}
+}
+
+// collision damage
+void BossEnemy_OnCollision(Enemy& enemy, Player& player)
+{
+	if (!enemy.isAlive || enemy.hitStunTimer > 0.0f)
+		return;
+
+	next = GS_WINLOSE;
+}
+
 
 // ----------------------------------------------------------------------------
 // Loads Level 2 resources and initial data

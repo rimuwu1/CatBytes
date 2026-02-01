@@ -36,6 +36,8 @@ static AEGfxTexture* lowHpOverlayTexture = nullptr;
 // -----------------------------------------------------------------------------
 void Enemy_Init(Enemy& enemy, float startX, float startY)
 {
+    enemy.facesLeft = true; // for flipping img. easy enemy (veryslightly if u squint..) faces left
+
     enemy.pos = { startX, startY };// set position
     enemy.width = 80.0f;//enemy width
     enemy.height = 80.0f;//enemy height
@@ -74,6 +76,8 @@ void Enemy_Init(Enemy& enemy, float startX, float startY)
 // -----------------------------------------------------------------------------
 void Enemy_Update(Enemy& enemy, float dt)
 {
+    enemy.facesLeft = false; // hard enemy jpg faces right (for now anyways)
+
     if (!enemy.isAlive) return;//skip if dead
 
     //handle hit stun (freeze)
@@ -112,14 +116,21 @@ void Enemy_Draw(const Enemy& enemy)
 {
     if (!enemy.isAlive) return;//Skip if dead
 
+    // flip when moving opposite to the way the image faces
+    float scaleX;
+    if (enemy.facesLeft)
+        scaleX = (enemy.direction == 1) ? -enemy.width : enemy.width;
+    else
+        scaleX = (enemy.direction == -1) ? -enemy.width : enemy.width;
+
     util::DrawTexturedSquare(
         enemyMesh,
         enemy.texture,
         enemy.pos.x,
         enemy.pos.y,
-        enemy.width,
+        scaleX,
         enemy.height,
-        1.0f //fully opaque
+        1.0f
     );
 
     // Low HP overlay

@@ -28,6 +28,8 @@ enum class PlayerWeapon
 
 struct Player
 {
+	bool facingRight; // player jpg direction (current asset faces right)
+
 	AEVec2 pos;
 	AEVec2 vel;
 	float width;
@@ -41,16 +43,27 @@ struct Player
 	PlayerWeapon weapon;//which weapon is equipped
 	bool weaponEquipped;//quick toggle flag
 
- //Melee attack state
+	//Melee attack state
 	bool isAttacking;//true while melee swing is active
 	float attackTimer;//how long the attack lasts
 	float meleeDamage;//damage dealt to enemies
+	
+	// player gun
+	int maxBullets;
+	float bulletSpeed;
+	float bulletDamage;
+	float fireCooldown;
+	float fireTimer;
+	float bulletWidth;
+	float bulletHeight;
 
 };
 
+struct Enemy; // forward declaration
 
 void Player_Init(Player& player, float startX, float startY);
 void Player_Update(Player& player, float dt);
 void Player_Draw(const Player& player);
 void Player_Free();
 void Player_ApplyDamage(Player& player, float damage);
+void Player_CheckBulletCollisions(Enemy& enemy);

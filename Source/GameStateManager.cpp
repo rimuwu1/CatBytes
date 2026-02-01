@@ -23,6 +23,7 @@ Technology is prohibited.
 #include "Boss.h"
 #include "MainMenu.h"
 #include "SplashScreen.h"
+#include "WinLose.h"
 
 int current = 0, previous = 0, next = 0;
 
@@ -90,13 +91,21 @@ void GSM_Update()
 		fpFree = Level3_Free;
 		fpUnload = Level3_Unload;
 		break;
-	case GS_LEVEL4: // Level 3 game state
+	case GS_LEVEL4: // Level 4 game state
 		fpLoad = Boss_Load;
 		fpInitialize = Boss_Initialize;
 		fpUpdate = Boss_Update;
 		fpDraw = Boss_Draw;
 		fpFree = Boss_Free;
 		fpUnload = Boss_Unload;
+		break;
+	case GS_WINLOSE:
+		fpLoad = WinLose_Load;
+		fpInitialize = WinLose_Initialize;
+		fpUpdate = WinLose_Update;
+		fpDraw = WinLose_Draw;
+		fpFree = WinLose_Free;
+		fpUnload = WinLose_Unload;
 		break;
 	case GS_RESTART: // State indicating the game should restart
 		break;

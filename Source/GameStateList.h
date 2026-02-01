@@ -26,6 +26,7 @@ enum GS_STATES
 	GS_LEVEL2,      // Level 2 game state
 	GS_LEVEL3,      // Level 3 game state
 	GS_LEVEL4,      // Level 4 game state
+	GS_WINLOSE,     // Win/Lose game state
 	GS_QUIT,        // Quit state to exit the game
 	GS_RESTART      // Restart state to reload current level 
 };

@@ -8,7 +8,15 @@
             "x": 0.0,
             "y": -290.0,
             "hp": 20.0,
-            "melee_damage": 5
+            "melee_damage": 5,
+            "bullet": {
+                "speed": 1200.0,
+                "damage": 50.0,
+                "cooldown": 0.25,
+                "width": 20.0,
+                "height": 8.0,
+                "max_count": 20
+            }  
         },
         "enemies": [
             {
@@ -74,7 +82,16 @@
             "hp": 20.0,
             "melee_damage": 5
         },
-        "enemies": [],
+        "enemies": [
+            {
+                "type": "boss",
+                "x" : 250.0,
+                "y" : 1880.0,
+                "hp": 30.0,
+                "speed": 120.0,
+                "damage": 8
+            }
+        ],
         "platforms": []
     }
 }
