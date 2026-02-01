@@ -17,6 +17,7 @@ Technology is prohibited.
 #pragma once
 
 #include <vector>
+#include "Player.h"
 
 struct Platform {
 	float x, y, w, h;
@@ -34,8 +35,16 @@ struct PlatformButton {
 	bool wasPressed = false;
 };
 
+struct PlatformObstacle {
+	float x, y, w, h, r;
+	//bool active = true; //can toggle off if bullet collision for example
+};
 void PlatformButton_Draw(AEGfxVertexList* mesh, const std::vector<PlatformButton>& buttons, const std::vector<Platform>& platforms);
 
 void Platforms_Draw(AEGfxVertexList* mesh, const std::vector<Platform> &platform);
+
+void PlatformsObstacle_Draw(AEGfxVertexList* mesh, const std::vector<PlatformObstacle>& obstacles);
+
+bool CheckObstacleCollision(const Player& player, const PlatformObstacle& obstacle);
 
 void Platforms_OffsetY(std::vector<Platform>& platforms, float offsetY);

@@ -141,10 +141,35 @@ namespace util {
 		}
 		return 0;
 	}
-
+	AEGfxVertexList* CreateTriangleMesh() {
+		AEGfxMeshStart();
+		AEGfxTriAdd(
+			0.0f, 0.5f, 0xFFFFFFFF, 0.5f, 0.0f,
+			-0.5f, -0.5f, 0xFFFFFFFF, 0.0f, 1.0f,
+			0.5f, -0.5f, 0xFFFFFFFF, 1.0f, 1.0f);
+		return AEGfxMeshEnd();
+	}
+	void DrawTriangle(AEGfxVertexList* mesh, float x, float y, float width, float height, float rotation, int r, int g, int b) {
+		AEMtx33 scale, translate, transform;
+		//convert colour
+		float red = static_cast<float>(r / 255.0f);
+		float green = static_cast<float>(g / 255.0f);
+		float blue = static_cast<float>(b / 255.0f);
+		AEGfxSetRenderMode(AE_GFX_RM_COLOR);
+		AEGfxSetColorToMultiply(red, green, blue, 1.0f);
+		AEGfxSetColorToAdd(0.0f, 0.0f, 0.0f, 0.0f);
+		//transformations
+		AEMtx33RotDeg(&scale, rotation); // No rotation for now
+		AEMtx33Scale(&scale, width, height);
+		AEMtx33Trans(&translate, x, y);
+		AEMtx33Concat(&transform, &translate, &scale);
+		//draw
+		AEGfxSetTransform(transform.m);
+		AEGfxMeshDraw(mesh, AE_GFX_MDM_TRIANGLES);
+	}
 }
 
-
+/*
 // ----------------------------------------------------------------------------
 // load a float value from a text file
 // ----------------------------------------------------------------------------
@@ -167,3 +192,4 @@ int LoadIntFromFile(const char* filename)
 	file >> value;
 	return value;
 }
+*/

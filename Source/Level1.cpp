@@ -50,6 +50,7 @@ static int previousSelection = -1;
 const float LEVEL2_START_Y = sectionHeight[0];
 
 AEGfxVertexList* lv1mesh;
+AEGfxVertexList* triangleMesh;
 std::ifstream ifs;
 float ground;
 
@@ -66,6 +67,7 @@ static std::vector<Platform> level1Platforms = {
 */
 // platforms array - will be loaded from JSON
 static std::vector<Platform> level1Platforms;
+static std::vector<PlatformObstacle> level1Obstacles;
 static std::vector<Platform> level2Platforms = {
 	{  255.0f,  610.0f, 400.0f, 40.0f, true},
 	{ -350.0f,  700.0f, 300.0f, 40.0f, true },
@@ -102,12 +104,16 @@ void Level1_Load()
 {
     
 	ifs.open("Assets/Data/GameSave.json");
-	if (!ifs.is_open()) {
-		ifs.clear(); // Clear the fail bit from the first attempt
-		ifs.open("Assets/Data/Config.json");
+	if (ifs.is_open()) {
+		rapidjson::IStreamWrapper isw(ifs);
+		level1Config.ParseStream(isw);
 	}
-    rapidjson::IStreamWrapper isw(ifs);
-    level1Config.ParseStream(isw);
+	else if (!ifs.is_open()) {
+		ifs.clear(); // Clear the fail bit from the first attempt
+		ifs.open("Assets/Data/GameConfig.json");
+		rapidjson::IStreamWrapper isw(ifs);
+		level1Config.ParseStream(isw);
+	}
     std::cout << "Level1:Load" << std::endl;
 }
 
@@ -117,6 +123,9 @@ void Level1_Load()
 // ----------------------------------------------------------------------------
 void Level1_Initialize()
 {
+	//initialise meshes
+	lv1mesh = util::CreateSquareMesh();
+	triangleMesh = util::CreateTriangleMesh();
 	// initialise background
 	Background_Initialise();
 
@@ -124,7 +133,6 @@ void Level1_Initialize()
 	LevelIndicator_Initialize();
 
 	// Player Initialization
-	lv1mesh = util::CreateSquareMesh();
 	ground = -350.0f;
 	const float groundHeight = 50.0f;
 	float groundTop = ground + groundHeight * 0.5f;
@@ -176,8 +184,25 @@ void Level1_Initialize()
 		}
 	}
 
-	// initialise platforms (for drawing)
-	//Platforms_Initialize();
+	//initialise obstacles
+	const rapidjson::Value& obstacles = level1Config["level_1"]["obstacles"];
+	if (obstacles.IsArray()) {
+		for (rapidjson::SizeType i = 0; i < obstacles.Size(); i++) {
+			const rapidjson::Value& obstacle = obstacles[i];
+
+			if (obstacle.HasMember("x") && obstacle.HasMember("y") &&
+				obstacle.HasMember("width") && obstacle.HasMember("height") && obstacle.HasMember("rotation") ){
+
+				PlatformObstacle newObstacle{};
+				newObstacle.x = obstacle["x"].GetFloat();
+				newObstacle.y = obstacle["y"].GetFloat();
+				newObstacle.w = obstacle["width"].GetFloat();
+				newObstacle.h = obstacle["height"].GetFloat();
+				newObstacle.r = obstacle["rotation"].GetFloat();
+				level1Obstacles.push_back(newObstacle);
+			}
+		}
+	}
 
 	// initialise camera
 	const float halfScreenHeight = 900 * 0.5f;
@@ -241,58 +266,7 @@ void Level1_Update()
 	{
 		float playerPrevBottom = playerPrevY - lv1Player.height * 0.5f;
 		float playerCurrBottom = lv1Player.pos.y - lv1Player.height * 0.5f;
-		/*
-		for (int i = 0; i < platformCount; ++i)
-		{
-			const Platform& pf = level1Platforms[i];
-
-			float pfLeft = pf.x - pf.w * 0.5f;
-			float pfRight = pf.x + pf.w * 0.5f;
-			float pfTop = pf.y + pf.h * 0.5f;
-
-			float playerLeft = lv1Player.pos.x - lv1Player.width * 0.5f;
-			float playerRight = lv1Player.pos.x + lv1Player.width * 0.5f;
-
-			bool overlapX = (playerRight >= pfLeft) && (playerLeft <= pfRight);
-			bool landOnPlatform = (playerPrevBottom >= pfTop) && (playerCurrBottom <= pfTop);
-
-			if (overlapX && landOnPlatform)
-			{
-				lv1Player.pos.y = pfTop + lv1Player.height * 0.5f;
-				lv1Player.vel.y = 0.0f;
-				lv1Player.grounded = 1;
-
-				playerPrevY = lv1Player.pos.y;
-
-				break;
-			}
-			*/
-		/*
-		for (const Platform& pf : level1Platforms) {
-			float pfLeft = pf.x - pf.w * 0.5f;
-			float pfRight = pf.x + pf.w * 0.5f;
-			float pfTop = pf.y + pf.h * 0.5f;
-
-			float playerLeft = lv1Player.pos.x - lv1Player.width * 0.5f;
-			float playerRight = lv1Player.pos.x + lv1Player.width * 0.5f;
-
-			bool overlapX = (playerRight >= pfLeft) && (playerLeft <= pfRight);
-			bool landOnPlatform = (playerPrevBottom >= pfTop) && (playerCurrBottom <= pfTop);
-
-			if (overlapX && landOnPlatform)
-			{
-				lv1Player.pos.y = pfTop + lv1Player.height * 0.5f;
-				lv1Player.vel.y = 0.0f;
-				lv1Player.grounded = 1;
-
-				playerPrevY = lv1Player.pos.y;
-
-				break;
-			}
-
-		}
-		*/
-
+		
 		auto CheckPlatformLanding = [&](const std::vector<Platform>& platforms)->bool
 			{
 				for (const Platform& pf : platforms)
@@ -321,7 +295,6 @@ void Level1_Update()
 				}
 				return false;
 			};
-
 		if (!CheckPlatformLanding(level1Platforms))
 		{
 			CheckPlatformLanding(level2Platforms);
@@ -335,6 +308,11 @@ void Level1_Update()
 		if (!CheckPlatformLanding(level3Platforms))
 		{
 			CheckPlatformLanding(bossPlatforms);
+		}
+		if (CheckObstacleCollision(lv1Player, level1Obstacles[0])) //hit spikes
+		{
+			textScreenMessage = "You Lose"; //change when hp system implemented
+			next = GS_WINLOSE;
 		}
 	}
 
@@ -596,6 +574,7 @@ void Level1_Draw()
 	Platforms_Draw(lv1mesh, level3Platforms);
 	Platforms_Draw(lv1mesh, bossPlatforms);
 	PlatformButton_Draw(lv1mesh, level2Buttons, level2Platforms);
+	PlatformsObstacle_Draw(triangleMesh, level1Obstacles);
 
 	util::DrawSquare(lv1mesh, 0.0f, ground, 1600.0f, 50.0f, 0, 0, 0); // Draw Ground (Texture TBA?)
 	Player_Draw(lv1Player);
@@ -643,7 +622,7 @@ void Level1_Free()
 void Level1_Unload()
 {
 	AEGfxMeshFree(lv1mesh);
-	level1Platforms.clear();
+	AEGfxMeshFree(triangleMesh);
 	ifs.close();
 	std::cout << "Level1:Unload" << std::endl;
 }

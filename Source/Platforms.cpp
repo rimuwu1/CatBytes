@@ -18,6 +18,7 @@ Technology is prohibited.
 #include "GameStateManager.h"
 #include "Platforms.h"
 #include "Utils.h"
+#include "Player.h"
 
 //AEGfxVertexList* platformMesh = nullptr;
 
@@ -55,6 +56,31 @@ void PlatformButton_Draw(AEGfxVertexList* mesh, const std::vector<PlatformButton
 		else
 			util::DrawSquare(mesh, btn.x, btn.y, btn.w, btn.h, 255, 0, 0);
 	}
+}
+
+void PlatformsObstacle_Draw(AEGfxVertexList* mesh, const std::vector<PlatformObstacle>& obstacles)
+{
+	for (const PlatformObstacle& obs : obstacles)
+	{
+		//if (!obs.active) continue;  // skip inactive
+		util::DrawTriangle(mesh, obs.x, obs.y, obs.w, obs.h, obs.r); // purple
+	}
+}
+
+bool CheckObstacleCollision(const Player& player, const PlatformObstacle& obstacle)
+{
+	// Simple AABB collision detection
+	float playerLeft = player.pos.x - player.width * 0.5f;
+	float playerRight = player.pos.x + player.width * 0.5f;
+	float playerTop = player.pos.y + player.height * 0.5f;
+	float playerBottom = player.pos.y - player.height * 0.5f;
+	float obsLeft = obstacle.x - obstacle.w * 0.5f;
+	float obsRight = obstacle.x + obstacle.w * 0.5f;
+	float obsTop = obstacle.y + obstacle.h * 0.5f;
+	float obsBottom = obstacle.y - obstacle.h * 0.5f;
+	bool overlapX = (playerRight >= obsLeft) && (playerLeft <= obsRight);
+	bool overlapY = (playerTop >= obsBottom) && (playerBottom <= obsTop);
+	return overlapX && overlapY;
 }
 
 void Platforms_OffsetY(std::vector<Platform>& platforms, float offsetY)
