@@ -127,6 +127,7 @@ void Level1_Initialize()
 	lv1mesh = util::CreateSquareMesh();
 	ground = -350.0f;
 	const float groundHeight = 50.0f;
+	float groundTop = ground + groundHeight * 0.5f;
 
 	float playerX = level1Config["level_1"]["player"]["x"].GetFloat();
 	float playerY = level1Config["level_1"]["player"]["y"].GetFloat();
@@ -179,7 +180,9 @@ void Level1_Initialize()
 	//Platforms_Initialize();
 
 	// initialise camera
-	Camera_Init(globalCam, lv1Player.pos.x, lv1Player.pos.y);
+	const float halfScreenHeight = 900 * 0.5f;
+	float camera_start_y = groundTop + halfScreenHeight;
+	Camera_Init(globalCam, lv1Player.pos.x, camera_start_y);
 
 	previousSelection = -1;
 
@@ -207,6 +210,17 @@ void Level1_Update()
 	if (!BossEnemy.isAlive)
 	{
 		textScreenMessage = "You Win";
+		next = GS_WINLOSE;
+	}
+
+	// fall below camera -> lose
+	const float halfScreenHeight = 900 * 0.5f;
+	float camBottomY = globalCam.y - halfScreenHeight;
+	float playerTopY = lv1Player.pos.y + lv1Player.height * 0.5f;
+
+	if (playerTopY < camBottomY - 50.0f)
+	{
+		textScreenMessage = "You Lose";
 		next = GS_WINLOSE;
 	}
 

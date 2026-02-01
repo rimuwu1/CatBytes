@@ -25,13 +25,32 @@ void Camera_Init(Camera& cam, float startX, float startY)
 	AEGfxSetCamPosition(cam.x, cam.y);
 }
 
-void Camera_FollowPlayer(Camera& cam, float playerX, float playerY, float dt)
+void Camera_FollowPlayer(Camera& cam, float /*playerX*/, float playerY, float dt)
 {
-	float followSpeed = 10.0f;
-	
 	//cam.x += (playerX - cam.x) * followSpeed * dt;
 	cam.x = 0.0f; // Fixed player cam.x
-	cam.y += (playerY - cam.y) * followSpeed * dt;
+
+	const float followSpeed = 10.0f;
+	const float verticalOffset = 50.0f;
+
+	float targetY = playerY + verticalOffset;
+
+	if (targetY > cam.y)
+	{
+		cam.y += (targetY - cam.y) * followSpeed * dt;
+	}
+
+	const float ground = -350.0f;
+	const float groundHeight = 50.0f;
+	const float halfScreenHeight = 900.0f * 0.5f;
+
+	float groundTop = ground + groundHeight * 0.5f;
+	float camera_start_y = groundTop + halfScreenHeight - groundHeight;
+
+	if (cam.y < camera_start_y)
+	{
+		cam.y = camera_start_y;
+	}
 	
 }
 
