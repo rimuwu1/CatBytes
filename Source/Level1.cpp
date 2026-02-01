@@ -67,6 +67,7 @@ static std::vector<Platform> level1Platforms = {
 */
 // platforms array - will be loaded from JSON
 static std::vector<Platform> level1Platforms;
+static std::vector<Platform> wallPlatforms;
 static std::vector<PlatformObstacle> level1Obstacles;
 static std::vector<Platform> level2Platforms = {
 	{  255.0f,  610.0f, 400.0f, 40.0f, true},
@@ -184,6 +185,28 @@ void Level1_Initialize()
 		}
 	}
 
+	// Wall Initialization from JSON
+	const rapidjson::Value& walls = level1Config["level_1"]["walls"];
+	wallPlatforms.clear();
+
+	if (walls.IsArray()) {
+		for (rapidjson::SizeType i = 0; i < walls.Size(); i++) {
+			const rapidjson::Value& wall = walls[i];
+
+			if (wall.HasMember("x") && wall.HasMember("y") &&
+				wall.HasMember("width") && wall.HasMember("height")) {
+
+				Platform newWall{};
+				newWall.x = wall["x"].GetFloat();
+				newWall.y = wall["y"].GetFloat();
+				newWall.w = wall["width"].GetFloat();
+				newWall.h = wall["height"].GetFloat();
+
+				wallPlatforms.push_back(newWall);
+			}
+		}
+	}
+
 	//initialise obstacles
 	const rapidjson::Value& obstacles = level1Config["level_1"]["obstacles"];
 	if (obstacles.IsArray()) {
@@ -262,6 +285,7 @@ void Level1_Update()
 		playerPrevY = lv1Player.pos.y;
 	}
 
+	// Player collision
 	if (lv1Player.vel.y <= 0.0f)
 	{
 		float playerPrevBottom = playerPrevY - lv1Player.height * 0.5f;
@@ -295,24 +319,54 @@ void Level1_Update()
 				}
 				return false;
 			};
-		if (!CheckPlatformLanding(level1Platforms))
-		{
-			CheckPlatformLanding(level2Platforms);
-		}
-		
-		if (!CheckPlatformLanding(level2Platforms))
-		{
-			CheckPlatformLanding(level3Platforms);
-		}
 
-		if (!CheckPlatformLanding(level3Platforms))
+		if (!CheckPlatformLanding(level1Platforms) &&
+			!CheckPlatformLanding(level2Platforms) &&
+			!CheckPlatformLanding(level3Platforms))
 		{
 			CheckPlatformLanding(bossPlatforms);
 		}
+
 		if (CheckObstacleCollision(lv1Player, level1Obstacles[0])) //hit spikes
 		{
 			textScreenMessage = "You Lose"; //change when hp system implemented
 			next = GS_WINLOSE;
+		}
+	}
+
+	// Wall collision
+	for (const Platform& w : wallPlatforms)
+	{
+		if (!w.active) continue;
+
+		float wLeft = w.x - w.w * 0.5f;
+		float wRight = w.x + w.w * 0.5f;
+		float wBottom = w.y - w.h * 0.5f;
+		float wTop = w.y + w.h * 0.5f;
+
+		float playerLeft = lv1Player.pos.x - lv1Player.width * 0.5f;
+		float playerRight = lv1Player.pos.x + lv1Player.width * 0.5f;
+		float playerBottom = lv1Player.pos.y - lv1Player.height * 0.5f;
+		float playerTop = lv1Player.pos.y + lv1Player.height * 0.5f;
+
+		bool overlapX = (playerRight > wLeft) && (playerLeft < wRight);
+		bool overlapY = (playerTop > wBottom) && (playerBottom < wTop);
+
+		if (!(overlapX && overlapY))
+		{
+			continue;
+		}
+
+		float pushRight = wRight - playerLeft;
+		float pushLeft = playerRight - wLeft;
+
+		if (pushRight < pushLeft)
+		{
+			lv1Player.pos.x += pushRight;
+		}
+		else
+		{
+			lv1Player.pos.x -= pushLeft;
 		}
 	}
 
@@ -575,6 +629,7 @@ void Level1_Draw()
 	Platforms_Draw(lv1mesh, bossPlatforms);
 	PlatformButton_Draw(lv1mesh, level2Buttons, level2Platforms);
 	PlatformsObstacle_Draw(triangleMesh, level1Obstacles);
+	Platforms_Draw(lv1mesh, wallPlatforms);
 
 	util::DrawSquare(lv1mesh, 0.0f, ground, 1600.0f, 50.0f, 0, 0, 0); // Draw Ground (Texture TBA?)
 	Player_Draw(lv1Player);
