@@ -2,7 +2,9 @@
 /*!
 \file Player.h
 \author Kerwin Wong Jia Jie, kerwinjiajie.wong, 2502740
+		Tse Xuan Qi Tristin, tse.x, 2503757
 \par kerwinajijie.wong@digipen.edu
+	 tse.x@digipen.edu
 \date January, 23, 2026
 \brief This file contains the function declarations for the Player movements, physics,
 		input handling, and rendering.
@@ -23,12 +25,23 @@ Technology is prohibited.
 enum class PlayerWeapon
 {
 	NONE = 0,//No weapon equipped(basic player)
-	MELEE//Basic melee weapon
+	MELEE,//Basic melee weapon
+	GUN //gun weapon
 };
 
 struct Player
 {
 	bool facingRight; // player jpg direction (current asset faces right)
+
+		AEGfxVertexList* mesh = nullptr;// shared quad mesh
+		AEGfxTexture* texture = nullptr;//default player texture
+
+		AEGfxTexture* meleeTexture = nullptr;//melee equipped
+		AEGfxTexture* meleeAttackTexture = nullptr; //melee attack frame
+		AEGfxTexture* meleeWeaponTexture = nullptr; // separate melee weapon sprite
+
+		AEGfxTexture* gunTexture = nullptr;//gun equipped
+		AEGfxTexture* gunAttackTexture = nullptr;//gun attack frame
 
 	AEVec2 pos;
 	AEVec2 vel;
@@ -56,6 +69,14 @@ struct Player
 	float fireTimer;
 	float bulletWidth;
 	float bulletHeight;
+
+	//melee weapon animation
+	float meleeWeaponYOffset = 0.0f;//current vertical offset
+	float meleeWeaponMaxDrop = 50.0f;// how far weapon goes down
+	bool meleeHasHitThisSwing = false; //prevents multi-hit per attack
+
+	float meleeWeaponRotation = 0.0f;// current rotation angle in degrees
+	float meleeWeaponRotationSpeed = 720.0f;//degrees per second for swing
 
 };
 

@@ -1,9 +1,11 @@
 ﻿/* Start Header ************************************************************************/
 /*!
 \file Player.cpp
-\author Kerwin Wong Jia Jie, kerwinjiajie.wong, 2502740 pogbamoneysniper
+\author Kerwin Wong Jia Jie, kerwinjiajie.wong, 2502740
+		Tse Xuan Qi Tristin, tse.x, 2503757
 		Sim Hui Min, s.huimin, 2503506
-\par [kerwinajijie.wong@digipen.edu]
+\par kerwinajijie.wong@digipen.edu
+	 tse.x@digipen.edu
 	 s.huimin@digipen.edu
 \date January, 23, 2026
 \brief This file contains the function definitions for the Player movements, physics,
@@ -53,9 +55,14 @@ static float LoadMeleeDamage()
 
 static AEGfxVertexList* playerMesh = nullptr;
 static AEGfxTexture* playerTexture = nullptr;//no weapon
+
 static AEGfxTexture* playerMeleeTexture = nullptr;//melee equipped
-static AEGfxTexture* playerMeleeAttackTexture = nullptr;
+static AEGfxTexture* playerMeleeAttackTexture = nullptr;//melee attack
+
+static AEGfxTexture* playerGunTexture = nullptr;// gun equipped
+static AEGfxTexture* playerGunAttackTexture = nullptr; // gun firing
 static std::vector<PlayerBullet> playerBullets; // player gun
+
 
 void Player_Init(Player& player, float startX, float startY)
 {
@@ -87,12 +94,7 @@ void Player_Init(Player& player, float startX, float startY)
 
 	// Weapon state
 	player.weapon = PlayerWeapon::NONE;
-	player.weaponEquipped = false;
-
-	if (!playerMesh) // Check for player mesh
-	{
-		playerMesh = util::CreateSquareMesh();
-	}
+	player.weaponEquipped = true;
 
 	//melee attack state
 	player.isAttacking = false;
@@ -113,24 +115,6 @@ void Player_Init(Player& player, float startX, float startY)
 	{
 		PlayerBullet_Init(b, player);
 		b.damage = player.bulletDamage; // assign damage from JSON
-	}
-
-
-	//load player textures(shared)
-	if (!playerTexture)
-	{
-		playerTexture = AEGfxTextureLoad("Assets/Images/player.jpg");
-	}
-
-	if (!playerMeleeTexture)
-	{
-		playerMeleeTexture = AEGfxTextureLoad("Assets/Images/PlayerMelee.jpg");
-	}
-
-	if (!playerMeleeAttackTexture)
-	{
-		playerMeleeAttackTexture =
-			AEGfxTextureLoad("Assets/Images/PlayerMeleeAttack.jpg");
 	}
 
 }
@@ -173,8 +157,9 @@ void Player_Update(Player& player, float dt)
 	if (player.fireTimer > 0.0f)
 		player.fireTimer -= dt;
 
+	//changed tomake it GUN
 	// only fire if the player has the weapon equipped
-	if (player.weaponEquipped && player.weapon == PlayerWeapon::MELEE)
+	if (player.weaponEquipped && player.weapon == PlayerWeapon::GUN)
 	{
 		if (AEInputCheckTriggered(AEVK_LBUTTON) && player.fireTimer <= 0.0f)
 		{
@@ -194,40 +179,54 @@ void Player_Update(Player& player, float dt)
 		}
 	}
 
+
 	// update player bullets
 	for (auto& b : playerBullets)
 	{
 		PlayerBullet_Update(b, dt);
 	}
+
+	// melee weapon tilt/swing
+	if (player.weapon == PlayerWeapon::MELEE && player.weaponEquipped)
+	{
+		const float maxRotation = 100.0f; //swing (number) of degrees
+		float rotationSpeed = player.meleeWeaponRotationSpeed;
+
+		if (player.isAttacking)
+		{
+			// swing from vertical to horizontal
+			player.meleeWeaponRotation += rotationSpeed * dt;
+			if (player.meleeWeaponRotation > maxRotation)
+				player.meleeWeaponRotation = maxRotation;
+		}
+		else
+		{
+			// return to vertical
+			player.meleeWeaponRotation -= rotationSpeed * dt;
+			if (player.meleeWeaponRotation < 0.0f)
+				player.meleeWeaponRotation = 0.0f;
+			player.meleeHasHitThisSwing = false;
+		}
+	}
+
 }
 
 void Player_Draw(const Player& player)
 {
-	/*util::DrawSquare(
-		playerMesh,
-		player.pos.x,
-		player.pos.y,
-		player.width,
-		player.height,
-		0, 0, 255
-	);*/
-
-	//test for drawing image instead
-
 	// flip when moving left (default image faces right)
 	float scaleX = player.facingRight ? player.width : -player.width;
 
-	util::DrawTexturedSquare(
-		playerMesh,
-		(player.isAttacking) ? playerMeleeAttackTexture :
-		(player.weapon == PlayerWeapon::MELEE ? playerMeleeTexture
-			: playerTexture),
+	/*util::DrawTexturedSquare(
+		player.mesh,
+		(player.isAttacking) ? player.meleeAttackTexture :
+		(player.weapon == PlayerWeapon::MELEE ? player.meleeTexture
+			: player.texture),
 		player.pos.x,
 		player.pos.y,
 		scaleX,
 		player.height,
 		1.0f
-	);
+	);*/
 
 	//TODO, will try to make it work another time
 	/*
@@ -245,6 +244,78 @@ void Player_Draw(const Player& player)
 	// drawing player bullets
 	for (const auto& b : playerBullets)
 		PlayerBullet_Draw(b);
+
+	AEGfxTexture* currentTexture = nullptr;
+
+	switch (player.weapon)
+	{
+	case PlayerWeapon::NONE:
+		currentTexture = player.texture;
+		break;
+	case PlayerWeapon::MELEE:
+		currentTexture = (player.isAttacking) ? player.meleeAttackTexture : player.meleeTexture;
+		break;
+	case PlayerWeapon::GUN:
+		currentTexture = (player.fireTimer > 0.0f)
+			? player.gunAttackTexture
+			: player.gunTexture;
+		break;
+	}
+
+	util::DrawTexturedSquare(
+		player.mesh,
+		currentTexture,
+		player.pos.x,
+		player.pos.y,
+		scaleX,
+		player.height,
+		1.0f
+	);
+
+
+	//melee weapon visual parameters
+
+	//size of the weapon sprite in world units
+	const float weaponWidth = 30.0f;
+	const float weaponHeight = 80.0f;
+
+	//rotation angle for the weapon
+	//flip direction when player faces left/right
+	float rotDeg = -player.meleeWeaponRotation;//can use + or - to rotate differently
+	if (!player.facingRight)
+		rotDeg = -rotDeg;
+
+
+	//Draw melee weapon sprite beside player when equipped
+		//draw melee weapon sprite (rotates around handle)
+
+	if (player.weapon == PlayerWeapon::MELEE &&
+		player.weaponEquipped &&
+		player.meleeWeaponTexture)
+	{
+		//how far the weapon sits from the player body
+		float weaponOffsetX = player.facingRight
+			? player.width * 0.5f + 10.0f
+			: -player.width * 0.5f - 10.0f;
+
+		//final weapon position in world space
+		float weaponX = player.pos.x + weaponOffsetX;
+		float weaponY = player.pos.y;
+
+		//draw weapon with rotation around its bottom-center
+		util::DrawTexturedSquarePivot(
+			player.mesh,
+			player.meleeWeaponTexture,
+			weaponX,
+			weaponY,
+			weaponWidth,
+			weaponHeight,
+			rotDeg,
+			0.0f,//pivot X: center of mesh
+			0.5f,// pivot Y(handle)
+			1.0f
+		);
+	}
 }
 
 //Apply damage to the player
@@ -310,26 +381,7 @@ void Player_Draw(const Player& player)
 // ----------------------------------------------------------------------------
 void Player_Free()
 {
-	//unload the player texture if it was loaded
-	if (playerTexture)
-	{
-		AEGfxTextureUnload(playerTexture);
-		playerTexture = nullptr; //prevent accidental reuse 
-	}
-
-	//free the player mesh if it exists
-	if (playerMesh)
-	{
-		AEGfxMeshFree(playerMesh);
-		playerMesh = nullptr;//mark as freed
-	}
-
-	if (playerMeleeTexture)
-	{
-		AEGfxTextureUnload(playerMeleeTexture);
-		playerMeleeTexture = nullptr;
-	}
-
+	//only for gameplay related memory
 	// free bullets
 	PlayerBullet_Free();
 }

@@ -2,7 +2,9 @@
 /*!
 \file Utils.cpp
 \author Joash ng, joash.ng, 2502780
+		Tse Xuan Qi Tristin, tse.x, 2503757
 \par joash.ng@digipen.edu
+	 tse.x@digipen.edu
 \date 21/01/2026
 \brief This file implements util functions to create mesh and draw mesh.
 
@@ -79,6 +81,49 @@ namespace util {
 		AEGfxSetTransform(transform.m);
 		AEGfxMeshDraw(mesh, AE_GFX_MDM_TRIANGLES);
 	}
+
+	//for image rotation
+	void DrawTexturedSquarePivot(
+		AEGfxVertexList* mesh,
+		AEGfxTexture* texture,
+		float x, float y,
+		float width, float height,
+		float rotationDeg,
+		float pivotX, float pivotY,
+		float opacity
+	)
+	{
+		AEMtx33 scale, rot, trans, pivot, transform;
+
+		AEGfxSetRenderMode(AE_GFX_RM_TEXTURE);
+		AEGfxSetColorToMultiply(1, 1, 1, 1);
+		AEGfxSetColorToAdd(0, 0, 0, 0);
+		AEGfxSetBlendMode(AE_GFX_BM_BLEND);
+		AEGfxSetTransparency(opacity);
+		AEGfxTextureSet(texture, 0, 0);
+
+		// scale mesh
+		AEMtx33Scale(&scale, width, height);
+
+		// move pivot to origin (LOCAL space!)
+		AEMtx33Trans(&pivot, -pivotX, -pivotY);
+
+		// rotation
+		AEMtx33RotDeg(&rot, rotationDeg);
+
+		// move to world position
+		AEMtx33Trans(&trans, x, y);
+
+		// final transform: T * R * P * S
+		AEMtx33Concat(&transform, &pivot, &scale);
+		AEMtx33Concat(&transform, &rot, &transform);
+		AEMtx33Concat(&transform, &trans, &transform);
+
+		AEGfxSetTransform(transform.m);
+		AEGfxMeshDraw(mesh, AE_GFX_MDM_TRIANGLES);
+	}
+
+
 
 	AEGfxVertexList* CreateCircleMesh() {
 		AEGfxMeshStart();
@@ -168,28 +213,3 @@ namespace util {
 		AEGfxMeshDraw(mesh, AE_GFX_MDM_TRIANGLES);
 	}
 }
-
-/*
-// ----------------------------------------------------------------------------
-// load a float value from a text file
-// ----------------------------------------------------------------------------
-float LoadFloatFromFile(const char* filename)
-{
-	std::ifstream file(filename);
-	float value = 0.0f;
-	file >> value;
-	return value;
-}
-
-// ----------------------------------------------------------------------------
-// load an int value from a text file
-// ----------------------------------------------------------------------------
-
-int LoadIntFromFile(const char* filename)
-{
-	std::ifstream file(filename);
-	int value = 1;
-	file >> value;
-	return value;
-}
-*/

@@ -30,6 +30,13 @@ struct Enemy
 {
     bool facesLeft; // for flipping images whille they're patrolling
 
+    AEGfxVertexList* mesh;
+
+    //per-enemy textures
+    AEGfxTexture* texture = nullptr;//current texture
+    AEGfxTexture* normalTexture = nullptr;//default texture
+    AEGfxTexture* attackTexture = nullptr;//for HardEnemy attack
+
     AEVec2 pos;//enemy position in world coordinates
     float width; //enemy width
     float height;
@@ -47,10 +54,6 @@ struct Enemy
 
     // HardEnemy only
     float damage; //damage to deal to player on collision
-
-    //per-enemy textures
-    AEGfxTexture* texture = nullptr;//normal texture
-    AEGfxTexture* attackTexture = nullptr;//for HardEnemy attack
 };
 
 // ----------------------------------------------------------------------------
@@ -76,7 +79,7 @@ void Enemy_Draw(const Enemy& enemy);
 // called when player collides with enemy
 // reduces hitPoints and sets hit stun
 // ----------------------------------------------------------------------------
-void Enemy_OnHit(Enemy& enemy);
+void Enemy_OnHit(Enemy& enemy, float damage);
 
 // ----------------------------------------------------------------------------
 // frees static resources (mesh and texture) shared across all enemies

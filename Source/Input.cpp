@@ -2,7 +2,9 @@
 /*!
 \file Input.cpp
 \author Joash ng, joash.ng, 2502780
+		Tse Xuan Qi Tristin, tse.x, 2503757
 \par joash.ng@digipen.edu
+	 tse.x@digipen.edu
 \date 21/01/2026
 \brief This file implements the functions for Input Handling, which processes user inputs.
 
@@ -73,21 +75,25 @@ void Input_Handle() {
 		}
 
 		//Weapon equip / unequip toggle
-	//press F to switch melee weapon on/off
-		if (AEInputCheckTriggered(AEVK_F))
+		//weapon switch: 1 = none, 2 = melee, 3 = gun
+		if (AEInputCheckTriggered('1'))
 		{
-			s_CurrentPlayer->weaponEquipped = !s_CurrentPlayer->weaponEquipped;
-
-			if (s_CurrentPlayer->weaponEquipped)
-			{
-				s_CurrentPlayer->weapon = PlayerWeapon::MELEE;
-			}
-			else
-			{
-				s_CurrentPlayer->weapon = PlayerWeapon::NONE;
-			}
+			s_CurrentPlayer->weapon = PlayerWeapon::NONE;
+			s_CurrentPlayer->weaponEquipped = false;
+			s_CurrentPlayer->isAttacking = false;
 		}
-
+		if (AEInputCheckTriggered('2'))
+		{
+			s_CurrentPlayer->weapon = PlayerWeapon::MELEE;
+			s_CurrentPlayer->weaponEquipped = true;
+			s_CurrentPlayer->isAttacking = false; // reset attack state
+		}
+		if (AEInputCheckTriggered('3'))
+		{
+			s_CurrentPlayer->weapon = PlayerWeapon::GUN;
+			s_CurrentPlayer->weaponEquipped = true;
+			s_CurrentPlayer->isAttacking = false; // melee attack off
+		}
 
 		// Melee attack (LMB)
 		if (s_CurrentPlayer->weapon == PlayerWeapon::MELEE &&

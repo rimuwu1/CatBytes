@@ -18,7 +18,6 @@ Technology is prohibited.
 #include "enemy.h"
 #include "Utils.h"
 #include "Player.h"
-#include "Level1.h"
 #include <fstream>
 #include <iostream>
 #include "rapidjson/document.h"
@@ -26,9 +25,6 @@ Technology is prohibited.
 #include "rapidjson/istreamwrapper.h"
 
 extern rapidjson::Document level1Config;
-
-static AEGfxVertexList* enemyMesh = nullptr;
-static AEGfxTexture* lowHpOverlayTexture = nullptr;
 
 // -----------------------------------------------------------------------------
 // initialize enemy
@@ -57,18 +53,6 @@ void Enemy_Init(Enemy& enemy, float startX, float startY)
     enemy.isAlive = 1;
     enemy.hitStunTimer = 0.0f;
     enemy.isPlayerColliding = false;
-
-    //create mesh if it doesn't exist yet
-    if (!enemyMesh)
-        enemyMesh = util::CreateSquareMesh();
-
-    //load enemy texture if not already loaded
-    if (!enemy.texture)  // per-enemy texture
-        enemy.texture = AEGfxTextureLoad("Assets/Images/easyenemy.jpg");
-
-    if (!lowHpOverlayTexture)
-        lowHpOverlayTexture = AEGfxTextureLoad("Assets/Images/LowHpOverlay.jpg");
-
 }
 
 // -----------------------------------------------------------------------------
@@ -87,6 +71,8 @@ void Enemy_Update(Enemy& enemy, float dt)
         if (enemy.hitStunTimer <= 0.0f) enemy.hitStunTimer = 0.0f;
         return; // do not move while stunned
     }
+
+    enemy.shootTimer -= dt;
 
     //time to shoot
     if (enemy.shootTimer <= 0.0f)
@@ -124,22 +110,19 @@ void Enemy_Draw(const Enemy& enemy)
         scaleX = (enemy.direction == -1) ? -enemy.width : enemy.width;
 
     util::DrawTexturedSquare(
-        enemyMesh,
-        enemy.texture,
+        enemy.mesh,
+        enemy.texture, // overlay handled by level, not enemy
         enemy.pos.x,
         enemy.pos.y,
-        scaleX,
-        enemy.height,
-        1.0f
+        enemy.width,
+        enemy.height
     );
 
-    // Low HP overlay
-    if (enemy.hitPoints == 1 || enemy.hitStunTimer > 0.0f)
     {
         float alpha = (enemy.hitPoints == 1) ? 0.2f : (enemy.hitStunTimer / 0.5f) * 0.2f;
         util::DrawTexturedSquare(
-            enemyMesh,
-            lowHpOverlayTexture,
+            enemy.mesh,
+            enemy.texture,
             enemy.pos.x,
             enemy.pos.y,
             enemy.width,
@@ -153,13 +136,13 @@ void Enemy_Draw(const Enemy& enemy)
 // called when player collides with enemy
 // reduces hitPoints and sets hit stun
 // -----------------------------------------------------------------------------
-void Enemy_OnHit(Enemy& enemy)
+void Enemy_OnHit(Enemy& enemy, float damage)
 {
     if (!enemy.isAlive || enemy.hitStunTimer > 0.0f)
         return; // already hit, or dead
 
     // decrease hit points
-    enemy.hitPoints--;
+    enemy.hitPoints -=damage;
 
     // freeze enemy for 0.5 seconds
     enemy.hitStunTimer = 0.5f;
@@ -192,18 +175,6 @@ void HardEnemy_Init(Enemy& enemy, float startX, float startY)
     enemy.isPlayerColliding = false;
     enemy.damage = level1Config["level_1"]["enemies"][1]["damage"].GetFloat();
     if (enemy.damage <= 0.0f) enemy.damage = 3.0f;//default damage for ahrd enemy
-
-    //Create mesh if needed
-    if (!enemyMesh)
-        enemyMesh = util::CreateSquareMesh();
-
-    //Load textures
-    if(!enemy.texture)
-        enemy.texture = AEGfxTextureLoad("Assets/Images/HardEnemy.jpg");
-
-    if (!enemy.attackTexture)
-        enemy.attackTexture = AEGfxTextureLoad("Assets/Images/HardEnemyAttack.jpg");
-
 }
 
 
@@ -222,7 +193,7 @@ void HardEnemy_Update(Enemy& enemy, float dt)
             enemy.hitStunTimer = 0.0f;
 
             //switch back to normal texture
-            enemy.texture = AEGfxTextureLoad("Assets/Images/HardEnemy.jpg");
+            enemy.texture = enemy.normalTexture;
         }
 
         return; // do not move while stunned
@@ -262,15 +233,4 @@ void HardEnemy_OnCollision(Enemy& enemy, Player& player)
 // -----------------------------------------------------------------------------
 void Enemy_Free()
 {
-    if (lowHpOverlayTexture)
-    {
-        AEGfxTextureUnload(lowHpOverlayTexture);
-        lowHpOverlayTexture = nullptr;
-    }
-
-    if (enemyMesh)
-    {
-        AEGfxMeshFree(enemyMesh);
-        enemyMesh = nullptr;
-    }
 }

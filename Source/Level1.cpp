@@ -3,8 +3,10 @@
 \file Level1.cpp
 \author Joash ng, joash.ng, 2502780
 		Sim Hui Min, s.huimin, 2503506
+		Tse Xuan Qi Tristin, tse.x, 2503757
 \par joash.ng@digipen.edu
 	 s.huimin@digipen.edu
+	 tse.x@digipen.edu
 \date 21/01/2026
 \brief This file implements the functions for Level 1 of the game.
 
@@ -53,6 +55,24 @@ AEGfxVertexList* lv1mesh;
 AEGfxVertexList* triangleMesh;
 std::ifstream ifs;
 float ground;
+
+static AEGfxVertexList* playerMesh = nullptr;
+static AEGfxTexture* playerTexture = nullptr;
+static AEGfxTexture* playerMeleeTexture = nullptr;
+static AEGfxTexture* playerMeleeAttackTexture = nullptr;
+static AEGfxTexture* playerMeleeWeaponTexture = nullptr;//for the weapon
+
+static AEGfxVertexList* enemyMesh = nullptr;
+static AEGfxTexture* easyEnemyTexture = nullptr;
+static AEGfxTexture* hardEnemyTexture = nullptr;
+static AEGfxTexture* hardEnemyAttackTexture = nullptr;
+
+//for enemy
+static AEGfxVertexList* overlayMesh = nullptr;
+static AEGfxTexture* lowHpOverlayTexture = nullptr;
+
+static AEGfxTexture* playerGunTexture = nullptr;
+static AEGfxTexture* playerGunAttackTexture = nullptr;
 
 /*
 // platforms array
@@ -138,13 +158,78 @@ void Level1_Initialize()
 	const float groundHeight = 50.0f;
 	float groundTop = ground + groundHeight * 0.5f;
 
+	//load shared player resources
+	if (!playerMesh)
+		playerMesh = util::CreateSquareMesh();
+
+	if (!playerTexture)
+		playerTexture = AEGfxTextureLoad("Assets/Images/player.jpg");
+
+	if (!playerMeleeTexture)
+		playerMeleeTexture = AEGfxTextureLoad("Assets/Images/PlayerMelee.jpg");
+
+	if (!playerMeleeWeaponTexture)
+	{
+		playerMeleeWeaponTexture = AEGfxTextureLoad("Assets/Images/PlayerMeleeWeapon.png");
+	}
+
+	if (!playerMeleeAttackTexture)
+		playerMeleeAttackTexture =
+		AEGfxTextureLoad("Assets/Images/PlayerMeleeAttack.jpg");
+
+	if (!playerGunTexture)
+		playerGunTexture = AEGfxTextureLoad("Assets/Images/PlayerGun.jpg");
+
+	if (!playerGunAttackTexture)
+		playerGunAttackTexture = AEGfxTextureLoad("Assets/Images/PlayerGunAttack.jpg");
+
+	// for enemy low HP overlay
+	if (!overlayMesh)
+	{
+		overlayMesh = util::CreateSquareMesh();
+	}
+	if (!lowHpOverlayTexture)
+	{
+		lowHpOverlayTexture = AEGfxTextureLoad("Assets/Images/LowHpOverlay.jpg");
+	}
+
+
 	float playerX = level1Config["level_1"]["player"]["x"].GetFloat();
 	float playerY = level1Config["level_1"]["player"]["y"].GetFloat();
 	Player_Init(lv1Player, playerX, playerY);
 	lv1Player.grounded = 1;
 
+	//aassign graphics resources to player
+	lv1Player.mesh = playerMesh;
+	lv1Player.texture = playerTexture;
+
+	lv1Player.meleeTexture = playerMeleeTexture;
+	lv1Player.meleeAttackTexture = playerMeleeAttackTexture;
+	lv1Player.meleeWeaponTexture = playerMeleeWeaponTexture;
+
+	lv1Player.gunTexture = playerGunTexture;
+	lv1Player.gunAttackTexture = playerGunAttackTexture;
+
 	// Bind the level player to the input system
 	Input_SetPlayer(&lv1Player);
+
+	if (!enemyMesh)
+		enemyMesh = util::CreateSquareMesh();
+
+	if (!easyEnemyTexture)
+		easyEnemyTexture = AEGfxTextureLoad("Assets/Images/easyenemy.jpg");
+
+	if (!hardEnemyTexture)
+		hardEnemyTexture = AEGfxTextureLoad("Assets/Images/hardenemy.jpg");
+
+	if (!hardEnemyAttackTexture)
+		hardEnemyAttackTexture = AEGfxTextureLoad("Assets/Images/hardenemy_attack.jpg");
+
+	//for enemy lowhp
+	if (!lowHpOverlayTexture)
+	{
+		lowHpOverlayTexture = AEGfxTextureLoad("Assets/Images/LowHpOverlay.jpg");
+	}
 
 	// Enemy Initialization from JSON
 	const rapidjson::Value& enemies = level1Config["level_1"]["enemies"];
@@ -153,11 +238,21 @@ void Level1_Initialize()
 		float enemyY = enemies[0]["y"].GetFloat();
 		Enemy_Init(EasyEnemy, enemyX, enemyY);
 
+		EasyEnemy.mesh = enemyMesh;
+		EasyEnemy.texture = easyEnemyTexture;
+		EasyEnemy.normalTexture = easyEnemyTexture;
+
 		float hardEnemyX = enemies[1]["x"].GetFloat(); //JSON index 1 for HardEnemy
 		float hardEnemyY = enemies[1]["y"].GetFloat();
 		HardEnemy_Init(HardEnemy, hardEnemyX, hardEnemyY);
 
+		HardEnemy.mesh = enemyMesh;
+		HardEnemy.texture = hardEnemyTexture;
+		HardEnemy.normalTexture = hardEnemyTexture;
+		HardEnemy.attackTexture = hardEnemyAttackTexture;
+
 		// boss
+		//mr pogba
 		float bossX = level1Config["level_4"]["enemies"][0]["x"].GetFloat();
 		float bossY = level1Config["level_4"]["enemies"][0]["y"].GetFloat();
 		BossEnemy_Init(BossEnemy, bossX, bossY);
@@ -396,38 +491,112 @@ void Level1_Update()
 	}
 
 
-	//player melee vs EasyEnemy hashtag evil
-	if (lv1Player.isAttacking && EasyEnemy.isAlive)
+
+	//melee weapon vs EasyEnemy
+	if (lv1Player.weapon == PlayerWeapon::MELEE &&
+		lv1Player.isAttacking &&
+		!lv1Player.meleeHasHitThisSwing &&
+		EasyEnemy.isAlive)
 	{
-		float playerHalfW = lv1Player.width * 0.5f;
-		float playerHalfH = lv1Player.height * 0.5f;
+		float weaponWidth = 30.0f;
+		float weaponHeight = 80.0f;
+
+		/*
+		float offsetX = lv1Player.width * 0.5f + 20.0f;
+		float weaponX = lv1Player.pos.x +
+			(lv1Player.facingRight ? offsetX : -offsetX);
+		float weaponY = lv1Player.pos.y + lv1Player.meleeWeaponYOffset;
+		*/
+
+		// how far the melee weapon is in front of the player
+       //+40.0f pushes the hitbox to match the weapon sprite instead of the body, this one is for testing rn
+		float offsetX = lv1Player.width * 0.5f + 40.0f;
+
+		// weapon hitbox position(this represents the melee sprite, not the player)
+		float weaponX = lv1Player.pos.x +
+			(lv1Player.facingRight ? offsetX : -offsetX);
+
+		// keep Y aligned with player for now
+		float weaponY = lv1Player.pos.y;
+
+
+		float weaponHalfW = weaponWidth * 0.5f;
+		float weaponHalfH = weaponHeight * 0.5f;
 		float enemyHalfW = EasyEnemy.width * 0.5f;
 		float enemyHalfH = EasyEnemy.height * 0.5f;
 
-		bool overlapX = fabs(lv1Player.pos.x - EasyEnemy.pos.x) < (playerHalfW + enemyHalfW);
-		bool overlapY = fabs(lv1Player.pos.y - EasyEnemy.pos.y) < (playerHalfH + enemyHalfH);
+		bool overlapX = fabs(weaponX - EasyEnemy.pos.x) < (weaponHalfW + enemyHalfW);
+		bool overlapY = fabs(weaponY - EasyEnemy.pos.y) < (weaponHalfH + enemyHalfH);
 
 		if (overlapX && overlapY)
 		{
-			Enemy_OnHit(EasyEnemy);
+			Enemy_OnHit(EasyEnemy, lv1Player.meleeDamage);
+			lv1Player.meleeHasHitThisSwing = true;
 		}
 	}
 
 
-	//Player melee vs HardEnemy
-	if (lv1Player.isAttacking && HardEnemy.isAlive)
+	//Player melee vs HardEnemy(uses weapon hitbox rn, not player body)
+	if (lv1Player.weapon == PlayerWeapon::MELEE &&
+		lv1Player.isAttacking &&
+		!lv1Player.meleeHasHitThisSwing &&
+		HardEnemy.isAlive)
 	{
-		float playerHalfW = lv1Player.width * 0.5f;
-		float playerHalfH = lv1Player.height * 0.5f;
+		float weaponWidth = 30.0f;
+		float weaponHeight = 80.0f;
+
+		lv1Player.meleeDamage = level1Config["level_1"]["player"]["melee_damage"].GetFloat();
+
+		//push hitbox forward into the weapon sprite
+		float offsetX = lv1Player.width * 0.5f + 40.0f;
+
+		float weaponX = lv1Player.pos.x +
+			(lv1Player.facingRight ? offsetX : -offsetX);
+		float weaponY = lv1Player.pos.y;
+
+		float weaponHalfW = weaponWidth * 0.5f;
+		float weaponHalfH = weaponHeight * 0.5f;
 		float enemyHalfW = HardEnemy.width * 0.5f;
 		float enemyHalfH = HardEnemy.height * 0.5f;
 
-		bool overlapX = fabs(lv1Player.pos.x - HardEnemy.pos.x) < (playerHalfW + enemyHalfW);
-		bool overlapY = fabs(lv1Player.pos.y - HardEnemy.pos.y) < (playerHalfH + enemyHalfH);
+		bool overlapX = fabs(weaponX - HardEnemy.pos.x) < (weaponHalfW + enemyHalfW);
+		bool overlapY = fabs(weaponY - HardEnemy.pos.y) < (weaponHalfH + enemyHalfH);
 
 		if (overlapX && overlapY)
 		{
-			Enemy_OnHit(HardEnemy);
+			Enemy_OnHit(HardEnemy, lv1Player.meleeDamage);
+			lv1Player.meleeHasHitThisSwing = true;
+		}
+	}
+
+	//player melee vs BossEnemy
+	if (lv1Player.weapon == PlayerWeapon::MELEE &&
+		lv1Player.isAttacking &&
+		!lv1Player.meleeHasHitThisSwing &&
+		BossEnemy.isAlive)
+	{
+		float weaponWidth = 30.0f;
+		float weaponHeight = 80.0f;
+
+		//push hitbox forward to match weapon sprite
+		float offsetX = lv1Player.width * 0.5f + 40.0f;
+
+		float weaponX = lv1Player.pos.x +
+			(lv1Player.facingRight ? offsetX : -offsetX);
+		float weaponY = lv1Player.pos.y;
+
+		float weaponHalfW = weaponWidth * 0.5f;
+		float weaponHalfH = weaponHeight * 0.5f;
+		float enemyHalfW = BossEnemy.width * 0.5f;
+		float enemyHalfH = BossEnemy.height * 0.5f;
+
+		bool overlapX = fabs(weaponX - BossEnemy.pos.x) < (weaponHalfW + enemyHalfW);
+		bool overlapY = fabs(weaponY - BossEnemy.pos.y) < (weaponHalfH + enemyHalfH);
+
+		if (overlapX && overlapY)
+		{
+			Enemy_OnHit(BossEnemy, lv1Player.meleeDamage);
+			lv1Player.meleeHasHitThisSwing = true;
 		}
 	}
 
@@ -642,7 +811,41 @@ void Level1_Draw()
 		EnemyBullet_Draw(bullet);
 	}
 
+
 	Enemy_Draw(HardEnemy);
+
+	// Low HP overlay for(both) enemies
+	auto DrawEnemyOverlay = [](const Enemy& enemy)
+		{
+			if (!enemy.isAlive) return;
+
+			float overlayAlpha = 0.0f;
+
+			//flash when hit
+			if (enemy.hitStunTimer > 0.0f)
+				overlayAlpha = enemy.hitStunTimer / 0.5f;
+			//stay on when at 1 HP
+			else if (enemy.hitPoints == 1)
+				overlayAlpha = 0.25f;
+
+			if (overlayAlpha > 0.0f)
+			{
+				util::DrawTexturedSquare(
+					overlayMesh,
+					lowHpOverlayTexture,
+					enemy.pos.x,
+					enemy.pos.y,
+					enemy.width,
+					enemy.height,
+					overlayAlpha
+				);
+			}
+		};
+
+	// Draw overlay for both enemies
+	DrawEnemyOverlay(EasyEnemy);
+	DrawEnemyOverlay(HardEnemy);
+
 	BossEnemy_Draw(BossEnemy);
 
 	// player bullets
@@ -665,7 +868,6 @@ void Level1_Draw()
 // ----------------------------------------------------------------------------
 void Level1_Free()
 {
-	Enemy_Free();//Enemy
 	EnemyBullet_Free();
 	std::cout << "Level1:Free" << std::endl;
 }
