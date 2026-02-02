@@ -90,3 +90,40 @@ void Platforms_OffsetY(std::vector<Platform>& platforms, float offsetY)
 		pf.y += offsetY;
 	}
 }
+
+bool Platform_CollisionCheck(Player& player, float& previousY, const std::vector<Platform>& platforms) {
+
+	if (player.vel.y > 0.0f) {
+
+		return false;
+
+	}
+
+	float playerPrevBottom = previousY - player.height * 0.5f;
+	float playerCurrBottom = player.pos.y - player.height * 0.5f;
+
+	for (const Platform& pf : platforms)
+	{
+		float pfLeft = pf.x - pf.w * 0.5f;
+		float pfRight = pf.x + pf.w * 0.5f;
+		float pfTop = pf.y + pf.h * 0.5f;
+
+		float playerLeft = player.pos.x - player.width * 0.5f;
+		float playerRight = player.pos.x + player.width * 0.5f;
+
+		bool overlapX = (playerRight >= pfLeft) && (playerLeft <= pfRight);
+		bool landedThisFrame = (playerPrevBottom >= pfTop) && (playerCurrBottom <= pfTop);
+
+		if (overlapX && landedThisFrame)
+		{
+			player.pos.y = pfTop + player.height * 0.5f;
+			player.vel.y = 0.0f;
+			player.grounded = 1;
+
+			previousY = player.pos.y;
+			return true;
+		}
+	}
+	return false;
+
+}

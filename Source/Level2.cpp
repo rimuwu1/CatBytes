@@ -37,7 +37,7 @@ rapidjson::Document level2Config;
 
 std::ifstream ifs2;
 
-// platforms array
+/* platforms array
 static std::vector<Platform> level2Platforms = {
 	{  255.0f,  610.0f, 400.0f, 40.0f },
 	{ -350.0f,  700.0f, 300.0f, 40.0f },
@@ -46,10 +46,10 @@ static std::vector<Platform> level2Platforms = {
 	{ -240.0f,  950.0f, 200.0f, 40.0f },
 	{  500.0f,  999.0f, 300.0f, 40.0f }
 };
-
+*/
 
 // platforms array - loaded from JSON
-//std::vector<Platform> level2Platforms;
+static std::vector<Platform> level2Platforms;
 
 // ----------------------------------------------------------------------------
 // Loads Level 2 resources and initial data
@@ -60,7 +60,7 @@ void Level2_Load()
 	ifs2.open("Assets/Data/GameSave.json");
 	if (!ifs2.is_open()) {
 		ifs2.clear(); // Clear the fail bit from the first attempt
-		ifs2.open("Assets/Data/Config.json");
+		ifs2.open("Assets/Data/GameConfig.json");
 	}
 	rapidjson::IStreamWrapper isw(ifs2);
 	level2Config.ParseStream(isw);
@@ -84,7 +84,6 @@ void Level2_Initialize()
 	//Platforms_Initialize();
 
 	// initialise platforms from JSON
-	/*
 	const rapidjson::Value& platforms = level2Config["level_2"]["platforms"];
 	level2Platforms.clear(); // Clear any existing data
 
@@ -105,10 +104,14 @@ void Level2_Initialize()
 			}
 		}
 	}
-	*/
+
+	// initialise player
+	float playerX = level2Config["level_2"]["player"]["x"].GetFloat();
+	float playerY = level2Config["level_2"]["player"]["y"].GetFloat();
+	Player_Init(lv2Player, playerX, playerY);
 
 	// initialise camera
-	Camera_Init(globalCam, lv2Player.pos.x, lv2Player.pos.y);
+	Camera_Init(globalCam, lv2Player.pos.x, globalCam.y);
 
 	// Log that initialization is complete
 	std::cout << "Level2:Initialize" << std::endl;
@@ -125,6 +128,9 @@ void Level2_Update()
 	AEGfxSetRenderMode(AE_GFX_RM_COLOR);
 
 	float dt = (float)AEFrameRateControllerGetFrameTime();
+
+	// update player
+	Player_Update(lv2Player, dt);
 
 	// toggle use debug cam
 	if (AEInputCheckTriggered(AEVK_1)) {
@@ -167,6 +173,8 @@ void Level2_Update()
 	if (globalCam.y >= endOfLevel2) {
 
 		next = GS_LEVEL3;
+
+		return;
 
 	}
 
@@ -213,5 +221,7 @@ void Level2_Free()
 void Level2_Unload()
 {
 	AEGfxMeshFree(lv2mesh);
+	level2Platforms.clear();
+	ifs2.close();
 	std::cout << "Level2:Unload" << std::endl;
 }

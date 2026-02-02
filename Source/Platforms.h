@@ -43,6 +43,8 @@ void PlatformButton_Draw(AEGfxVertexList* mesh, const std::vector<PlatformButton
 
 void Platforms_Draw(AEGfxVertexList* mesh, const std::vector<Platform> &platform);
 
+bool Platform_CollisionCheck(Player& player, float& previosY, const std::vector<Platform>& platforms);
+
 void PlatformsObstacle_Draw(AEGfxVertexList* mesh, const std::vector<PlatformObstacle>& obstacles);
 
 bool CheckObstacleCollision(const Player& player, const PlatformObstacle& obstacle);

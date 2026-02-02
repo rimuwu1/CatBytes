@@ -29,17 +29,17 @@ int previousSection = -1;
 float sectionHeight[backgroundSections]{
 
 	// level 1 height limit
-	500.0f,
+	500.0f,		// 1000.0f
 
 	// level 2 height limit
-	1000.0f,
+	1000.0f,	// 2000.0f
 
 	// level 3 height limit
-	1500.0f,
+	1500.0f,	// 3000.0f
 
 	// level 4 height limit
-	3000.0f
-
+	3000.0f		// 4000.0f
+	
 };
 
 static int currentSection = 0;

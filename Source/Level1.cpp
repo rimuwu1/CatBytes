@@ -20,6 +20,7 @@ Technology is prohibited.
 #include "FileManager.h"
 #include "GameStateManager.h"
 #include "Level1.h"
+#include "Level2.h"
 #include "Player.h"
 #include "Utils.h"
 #include "Input.h"
@@ -56,6 +57,9 @@ AEGfxVertexList* triangleMesh;
 std::ifstream ifs;
 float ground;
 
+// platforms array - will be loaded from JSON
+static std::vector<Platform> level1Platforms;
+
 static AEGfxVertexList* playerMesh = nullptr;
 static AEGfxTexture* playerTexture = nullptr;
 static AEGfxTexture* playerMeleeTexture = nullptr;
@@ -86,7 +90,6 @@ static std::vector<Platform> level1Platforms = {
 };
 */
 // platforms array - will be loaded from JSON
-static std::vector<Platform> level1Platforms;
 static std::vector<Platform> wallPlatforms;
 static std::vector<PlatformObstacle> level1Obstacles;
 static std::vector<Platform> level2Platforms = {
@@ -114,6 +117,7 @@ static std::vector<Platform> bossPlatforms = {
 	{ -600.0f,  1650.0f, 250.0f, 40.0f },
 	{    0.0f,  1800.0f, 1000.0f, 40.0f }
 };
+
 
 //static const int platformCount = sizeof(level1Platforms) / sizeof(level1Platforms[0]);
 
@@ -357,14 +361,18 @@ void Level1_Update()
 	}
 
 	// fall below camera -> lose
-	const float halfScreenHeight = 900 * 0.5f;
-	float camBottomY = globalCam.y - halfScreenHeight;
-	float playerTopY = lv1Player.pos.y + lv1Player.height * 0.5f;
+	if (!globalCam.debugCam) {
 
-	if (playerTopY < camBottomY - 50.0f)
-	{
-		textScreenMessage = "You Lose";
-		next = GS_WINLOSE;
+		const float halfScreenHeight = 900 * 0.5f;
+		float camBottomY = globalCam.y - halfScreenHeight;
+		float playerTopY = lv1Player.pos.y + lv1Player.height * 0.5f;
+
+		if (playerTopY < camBottomY - 50.0f)
+		{
+			textScreenMessage = "You Lose";
+			next = GS_WINLOSE;
+		}
+
 	}
 
 	lv1Player.grounded = 0;
@@ -380,8 +388,14 @@ void Level1_Update()
 		playerPrevY = lv1Player.pos.y;
 	}
 
-	// Player collision
+	// Player-Platform collision
 	if (lv1Player.vel.y <= 0.0f)
+	{ 
+		Platform_CollisionCheck(lv1Player, playerPrevY, level1Platforms);
+
+	}
+
+
 	{
 		float playerPrevBottom = playerPrevY - lv1Player.height * 0.5f;
 		float playerCurrBottom = lv1Player.pos.y - lv1Player.height * 0.5f;
@@ -710,7 +724,7 @@ void Level1_Update()
 	}
 
 	// toggle use debug cam
-	if (AEInputCheckTriggered(AEVK_1)) {
+	if (AEInputCheckTriggered(AEVK_0)) {
 
 		globalCam.debugCam = !globalCam.debugCam;
 
@@ -731,8 +745,9 @@ void Level1_Update()
 
 	}
 
-	// update background based on y axis
-	Background_Update(globalCam.y);
+	// update background based on player's y position/debug
+	float backgroundY = globalCam.debugCam ? globalCam.y : lv1Player.pos.y;
+	Background_Update(backgroundY);
 
 	// check for section change
 	int currentSection = Background_CurrentSection();
@@ -744,15 +759,19 @@ void Level1_Update()
 
 	}
 
-	//// exit level 1 & goes to level 2
-	//const float endOfLevel1 = sectionHeight[0];
+	// exit level 1 & goes to level 2
+	/*
+	const float level2Start = 650.0f;;
 
-	//if (globalCam.y >= endOfLevel1) {
+	if (lv1Player.pos.y >= level2Start) {
 
-	//	next = GS_LEVEL2;
+		next = GS_LEVEL2;
 
-	//}
+		return;
 
+	}
+	*/
+	
 	// update when section changes
 	LevelIndicator_Update(dt);
 

@@ -20,16 +20,26 @@ Technology is prohibited.
 #include "Player.h"
 #include "Camera.h"
 #include "Platforms.h"
-#include "enemy.h"
 #include "Utils.h"
+#include "FileManager.h"
 #include "rapidjson/document.h"
 #include "rapidjson/filereadstream.h"
 #include "rapidjson/istreamwrapper.h"
+#include "rapidjson/stringbuffer.h"
+#include <iostream>
+#include <fstream>
+#include "enemy.h"
 
 //extern rapidjson::Document level4Config;
 extern rapidjson::Document level1Config;
 
 static Player bossPlayer;
+
+AEGfxVertexList* bossPlatformMesh;
+
+rapidjson::Document bossConfig;
+
+std::ifstream ifs4;
 
 static Enemy bossEnemy;
 static AEGfxVertexList* bossMesh = nullptr;
@@ -41,6 +51,9 @@ static std::vector<Platform> bossPlatforms = {
 	{ -600.0f,  1650.0f, 250.0f, 40.0f },
 	{    0.0f,  1800.0f, 1000.0f, 40.0f }
 };
+
+// platforms array - loaded from JSON
+//std::vector<Platform> bossPlatforms;
 
 // -----------------------------------------------------------------------------
 // Initialize the boss enemy
@@ -167,6 +180,17 @@ void BossEnemy_OnCollision(Enemy& enemy, Player& player)
 // ----------------------------------------------------------------------------
 void Boss_Load()
 {
+
+	ifs4.open("Assets/Data/GameSave.json");
+	if (!ifs4.is_open()) {
+		ifs4.clear(); // Clear the fail bit from the first attempt
+		ifs4.open("Assets/Data/Config.json");
+	}
+	rapidjson::IStreamWrapper isw(ifs4);
+	bossConfig.ParseStream(isw);
+
+	// Log that loading is complete
+	std::cout << "Boss:Load" << std::endl;
 	
 }
 
@@ -176,12 +200,38 @@ void Boss_Load()
 // ----------------------------------------------------------------------------
 void Boss_Initialize()
 {
+
+	bossPlatformMesh = util::CreateSquareMesh();
 	
 	// initialise level indicator
 	LevelIndicator_Initialize();
 
+	// initialise platforms from JSON
+	const rapidjson::Value& platforms = bossConfig["level_4"]["platforms"];
+	bossPlatforms.clear(); // Clear any existing data
+
+	if (platforms.IsArray()) {
+		for (rapidjson::SizeType i = 0; i < platforms.Size(); i++) {
+			const rapidjson::Value& platform = platforms[i];
+
+			if (platform.HasMember("x") && platform.HasMember("y") &&
+				platform.HasMember("width") && platform.HasMember("height")) {
+
+				Platform newPlatform{};
+				newPlatform.x = platform["x"].GetFloat();
+				newPlatform.y = platform["y"].GetFloat();
+				newPlatform.w = platform["width"].GetFloat();
+				newPlatform.h = platform["height"].GetFloat();
+
+				bossPlatforms.push_back(newPlatform);
+			}
+		}
+	}
+
 	// initialise camera
 	Camera_Init(globalCam, bossPlayer.pos.x, bossPlayer.pos.y);
+
+	std::cout << "Boss:Initialize" << std::endl;
 
 }
 
@@ -191,6 +241,7 @@ void Boss_Initialize()
 // ----------------------------------------------------------------------------
 void Boss_Update()
 {
+	std::cout << "Boss:Update" << std::endl;
 
 	AEGfxSetRenderMode(AE_GFX_RM_COLOR);
 
@@ -233,6 +284,7 @@ void Boss_Update()
 // ----------------------------------------------------------------------------
 void Boss_Draw()
 {
+	std::cout << "Boss:Draw" << std::endl;
 
 	// Informing the system about the loop's start
 	AESysFrameStart();
@@ -243,6 +295,9 @@ void Boss_Draw()
 	// draw text for level indicator
 	LevelIndicator_Draw();
 
+	// draw platforms
+	Platforms_Draw(bossPlatformMesh, bossPlatforms);
+
 	AESysFrameEnd();
 }
 
@@ -252,7 +307,7 @@ void Boss_Draw()
 // ----------------------------------------------------------------------------
 void Boss_Free()
 {
-	
+	std::cout << "Boss:Free" << std::endl;
 }
 
 // ----------------------------------------------------------------------------
@@ -262,4 +317,9 @@ void Boss_Free()
 void Boss_Unload()
 {
 	
+	AEGfxMeshFree(bossPlatformMesh);
+	bossPlatforms.clear();
+	ifs4.close();
+	std::cout << "Boss:Unload" << std::endl;
+
 }
