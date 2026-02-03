@@ -35,6 +35,7 @@ Technology is prohibited.
 #include "Platforms.h"
 #include "EnemyBullet.h"
 #include "PlayerBullet.h"
+#include "PlayerMelee.h"
 #include <iostream>
 #include "Camera.h"
 #include "WinLose.h"
@@ -47,7 +48,6 @@ static Enemy HardEnemy;
 rapidjson::Document level1Config;
 
 static Enemy BossEnemy;  // boss - temporary for demo as everything's in this file..
-static std::vector<PlayerBullet> playerBullets; // player gun pool // player bullets
 
 static int previousSelection = -1;
 const float LEVEL2_START_Y = sectionHeight[0];
@@ -504,116 +504,9 @@ void Level1_Update()
 		btn.wasPressed = isPressed;
 	}
 
-
-
-	//melee weapon vs EasyEnemy
-	if (lv1Player.weapon == PlayerWeapon::MELEE &&
-		lv1Player.isAttacking &&
-		!lv1Player.meleeHasHitThisSwing &&
-		EasyEnemy.isAlive)
-	{
-		float weaponWidth = 30.0f;
-		float weaponHeight = 80.0f;
-
-		/*
-		float offsetX = lv1Player.width * 0.5f + 20.0f;
-		float weaponX = lv1Player.pos.x +
-			(lv1Player.facingRight ? offsetX : -offsetX);
-		float weaponY = lv1Player.pos.y + lv1Player.meleeWeaponYOffset;
-		*/
-
-		// how far the melee weapon is in front of the player
-       //+40.0f pushes the hitbox to match the weapon sprite instead of the body, this one is for testing rn
-		float offsetX = lv1Player.width * 0.5f + 40.0f;
-
-		// weapon hitbox position(this represents the melee sprite, not the player)
-		float weaponX = lv1Player.pos.x +
-			(lv1Player.facingRight ? offsetX : -offsetX);
-
-		// keep Y aligned with player for now
-		float weaponY = lv1Player.pos.y;
-
-
-		float weaponHalfW = weaponWidth * 0.5f;
-		float weaponHalfH = weaponHeight * 0.5f;
-		float enemyHalfW = EasyEnemy.width * 0.5f;
-		float enemyHalfH = EasyEnemy.height * 0.5f;
-
-		bool overlapX = fabs(weaponX - EasyEnemy.pos.x) < (weaponHalfW + enemyHalfW);
-		bool overlapY = fabs(weaponY - EasyEnemy.pos.y) < (weaponHalfH + enemyHalfH);
-
-		if (overlapX && overlapY)
-		{
-			Enemy_OnHit(EasyEnemy, lv1Player.meleeDamage);
-			lv1Player.meleeHasHitThisSwing = true;
-		}
-	}
-
-
-	//Player melee vs HardEnemy(uses weapon hitbox rn, not player body)
-	if (lv1Player.weapon == PlayerWeapon::MELEE &&
-		lv1Player.isAttacking &&
-		!lv1Player.meleeHasHitThisSwing &&
-		HardEnemy.isAlive)
-	{
-		float weaponWidth = 30.0f;
-		float weaponHeight = 80.0f;
-
-		lv1Player.meleeDamage = level1Config["level_1"]["player"]["melee_damage"].GetFloat();
-
-		//push hitbox forward into the weapon sprite
-		float offsetX = lv1Player.width * 0.5f + 40.0f;
-
-		float weaponX = lv1Player.pos.x +
-			(lv1Player.facingRight ? offsetX : -offsetX);
-		float weaponY = lv1Player.pos.y;
-
-		float weaponHalfW = weaponWidth * 0.5f;
-		float weaponHalfH = weaponHeight * 0.5f;
-		float enemyHalfW = HardEnemy.width * 0.5f;
-		float enemyHalfH = HardEnemy.height * 0.5f;
-
-		bool overlapX = fabs(weaponX - HardEnemy.pos.x) < (weaponHalfW + enemyHalfW);
-		bool overlapY = fabs(weaponY - HardEnemy.pos.y) < (weaponHalfH + enemyHalfH);
-
-		if (overlapX && overlapY)
-		{
-			Enemy_OnHit(HardEnemy, lv1Player.meleeDamage);
-			lv1Player.meleeHasHitThisSwing = true;
-		}
-	}
-
-	//player melee vs BossEnemy
-	if (lv1Player.weapon == PlayerWeapon::MELEE &&
-		lv1Player.isAttacking &&
-		!lv1Player.meleeHasHitThisSwing &&
-		BossEnemy.isAlive)
-	{
-		float weaponWidth = 30.0f;
-		float weaponHeight = 80.0f;
-
-		//push hitbox forward to match weapon sprite
-		float offsetX = lv1Player.width * 0.5f + 40.0f;
-
-		float weaponX = lv1Player.pos.x +
-			(lv1Player.facingRight ? offsetX : -offsetX);
-		float weaponY = lv1Player.pos.y;
-
-		float weaponHalfW = weaponWidth * 0.5f;
-		float weaponHalfH = weaponHeight * 0.5f;
-		float enemyHalfW = BossEnemy.width * 0.5f;
-		float enemyHalfH = BossEnemy.height * 0.5f;
-
-		bool overlapX = fabs(weaponX - BossEnemy.pos.x) < (weaponHalfW + enemyHalfW);
-		bool overlapY = fabs(weaponY - BossEnemy.pos.y) < (weaponHalfH + enemyHalfH);
-
-		if (overlapX && overlapY)
-		{
-			Enemy_OnHit(BossEnemy, lv1Player.meleeDamage);
-			lv1Player.meleeHasHitThisSwing = true;
-		}
-	}
-
+	std::vector<Enemy*> enemies = { &EasyEnemy, &HardEnemy };
+	PlayerMelee_CheckCollisions(lv1Player, enemies);
+	PlayerMelee_CheckBossCollision(lv1Player, BossEnemy);
 
 	//enemy update
 	Enemy_Update(EasyEnemy, dt);//Enemy
@@ -867,13 +760,6 @@ void Level1_Draw()
 
 	BossEnemy_Draw(BossEnemy);
 
-	// player bullets
-	for (const auto& b : playerBullets)
-	{
-		PlayerBullet_Draw(b);
-	}
-
-
 	// draw text for level indicator
 	LevelIndicator_Draw();
 
@@ -887,6 +773,7 @@ void Level1_Draw()
 // ----------------------------------------------------------------------------
 void Level1_Free()
 {
+	Player_Free();
 	EnemyBullet_Free();
 	std::cout << "Level1:Free" << std::endl;
 }
@@ -899,6 +786,29 @@ void Level1_Unload()
 {
 	AEGfxMeshFree(lv1mesh);
 	AEGfxMeshFree(triangleMesh);
+
+	if (playerMesh)
+	{
+		AEGfxMeshFree(playerMesh);
+		playerMesh = nullptr;
+	}
+
+	//player textures
+	AEGfxTextureUnload(playerTexture);
+	AEGfxTextureUnload(playerMeleeTexture);
+	AEGfxTextureUnload(playerMeleeAttackTexture);
+	AEGfxTextureUnload(playerMeleeWeaponTexture);
+	AEGfxTextureUnload(playerGunTexture);
+	AEGfxTextureUnload(playerGunAttackTexture);
+
+	playerTexture = nullptr;
+	playerMeleeTexture = nullptr;
+	playerMeleeAttackTexture = nullptr;
+	playerMeleeWeaponTexture = nullptr;
+	playerGunTexture = nullptr;
+	playerGunAttackTexture = nullptr;
+
+
 	ifs.close();
 	std::cout << "Level1:Unload" << std::endl;
 }

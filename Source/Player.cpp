@@ -34,16 +34,11 @@ Technology is prohibited.
 
 extern rapidjson::Document level1Config;
 
-//small helper to load a  float from a text file(For Player HP)
-static float LoadFloatFromFile(const char* filename)
-{
-	std::ifstream file(filename);
-	float value = 0.0f;
 
-	if (file.is_open())
-		file >> value;//reads the first number
 
-	return value;
+static float LoadPlayerHP() {
+	float hp = level1Config["level_1"]["player"]["hp"].GetFloat();
+	return (hp > 0.0f) ? hp : 20.0f; 
 }
 
 //loads melee damage from file (Player melee attack)
@@ -87,10 +82,8 @@ void Player_Init(Player& player, float startX, float startY)
 	player.height = 80.0f;
 	player.grounded = 1;
 
-	//load player hp from file, fallback to 5.0f if file fails
-	player.hp = level1Config["level_1"]["player"]["hp"].GetFloat();
-	if (player.hp <= 0.0f)
-		player.hp = 5.0f;//default hp
+	//load player hp
+	player.hp = LoadPlayerHP();
 
 	// Weapon state
 	player.weapon = PlayerWeapon::NONE;
@@ -382,6 +375,9 @@ void Player_Draw(const Player& player)
 void Player_Free()
 {
 	//only for gameplay related memory
+	
+	playerBullets.clear();
+	playerBullets.shrink_to_fit();
 	// free bullets
 	PlayerBullet_Free();
 }

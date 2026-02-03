@@ -30,6 +30,7 @@
     <ClCompile Include="..\Source\Player.cpp" />
     <ClCompile Include="..\Source\MainMenu.cpp" />
     <ClCompile Include="..\Source\PlayerBullet.cpp" />
+    <ClCompile Include="..\Source\PlayerMelee.cpp" />
     <ClCompile Include="..\Source\SplashScreen.cpp" />
     <ClCompile Include="..\Source\System.cpp" />
     <ClCompile Include="..\Source\Utils.cpp" />
@@ -55,6 +56,7 @@
     <ClInclude Include="..\Source\Platforms.h" />
     <ClInclude Include="..\Source\Player.h" />
     <ClInclude Include="..\Source\PlayerBullet.h" />
+    <ClInclude Include="..\Source\PlayerMelee.h" />
     <ClInclude Include="..\Source\SplashScreen.h" />
     <ClInclude Include="..\Source\System.h" />
     <ClInclude Include="..\Source\Utils.h" />

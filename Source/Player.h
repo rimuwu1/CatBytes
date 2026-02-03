@@ -31,44 +31,44 @@ enum class PlayerWeapon
 
 struct Player
 {
-	bool facingRight; // player jpg direction (current asset faces right)
+	bool facingRight = true; // player jpg direction (current asset faces right)
 
-		AEGfxVertexList* mesh = nullptr;// shared quad mesh
-		AEGfxTexture* texture = nullptr;//default player texture
+	AEGfxVertexList* mesh = nullptr;// shared quad mesh
+	AEGfxTexture* texture = nullptr;//default player texture
 
-		AEGfxTexture* meleeTexture = nullptr;//melee equipped
-		AEGfxTexture* meleeAttackTexture = nullptr; //melee attack frame
-		AEGfxTexture* meleeWeaponTexture = nullptr; // separate melee weapon sprite
+	AEGfxTexture* meleeTexture = nullptr;//melee equipped
+	AEGfxTexture* meleeAttackTexture = nullptr; //melee attack frame
+	AEGfxTexture* meleeWeaponTexture = nullptr; // separate melee weapon sprite
 
-		AEGfxTexture* gunTexture = nullptr;//gun equipped
-		AEGfxTexture* gunAttackTexture = nullptr;//gun attack frame
+	AEGfxTexture* gunTexture = nullptr;//gun equipped
+	AEGfxTexture* gunAttackTexture = nullptr;//gun attack frame
 
-	AEVec2 pos;
-	AEVec2 vel;
-	float width;
-	float height;
-	int grounded;
+	AEVec2 pos{ 0.0f, 0.0f };
+	AEVec2 vel{ 0.0f, 0.0f };
+	float width = 0.0f;
+	float height = 0.0f;
+	int grounded = 0;
 
-	float hp; //current player health(loaded from file)
+	float hp = 0.0f; // player health
 	float hitTextTimer = 0.0f;//got hit
 
 	//Weapon system (extendable)
-	PlayerWeapon weapon;//which weapon is equipped
-	bool weaponEquipped;//quick toggle flag
+	PlayerWeapon weapon = PlayerWeapon::NONE;//which weapon is equipped
+	bool weaponEquipped = false;//quick toggle flag
 
 	//Melee attack state
-	bool isAttacking;//true while melee swing is active
-	float attackTimer;//how long the attack lasts
-	float meleeDamage;//damage dealt to enemies
+	bool isAttacking = false;//true while melee swing is active
+	float attackTimer = 0.0f;//how long the attack lasts
+	float meleeDamage = 0.0f;//damage dealt to enemies
 	
 	// player gun
-	int maxBullets;
-	float bulletSpeed;
-	float bulletDamage;
-	float fireCooldown;
-	float fireTimer;
-	float bulletWidth;
-	float bulletHeight;
+	int maxBullets = 0;
+	float bulletSpeed = 0.0f;
+	float bulletDamage = 0.0f;
+	float fireCooldown = 0.0f;
+	float fireTimer = 0.0f;
+	float bulletWidth = 0.0f;
+	float bulletHeight = 0.0f;
 
 	//melee weapon animation
 	float meleeWeaponYOffset = 0.0f;//current vertical offset

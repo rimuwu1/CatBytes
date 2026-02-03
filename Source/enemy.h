@@ -28,32 +28,32 @@ struct Player;
 // ----------------------------------------------------------------------------
 struct Enemy
 {
-    bool facesLeft; // for flipping images whille they're patrolling
+    bool facesLeft = false; // for flipping images whille they're patrolling
 
-    AEGfxVertexList* mesh;
+    AEGfxVertexList* mesh = nullptr;
 
     //per-enemy textures
     AEGfxTexture* texture = nullptr;//current texture
     AEGfxTexture* normalTexture = nullptr;//default texture
     AEGfxTexture* attackTexture = nullptr;//for HardEnemy attack
 
-    AEVec2 pos;//enemy position in world coordinates
-    float width; //enemy width
-    float height;
+    AEVec2 pos = { 0.0f, 0.0f };//enemy position in world coordinates
+    float width = 0.0f; //enemy width
+    float height = 0.0f;
 
-    float moveSpeed;//Movement speed in units per second
-    int direction;//current movement direction: -1 = left, 1 = right
-    int isAlive;//status: 1=alive, 0=dead
+    float moveSpeed = 0.0f;//Movement speed in units per second
+    int direction = 1;//current movement direction: -1 = left, 1 = right
+    int isAlive = 0;//status: 1=alive, 0=dead
 
-    float hitPoints; // number of hits left
-    float hitStunTimer; // time remaining frozen after hit
-    bool isPlayerColliding; // prevents multiple hits per frame
+    float hitPoints = 0.0f; // number of hits left
+    float hitStunTimer = 0.0f; // time remaining frozen after hit
+    bool isPlayerColliding = false; // prevents multiple hits per frame
 
-    float shootCooldown;//time between shots
-    float shootTimer; //countdown until next shot
+    float shootCooldown = 0.0f;//time between shots
+    float shootTimer = 0.0f; //countdown until next shot
 
     // HardEnemy only
-    float damage; //damage to deal to player on collision
+    float damage = 0.0f; //damage to deal to player on collision
 };
 
 // ----------------------------------------------------------------------------

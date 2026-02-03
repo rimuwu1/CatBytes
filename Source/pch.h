@@ -22,11 +22,10 @@ Technology is prohibited.
 #ifndef PCH_H
 #define PCH_H
 
-
-#include "GameStateList.h"
-#include "AEEngine.h"
-#include <crtdbg.h> // To check for memory leaks
+#define NOMINMAX//for windows macro pollution(since some min/max are defined as macros)
 #include <iostream>
 #include <fstream>
+#include "AEEngine.h"
+#include "GameStateList.h"
 
 #endif //PCH_H
