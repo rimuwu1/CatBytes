@@ -164,7 +164,7 @@ void Level1_Initialize()
 
 	//load shared player resources
 	if (!playerMesh)
-		playerMesh = util::CreateSquareMesh();
+		playerMesh = lv1mesh;
 
 	if (!playerTexture)
 		playerTexture = AEGfxTextureLoad("Assets/Images/player.jpg");
@@ -218,7 +218,7 @@ void Level1_Initialize()
 	Input_SetPlayer(&lv1Player);
 
 	if (!enemyMesh)
-		enemyMesh = util::CreateSquareMesh();
+		enemyMesh = lv1mesh;
 
 	if (!easyEnemyTexture)
 		easyEnemyTexture = AEGfxTextureLoad("Assets/Images/easyenemy.jpg");
@@ -786,12 +786,6 @@ void Level1_Unload()
 {
 	AEGfxMeshFree(lv1mesh);
 	AEGfxMeshFree(triangleMesh);
-
-	if (playerMesh)
-	{
-		AEGfxMeshFree(playerMesh);
-		playerMesh = nullptr;
-	}
 
 	//player textures
 	AEGfxTextureUnload(playerTexture);
