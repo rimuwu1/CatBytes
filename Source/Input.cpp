@@ -20,6 +20,8 @@ Technology is prohibited.
 #include "AEEngine.h"
 #include "Utils.h"
 #include <vector>
+#include "Level1.h"
+#include "FileManager.h"
 
 static Player* s_CurrentPlayer = nullptr;
 
@@ -101,6 +103,14 @@ void Input_Handle() {
 		{
 			s_CurrentPlayer->isAttacking = true;
 			s_CurrentPlayer->attackTimer = 0.4f; //short attack window
+		}
+
+		if (AEInputCheckTriggered('L')) {
+			Level1_RequestSave(); //Debug feature for level 1!! remove when not needed
+		}
+		if (AEInputCheckTriggered('M')) {
+			GameSave::ResetSave(); //Debug feature for level 1!! remove when not needed
+			GameSave::Notify_Show(GameSave::NotifyType::RESET);
 		}
 	}
 

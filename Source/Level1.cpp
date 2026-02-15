@@ -92,6 +92,7 @@ static std::vector<Platform> level1Platforms = {
 // platforms array - will be loaded from JSON
 static std::vector<Platform> wallPlatforms;
 static std::vector<PlatformObstacle> level1Obstacles;
+static std::vector<Checkpoint> checkpoints;
 static std::vector<Platform> level2Platforms = {
 	{  255.0f,  610.0f, 400.0f, 40.0f, true},
 	{ -350.0f,  700.0f, 300.0f, 40.0f, true },
@@ -118,13 +119,17 @@ static std::vector<Platform> bossPlatforms = {
 	{    0.0f,  1800.0f, 1000.0f, 40.0f }
 };
 
-
-//static const int platformCount = sizeof(level1Platforms) / sizeof(level1Platforms[0]);
+static bool s_SaveRequested = false;
 
 // ----------------------------------------------------------------------------
 // Loads Level 1 resources and initial data
 // Reads the Level1_Counter value from a text file to determine level duration
 // ----------------------------------------------------------------------------
+
+
+
+void Level1_RequestSave() { s_SaveRequested = true; }
+
 void Level1_Load()
 {
     
@@ -306,6 +311,29 @@ void Level1_Initialize()
 		}
 	}
 
+	// checkpoint Initialization from JSON
+	const rapidjson::Value& points = level1Config["checkpoints"];
+	checkpoints.clear();
+
+	if (points.IsArray()) {
+		for (rapidjson::SizeType i = 0; i < points.Size(); i++) {
+			const rapidjson::Value& point = points[i];
+
+			if (point.HasMember("x") && point.HasMember("y") &&
+				point.HasMember("width") && point.HasMember("height")) {
+
+				Checkpoint newPoint{};
+				newPoint.x = point["x"].GetFloat();
+				newPoint.y = point["y"].GetFloat();
+				newPoint.w = point["width"].GetFloat();
+				newPoint.h = point["height"].GetFloat();
+
+				checkpoints.push_back(newPoint);
+			}
+		}
+	}
+
+
 	//initialise obstacles
 	const rapidjson::Value& obstacles = level1Config["level_1"]["obstacles"];
 	if (obstacles.IsArray()) {
@@ -436,7 +464,7 @@ void Level1_Update()
 			CheckPlatformLanding(bossPlatforms);
 		}
 
-		if (CheckObstacleCollision(lv1Player, level1Obstacles[0])) //hit spikes
+		if (CheckObstacleCollision(lv1Player, level1Obstacles)) //hit spikes
 		{
 			textScreenMessage = "You Lose"; //change when hp system implemented
 			next = GS_WINLOSE;
@@ -444,39 +472,21 @@ void Level1_Update()
 	}
 
 	// Wall collision
-	for (const Platform& w : wallPlatforms)
-	{
-		if (!w.active) continue;
+	WallCollisionCheck(lv1Player,wallPlatforms);
 
-		float wLeft = w.x - w.w * 0.5f;
-		float wRight = w.x + w.w * 0.5f;
-		float wBottom = w.y - w.h * 0.5f;
-		float wTop = w.y + w.h * 0.5f;
-
-		float playerLeft = lv1Player.pos.x - lv1Player.width * 0.5f;
-		float playerRight = lv1Player.pos.x + lv1Player.width * 0.5f;
-		float playerBottom = lv1Player.pos.y - lv1Player.height * 0.5f;
-		float playerTop = lv1Player.pos.y + lv1Player.height * 0.5f;
-
-		bool overlapX = (playerRight > wLeft) && (playerLeft < wRight);
-		bool overlapY = (playerTop > wBottom) && (playerBottom < wTop);
-
-		if (!(overlapX && overlapY))
-		{
-			continue;
+	//Gamesave collision check
+	static bool checkpointSaved = false;
+	if (CheckpointCollisionCheck(lv1Player, checkpoints) || s_SaveRequested) {
+		if (!checkpointSaved || s_SaveRequested) {
+			checkpointSaved = true;
+			s_SaveRequested = false;
+			GameSave::Metadata meta{ "1.0", "", 1, 4, 0, 3 };
+			GameSave::SaveGame(meta, 1, lv1Player, { EasyEnemy, HardEnemy });
+			GameSave::Notify_Show(GameSave::NotifyType::SAVED);
 		}
-
-		float pushRight = wRight - playerLeft;
-		float pushLeft = playerRight - wLeft;
-
-		if (pushRight < pushLeft)
-		{
-			lv1Player.pos.x += pushRight;
-		}
-		else
-		{
-			lv1Player.pos.x -= pushLeft;
-		}
+	}
+	else {
+		checkpointSaved = false; // reset when player leaves the checkpoint
 	}
 
 	// level 2 button toggle
@@ -667,6 +677,8 @@ void Level1_Update()
 	
 	// update when section changes
 	LevelIndicator_Update(dt);
+	//update whenever save happens
+	GameSave::Notify_Update(dt);
 
 	std::cout << "Level1:Update" << std::endl;
 
@@ -711,6 +723,7 @@ void Level1_Draw()
 	PlatformButton_Draw(lv1mesh, level2Buttons, level2Platforms);
 	PlatformsObstacle_Draw(triangleMesh, level1Obstacles);
 	Platforms_Draw(lv1mesh, wallPlatforms);
+	CheckpointDraw(lv1mesh, checkpoints);
 
 	util::DrawSquare(lv1mesh, 0.0f, ground, 1600.0f, 50.0f, 0, 0, 0); // Draw Ground (Texture TBA?)
 	Player_Draw(lv1Player);
@@ -760,8 +773,9 @@ void Level1_Draw()
 
 	BossEnemy_Draw(BossEnemy);
 
-	// draw text for level indicator
+	// draw text for level indicator & game save
 	LevelIndicator_Draw();
+	GameSave::Notify_Draw();
 
 	std::cout << "Level1:Draw" << std::endl;
 	AESysFrameEnd();

@@ -13,5 +13,5 @@ namespace util {
 	void DrawCircle(AEGfxVertexList* mesh, float x, float y, float diameter, int r = 255, int g = 0, int b = 0);
 	int IsCircleCollided(float circle1_center_x, float circle1_center_y, float circle2_center_x, float circle2_center_y, float diameter1, float diameter2);
 	AEGfxVertexList* CreateTriangleMesh();
-	void DrawTriangle(AEGfxVertexList* mesh, float x, float y, float width, float height, float rotation = 90.0f, int r = 128, int g = 128, int b = 128);
+	void DrawTriangle(AEGfxVertexList* mesh, float x, float y, float width, float height, float rotation = 0.0f, int r = 128, int g = 128, int b = 128);
 }

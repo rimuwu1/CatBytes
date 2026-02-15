@@ -20,15 +20,6 @@ Technology is prohibited.
 #include "Utils.h"
 #include "Player.h"
 
-//AEGfxVertexList* platformMesh = nullptr;
-
-//void Platforms_Initialize() {
-
-	// initialise platform mesh
-	//platformMesh = util::CreateSquareMesh();
-
-//}
-
 void Platforms_Draw(AEGfxVertexList* mesh, const std::vector<Platform>& platform) {
 
 	// for each Platform named pf in container platform
@@ -67,20 +58,30 @@ void PlatformsObstacle_Draw(AEGfxVertexList* mesh, const std::vector<PlatformObs
 	}
 }
 
-bool CheckObstacleCollision(const Player& player, const PlatformObstacle& obstacle)
+bool CheckObstacleCollision(const Player& player, const std::vector<PlatformObstacle>& obstacle)
 {
-	// Simple AABB collision detection
-	float playerLeft = player.pos.x - player.width * 0.5f;
-	float playerRight = player.pos.x + player.width * 0.5f;
-	float playerTop = player.pos.y + player.height * 0.5f;
-	float playerBottom = player.pos.y - player.height * 0.5f;
-	float obsLeft = obstacle.x - obstacle.w * 0.5f;
-	float obsRight = obstacle.x + obstacle.w * 0.5f;
-	float obsTop = obstacle.y + obstacle.h * 0.5f;
-	float obsBottom = obstacle.y - obstacle.h * 0.5f;
-	bool overlapX = (playerRight >= obsLeft) && (playerLeft <= obsRight);
-	bool overlapY = (playerTop >= obsBottom) && (playerBottom <= obsTop);
-	return overlapX && overlapY;
+	for (int i = 0; i < obstacle.size(); i++) {
+		float playerLeft = player.pos.x - player.width * 0.5f;
+		float playerRight = player.pos.x + player.width * 0.5f;
+		float playerTop = player.pos.y + player.height * 0.5f;
+		float playerBottom = player.pos.y - player.height * 0.5f;
+
+		float obsLeft = obstacle[i].x - obstacle[i].w * 0.5f;
+		float obsRight = obstacle[i].x + obstacle[i].w * 0.5f;
+		float obsTop = obstacle[i].y + obstacle[i].h * 0.5f;
+		float obsBottom = obstacle[i].y - obstacle[i].h * 0.5f;
+
+		bool overlapX = (playerRight >= obsLeft) && (playerLeft <= obsRight);
+		bool overlapY = (playerTop >= obsBottom) && (playerBottom <= obsTop);
+
+		// If we found a collision, return true immediately
+		if (overlapX && overlapY) {
+			return true;
+		}
+	}
+
+	// If we checked EVERY obstacle and found no overlaps, return false.
+	return false;
 }
 
 void Platforms_OffsetY(std::vector<Platform>& platforms, float offsetY)
@@ -126,4 +127,71 @@ bool Platform_CollisionCheck(Player& player, float& previousY, const std::vector
 	}
 	return false;
 
+}
+void WallCollisionCheck(Player& player, const std::vector<Platform>& wallPlatforms)
+{
+	for (const Platform& w : wallPlatforms)
+	{
+		if (!w.active) continue;
+
+		float wLeft = w.x - w.w * 0.5f;
+		float wRight = w.x + w.w * 0.5f;
+		float wBottom = w.y - w.h * 0.5f;
+		float wTop = w.y + w.h * 0.5f;
+
+		float playerLeft = player.pos.x - player.width * 0.5f;
+		float playerRight = player.pos.x + player.width * 0.5f;
+		float playerBottom = player.pos.y - player.height * 0.5f;
+		float playerTop = player.pos.y + player.height * 0.5f;
+
+		bool overlapX = (playerRight > wLeft) && (playerLeft < wRight);
+		bool overlapY = (playerTop > wBottom) && (playerBottom < wTop);
+
+		if (!(overlapX && overlapY))
+		{
+			continue;
+		}
+
+		float pushRight = wRight - playerLeft;
+		float pushLeft = playerRight - wLeft;
+
+		if (pushRight < pushLeft)
+		{
+			player.pos.x += pushRight;
+		}
+		else
+		{
+			player.pos.x -= pushLeft;
+		}
+	}
+}
+
+void CheckpointDraw(AEGfxVertexList* mesh, const std::vector<Checkpoint>& checkpoint){
+	for (auto& point : checkpoint) {
+		util::DrawSquare(mesh, point.x, point.y, point.w, point.h);
+	}
+}
+
+bool CheckpointCollisionCheck(const Player& player, const std::vector<Checkpoint>& checkpoint)
+{
+	for (int i = 0; i < checkpoint.size(); i++) {
+		float playerLeft = player.pos.x - player.width * 0.5f;
+		float playerRight = player.pos.x + player.width * 0.5f;
+		float playerTop = player.pos.y + player.height * 0.5f;
+		float playerBottom = player.pos.y - player.height * 0.5f;
+
+		float obsLeft = checkpoint[i].x - checkpoint[i].w * 0.5f;
+		float obsRight = checkpoint[i].x + checkpoint[i].w * 0.5f;
+		float obsTop = checkpoint[i].y + checkpoint[i].h * 0.5f;
+		float obsBottom = checkpoint[i].y - checkpoint[i].h * 0.5f;
+
+		bool overlapX = (playerRight >= obsLeft) && (playerLeft <= obsRight);
+		bool overlapY = (playerTop >= obsBottom) && (playerBottom <= obsTop);
+
+		// If we found a collision, return true immediately
+		if (overlapX && overlapY) {
+			return true;
+		}
+	}
+	return false;
 }

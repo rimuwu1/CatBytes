@@ -195,7 +195,7 @@ namespace util {
 		return AEGfxMeshEnd();
 	}
 	void DrawTriangle(AEGfxVertexList* mesh, float x, float y, float width, float height, float rotation, int r, int g, int b) {
-		AEMtx33 scale, translate, transform;
+		AEMtx33 scale, translate, transform, rotate;
 		//convert colour
 		float red = static_cast<float>(r / 255.0f);
 		float green = static_cast<float>(g / 255.0f);
@@ -204,9 +204,10 @@ namespace util {
 		AEGfxSetColorToMultiply(red, green, blue, 1.0f);
 		AEGfxSetColorToAdd(0.0f, 0.0f, 0.0f, 0.0f);
 		//transformations
-		AEMtx33RotDeg(&scale, rotation); // No rotation for now
+		AEMtx33RotDeg(&rotate, rotation);
 		AEMtx33Scale(&scale, width, height);
 		AEMtx33Trans(&translate, x, y);
+		AEMtx33Concat(&scale, &rotate, &scale);
 		AEMtx33Concat(&transform, &translate, &scale);
 		//draw
 		AEGfxSetTransform(transform.m);

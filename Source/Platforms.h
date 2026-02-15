@@ -24,10 +24,6 @@ struct Platform {
 	bool active = true;
 };
 
-// global platform mesh
-//extern AEGfxVertexList* platformMesh;
-
-//void Platforms_Initialize();
 
 struct PlatformButton {
 	float x, y, w, h;
@@ -39,6 +35,11 @@ struct PlatformObstacle {
 	float x, y, w, h, r;
 	//bool active = true; //can toggle off if bullet collision for example
 };
+
+struct Checkpoint {
+	float x, y, w, h, r;
+};
+
 void PlatformButton_Draw(AEGfxVertexList* mesh, const std::vector<PlatformButton>& buttons, const std::vector<Platform>& platforms);
 
 void Platforms_Draw(AEGfxVertexList* mesh, const std::vector<Platform> &platform);
@@ -47,6 +48,13 @@ bool Platform_CollisionCheck(Player& player, float& previosY, const std::vector<
 
 void PlatformsObstacle_Draw(AEGfxVertexList* mesh, const std::vector<PlatformObstacle>& obstacles);
 
-bool CheckObstacleCollision(const Player& player, const PlatformObstacle& obstacle);
+bool CheckObstacleCollision(const Player& player, const std::vector<PlatformObstacle>& obstacle);
 
 void Platforms_OffsetY(std::vector<Platform>& platforms, float offsetY);
+
+void WallCollisionCheck(Player& player, const std::vector<Platform>& wallPlatforms);
+
+void CheckpointDraw(AEGfxVertexList* mesh, const std::vector<Checkpoint>& checkpoint);
+
+bool CheckpointCollisionCheck(const Player& player, const std::vector<Checkpoint>& checkpoint);
+
