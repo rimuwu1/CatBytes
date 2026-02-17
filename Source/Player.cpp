@@ -30,11 +30,8 @@ Technology is prohibited.
 #include "rapidjson/filereadstream.h"
 #include "rapidjson/istreamwrapper.h"
 #include <iostream>
-#include <vector>
 
 extern rapidjson::Document level1Config;
-
-
 
 static float LoadPlayerHP() {
 	float hp = level1Config["level_1"]["player"]["hp"].GetFloat();
@@ -48,17 +45,6 @@ static float LoadMeleeDamage()
 	return (dmg > 0.0f)? dmg:5.0f; //fallback to 5 ifnone
 }
 
-static AEGfxVertexList* playerMesh = nullptr;
-static AEGfxTexture* playerTexture = nullptr;//no weapon
-
-static AEGfxTexture* playerMeleeTexture = nullptr;//melee equipped
-static AEGfxTexture* playerMeleeAttackTexture = nullptr;//melee attack
-
-static AEGfxTexture* playerGunTexture = nullptr;// gun equipped
-static AEGfxTexture* playerGunAttackTexture = nullptr; // gun firing
-static std::vector<PlayerBullet> playerBullets; // player gun
-
-
 void Player_Init(Player& player, float startX, float startY)
 {
 	player.facingRight = true; // current player asset faces right on load
@@ -66,10 +52,13 @@ void Player_Init(Player& player, float startX, float startY)
 	// player gun bullets
 	player.maxBullets = level1Config["level_1"]["player"]["bullet"]["max_count"].GetInt(); // player gun limit
 	player.fireTimer = 0.0f;
-	playerBullets.clear();
-	playerBullets.resize(player.maxBullets);
 
-	for (auto& b : playerBullets)
+	//playerBullets.clear();
+	//playerBullets.resize(player.maxBullets);
+	player.bullets.clear();
+	player.bullets.resize(player.maxBullets);
+
+	for (auto& b : player.bullets)
 	{
 		PlayerBullet_Init(b, player); // pass the player object
 	}
@@ -104,7 +93,7 @@ void Player_Init(Player& player, float startX, float startY)
 	player.bulletWidth = bulletJson["width"].GetFloat();
 	player.bulletHeight = bulletJson["height"].GetFloat();
 
-	for (auto& b : playerBullets)
+	for (auto& b : player.bullets)
 	{
 		PlayerBullet_Init(b, player);
 		b.damage = player.bulletDamage; // assign damage from JSON
@@ -156,7 +145,7 @@ void Player_Update(Player& player, float dt)
 	{
 		if (AEInputCheckTriggered(AEVK_LBUTTON) && player.fireTimer <= 0.0f)
 		{
-			for (auto& b : playerBullets)
+			for (auto& b : player.bullets)
 			{
 				if (!b.active)
 				{
@@ -174,7 +163,7 @@ void Player_Update(Player& player, float dt)
 
 
 	// update player bullets
-	for (auto& b : playerBullets)
+	for (auto& b : player.bullets)
 	{
 		PlayerBullet_Update(b, dt);
 	}
@@ -204,7 +193,7 @@ void Player_Update(Player& player, float dt)
 
 }
 
-void Player_Draw(const Player& player)
+void Player_Draw(AEGfxVertexList* mesh, const Player& player)
 {
 	// flip when moving left (default image faces right)
 	float scaleX = player.facingRight ? player.width : -player.width;
@@ -235,7 +224,7 @@ void Player_Draw(const Player& player)
 	*/
 
 	// drawing player bullets
-	for (const auto& b : playerBullets)
+	for (const auto& b : player.bullets)
 		PlayerBullet_Draw(b);
 
 	AEGfxTexture* currentTexture = nullptr;
@@ -254,9 +243,9 @@ void Player_Draw(const Player& player)
 			: player.gunTexture;
 		break;
 	}
-
+	 
 	util::DrawTexturedSquare(
-		player.mesh,
+		mesh,
 		currentTexture,
 		player.pos.x,
 		player.pos.y,
@@ -297,7 +286,7 @@ void Player_Draw(const Player& player)
 
 		//draw weapon with rotation around its bottom-center
 		util::DrawTexturedSquarePivot(
-			player.mesh,
+			mesh,
 			player.meleeWeaponTexture,
 			weaponX,
 			weaponY,
@@ -331,10 +320,10 @@ void Player_Draw(const Player& player)
 	}
 }
 
- void Player_CheckBulletCollisions(Enemy& enemy)
+ void Player_CheckBulletCollisions(Player& player, Enemy& enemy)
  {
 	 printf("CheckBulletCollisions called, enemy alive=%d, hp=%.1f\n", enemy.isAlive, enemy.hitPoints);
-	 for (auto& b : playerBullets)
+	 for (auto& b : player.bullets)
 	 {
 		 if (!b.active) continue;
 
@@ -372,12 +361,27 @@ void Player_Draw(const Player& player)
 // Releases all dynamically allocated resources used by the player
 // this includes the player's mesh and texture, which are shared static resources
 // ----------------------------------------------------------------------------
-void Player_Free()
+void Player_Free(Player& player)
 {
 	//only for gameplay related memory
-	
-	playerBullets.clear();
-	playerBullets.shrink_to_fit();
 	// free bullets
-	PlayerBullet_Free();
+	//PlayerBullet_Free();
+
+	//free bullet internal resources (if any)
+	for (auto& b : player.bullets)
+		PlayerBullet_Free(b);
+
+	//release vector heap memory
+	player.bullets.clear();
+	player.bullets.shrink_to_fit();
+
+
+	// do not unload shared textures or mesh here
+	player.mesh = nullptr;
+	player.texture = nullptr;
+	player.meleeTexture = nullptr;
+	player.meleeAttackTexture = nullptr;
+	player.meleeWeaponTexture = nullptr;
+	player.gunTexture = nullptr;
+	player.gunAttackTexture = nullptr;
 }

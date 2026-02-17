@@ -60,7 +60,7 @@ float ground;
 // platforms array - will be loaded from JSON
 static std::vector<Platform> level1Platforms;
 
-static AEGfxVertexList* playerMesh = nullptr;
+//static AEGfxVertexList* playerMesh = nullptr;
 static AEGfxTexture* playerTexture = nullptr;
 static AEGfxTexture* playerMeleeTexture = nullptr;
 static AEGfxTexture* playerMeleeAttackTexture = nullptr;
@@ -166,11 +166,7 @@ void Level1_Initialize()
 	ground = -350.0f;
 	const float groundHeight = 50.0f;
 	float groundTop = ground + groundHeight * 0.5f;
-
-	//load shared player resources
-	if (!playerMesh)
-		playerMesh = lv1mesh;
-
+	
 	if (!playerTexture)
 		playerTexture = AEGfxTextureLoad("Assets/Images/player.jpg");
 
@@ -192,15 +188,6 @@ void Level1_Initialize()
 	if (!playerGunAttackTexture)
 		playerGunAttackTexture = AEGfxTextureLoad("Assets/Images/PlayerGunAttack.jpg");
 
-	// for enemy low HP overlay
-	if (!overlayMesh)
-	{
-		overlayMesh = util::CreateSquareMesh();
-	}
-	if (!lowHpOverlayTexture)
-	{
-		lowHpOverlayTexture = AEGfxTextureLoad("Assets/Images/LowHpOverlay.jpg");
-	}
 
 
 	float playerX = level1Config["level_1"]["player"]["x"].GetFloat();
@@ -209,7 +196,7 @@ void Level1_Initialize()
 	lv1Player.grounded = 1;
 
 	//aassign graphics resources to player
-	lv1Player.mesh = playerMesh;
+	lv1Player.mesh = lv1mesh;
 	lv1Player.texture = playerTexture;
 
 	lv1Player.meleeTexture = playerMeleeTexture;
@@ -232,9 +219,13 @@ void Level1_Initialize()
 		hardEnemyTexture = AEGfxTextureLoad("Assets/Images/hardenemy.jpg");
 
 	if (!hardEnemyAttackTexture)
-		hardEnemyAttackTexture = AEGfxTextureLoad("Assets/Images/hardenemy_attack.jpg");
+		hardEnemyAttackTexture = AEGfxTextureLoad("Assets/Images/HardEnemyAttack.jpg");
 
-	//for enemy lowhp
+	// for enemy low HP overlay
+	if (!overlayMesh)
+	{
+		overlayMesh = util::CreateSquareMesh();
+	}
 	if (!lowHpOverlayTexture)
 	{
 		lowHpOverlayTexture = AEGfxTextureLoad("Assets/Images/LowHpOverlay.jpg");
@@ -247,18 +238,13 @@ void Level1_Initialize()
 		float enemyY = enemies[0]["y"].GetFloat();
 		Enemy_Init(EasyEnemy, enemyX, enemyY);
 
-		EasyEnemy.mesh = enemyMesh;
-		EasyEnemy.texture = easyEnemyTexture;
-		EasyEnemy.normalTexture = easyEnemyTexture;
+		Enemy_SetGraphics(EasyEnemy, enemyMesh, easyEnemyTexture, nullptr, lowHpOverlayTexture);
 
 		float hardEnemyX = enemies[1]["x"].GetFloat(); //JSON index 1 for HardEnemy
 		float hardEnemyY = enemies[1]["y"].GetFloat();
 		HardEnemy_Init(HardEnemy, hardEnemyX, hardEnemyY);
 
-		HardEnemy.mesh = enemyMesh;
-		HardEnemy.texture = hardEnemyTexture;
-		HardEnemy.normalTexture = hardEnemyTexture;
-		HardEnemy.attackTexture = hardEnemyAttackTexture;
+		Enemy_SetGraphics(HardEnemy, enemyMesh, hardEnemyTexture, hardEnemyAttackTexture, lowHpOverlayTexture);
 
 		// boss
 		//mr pogba
@@ -377,9 +363,9 @@ void Level1_Update()
 	float dt = (float)AEFrameRateControllerGetFrameTime();
 	Player_Update(lv1Player, dt);
 
-	Player_CheckBulletCollisions(EasyEnemy);
-	Player_CheckBulletCollisions(HardEnemy);
-	Player_CheckBulletCollisions(BossEnemy);
+	Player_CheckBulletCollisions(lv1Player, EasyEnemy);
+	Player_CheckBulletCollisions(lv1Player, HardEnemy);
+	Player_CheckBulletCollisions(lv1Player, BossEnemy);
 	
 	// boss killed -> win
 	if (!BossEnemy.isAlive)
@@ -726,9 +712,9 @@ void Level1_Draw()
 	CheckpointDraw(lv1mesh, checkpoints);
 
 	util::DrawSquare(lv1mesh, 0.0f, ground, 1600.0f, 50.0f, 0, 0, 0); // Draw Ground (Texture TBA?)
-	Player_Draw(lv1Player);
+	Player_Draw(lv1mesh, lv1Player);
 
-	Enemy_Draw(EasyEnemy);//Enemy
+	Enemy_Draw(lv1mesh, EasyEnemy);//Enemy
 	for (const auto& bullet : enemyBullets)
 	{
 		if (!bullet.active) continue;
@@ -737,7 +723,7 @@ void Level1_Draw()
 	}
 
 
-	Enemy_Draw(HardEnemy);
+	Enemy_Draw(lv1mesh, HardEnemy);
 
 	// Low HP overlay for(both) enemies
 	auto DrawEnemyOverlay = [](const Enemy& enemy)
@@ -787,8 +773,11 @@ void Level1_Draw()
 // ----------------------------------------------------------------------------
 void Level1_Free()
 {
-	Player_Free();
-	EnemyBullet_Free();
+	Player_Free(lv1Player);
+
+	PlayerBullet_FreeShared();
+	//EnemyBullet_Free();
+	enemyBullets.clear();
 	std::cout << "Level1:Free" << std::endl;
 }
 
@@ -801,13 +790,22 @@ void Level1_Unload()
 	AEGfxMeshFree(lv1mesh);
 	AEGfxMeshFree(triangleMesh);
 
-	//player textures
-	AEGfxTextureUnload(playerTexture);
-	AEGfxTextureUnload(playerMeleeTexture);
-	AEGfxTextureUnload(playerMeleeAttackTexture);
-	AEGfxTextureUnload(playerMeleeWeaponTexture);
-	AEGfxTextureUnload(playerGunTexture);
-	AEGfxTextureUnload(playerGunAttackTexture);
+	AEGfxMeshFree(overlayMesh); overlayMesh = nullptr;
+
+	PlayerBullet_FreeShared();
+
+	// Free enemies
+	Enemy_Free(EasyEnemy);
+	Enemy_Free(HardEnemy);
+	Enemy_Free(BossEnemy);
+
+	// Free player textures
+	if (playerTexture) AEGfxTextureUnload(playerTexture);
+	if (playerMeleeTexture) AEGfxTextureUnload(playerMeleeTexture);
+	if (playerMeleeAttackTexture) AEGfxTextureUnload(playerMeleeAttackTexture);
+	if (playerMeleeWeaponTexture) AEGfxTextureUnload(playerMeleeWeaponTexture);
+	if (playerGunTexture) AEGfxTextureUnload(playerGunTexture);
+	if (playerGunAttackTexture) AEGfxTextureUnload(playerGunAttackTexture);
 
 	playerTexture = nullptr;
 	playerMeleeTexture = nullptr;
@@ -816,6 +814,19 @@ void Level1_Unload()
 	playerGunTexture = nullptr;
 	playerGunAttackTexture = nullptr;
 
+	// Free enemy textures that are global/shared
+	if (easyEnemyTexture) AEGfxTextureUnload(easyEnemyTexture);
+	if (hardEnemyTexture) AEGfxTextureUnload(hardEnemyTexture);
+	if (hardEnemyAttackTexture) AEGfxTextureUnload(hardEnemyAttackTexture);
+	if (lowHpOverlayTexture) AEGfxTextureUnload(lowHpOverlayTexture);
+
+	// Null pointers
+	easyEnemyTexture = nullptr;
+	hardEnemyTexture = nullptr;
+	hardEnemyAttackTexture = nullptr;
+	lowHpOverlayTexture = nullptr;
+
+	enemyMesh = nullptr;
 
 	ifs.close();
 	std::cout << "Level1:Unload" << std::endl;

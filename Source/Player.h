@@ -17,6 +17,8 @@ Technology is prohibited.
 /* End Header **************************************************************************/
 #pragma once
 #include "AEEngine.h"
+#include "PlayerBullet.h"
+#include <vector>
 
 // ----------------------------------------------------------------------------
 // Types of weapons the player can equip
@@ -70,6 +72,8 @@ struct Player
 	float bulletWidth = 0.0f;
 	float bulletHeight = 0.0f;
 
+	std::vector<PlayerBullet> bullets; // player gun
+
 	//melee weapon animation
 	float meleeWeaponYOffset = 0.0f;//current vertical offset
 	float meleeWeaponMaxDrop = 50.0f;// how far weapon goes down
@@ -84,7 +88,7 @@ struct Enemy; // forward declaration
 
 void Player_Init(Player& player, float startX, float startY);
 void Player_Update(Player& player, float dt);
-void Player_Draw(const Player& player);
-void Player_Free();
+void Player_Draw(AEGfxVertexList* mesh, const Player& player);
+void Player_Free(Player& player);
 void Player_ApplyDamage(Player& player, float damage);
-void Player_CheckBulletCollisions(Enemy& enemy);
+void Player_CheckBulletCollisions(Player& player, Enemy& enemy);

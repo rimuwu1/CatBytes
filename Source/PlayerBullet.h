@@ -15,7 +15,8 @@ Technology is prohibited.
 
 #pragma once
 #include "AEEngine.h"
-#include "Player.h"
+
+struct Player;
 
 struct PlayerBullet {
     bool active;
@@ -29,5 +30,5 @@ struct PlayerBullet {
 void PlayerBullet_Init(PlayerBullet& bullet, const Player& player); 
 void PlayerBullet_Update(PlayerBullet& bullet, float dt);
 void PlayerBullet_Draw(const PlayerBullet& bullet);
-void PlayerBullet_Free();
-void PlayerBullet_Free();
+void PlayerBullet_Free(PlayerBullet& bullet);
+void PlayerBullet_FreeShared();

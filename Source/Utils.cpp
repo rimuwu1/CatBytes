@@ -83,15 +83,7 @@ namespace util {
 	}
 
 	//for image rotation
-	void DrawTexturedSquarePivot(
-		AEGfxVertexList* mesh,
-		AEGfxTexture* texture,
-		float x, float y,
-		float width, float height,
-		float rotationDeg,
-		float pivotX, float pivotY,
-		float opacity
-	)
+	void DrawTexturedSquarePivot(AEGfxVertexList* mesh, AEGfxTexture* texture,float x, float y, float width, float height, float rotationDeg, float pivotX, float pivotY, float opacity)
 	{
 		AEMtx33 scale, rot, trans, pivot, transform;
 

@@ -15,6 +15,7 @@ Technology is prohibited.
 
 #include "PlayerBullet.h"
 #include "Utils.h"
+#include "Player.h"
 
 // shared resources
 static AEGfxVertexList* bulletMesh = nullptr;
@@ -64,7 +65,25 @@ void PlayerBullet_Draw(const PlayerBullet& bullet)
     );
 }
 
-void PlayerBullet_Free()
+void PlayerBullet_Free(PlayerBullet&)
+{
+    /*
+    if (bulletTexture)
+    {
+        AEGfxTextureUnload(bulletTexture);
+        bulletTexture = nullptr;
+    }
+
+    if (bulletMesh)
+    {
+        AEGfxMeshFree(bulletMesh);
+        bulletMesh = nullptr;
+    }
+    */
+}
+
+//frees the static resources
+void PlayerBullet_FreeShared()
 {
     if (bulletTexture)
     {

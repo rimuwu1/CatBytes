@@ -36,6 +36,7 @@ struct Enemy
     AEGfxTexture* texture = nullptr;//current texture
     AEGfxTexture* normalTexture = nullptr;//default texture
     AEGfxTexture* attackTexture = nullptr;//for HardEnemy attack
+    AEGfxTexture* lowHpTexture = nullptr;
 
     AEVec2 pos = { 0.0f, 0.0f };//enemy position in world coordinates
     float width = 0.0f; //enemy width
@@ -56,6 +57,7 @@ struct Enemy
     float damage = 0.0f; //damage to deal to player on collision
 };
 
+
 // ----------------------------------------------------------------------------
 // initializes an enemy at a given position
 // loads movement speed from file, sets alive state, creates mesh/texture if needed
@@ -73,7 +75,9 @@ void Enemy_Update(Enemy& enemy, float dt);
 // draws the enemy on screen
 // shows low HP overlay when hit or at 1 HP
 // ----------------------------------------------------------------------------
-void Enemy_Draw(const Enemy& enemy);
+void Enemy_Draw(AEGfxVertexList* mesh, const Enemy& enemy);
+
+void Enemy_SetGraphics(Enemy& enemy, AEGfxVertexList* mesh, AEGfxTexture* normalTex, AEGfxTexture* attackTex = nullptr, AEGfxTexture* lowHpTex = nullptr);
 
 // ----------------------------------------------------------------------------
 // called when player collides with enemy
@@ -84,7 +88,7 @@ void Enemy_OnHit(Enemy& enemy, float damage);
 // ----------------------------------------------------------------------------
 // frees static resources (mesh and texture) shared across all enemies
 // ----------------------------------------------------------------------------
-void Enemy_Free();
+void Enemy_Free(Enemy& enemy);
 
 // -----------------------------------------------------------------------------
 // Initialize HardEnemy

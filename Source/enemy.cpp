@@ -98,9 +98,10 @@ void Enemy_Update(Enemy& enemy, float dt)
 // -----------------------------------------------------------------------------
 // Draw enemy on screen
 // -----------------------------------------------------------------------------
-void Enemy_Draw(const Enemy& enemy)
+void Enemy_Draw(AEGfxVertexList* mesh, const Enemy& enemy)
 {
     if (!enemy.isAlive) return;//Skip if dead
+    if (!enemy.mesh) return;
 
     // flip when moving opposite to the way the image faces
     float scaleX;
@@ -111,18 +112,26 @@ void Enemy_Draw(const Enemy& enemy)
 
     util::DrawTexturedSquare(
         enemy.mesh,
-        enemy.texture, // overlay handled by level, not enemy
+        enemy.texture,// overlay handled by level, not enemy
         enemy.pos.x,
         enemy.pos.y,
-        enemy.width,
+        scaleX, //enemy.width
         enemy.height
     );
 
+    //Low HPoverlay
+    float alpha = 0.0f;
+    if (enemy.hitPoints == 1)
+        alpha = 0.5f;//overlay opacity
+    else if (enemy.hitStunTimer > 0.0f)
+        alpha = (enemy.hitStunTimer / 0.5f) * 1.0f;
+
+    if (alpha > 0.0f)
     {
-        float alpha = (enemy.hitPoints == 1) ? 0.2f : (enemy.hitStunTimer / 0.5f) * 0.2f;
+        if (!enemy.lowHpTexture || !enemy.mesh) return;
         util::DrawTexturedSquare(
             enemy.mesh,
-            enemy.texture,
+            enemy.lowHpTexture,
             enemy.pos.x,
             enemy.pos.y,
             enemy.width,
@@ -152,7 +161,16 @@ void Enemy_OnHit(Enemy& enemy, float damage)
         enemy.isAlive = 0;
 }
 
+void Enemy_SetGraphics(Enemy& enemy, AEGfxVertexList* mesh, AEGfxTexture* normalTex, AEGfxTexture* attackTex, AEGfxTexture* lowHpTex)
+{
+    enemy.mesh = mesh;
 
+    enemy.texture = normalTex;
+    enemy.normalTexture = normalTex;
+
+    enemy.attackTexture = attackTex;
+    enemy.lowHpTexture = lowHpTex;
+}
 
 void HardEnemy_Init(Enemy& enemy, float startX, float startY)
 {
@@ -215,8 +233,11 @@ void HardEnemy_Update(Enemy& enemy, float dt)
 
 void HardEnemy_OnCollision(Enemy& enemy, Player& player)
 {
-    // prevent repeated hits every frame
-    if (!enemy.isAlive||enemy.hitStunTimer > 0.0f)
+    if (!enemy.isAlive)
+        return;
+
+    // prevent repeated hits while already attacking
+    if (enemy.texture == enemy.attackTexture)
         return;
 
     // apply damage
@@ -231,6 +252,21 @@ void HardEnemy_OnCollision(Enemy& enemy, Player& player)
 // -----------------------------------------------------------------------------
 // Free static resources (mesh and texture)
 // -----------------------------------------------------------------------------
-void Enemy_Free()
-{
+void Enemy_Free(Enemy& enemy)
+{    
+    //only free textures if they are unique(not shared)
+    if (enemy.texture && enemy.texture != enemy.normalTexture &&
+        enemy.texture != enemy.attackTexture && enemy.texture != enemy.lowHpTexture)
+    {
+        AEGfxTextureUnload(enemy.texture);
+    }
+
+    //do not unload shared textures, Only null out pointers
+    enemy.texture = nullptr;
+    enemy.normalTexture = nullptr;
+    enemy.attackTexture = nullptr;
+    enemy.lowHpTexture = nullptr;
+
+    //do not free shared mesh
+    // enemy.mesh = nullptr;  //keep mesh pointer intact if reused
 }
