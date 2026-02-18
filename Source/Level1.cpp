@@ -4,9 +4,11 @@
 \author Joash ng, joash.ng, 2502780
 		Sim Hui Min, s.huimin, 2503506
 		Tse Xuan Qi Tristin, tse.x, 2503757
+		Peh Yu Xuan, Lovette, p.yuxuanlovette, 2502079
 \par joash.ng@digipen.edu
 	 s.huimin@digipen.edu
 	 tse.x@digipen.edu
+	 p.yuxuanlovette@digipen.edu
 \date 21/01/2026
 \brief This file implements the functions for Level 1 of the game.
 
@@ -633,6 +635,7 @@ void Level1_Update()
 		Camera_Apply(globalCam);
 
 	}
+	// ^^^ MOVED TO MAINGAME.CPP; CAN BE DELETED IF NOT IN USE
 
 	// update background based on player's y position/debug
 	float backgroundY = globalCam.debugCam ? globalCam.y : lv1Player.pos.y;
@@ -648,21 +651,10 @@ void Level1_Update()
 
 	}
 
-	// exit level 1 & goes to level 2
-	/*
-	const float level2Start = 650.0f;;
-
-	if (lv1Player.pos.y >= level2Start) {
-
-		next = GS_LEVEL2;
-
-		return;
-
-	}
-	*/
-	
 	// update when section changes
 	LevelIndicator_Update(dt);
+	// ^^^ MOVED TO MAINGAME.CPP; CAN BE DELETED IF NOT IN USE
+
 	//update whenever save happens
 	GameSave::Notify_Update(dt);
 
@@ -686,6 +678,7 @@ void Level1_Update()
 		lv1Player.vel.x = 0.0f;
 		lv1Player.vel.y = 0.0f;
 	}
+	// ^^^ MOVED TO MAINGAME.CPP; CAN BE DELETED IF NOT IN USE
 	
 }
 
