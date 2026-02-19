@@ -16,7 +16,7 @@ Technology is prohibited.
 
 #include "pch.h"
 #include "enemy.h"
-#include "Utils.h"
+#include "MeshManager.h"
 #include "Player.h"
 #include <fstream>
 #include <iostream>
@@ -98,39 +98,37 @@ void Enemy_Update(Enemy& enemy, float dt)
 // -----------------------------------------------------------------------------
 // Draw enemy on screen
 // -----------------------------------------------------------------------------
-void Enemy_Draw(AEGfxVertexList* mesh, const Enemy& enemy)
+void Enemy_Draw(const Enemy& enemy)
 {
-    if (!enemy.isAlive) return;//Skip if dead
-    if (!enemy.mesh) return;
+    if (!enemy.isAlive) return;
 
-    // flip when moving opposite to the way the image faces
+    // Horizontal flip based on direction and which way the image faces
     float scaleX;
     if (enemy.facesLeft)
         scaleX = (enemy.direction == 1) ? -enemy.width : enemy.width;
     else
         scaleX = (enemy.direction == -1) ? -enemy.width : enemy.width;
 
-    util::DrawTexturedSquare(
-        enemy.mesh,
-        enemy.texture,// overlay handled by level, not enemy
-        enemy.pos.x,
-        enemy.pos.y,
-        scaleX, //enemy.width
-        enemy.height
-    );
+    // Draw enemy body (if texture exists)
+    if (enemy.texture) {
+        MeshManager::Get().DrawTexturedSquare(
+            enemy.texture,
+            enemy.pos.x,
+            enemy.pos.y,
+            scaleX,
+            enemy.height
+        );
+    }
 
-    //Low HPoverlay
+    // Low?HP overlay
     float alpha = 0.0f;
     if (enemy.hitPoints == 1)
-        alpha = 0.5f;//overlay opacity
+        alpha = 0.5f;
     else if (enemy.hitStunTimer > 0.0f)
         alpha = (enemy.hitStunTimer / 0.5f) * 1.0f;
 
-    if (alpha > 0.0f)
-    {
-        if (!enemy.lowHpTexture || !enemy.mesh) return;
-        util::DrawTexturedSquare(
-            enemy.mesh,
+    if (alpha > 0.0f && enemy.lowHpTexture) {
+        MeshManager::Get().DrawTexturedSquare(
             enemy.lowHpTexture,
             enemy.pos.x,
             enemy.pos.y,
@@ -161,10 +159,9 @@ void Enemy_OnHit(Enemy& enemy, float damage)
         enemy.isAlive = 0;
 }
 
-void Enemy_SetGraphics(Enemy& enemy, AEGfxVertexList* mesh, AEGfxTexture* normalTex, AEGfxTexture* attackTex, AEGfxTexture* lowHpTex)
+void Enemy_SetGraphics(Enemy& enemy, AEGfxTexture* normalTex, AEGfxTexture* attackTex, AEGfxTexture* lowHpTex)
 {
-    enemy.mesh = mesh;
-
+    
     enemy.texture = normalTex;
     enemy.normalTexture = normalTex;
 
@@ -253,20 +250,11 @@ void HardEnemy_OnCollision(Enemy& enemy, Player& player)
 // Free static resources (mesh and texture)
 // -----------------------------------------------------------------------------
 void Enemy_Free(Enemy& enemy)
-{    
-    //only free textures if they are unique(not shared)
-    if (enemy.texture && enemy.texture != enemy.normalTexture &&
-        enemy.texture != enemy.attackTexture && enemy.texture != enemy.lowHpTexture)
-    {
-        AEGfxTextureUnload(enemy.texture);
-    }
-
-    //do not unload shared textures, Only null out pointers
+{
+    // Textures are owned globally (e.g., in Level1_Unload).
+    // Here we just nullify pointers to avoid stale references.
     enemy.texture = nullptr;
     enemy.normalTexture = nullptr;
     enemy.attackTexture = nullptr;
     enemy.lowHpTexture = nullptr;
-
-    //do not free shared mesh
-    // enemy.mesh = nullptr;  //keep mesh pointer intact if reused
 }

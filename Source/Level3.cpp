@@ -20,7 +20,7 @@ Technology is prohibited.
 #include "Platforms.h"
 #include "Camera.h"
 #include "Player.h"
-#include "Utils.h"
+#include "MeshManager.h"
 #include "FileManager.h"
 #include "rapidjson/document.h"
 #include "rapidjson/filereadstream.h"
@@ -31,7 +31,7 @@ Technology is prohibited.
 
 static Player lv3Player;
 
-AEGfxVertexList* lv3mesh;
+//AEGfxVertexList* lv3mesh;
 
 rapidjson::Document level3Config;
 
@@ -77,7 +77,7 @@ void Level3_Load()
 void Level3_Initialize()
 {
 
-	lv3mesh = util::CreateSquareMesh();
+	//lv3mesh = util::CreateSquareMesh();
 	
 	// initialise level indicator
 	LevelIndicator_Initialize();
@@ -194,7 +194,7 @@ void Level3_Draw()
 	LevelIndicator_Draw();
 
 	// draw platforms
-	Platforms_Draw(lv3mesh, level3Platforms);
+	Platforms_Draw(level3Platforms);
 
 	AESysFrameEnd();
 }
@@ -215,7 +215,7 @@ void Level3_Free()
 // ----------------------------------------------------------------------------
 void Level3_Unload()
 {
-	AEGfxMeshFree(lv3mesh);
+	//AEGfxMeshFree(lv3mesh);
 	level3Platforms.clear();
 	ifs3.close();
 	std::cout << "Level3:Unload" << std::endl;

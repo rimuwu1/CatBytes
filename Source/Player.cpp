@@ -21,7 +21,7 @@ Technology is prohibited.
 #include "Player.h"
 #include  "enemy.h"
 #include "PlayerBullet.h"
-#include "Utils.h"
+#include "MeshManager.h"
 #include "Fonts.h"
 #include "Level1.h"
 #include <fstream>
@@ -193,7 +193,7 @@ void Player_Update(Player& player, float dt)
 
 }
 
-void Player_Draw(AEGfxVertexList* mesh, const Player& player)
+void Player_Draw(const Player& player)
 {
 	// flip when moving left (default image faces right)
 	float scaleX = player.facingRight ? player.width : -player.width;
@@ -244,8 +244,7 @@ void Player_Draw(AEGfxVertexList* mesh, const Player& player)
 		break;
 	}
 	 
-	util::DrawTexturedSquare(
-		mesh,
+	MeshManager::Get().DrawTexturedSquare(
 		currentTexture,
 		player.pos.x,
 		player.pos.y,
@@ -285,8 +284,7 @@ void Player_Draw(AEGfxVertexList* mesh, const Player& player)
 		float weaponY = player.pos.y;
 
 		//draw weapon with rotation around its bottom-center
-		util::DrawTexturedSquarePivot(
-			mesh,
+		MeshManager::Get().DrawTexturedSquarePivot(
 			player.meleeWeaponTexture,
 			weaponX,
 			weaponY,
@@ -377,7 +375,7 @@ void Player_Free(Player& player)
 
 
 	// do not unload shared textures or mesh here
-	player.mesh = nullptr;
+	
 	player.texture = nullptr;
 	player.meleeTexture = nullptr;
 	player.meleeAttackTexture = nullptr;

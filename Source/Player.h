@@ -88,7 +88,7 @@ struct Enemy; // forward declaration
 
 void Player_Init(Player& player, float startX, float startY);
 void Player_Update(Player& player, float dt);
-void Player_Draw(AEGfxVertexList* mesh, const Player& player);
+void Player_Draw(const Player& player);
 void Player_Free(Player& player);
 void Player_ApplyDamage(Player& player, float damage);
 void Player_CheckBulletCollisions(Player& player, Enemy& enemy);

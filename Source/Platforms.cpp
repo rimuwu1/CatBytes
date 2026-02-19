@@ -17,44 +17,44 @@ Technology is prohibited.
 #include "pch.h"
 #include "GameStateManager.h"
 #include "Platforms.h"
-#include "Utils.h"
+#include "MeshManager.h"
 #include "Player.h"
 
-void Platforms_Draw(AEGfxVertexList* mesh, const std::vector<Platform>& platform) {
+void Platforms_Draw(const std::vector<Platform>& platform) {
 
 	// for each Platform named pf in container platform
 	/*for (const Platform& pf : platform) {
 
-		util::DrawSquare(mesh, pf.x, pf.y, pf.w, pf.h, 255, 178, 102);
+		MeshManager::Get().DrawSquare(pf.x, pf.y, pf.w, pf.h, 255, 178, 102);
 
 	}*/
 
 	for (const Platform& pf : platform) {
 		if (!pf.active) continue;  // skip inactive
-		util::DrawSquare(mesh, pf.x, pf.y, pf.w, pf.h, 255, 178, 102);
+		MeshManager::Get().DrawSquare(pf.x, pf.y, pf.w, pf.h, 255, 178, 102);
 	}
 
 }
 
-void PlatformButton_Draw(AEGfxVertexList* mesh, const std::vector<PlatformButton>& buttons, const std::vector<Platform>& platforms)
+void PlatformButton_Draw(const std::vector<PlatformButton>& buttons, const std::vector<Platform>& platforms)
 {
 	for (int i = 0; i < (int)buttons.size(); i++)
 	{
 		const PlatformButton& btn = buttons[i];
 		// green if linked platform is active, red if not
 		if (platforms[btn.platformIndex].active)
-			util::DrawSquare(mesh, btn.x, btn.y, btn.w, btn.h, 0, 255, 0);
+			MeshManager::Get().DrawSquare(btn.x, btn.y, btn.w, btn.h, 0, 255, 0);
 		else
-			util::DrawSquare(mesh, btn.x, btn.y, btn.w, btn.h, 255, 0, 0);
+			MeshManager::Get().DrawSquare(btn.x, btn.y, btn.w, btn.h, 255, 0, 0);
 	}
 }
 
-void PlatformsObstacle_Draw(AEGfxVertexList* mesh, const std::vector<PlatformObstacle>& obstacles)
+void PlatformsObstacle_Draw(const std::vector<PlatformObstacle>& obstacles)
 {
 	for (const PlatformObstacle& obs : obstacles)
 	{
 		//if (!obs.active) continue;  // skip inactive
-		util::DrawTriangle(mesh, obs.x, obs.y, obs.w, obs.h, obs.r); // purple
+		MeshManager::Get().DrawTriangle(obs.x, obs.y, obs.w, obs.h, obs.r); // grey
 	}
 }
 
@@ -166,9 +166,9 @@ void WallCollisionCheck(Player& player, const std::vector<Platform>& wallPlatfor
 	}
 }
 
-void CheckpointDraw(AEGfxVertexList* mesh, const std::vector<Checkpoint>& checkpoint){
+void CheckpointDraw(const std::vector<Checkpoint>& checkpoint){
 	for (auto& point : checkpoint) {
-		util::DrawSquare(mesh, point.x, point.y, point.w, point.h);
+		MeshManager::Get().DrawSquare(point.x, point.y, point.w, point.h);
 	}
 }
 

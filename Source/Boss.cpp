@@ -20,7 +20,7 @@ Technology is prohibited.
 #include "Player.h"
 #include "Camera.h"
 #include "Platforms.h"
-#include "Utils.h"
+#include "MeshManager.h"
 #include "FileManager.h"
 #include "rapidjson/document.h"
 #include "rapidjson/filereadstream.h"
@@ -35,7 +35,7 @@ extern rapidjson::Document level1Config;
 
 static Player bossPlayer;
 
-AEGfxVertexList* bossPlatformMesh;
+//AEGfxVertexList* bossPlatformMesh;
 
 rapidjson::Document bossConfig;
 
@@ -84,9 +84,11 @@ void BossEnemy_Init(Enemy& enemy, float startX, float startY)
 	enemy.hitStunTimer = 0.0f;
 	enemy.isPlayerColliding = false;
 
-	// create mesh if needed
+	// create mesh if needed(dont create pls)
+	/*
 	if (!bossMesh)
 		bossMesh = util::CreateSquareMesh();
+		*/
 
 	// load boss texture if not already loaded
 	if (!enemy.texture)
@@ -135,8 +137,7 @@ void BossEnemy_Draw(const Enemy& enemy)
 	float scaleX = (enemy.direction == 1) ? -enemy.width : enemy.width;
 
 	AEGfxSetRenderMode(AE_GFX_RM_TEXTURE);
-	util::DrawTexturedSquare(
-		bossMesh,
+	MeshManager::Get().DrawTexturedSquare(
 		enemy.texture,
 		enemy.pos.x,
 		enemy.pos.y,
@@ -156,15 +157,16 @@ void BossEnemy_Free()
 		AEGfxTextureUnload(bossEnemy.texture);
 		bossEnemy.texture = nullptr;
 	}
-
+	/*
 	if (bossMesh)
 	{
 		AEGfxMeshFree(bossMesh);
 		bossMesh = nullptr;
 	}
+	*/
 }
 
-// collision damage
+// collision damage (unreferenced param player)
 void BossEnemy_OnCollision(Enemy& enemy, Player& player)
 {
 	if (!enemy.isAlive || enemy.hitStunTimer > 0.0f)
@@ -200,8 +202,7 @@ void Boss_Load()
 // ----------------------------------------------------------------------------
 void Boss_Initialize()
 {
-
-	bossPlatformMesh = util::CreateSquareMesh();
+	//bossPlatformMesh = util::CreateSquareMesh();
 	
 	// initialise level indicator
 	LevelIndicator_Initialize();
@@ -296,7 +297,7 @@ void Boss_Draw()
 	LevelIndicator_Draw();
 
 	// draw platforms
-	Platforms_Draw(bossPlatformMesh, bossPlatforms);
+	Platforms_Draw(bossPlatforms);
 
 	AESysFrameEnd();
 }
@@ -317,7 +318,7 @@ void Boss_Free()
 void Boss_Unload()
 {
 	
-	AEGfxMeshFree(bossPlatformMesh);
+	//AEGfxMeshFree(bossPlatformMesh);
 	bossPlatforms.clear();
 	ifs4.close();
 	std::cout << "Boss:Unload" << std::endl;

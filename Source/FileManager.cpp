@@ -64,7 +64,7 @@ namespace GameSave
             }
         }
 
-        rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
+        //rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
 
         // ------------------------------------------------------------------
         // 2. Update player and enemies in place on the original doc,

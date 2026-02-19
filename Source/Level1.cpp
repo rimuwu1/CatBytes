@@ -24,7 +24,7 @@ Technology is prohibited.
 #include "Level1.h"
 #include "Level2.h"
 #include "Player.h"
-#include "Utils.h"
+#include "MeshManager.h"
 #include "Input.h"
 #include "enemy.h"//Enemy
 #include "Background.h"
@@ -54,8 +54,6 @@ static Enemy BossEnemy;  // boss - temporary for demo as everything's in this fi
 static int previousSelection = -1;
 const float LEVEL2_START_Y = sectionHeight[0];
 
-AEGfxVertexList* lv1mesh;
-AEGfxVertexList* triangleMesh;
 std::ifstream ifs;
 float ground;
 
@@ -68,13 +66,12 @@ static AEGfxTexture* playerMeleeTexture = nullptr;
 static AEGfxTexture* playerMeleeAttackTexture = nullptr;
 static AEGfxTexture* playerMeleeWeaponTexture = nullptr;//for the weapon
 
-static AEGfxVertexList* enemyMesh = nullptr;
+
 static AEGfxTexture* easyEnemyTexture = nullptr;
 static AEGfxTexture* hardEnemyTexture = nullptr;
 static AEGfxTexture* hardEnemyAttackTexture = nullptr;
 
 //for enemy
-static AEGfxVertexList* overlayMesh = nullptr;
 static AEGfxTexture* lowHpOverlayTexture = nullptr;
 
 static AEGfxTexture* playerGunTexture = nullptr;
@@ -156,8 +153,8 @@ void Level1_Load()
 void Level1_Initialize()
 {
 	//initialise meshes
-	lv1mesh = util::CreateSquareMesh();
-	triangleMesh = util::CreateTriangleMesh();
+	//lv1mesh = util::CreateSquareMesh();
+	//triangleMesh = util::CreateTriangleMesh();
 	// initialise background
 	Background_Initialise();
 
@@ -198,7 +195,7 @@ void Level1_Initialize()
 	lv1Player.grounded = 1;
 
 	//aassign graphics resources to player
-	lv1Player.mesh = lv1mesh;
+	lv1Player.mesh = nullptr;
 	lv1Player.texture = playerTexture;
 
 	lv1Player.meleeTexture = playerMeleeTexture;
@@ -211,8 +208,7 @@ void Level1_Initialize()
 	// Bind the level player to the input system
 	Input_SetPlayer(&lv1Player);
 
-	if (!enemyMesh)
-		enemyMesh = lv1mesh;
+
 
 	if (!easyEnemyTexture)
 		easyEnemyTexture = AEGfxTextureLoad("Assets/Images/easyenemy.jpg");
@@ -224,10 +220,6 @@ void Level1_Initialize()
 		hardEnemyAttackTexture = AEGfxTextureLoad("Assets/Images/HardEnemyAttack.jpg");
 
 	// for enemy low HP overlay
-	if (!overlayMesh)
-	{
-		overlayMesh = util::CreateSquareMesh();
-	}
 	if (!lowHpOverlayTexture)
 	{
 		lowHpOverlayTexture = AEGfxTextureLoad("Assets/Images/LowHpOverlay.jpg");
@@ -240,13 +232,13 @@ void Level1_Initialize()
 		float enemyY = enemies[0]["y"].GetFloat();
 		Enemy_Init(EasyEnemy, enemyX, enemyY);
 
-		Enemy_SetGraphics(EasyEnemy, enemyMesh, easyEnemyTexture, nullptr, lowHpOverlayTexture);
+		Enemy_SetGraphics(EasyEnemy, easyEnemyTexture, nullptr, lowHpOverlayTexture);
 
 		float hardEnemyX = enemies[1]["x"].GetFloat(); //JSON index 1 for HardEnemy
 		float hardEnemyY = enemies[1]["y"].GetFloat();
 		HardEnemy_Init(HardEnemy, hardEnemyX, hardEnemyY);
 
-		Enemy_SetGraphics(HardEnemy, enemyMesh, hardEnemyTexture, hardEnemyAttackTexture, lowHpOverlayTexture);
+		Enemy_SetGraphics(HardEnemy, hardEnemyTexture, hardEnemyAttackTexture, lowHpOverlayTexture);
 
 		// boss
 		//mr pogba
@@ -695,19 +687,19 @@ void Level1_Draw()
 	Background_Draw();
 
 	// draw platforms
-	Platforms_Draw(lv1mesh, level1Platforms);
-	Platforms_Draw(lv1mesh, level2Platforms);
-	Platforms_Draw(lv1mesh, level3Platforms);
-	Platforms_Draw(lv1mesh, bossPlatforms);
-	PlatformButton_Draw(lv1mesh, level2Buttons, level2Platforms);
-	PlatformsObstacle_Draw(triangleMesh, level1Obstacles);
-	Platforms_Draw(lv1mesh, wallPlatforms);
-	CheckpointDraw(lv1mesh, checkpoints);
+	Platforms_Draw(level1Platforms);
+	Platforms_Draw(level2Platforms);
+	Platforms_Draw(level3Platforms);
+	Platforms_Draw(bossPlatforms);
+	PlatformButton_Draw(level2Buttons, level2Platforms);
+	PlatformsObstacle_Draw(level1Obstacles);
+	Platforms_Draw(wallPlatforms);
+	CheckpointDraw(checkpoints);
 
-	util::DrawSquare(lv1mesh, 0.0f, ground, 1600.0f, 50.0f, 0, 0, 0); // Draw Ground (Texture TBA?)
-	Player_Draw(lv1mesh, lv1Player);
+	MeshManager::Get().DrawSquare(0.0f, ground, 1600.0f, 50.0f, 0, 0, 0); // Draw Ground (Texture TBA?)
+	Player_Draw(lv1Player);
 
-	Enemy_Draw(lv1mesh, EasyEnemy);//Enemy
+	Enemy_Draw(EasyEnemy);//Enemy
 	for (const auto& bullet : enemyBullets)
 	{
 		if (!bullet.active) continue;
@@ -716,7 +708,7 @@ void Level1_Draw()
 	}
 
 
-	Enemy_Draw(lv1mesh, HardEnemy);
+	Enemy_Draw(HardEnemy);
 
 	// Low HP overlay for(both) enemies
 	auto DrawEnemyOverlay = [](const Enemy& enemy)
@@ -734,8 +726,7 @@ void Level1_Draw()
 
 			if (overlayAlpha > 0.0f)
 			{
-				util::DrawTexturedSquare(
-					overlayMesh,
+				MeshManager::Get().DrawTexturedSquare(
 					lowHpOverlayTexture,
 					enemy.pos.x,
 					enemy.pos.y,
@@ -780,11 +771,8 @@ void Level1_Free()
 // ----------------------------------------------------------------------------
 void Level1_Unload()
 {
-	AEGfxMeshFree(lv1mesh);
-	AEGfxMeshFree(triangleMesh);
 
-	AEGfxMeshFree(overlayMesh); overlayMesh = nullptr;
-
+	
 	PlayerBullet_FreeShared();
 
 	// Free enemies
@@ -818,8 +806,6 @@ void Level1_Unload()
 	hardEnemyTexture = nullptr;
 	hardEnemyAttackTexture = nullptr;
 	lowHpOverlayTexture = nullptr;
-
-	enemyMesh = nullptr;
 
 	ifs.close();
 	std::cout << "Level1:Unload" << std::endl;

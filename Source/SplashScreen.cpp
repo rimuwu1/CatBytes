@@ -15,19 +15,18 @@ Technology is prohibited.
 
 #include "pch.h"
 #include "GameStateManager.h"
-#include "Utils.h"
+#include "MeshManager.h"
 #include "Level1.h"	
 #include <cmath>
 #include "Fonts.h"
 
-#define CYCLE_DURATION 4.0f
-#define PHASES 4
-#define PHASE_DURATION (CYCLE_DURATION / PHASES)
-#define MAX_OPACITY 1.0f
+constexpr float CYCLE_DURATION = 4.0f;
+constexpr int   PHASES = 4;
+constexpr float PHASE_DURATION = CYCLE_DURATION / PHASES;  // 1.0f
+constexpr float MAX_OPACITY = 1.0f;
 
 AEGfxTexture* Digipen;
 AEGfxTexture* Logo;
-AEGfxVertexList* squareMesh;
 
 int phase;
 float x, y, dt, t, opacity, phaseProgress, DigipenW, DigipenH, LogoW, LogoH;
@@ -41,7 +40,6 @@ void SplashScreen_Load()
 
 void SplashScreen_Initialize()
 {
-	squareMesh = util::CreateSquareMesh();
     DigipenW = 1525.0f / 2.0f;
     DigipenH = 445.0f / 2.0f;
 	LogoW = 1600.0f / 2.0f;
@@ -84,7 +82,7 @@ void SplashScreen_Draw()
         /* Digipen fade in */
         opacity = phaseProgress * MAX_OPACITY;
         AEGfxSetBackgroundColor(0.0f, 0.0f, 0.0f);
-        util::DrawTexturedSquare(squareMesh, Digipen, x, y, DigipenW, DigipenH, opacity);
+        MeshManager::Get().DrawTexturedSquare(Digipen, x, y, DigipenW, DigipenH, opacity);
         AEGfxPrint(g_FontLarge, "All content (c) 2026 DigiPen Institute of Technology Singapore. All Rights Reserved. ", -0.4f, -0.7f, 0.25f, 1.0f, 1.0f, 1.0f, opacity);
       
     }
@@ -92,20 +90,20 @@ void SplashScreen_Draw()
         /* Digipen fade out */
         opacity = (1.0f - phaseProgress) * MAX_OPACITY;
         AEGfxSetBackgroundColor(0.0f, 0.0f, 0.0f);
-        util::DrawTexturedSquare(squareMesh, Digipen, x, y, DigipenW, DigipenH, opacity);
+        MeshManager::Get().DrawTexturedSquare(Digipen, x, y, DigipenW, DigipenH, opacity);
         AEGfxPrint(g_FontLarge, "All content (c) 2026 DigiPen Institute of Technology Singapore. All Rights Reserved. ", -0.4f, -0.7f, 0.25f, 1.0f, 1.0f, 1.0f, opacity);
     }
     else if (phase == 2) {
         /* Logo fade in */
         opacity = phaseProgress * MAX_OPACITY;
         AEGfxSetBackgroundColor( 150.0f / 255.0f , 203.0f / 255.0f, 213.0f / 255.0f);
-        util::DrawTexturedSquare(squareMesh, Logo, x, y, LogoW, LogoH, opacity);
+        MeshManager::Get().DrawTexturedSquare(Logo, x, y, LogoW, LogoH, opacity);
     }
     else {
         /* Logo fade out */
         opacity = (1.0f - phaseProgress) * MAX_OPACITY;
         AEGfxSetBackgroundColor(150.0f / 255.0f, 203.0f / 255.0f, 213.0f / 255.0f);
-        util::DrawTexturedSquare(squareMesh, Logo, x, y, LogoW, LogoH, opacity);
+        MeshManager::Get().DrawTexturedSquare(Logo, x, y, LogoW, LogoH, opacity);
     }
     
 
@@ -126,6 +124,5 @@ void SplashScreen_Unload()
 {
 	AEGfxTextureUnload(Digipen);
 	AEGfxTextureUnload(Logo);
-    AEGfxMeshFree(squareMesh);
 	std::cout << "Splash Screen: Unload" << std::endl;
 }

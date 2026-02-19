@@ -75,9 +75,9 @@ void Enemy_Update(Enemy& enemy, float dt);
 // draws the enemy on screen
 // shows low HP overlay when hit or at 1 HP
 // ----------------------------------------------------------------------------
-void Enemy_Draw(AEGfxVertexList* mesh, const Enemy& enemy);
+void Enemy_Draw(const Enemy& enemy);
 
-void Enemy_SetGraphics(Enemy& enemy, AEGfxVertexList* mesh, AEGfxTexture* normalTex, AEGfxTexture* attackTex = nullptr, AEGfxTexture* lowHpTex = nullptr);
+void Enemy_SetGraphics(Enemy& enemy, AEGfxTexture* normalTex, AEGfxTexture* attackTex = nullptr, AEGfxTexture* lowHpTex = nullptr);
 
 // ----------------------------------------------------------------------------
 // called when player collides with enemy
