@@ -35,7 +35,6 @@
     <ClCompile Include="..\Source\PlayerMelee.cpp" />
     <ClCompile Include="..\Source\SplashScreen.cpp" />
     <ClCompile Include="..\Source\System.cpp" />
-    <ClCompile Include="..\Source\Utils.cpp" />
     <ClCompile Include="..\Source\WinLose.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -63,7 +62,6 @@
     <ClInclude Include="..\Source\PlayerMelee.h" />
     <ClInclude Include="..\Source\SplashScreen.h" />
     <ClInclude Include="..\Source\System.h" />
-    <ClInclude Include="..\Source\Utils.h" />
     <ClInclude Include="..\Source\WinLose.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

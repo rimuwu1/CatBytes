@@ -18,7 +18,6 @@ Technology is prohibited.
 #include "GameStateManager.h"
 #include "Input.h"
 #include "AEEngine.h"
-#include "Utils.h"
 #include <vector>
 #include "Level1.h"
 #include "FileManager.h"

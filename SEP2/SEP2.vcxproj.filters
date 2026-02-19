@@ -33,9 +33,6 @@
     <ClCompile Include="..\Source\Level2.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Source\Utils.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\Source\GameStateManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -114,9 +111,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\Source\Level2.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Source\Utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\Source\Player.h">

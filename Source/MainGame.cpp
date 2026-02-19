@@ -51,8 +51,6 @@ rapidjson::Document configDoc;
 std::ifstream ifs;
 
 // ---------------MESH/TEXTURES---------------
-AEGfxVertexList* gameMesh;
-AEGfxVertexList* triangleMesh;
 
 // ---------------GROUND/PLATFORMS/WALLS---------------
 float ground;
@@ -64,8 +62,6 @@ static std::vector<Platform> wallPlatforms;
 
 // ---------------PLAYER---------------
 static Player mainPlayer;
-
-static AEGfxVertexList* playerMesh = nullptr;
 
 static AEGfxTexture* playerTexture = nullptr;
 static AEGfxTexture* playerMeleeTexture = nullptr;
@@ -79,9 +75,6 @@ static Enemy EasyEnemy;
 static std::vector<EnemyBullet> enemyBullets;
 static Enemy HardEnemy;
 static Enemy BossEnemy;
-
-static AEGfxVertexList* enemyMesh = nullptr;
-static AEGfxVertexList* overlayMesh = nullptr;
 
 static AEGfxTexture* easyEnemyTexture = nullptr;
 static AEGfxTexture* hardEnemyTexture = nullptr;
