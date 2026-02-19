@@ -15,9 +15,9 @@ Technology is prohibited.
 
 #include "EnemyBullet.h"
 #include "MeshManager.h"
+#include "TextureManager.h"
 
 //static mesh & texture shared by all bullets
-static AEGfxVertexList* bulletMesh = nullptr;
 static AEGfxTexture* bulletTexture = nullptr;
 
 void EnemyBullet_Draw(const EnemyBullet& bullet)
@@ -32,7 +32,7 @@ void EnemyBullet_Draw(const EnemyBullet& bullet)
 
     //load texture if not already
     if (!bulletTexture)
-        bulletTexture = AEGfxTextureLoad("Assets/Images/EasyEnemyBullet.jpg");
+        bulletTexture = TextureManager::Get().LoadTexture("Assets/Images/EasyEnemyBullet.jpg");
 
     MeshManager::Get().DrawTexturedSquare(
         bulletTexture,
@@ -48,14 +48,7 @@ void EnemyBullet_Free()
 {
     if (bulletTexture)
     {
-        AEGfxTextureUnload(bulletTexture);
         bulletTexture = nullptr;
     }
-    /*
-    if (bulletMesh)
-    {
-        AEGfxMeshFree(bulletMesh);
-        bulletMesh = nullptr;
-    }
-    */
+    
 }

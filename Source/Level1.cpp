@@ -25,6 +25,7 @@ Technology is prohibited.
 #include "Level2.h"
 #include "Player.h"
 #include "MeshManager.h"
+#include "TextureManager.h"
 #include "Input.h"
 #include "enemy.h"//Enemy
 #include "Background.h"
@@ -38,7 +39,6 @@ Technology is prohibited.
 #include "EnemyBullet.h"
 #include "PlayerBullet.h"
 #include "PlayerMelee.h"
-#include <iostream>
 #include "Camera.h"
 #include "WinLose.h"
 #include "Boss.h"
@@ -167,25 +167,25 @@ void Level1_Initialize()
 	float groundTop = ground + groundHeight * 0.5f;
 	
 	if (!playerTexture)
-		playerTexture = AEGfxTextureLoad("Assets/Images/player.jpg");
+		playerTexture = TextureManager::Get().LoadTexture("Assets/Images/player.jpg");
 
 	if (!playerMeleeTexture)
-		playerMeleeTexture = AEGfxTextureLoad("Assets/Images/PlayerMelee.jpg");
+		playerMeleeTexture = TextureManager::Get().LoadTexture("Assets/Images/PlayerMelee.jpg");
 
 	if (!playerMeleeWeaponTexture)
 	{
-		playerMeleeWeaponTexture = AEGfxTextureLoad("Assets/Images/PlayerMeleeWeapon.png");
+		playerMeleeWeaponTexture = TextureManager::Get().LoadTexture("Assets/Images/PlayerMeleeWeapon.png");
 	}
 
 	if (!playerMeleeAttackTexture)
 		playerMeleeAttackTexture =
-		AEGfxTextureLoad("Assets/Images/PlayerMeleeAttack.jpg");
+		TextureManager::Get().LoadTexture("Assets/Images/PlayerMeleeAttack.jpg");
 
 	if (!playerGunTexture)
-		playerGunTexture = AEGfxTextureLoad("Assets/Images/PlayerGun.jpg");
+		playerGunTexture = TextureManager::Get().LoadTexture("Assets/Images/PlayerGun.jpg");
 
 	if (!playerGunAttackTexture)
-		playerGunAttackTexture = AEGfxTextureLoad("Assets/Images/PlayerGunAttack.jpg");
+		playerGunAttackTexture = TextureManager::Get().LoadTexture("Assets/Images/PlayerGunAttack.jpg");
 
 
 
@@ -211,18 +211,18 @@ void Level1_Initialize()
 
 
 	if (!easyEnemyTexture)
-		easyEnemyTexture = AEGfxTextureLoad("Assets/Images/easyenemy.jpg");
+		easyEnemyTexture = TextureManager::Get().LoadTexture("Assets/Images/easyenemy.jpg");
 
 	if (!hardEnemyTexture)
-		hardEnemyTexture = AEGfxTextureLoad("Assets/Images/hardenemy.jpg");
+		hardEnemyTexture = TextureManager::Get().LoadTexture("Assets/Images/hardenemy.jpg");
 
 	if (!hardEnemyAttackTexture)
-		hardEnemyAttackTexture = AEGfxTextureLoad("Assets/Images/HardEnemyAttack.jpg");
+		hardEnemyAttackTexture = TextureManager::Get().LoadTexture("Assets/Images/HardEnemyAttack.jpg");
 
 	// for enemy low HP overlay
 	if (!lowHpOverlayTexture)
 	{
-		lowHpOverlayTexture = AEGfxTextureLoad("Assets/Images/LowHpOverlay.jpg");
+		lowHpOverlayTexture = TextureManager::Get().LoadTexture("Assets/Images/LowHpOverlay.jpg");
 	}
 
 	// Enemy Initialization from JSON
@@ -759,7 +759,7 @@ void Level1_Free()
 {
 	Player_Free(lv1Player);
 
-	PlayerBullet_FreeShared();
+	//PlayerBullet_FreeShared();
 	//EnemyBullet_Free();
 	enemyBullets.clear();
 	std::cout << "Level1:Free" << std::endl;
@@ -780,13 +780,6 @@ void Level1_Unload()
 	Enemy_Free(HardEnemy);
 	Enemy_Free(BossEnemy);
 
-	// Free player textures
-	if (playerTexture) AEGfxTextureUnload(playerTexture);
-	if (playerMeleeTexture) AEGfxTextureUnload(playerMeleeTexture);
-	if (playerMeleeAttackTexture) AEGfxTextureUnload(playerMeleeAttackTexture);
-	if (playerMeleeWeaponTexture) AEGfxTextureUnload(playerMeleeWeaponTexture);
-	if (playerGunTexture) AEGfxTextureUnload(playerGunTexture);
-	if (playerGunAttackTexture) AEGfxTextureUnload(playerGunAttackTexture);
 
 	playerTexture = nullptr;
 	playerMeleeTexture = nullptr;
@@ -794,12 +787,6 @@ void Level1_Unload()
 	playerMeleeWeaponTexture = nullptr;
 	playerGunTexture = nullptr;
 	playerGunAttackTexture = nullptr;
-
-	// Free enemy textures that are global/shared
-	if (easyEnemyTexture) AEGfxTextureUnload(easyEnemyTexture);
-	if (hardEnemyTexture) AEGfxTextureUnload(hardEnemyTexture);
-	if (hardEnemyAttackTexture) AEGfxTextureUnload(hardEnemyAttackTexture);
-	if (lowHpOverlayTexture) AEGfxTextureUnload(lowHpOverlayTexture);
 
 	// Null pointers
 	easyEnemyTexture = nullptr;

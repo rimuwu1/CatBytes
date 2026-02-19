@@ -16,6 +16,7 @@ Technology is prohibited.
 #include "pch.h"
 #include "GameStateManager.h"
 #include "MeshManager.h"
+#include "TextureManager.h"
 #include "Level1.h"	
 #include <cmath>
 #include "Fonts.h"
@@ -33,8 +34,8 @@ float x, y, dt, t, opacity, phaseProgress, DigipenW, DigipenH, LogoW, LogoH;
 static float totalElapsedTime{};
 void SplashScreen_Load()
 {
-	Digipen = AEGfxTextureLoad("Assets/Images/DigiPen_BLACK.png");
-	Logo = AEGfxTextureLoad("Assets/Images/Logo.png");
+	Digipen = TextureManager::Get().LoadTexture("Assets/Images/DigiPen_BLACK.png");
+	Logo = TextureManager::Get().LoadTexture("Assets/Images/Logo.png");
 	std::cout << "Splash Screen: Load" << std::endl;
 }
 
@@ -122,7 +123,5 @@ void SplashScreen_Free()
 
 void SplashScreen_Unload()
 {
-	AEGfxTextureUnload(Digipen);
-	AEGfxTextureUnload(Logo);
 	std::cout << "Splash Screen: Unload" << std::endl;
 }

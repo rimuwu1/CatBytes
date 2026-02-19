@@ -15,6 +15,7 @@ Technology is prohibited.
 
 #include "PlayerBullet.h"
 #include "MeshManager.h"
+#include "TextureManager.h"
 #include "Player.h"
 
 // shared resources
@@ -54,7 +55,7 @@ void PlayerBullet_Draw(const PlayerBullet& bullet)
         */
 
     if (!bulletTexture)
-        bulletTexture = AEGfxTextureLoad("Assets/Images/PlayerBullet.jpg");
+        bulletTexture = TextureManager::Get().LoadTexture("Assets/Images/PlayerBullet.jpg");
 
     MeshManager::Get().DrawTexturedSquare(
         bulletTexture,
@@ -88,14 +89,6 @@ void PlayerBullet_FreeShared()
 {
     if (bulletTexture)
     {
-        AEGfxTextureUnload(bulletTexture);
         bulletTexture = nullptr;
     }
-    /*
-    if (bulletMesh)
-    {
-        AEGfxMeshFree(bulletMesh);
-        bulletMesh = nullptr;
-    }
-    */
 }

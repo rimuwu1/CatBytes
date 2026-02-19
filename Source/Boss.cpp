@@ -21,6 +21,7 @@ Technology is prohibited.
 #include "Camera.h"
 #include "Platforms.h"
 #include "MeshManager.h"
+#include "TextureManager.h"
 #include "FileManager.h"
 #include "rapidjson/document.h"
 #include "rapidjson/filereadstream.h"
@@ -42,7 +43,6 @@ rapidjson::Document bossConfig;
 std::ifstream ifs4;
 
 static Enemy bossEnemy;
-static AEGfxVertexList* bossMesh = nullptr;
 static AEGfxTexture* bossTexture = nullptr;
 
 // platforms array
@@ -84,15 +84,9 @@ void BossEnemy_Init(Enemy& enemy, float startX, float startY)
 	enemy.hitStunTimer = 0.0f;
 	enemy.isPlayerColliding = false;
 
-	// create mesh if needed(dont create pls)
-	/*
-	if (!bossMesh)
-		bossMesh = util::CreateSquareMesh();
-		*/
-
 	// load boss texture if not already loaded
 	if (!enemy.texture)
-		enemy.texture = AEGfxTextureLoad("Assets/Images/Boss.jpg");
+		enemy.texture = TextureManager::Get().LoadTexture("Assets/Images/Boss.jpg");
 }
 
 // -----------------------------------------------------------------------------
@@ -154,16 +148,8 @@ void BossEnemy_Free()
 {
 	if (bossEnemy.texture)
 	{
-		AEGfxTextureUnload(bossEnemy.texture);
 		bossEnemy.texture = nullptr;
 	}
-	/*
-	if (bossMesh)
-	{
-		AEGfxMeshFree(bossMesh);
-		bossMesh = nullptr;
-	}
-	*/
 }
 
 // collision damage (unreferenced param player)
@@ -318,7 +304,6 @@ void Boss_Free()
 void Boss_Unload()
 {
 	
-	//AEGfxMeshFree(bossPlatformMesh);
 	bossPlatforms.clear();
 	ifs4.close();
 	std::cout << "Boss:Unload" << std::endl;

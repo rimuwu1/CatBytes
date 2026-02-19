@@ -174,25 +174,25 @@ void MainGame_Initialize() {
 	// load player resources
 	
 	if (!playerTexture)
-		playerTexture = AEGfxTextureLoad("Assets/Images/player.jpg");
+		playerTexture = TextureManager::Get().LoadTexture("Assets/Images/player.jpg");
 
 	if (!playerMeleeTexture)
-		playerMeleeTexture = AEGfxTextureLoad("Assets/Images/PlayerMelee.jpg");
+		playerMeleeTexture = TextureManager::Get().LoadTexture("Assets/Images/PlayerMelee.jpg");
 
 	if (!playerMeleeWeaponTexture)
 	{
-		playerMeleeWeaponTexture = AEGfxTextureLoad("Assets/Images/PlayerMeleeWeapon.png");
+		playerMeleeWeaponTexture = TextureManager::Get().LoadTexture("Assets/Images/PlayerMeleeWeapon.png");
 	}
 
 	if (!playerMeleeAttackTexture)
 		playerMeleeAttackTexture =
-		AEGfxTextureLoad("Assets/Images/PlayerMeleeAttack.jpg");
+		TextureManager::Get().LoadTexture("Assets/Images/PlayerMeleeAttack.jpg");
 
 	if (!playerGunTexture)
-		playerGunTexture = AEGfxTextureLoad("Assets/Images/PlayerGun.jpg");
+		playerGunTexture = TextureManager::Get().LoadTexture("Assets/Images/PlayerGun.jpg");
 
 	if (!playerGunAttackTexture)
-		playerGunAttackTexture = AEGfxTextureLoad("Assets/Images/PlayerGunAttack.jpg");
+		playerGunAttackTexture = TextureManager::Get().LoadTexture("Assets/Images/PlayerGunAttack.jpg");
 
 	// assign graphic resources to player
 	mainPlayer.texture = playerTexture;
@@ -240,24 +240,24 @@ void MainGame_Initialize() {
 	// load enemy resources
 
 	if (!easyEnemyTexture)
-		easyEnemyTexture = AEGfxTextureLoad("Assets/Images/easyenemy.jpg");
+		easyEnemyTexture = TextureManager::Get().LoadTexture("Assets/Images/easyenemy.jpg");
 
 	if (!hardEnemyTexture)
-		hardEnemyTexture = AEGfxTextureLoad("Assets/Images/hardenemy.jpg");
+		hardEnemyTexture = TextureManager::Get().LoadTexture("Assets/Images/hardenemy.jpg");
 
 	if (!hardEnemyAttackTexture)
-		hardEnemyAttackTexture = AEGfxTextureLoad("Assets/Images/hardenemy_attack.jpg");
+		hardEnemyAttackTexture = TextureManager::Get().LoadTexture("Assets/Images/hardenemy_attack.jpg");
 
 	//for enemy lowhp
 	if (!lowHpOverlayTexture)
 	{
-		lowHpOverlayTexture = AEGfxTextureLoad("Assets/Images/LowHpOverlay.jpg");
+		lowHpOverlayTexture = TextureManager::Get().LoadTexture("Assets/Images/LowHpOverlay.jpg");
 	}
 
 	// for enemy low HP overlay
 	if (!lowHpOverlayTexture)
 	{
-		lowHpOverlayTexture = AEGfxTextureLoad("Assets/Images/LowHpOverlay.jpg");
+		lowHpOverlayTexture = TextureManager::Get().LoadTexture("Assets/Images/LowHpOverlay.jpg");
 	}
 
 	// --------------------------------------------------ENEMY INITIALISE END--------------------------------------------------
@@ -371,14 +371,6 @@ void MainGame_Free() {
 }
 
 void MainGame_Unload() {
-
-	// unload textures
-	AEGfxTextureUnload(playerTexture);
-	AEGfxTextureUnload(playerMeleeTexture);
-	AEGfxTextureUnload(playerMeleeAttackTexture);
-	AEGfxTextureUnload(playerMeleeWeaponTexture);
-	AEGfxTextureUnload(playerGunTexture);
-	AEGfxTextureUnload(playerGunAttackTexture);
 
 	playerTexture = nullptr;
 	playerMeleeTexture = nullptr;
