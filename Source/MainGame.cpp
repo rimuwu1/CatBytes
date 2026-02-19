@@ -105,9 +105,6 @@ void MainGame_Load() {
 
 void MainGame_Initialize() {
 
-	// initialise meshes
-	gameMesh = util::CreateSquareMesh();
-	triangleMesh = util::CreateTriangleMesh();
 
 	// initialise background
 	Background_Initialise();
@@ -182,9 +179,7 @@ void MainGame_Initialize() {
 	mainPlayer.grounded = 1;
 
 	// load player resources
-	if (!playerMesh)
-		playerMesh = gameMesh;
-
+	
 	if (!playerTexture)
 		playerTexture = AEGfxTextureLoad("Assets/Images/player.jpg");
 
@@ -207,7 +202,6 @@ void MainGame_Initialize() {
 		playerGunAttackTexture = AEGfxTextureLoad("Assets/Images/PlayerGunAttack.jpg");
 
 	// assign graphic resources to player
-	mainPlayer.mesh = playerMesh;
 	mainPlayer.texture = playerTexture;
 
 	mainPlayer.meleeTexture = playerMeleeTexture;
@@ -239,7 +233,6 @@ void MainGame_Initialize() {
 		float hardEnemyY = enemies[1]["y"].GetFloat();
 		HardEnemy_Init(HardEnemy, hardEnemyX, hardEnemyY);
 
-		HardEnemy.mesh = enemyMesh;
 		HardEnemy.texture = hardEnemyTexture;
 		HardEnemy.normalTexture = hardEnemyTexture;
 		HardEnemy.attackTexture = hardEnemyAttackTexture;
@@ -252,8 +245,6 @@ void MainGame_Initialize() {
 	}
 
 	// load enemy resources
-	if (!enemyMesh)
-		enemyMesh = gameMesh;
 
 	if (!easyEnemyTexture)
 		easyEnemyTexture = AEGfxTextureLoad("Assets/Images/easyenemy.jpg");
@@ -271,10 +262,6 @@ void MainGame_Initialize() {
 	}
 
 	// for enemy low HP overlay
-	if (!overlayMesh)
-	{
-		overlayMesh = util::CreateSquareMesh();
-	}
 	if (!lowHpOverlayTexture)
 	{
 		lowHpOverlayTexture = AEGfxTextureLoad("Assets/Images/LowHpOverlay.jpg");
@@ -391,10 +378,6 @@ void MainGame_Free() {
 }
 
 void MainGame_Unload() {
-
-	// unload mesh
-	AEGfxMeshFree(gameMesh);
-	AEGfxMeshFree(triangleMesh);
 
 	// unload textures
 	AEGfxTextureUnload(playerTexture);
