@@ -7,6 +7,20 @@
         "levels_completed": 0,
         "player_lives": 3
     },
+    "ui": {
+      "minimap": {
+        "active": true,
+        "x": -700.0,
+        "y": 370.0,
+        "width": 180.0,
+        "height": 140.0,
+        "worldMinX": -780.0,
+        "worldMaxX": 780.0,
+        "worldMinY": -350.0,
+        "worldMaxY": 2000.0,
+        "dotSize": 10.0
+      }
+    },
     "checkpoints": [
         { "x": -450.0, "y": -10.0, "width": 40.0, "height": 40.0 }
     ],

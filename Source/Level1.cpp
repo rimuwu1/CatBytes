@@ -5,10 +5,12 @@
 		Sim Hui Min, s.huimin, 2503506
 		Tse Xuan Qi Tristin, tse.x, 2503757
 		Peh Yu Xuan, Lovette, p.yuxuanlovette, 2502079
+		Kerwin Wong Jia Jie, kerwinjiajie.wong, 2502740
 \par joash.ng@digipen.edu
 	 s.huimin@digipen.edu
 	 tse.x@digipen.edu
 	 p.yuxuanlovette@digipen.edu
+	 kerwinajijie.wong@digipen.edu
 \date 21/01/2026
 \brief This file implements the functions for Level 1 of the game.
 
@@ -30,6 +32,7 @@ Technology is prohibited.
 #include "enemy.h"//Enemy
 #include "Background.h"
 #include "LevelIndicator.h"
+#include "Minimap.h"
 #include "rapidjson/document.h"
 #include "rapidjson/filereadstream.h"
 #include "rapidjson/istreamwrapper.h"
@@ -53,6 +56,8 @@ static Enemy BossEnemy;  // boss - temporary for demo as everything's in this fi
 
 static int previousSelection = -1;
 const float LEVEL2_START_Y = sectionHeight[0];
+
+static Minimap gameMinimap;
 
 std::ifstream ifs;
 float ground;
@@ -160,6 +165,53 @@ void Level1_Initialize()
 
 	// initialise level indicator
 	LevelIndicator_Initialize();
+
+	// Initialise minimap
+	if (level1Config.HasMember("ui") && level1Config["ui"].HasMember("minimap"))
+	{
+		const rapidjson::Value& minimap = level1Config["ui"]["minimap"];
+
+		if (minimap.HasMember("active"))
+		{
+			gameMinimap.active = minimap["active"].GetBool();
+		}
+		if (minimap.HasMember("x"))
+		{
+			gameMinimap.x = minimap["x"].GetFloat();
+		}
+		if (minimap.HasMember("y"))
+		{
+			gameMinimap.y = minimap["y"].GetFloat();
+		}
+		if (minimap.HasMember("width"))
+		{
+			gameMinimap.w = minimap["width"].GetFloat();
+		}
+		if (minimap.HasMember("height"))
+		{
+			gameMinimap.h = minimap["height"].GetFloat();
+		}
+		if (minimap.HasMember("worldMinX"))
+		{
+			gameMinimap.worldMinX = minimap["worldMinX"].GetFloat();
+		}
+		if (minimap.HasMember("worldMaxX"))
+		{
+			gameMinimap.worldMaxX = minimap["worldMaxX"].GetFloat();
+		}
+		if (minimap.HasMember("worldMinY"))
+		{
+			gameMinimap.worldMinY = minimap["worldMinY"].GetFloat();
+		}
+		if (minimap.HasMember("worldMaxY"))
+		{
+			gameMinimap.worldMaxY = minimap["worldMaxY"].GetFloat();
+		}
+		if (minimap.HasMember("dotSize"))
+		{
+			gameMinimap.dotSize = minimap["dotSize"].GetFloat();
+		}
+	}
 
 	// Player Initialization
 	ground = -350.0f;
@@ -742,6 +794,11 @@ void Level1_Draw()
 	DrawEnemyOverlay(HardEnemy);
 
 	BossEnemy_Draw(BossEnemy);
+
+	// Draw minimap
+	AEGfxSetCamPosition(0.0f, 0.0f); // for minimap
+	Minimap_Draw(gameMinimap, lv1Player.pos.x, lv1Player.pos.y);
+	AEGfxSetCamPosition(globalCam.x, globalCam.y);
 
 	// draw text for level indicator & game save
 	LevelIndicator_Draw();
