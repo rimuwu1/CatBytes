@@ -4,7 +4,8 @@
 \author Kerwin Wong Jia Jie, kerwinjiajie.wong, 2502740
 \par	kerwinajijie.wong@digipen.edu
 \date	February, 19, 2026
-\brief	This file contains the function declarations for ...
+\brief	This file contains the function declarations for rendering the in-game minimap
+		that maps player world position proportionally within defined world bounds.
 
 Copyright (C) 2026 DigiPen Institute of Technology.
 Reproduction or disclosure of this file or its contents
