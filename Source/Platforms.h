@@ -42,7 +42,7 @@ struct Checkpoint {
 
 void PlatformButton_Draw(const std::vector<PlatformButton>& buttons, const std::vector<Platform>& platforms);
 
-void Platforms_Draw(const std::vector<Platform> &platform);
+void Platforms_Draw(const std::vector<Platform>& platforms, AEGfxTexture* leftTex, AEGfxTexture* midTex, AEGfxTexture* rightTex);
 
 bool Platform_CollisionCheck(Player& player, float& previosY, const std::vector<Platform>& platforms);
 

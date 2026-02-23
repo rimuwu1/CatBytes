@@ -50,6 +50,10 @@ static std::vector<Platform> level2Platforms = {
 
 // platforms array - loaded from JSON
 static std::vector<Platform> level2Platforms;
+//level 2 platform textures
+static AEGfxTexture* leftTex2;
+static AEGfxTexture* midTex2;
+static AEGfxTexture* rightTex2;
 
 // ----------------------------------------------------------------------------
 // Loads Level 2 resources and initial data
@@ -104,6 +108,11 @@ void Level2_Initialize()
 			}
 		}
 	}
+
+	//platform texture init
+	leftTex2 = TextureManager::Get().LoadTexture("Assets/Images/platform_left.png");
+	midTex2 = TextureManager::Get().LoadTexture("Assets/Images/platform_middle.png");
+	rightTex2 = TextureManager::Get().LoadTexture("Assets/Images/platform_right.png");
 
 	// initialise player
 	float playerX = level2Config["level_2"]["player"]["x"].GetFloat();
@@ -200,7 +209,7 @@ void Level2_Draw()
 	LevelIndicator_Draw();
 
 	// draw platforms
-	Platforms_Draw(level2Platforms);
+	Platforms_Draw(level2Platforms, leftTex2, midTex2, rightTex2);
 
 	AESysFrameEnd();
 }

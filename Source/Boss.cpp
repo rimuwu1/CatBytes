@@ -45,6 +45,11 @@ std::ifstream ifs4;
 static Enemy bossEnemy;
 static AEGfxTexture* bossTexture = nullptr;
 
+//boss platform textures
+static AEGfxTexture* leftTexBoss;
+static AEGfxTexture* midTexBoss;
+static AEGfxTexture* rightTexBoss;
+
 // platforms array
 static std::vector<Platform> bossPlatforms = {
 	{  600.0f,  1650.0f, 250.0f, 40.0f },
@@ -215,6 +220,11 @@ void Boss_Initialize()
 		}
 	}
 
+	//platform texture init
+	leftTexBoss = TextureManager::Get().LoadTexture("Assets/Images/platform_left.png");
+	midTexBoss = TextureManager::Get().LoadTexture("Assets/Images/platform_middle.png");
+	rightTexBoss = TextureManager::Get().LoadTexture("Assets/Images/platform_right.png");
+
 	// initialise camera
 	Camera_Init(globalCam, bossPlayer.pos.x, bossPlayer.pos.y);
 
@@ -283,7 +293,7 @@ void Boss_Draw()
 	LevelIndicator_Draw();
 
 	// draw platforms
-	Platforms_Draw(bossPlatforms);
+	Platforms_Draw(bossPlatforms,leftTexBoss, midTexBoss, rightTexBoss);
 
 	AESysFrameEnd();
 }

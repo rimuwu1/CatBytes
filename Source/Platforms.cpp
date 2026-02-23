@@ -3,8 +3,10 @@
 \file       Platforms.cpp
 \author     Peh Yu Xuan, Lovette, p.yuxuanlovette, 2502079
 			Sim Hui Min, Huimin, s.huimin, 2503506
+			Joash Ng, joash.ng, 2502780
 \par        p.yuxuanlovette@digipen.edu
 			s.huimin@digipen.edu
+			joash.ng@digipen.edu
 \date       January 26 2026
 \brief		This file implements the functions for the game's platforms.
 
@@ -19,21 +21,46 @@ Technology is prohibited.
 #include "Platforms.h"
 #include "MeshManager.h"
 #include "Player.h"
+#include "TextureManager.h"
+#include "SpriteSheet.h"
+#include <memory>
 
-void Platforms_Draw(const std::vector<Platform>& platform) {
 
-	// for each Platform named pf in container platform
-	/*for (const Platform& pf : platform) {
 
-		MeshManager::Get().DrawSquare(pf.x, pf.y, pf.w, pf.h, 255, 178, 102);
 
-	}*/
+void Platforms_Draw(const std::vector<Platform>& platforms, AEGfxTexture* leftTex, AEGfxTexture* midTex, AEGfxTexture* rightTex) {
 
-	for (const Platform& pf : platform) {
-		if (!pf.active) continue;  // skip inactive
-		MeshManager::Get().DrawSquare(pf.x, pf.y, pf.w, pf.h, 255, 178, 102);
+	static SpriteSheet hoverAnim("Assets/Images/HoverSheet.png", 1, 4, 0, 0.5f);
+	
+	const float capWidth = 32.0f;   // width of left/right cap in world units
+	
+	float dt = (float)AEFrameRateControllerGetFrameTime();
+	hoverAnim.Update(dt);
+
+	for (const Platform& pf : platforms) {
+		if (!pf.active) continue;
+
+		// Left cap position
+		float leftX = pf.x - pf.w / 2 + capWidth / 2;
+		MeshManager::Get().DrawTexturedSquare(leftTex, leftX, pf.y, capWidth, pf.h);
+
+		// Right cap position
+		float rightX = pf.x + pf.w / 2 - capWidth / 2;
+		MeshManager::Get().DrawTexturedSquare(rightTex, rightX, pf.y, capWidth, pf.h);
+
+		// Middle section: a single section that stretches between the caps
+		float midStartX = leftX + capWidth / 2;            // left edge of middle
+		float midEndX = rightX - capWidth / 2;           // right edge of middle
+		float midWidth = midEndX - midStartX;
+
+		if (midWidth > 0.0f) {
+			float midCenterX = (midStartX + midEndX) * 0.5f;
+			MeshManager::Get().DrawTexturedSquare(midTex,
+				midCenterX, pf.y,
+				midWidth, pf.h);
+			MeshManager::Get().DrawSpriteSheet(hoverAnim, midCenterX, pf.y - 40.0f, midWidth, pf.h);
+		}
 	}
-
 }
 
 void PlatformButton_Draw(const std::vector<PlatformButton>& buttons, const std::vector<Platform>& platforms)

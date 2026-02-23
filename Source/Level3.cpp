@@ -31,7 +31,10 @@ Technology is prohibited.
 
 static Player lv3Player;
 
-//AEGfxVertexList* lv3mesh;
+//level 3 platform textures
+static AEGfxTexture* leftTex3;
+static AEGfxTexture* midTex3;
+static AEGfxTexture* rightTex3;
 
 rapidjson::Document level3Config;
 
@@ -103,6 +106,11 @@ void Level3_Initialize()
 			}
 		}
 	}
+
+	//platform texture init
+	leftTex3 = TextureManager::Get().LoadTexture("Assets/Images/platform_left.png");
+	midTex3 = TextureManager::Get().LoadTexture("Assets/Images/platform_middle.png");
+	rightTex3 = TextureManager::Get().LoadTexture("Assets/Images/platform_right.png");
 
 	// initialise camera
 	Camera_Init(globalCam, lv3Player.pos.x, lv3Player.pos.y);
@@ -194,7 +202,7 @@ void Level3_Draw()
 	LevelIndicator_Draw();
 
 	// draw platforms
-	Platforms_Draw(level3Platforms);
+	Platforms_Draw(level3Platforms, leftTex3, midTex3, rightTex3);
 
 	AESysFrameEnd();
 }

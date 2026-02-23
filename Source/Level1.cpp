@@ -76,6 +76,11 @@ static AEGfxTexture* easyEnemyTexture = nullptr;
 static AEGfxTexture* hardEnemyTexture = nullptr;
 static AEGfxTexture* hardEnemyAttackTexture = nullptr;
 
+//level 1 platform textures
+static AEGfxTexture* leftTex1;
+static AEGfxTexture* midTex1;
+static AEGfxTexture* rightTex1;
+
 //for enemy
 static AEGfxTexture* lowHpOverlayTexture = nullptr;
 
@@ -148,6 +153,7 @@ void Level1_Load()
 		rapidjson::IStreamWrapper isw(ifs);
 		level1Config.ParseStream(isw);
 	}
+
     std::cout << "Level1:Load" << std::endl;
 }
 
@@ -320,6 +326,11 @@ void Level1_Initialize()
 			}
 		}
 	}
+
+	//platform texture init
+	leftTex1 = TextureManager::Get().LoadTexture("Assets/Images/platform_left.png");
+	midTex1 = TextureManager::Get().LoadTexture("Assets/Images/platform_middle.png");
+	rightTex1 = TextureManager::Get().LoadTexture("Assets/Images/platform_right.png");
 
 	// Wall Initialization from JSON
 	const rapidjson::Value& walls = level1Config["level_1"]["walls"];
@@ -739,13 +750,13 @@ void Level1_Draw()
 	Background_Draw();
 
 	// draw platforms
-	Platforms_Draw(level1Platforms);
-	Platforms_Draw(level2Platforms);
-	Platforms_Draw(level3Platforms);
-	Platforms_Draw(bossPlatforms);
+	Platforms_Draw(level1Platforms, leftTex1, midTex1, rightTex1);
+	Platforms_Draw(level2Platforms, leftTex1, midTex1, rightTex1);
+	Platforms_Draw(level3Platforms, leftTex1, midTex1, rightTex1);
+	Platforms_Draw(bossPlatforms, leftTex1, midTex1, rightTex1);
 	PlatformButton_Draw(level2Buttons, level2Platforms);
 	PlatformsObstacle_Draw(level1Obstacles);
-	Platforms_Draw(wallPlatforms);
+	Platforms_Draw(wallPlatforms, leftTex1, midTex1, rightTex1);
 	CheckpointDraw(checkpoints);
 
 	MeshManager::Get().DrawSquare(0.0f, ground, 1600.0f, 50.0f, 0, 0, 0); // Draw Ground (Texture TBA?)
