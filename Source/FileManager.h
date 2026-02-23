@@ -1,3 +1,18 @@
+/* Start Header ************************************************************************/
+/*!
+\file FileManager.h
+\author Joash ng, joash.ng, 2502780
+\par joash.ng@digipen.edu
+\date 19/02/2026
+\brief Implements the Namespace Gamesave. Saves hp, position and metadata.
+       reset function available which overrides the save file with the config file
+
+Copyright (C) 2026 DigiPen Institute of Technology.
+Reproduction or disclosure of this file or its contents
+without the prior written consent of DigiPen Institute of
+Technology is prohibited.
+*/
+/* End Header **************************************************************************/
 #pragma once
 #include "pch.h"
 #include "Player.h"

@@ -18,7 +18,9 @@ Technology is prohibited.
 #pragma once
 #include "AEEngine.h"
 #include "PlayerBullet.h"
+#include "SpriteSheet.h"
 #include <vector>
+#include <memory>
 
 // ----------------------------------------------------------------------------
 // Types of weapons the player can equip
@@ -81,7 +83,14 @@ struct Player
 
 	float meleeWeaponRotation = 0.0f;// current rotation angle in degrees
 	float meleeWeaponRotationSpeed = 720.0f;//degrees per second for swing
+	// Sprite sheet for animations
+	std::unique_ptr<SpriteSheet> spriteSheet;
 
+	// State tracking for animation logic
+	bool wasAttacking = false;
+	bool wasWalking = false;
+	PlayerWeapon previousWeapon = PlayerWeapon::NONE;
+	bool weaponSwitchTriggered = false;
 };
 
 struct Enemy; // forward declaration

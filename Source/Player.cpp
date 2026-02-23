@@ -4,9 +4,11 @@
 \author Kerwin Wong Jia Jie, kerwinjiajie.wong, 2502740
 		Tse Xuan Qi Tristin, tse.x, 2503757
 		Sim Hui Min, s.huimin, 2503506
+		Joash Ng, joash.ng, 2502780
 \par kerwinajijie.wong@digipen.edu
 	 tse.x@digipen.edu
 	 s.huimin@digipen.edu
+	 joash.ng@digipen.edu
 \date January, 23, 2026
 \brief This file contains the function definitions for the Player movements, physics,
 		input handling, and rendering.
@@ -29,7 +31,7 @@ Technology is prohibited.
 #include "rapidjson/document.h"
 #include "rapidjson/filereadstream.h"
 #include "rapidjson/istreamwrapper.h"
-#include <iostream>
+#include "SpriteSheet.h"
 
 extern rapidjson::Document level1Config;
 
@@ -99,6 +101,34 @@ void Player_Init(Player& player, float startX, float startY)
 		b.damage = player.bulletDamage; // assign damage from JSON
 	}
 
+	// --- Dynamic SpriteSheet Loading ---
+	if (playerJson.HasMember("animations")) {
+		const auto& anims = playerJson["animations"];
+		player.spriteSheet = std::make_unique<SpriteSheet>(
+			anims["file"].GetString(),
+			anims["rows"].GetInt(),
+			anims["cols"].GetInt()
+		);
+
+		const auto& clips = anims["clips"];
+		for (rapidjson::SizeType i = 0; i < clips.Size(); i++) {
+			const auto& c = clips[i];
+			player.spriteSheet->AddClip(
+				c["name"].GetString(),
+				c["start"].GetInt(),
+				c["end"].GetInt(),
+				c["speed"].GetFloat(),
+				c["loop"].GetBool()
+			);
+		}
+	}
+	// Start with idle
+	player.spriteSheet->Play("idle");
+
+	player.wasAttacking = false;
+	player.wasWalking = false;
+	player.previousWeapon = PlayerWeapon::NONE;
+	player.weaponSwitchTriggered = false;
 }
 
 void Player_Update(Player& player, float dt)
@@ -191,25 +221,76 @@ void Player_Update(Player& player, float dt)
 		}
 	}
 
+	// --- Determine walking state ---
+	bool isWalking = (fabs(player.vel.x) > 0.1f) && player.grounded;
+	// (you can adjust threshold as needed)
+
+	// --- Detect weapon switch ---
+	if (player.weapon != player.previousWeapon) {
+		player.weaponSwitchTriggered = true;
+		player.previousWeapon = player.weapon;
+	}
+
+	// --- Decide desired clip ---
+	std::string desiredClip;
+	bool forceRestart = false;
+
+	// Handle weapon switch animation
+	if (player.weaponSwitchTriggered) {
+		desiredClip = "weapon_switch";
+		// Force restart only if we just entered this clip
+		if (player.spriteSheet->GetCurrentClip() != "weapon_switch") {
+			forceRestart = true;
+		}
+		// If the switch clip has finished playing, clear the trigger
+		if (player.spriteSheet->GetCurrentClip() == "weapon_switch" && !player.spriteSheet->IsPlaying()) {
+			player.weaponSwitchTriggered = false;
+		}
+	}
+	else {
+		// Normal state based on weapon and actions
+		switch (player.weapon) {
+		case PlayerWeapon::NONE:
+			desiredClip = isWalking ? "walk" : "idle";
+			break;
+		case PlayerWeapon::MELEE:
+			if (player.isAttacking) {
+				desiredClip = "melee_attack";
+				if (!player.wasAttacking) forceRestart = true;
+			}
+			else {
+				desiredClip = isWalking ? "melee_walk" : "melee_idle";
+			}
+			break;
+		case PlayerWeapon::GUN:
+			if (player.fireTimer > 0.0f) {
+				desiredClip = "gun_attack";
+				// Restart when firing starts (fireTimer == fireCooldown)
+				if (fabs(player.fireTimer - player.fireCooldown) < 0.001f) {
+					forceRestart = true;
+				}
+			}
+			else {
+				desiredClip = isWalking ? "gun_walk" : "gun_idle";
+			}
+			break;
+		}
+	}
+
+	// Play the clip and update animation
+	if (player.spriteSheet) {
+		player.spriteSheet->Play(desiredClip, forceRestart);
+		player.spriteSheet->Update(dt);
+	}
+
+	// Update state trackers
+	player.wasAttacking = player.isAttacking;
+	player.wasWalking = isWalking;
+
 }
 
 void Player_Draw(const Player& player)
 {
-	// flip when moving left (default image faces right)
-	float scaleX = player.facingRight ? player.width : -player.width;
-
-	/*util::DrawTexturedSquare(
-		player.mesh,
-		(player.isAttacking) ? player.meleeAttackTexture :
-		(player.weapon == PlayerWeapon::MELEE ? player.meleeTexture
-			: player.texture),
-		player.pos.x,
-		player.pos.y,
-		scaleX,
-		player.height,
-		1.0f
-	);*/
-
 	//TODO, will try to make it work another time
 	/*
 	  //draw hit text above the player
@@ -227,31 +308,19 @@ void Player_Draw(const Player& player)
 	for (const auto& b : player.bullets)
 		PlayerBullet_Draw(b);
 
-	AEGfxTexture* currentTexture = nullptr;
-
-	switch (player.weapon)
-	{
-	case PlayerWeapon::NONE:
-		currentTexture = player.texture;
-		break;
-	case PlayerWeapon::MELEE:
-		currentTexture = (player.isAttacking) ? player.meleeAttackTexture : player.meleeTexture;
-		break;
-	case PlayerWeapon::GUN:
-		currentTexture = (player.fireTimer > 0.0f)
-			? player.gunAttackTexture
-			: player.gunTexture;
-		break;
+	// Draw player using sprite sheet
+	if (player.spriteSheet) {
+		float scaleX = player.facingRight ? -player.width : player.width;
+		MeshManager::Get().DrawSpriteSheet(
+			*player.spriteSheet,
+			player.pos.x,
+			player.pos.y,
+			scaleX,
+			player.height,
+			1.0f
+		);
 	}
-	 
-	MeshManager::Get().DrawTexturedSquare(
-		currentTexture,
-		player.pos.x,
-		player.pos.y,
-		scaleX,
-		player.height,
-		1.0f
-	);
+	
 
 
 	//melee weapon visual parameters
@@ -299,7 +368,7 @@ void Player_Draw(const Player& player)
 }
 
 //Apply damage to the player
- void Player_ApplyDamage(Player& player, float damage)
+void Player_ApplyDamage(Player& player, float damage)
 {
 	if (player.hp <= 0.0f)
 		return;
@@ -372,6 +441,8 @@ void Player_Free(Player& player)
 	//release vector heap memory
 	player.bullets.clear();
 	player.bullets.shrink_to_fit();
+
+	player.spriteSheet.reset();
 
 
 	// do not unload shared textures or mesh here

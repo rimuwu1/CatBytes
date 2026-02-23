@@ -14,6 +14,7 @@ Technology is prohibited.
 /* End Header **************************************************************************/
 #pragma once
 #include "AEEngine.h"
+#include "SpriteSheet.h"
 #include <map>
 #include <string>
 
@@ -30,6 +31,7 @@ public:
     AEGfxVertexList* GetMesh(const std::string& name);
 
     // ----- Colour drawing helpers with defaults -----
+
     void DrawSquare(float x, float y, float width, float height,
         int r = 255, int g = 0, int b = 0);          // default red
 
@@ -41,9 +43,14 @@ public:
         int r = 128, int g = 128, int b = 128);    // default gray
 
     // ----- Textured drawing helpers with defaults -----
+
     void DrawTexturedSquare(AEGfxTexture* texture,
         float x, float y, float width, float height,
         float opacity = 1.0f);
+
+    void DrawSpriteSheet(SpriteSheet& sprite,
+        float x, float y, float width, float height,
+        float opacity = 1.f);
 
     void DrawTexturedSquarePivot(AEGfxTexture* texture,
         float x, float y, float width, float height,

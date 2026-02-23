@@ -147,6 +147,40 @@ void MeshManager::DrawTexturedSquare(AEGfxTexture* texture,
     AEGfxMeshDraw(mesh, AE_GFX_MDM_TRIANGLES);
 }
 
+void MeshManager::DrawSpriteSheet(SpriteSheet& sprite,
+    float x, float y, float width, float height,
+    float opacity)
+{
+    float uvW = sprite.GetSpriteUVWidth();
+    float uvH = sprite.GetSpriteUVHeight();
+
+    // Build a fresh mesh sized to one sprite cell's UV dimensions
+    AEGfxMeshStart();
+    AEGfxTriAdd(-0.5f, -0.5f, 0xFFFFFFFF, 0.0f, uvH,
+        0.5f, -0.5f, 0xFFFFFFFF, uvW, uvH,
+        -0.5f, 0.5f, 0xFFFFFFFF, 0.0f, 0.0f);
+    AEGfxTriAdd(0.5f, -0.5f, 0xFFFFFFFF, uvW, uvH,
+        0.5f, 0.5f, 0xFFFFFFFF, uvW, 0.0f,
+        -0.5f, 0.5f, 0xFFFFFFFF, 0.0f, 0.0f);
+    AEGfxVertexList* mesh = AEGfxMeshEnd();
+
+    AEGfxSetRenderMode(AE_GFX_RM_TEXTURE);
+    AEGfxSetColorToMultiply(1, 1, 1, 1);
+    AEGfxSetColorToAdd(0, 0, 0, 0);
+    AEGfxSetBlendMode(AE_GFX_BM_BLEND);
+    AEGfxSetTransparency(opacity);
+    AEGfxTextureSet(sprite.GetTexture(), sprite.GetUVOffsetX(), sprite.GetUVOffsetY());
+
+    AEMtx33 scale, translate, transform;
+    AEMtx33Scale(&scale, width, height);
+    AEMtx33Trans(&translate, x, y);
+    AEMtx33Concat(&transform, &translate, &scale);
+
+    AEGfxSetTransform(transform.m);
+    AEGfxMeshDraw(mesh, AE_GFX_MDM_TRIANGLES);
+
+    AEGfxMeshFree(mesh);
+}
 
 //delete when not needed (after removing the sword code)
 void MeshManager::DrawTexturedSquarePivot(AEGfxTexture* texture,

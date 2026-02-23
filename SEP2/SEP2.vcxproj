@@ -35,6 +35,7 @@
     <ClCompile Include="..\Source\PlayerBullet.cpp" />
     <ClCompile Include="..\Source\PlayerMelee.cpp" />
     <ClCompile Include="..\Source\SplashScreen.cpp" />
+    <ClCompile Include="..\Source\SpriteSheet.cpp" />
     <ClCompile Include="..\Source\System.cpp" />
     <ClCompile Include="..\Source\TextureManager.cpp" />
     <ClCompile Include="..\Source\WinLose.cpp" />
@@ -64,6 +65,7 @@
     <ClInclude Include="..\Source\PlayerBullet.h" />
     <ClInclude Include="..\Source\PlayerMelee.h" />
     <ClInclude Include="..\Source\SplashScreen.h" />
+    <ClInclude Include="..\Source\SpriteSheet.h" />
     <ClInclude Include="..\Source\System.h" />
     <ClInclude Include="..\Source\TextureManager.h" />
     <ClInclude Include="..\Source\WinLose.h" />
