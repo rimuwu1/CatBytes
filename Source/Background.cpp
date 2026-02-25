@@ -29,16 +29,16 @@ int previousSection = -1;
 float sectionHeight[backgroundSections]{
 
 	// level 1 height limit
-	500.0f,		// 1000.0f
+	1900.0f,
 
 	// level 2 height limit
-	1000.0f,	// 2000.0f
+	4550.0f,
 
 	// level 3 height limit
-	1500.0f,	// 3000.0f
+	7500.0f,	
 
 	// level 4 height limit
-	3000.0f		// 4000.0f
+	10500.0f		
 	
 };
 
@@ -65,21 +65,21 @@ static constexpr Colour rgb(unsigned int r, unsigned int g, unsigned int b) {
 // array to store background colours
 static Colour backgroundColours[backgroundSections] = {
 
-	// level 1: pink
-	rgb(255, 213, 196),
+	// level 1: blue #BDE7FF
+	rgb(189, 231, 255),
 
-	// level 2: yellow
-	rgb(255, 227, 187),
+	// level 2: dark blue #5777A5
+	rgb(87, 119, 165),
 
-	// level 3: blue
-	rgb(81, 97, 145),
+	// level 3: purple #681AA3
+	rgb(104, 26, 163),
 
-	// level 4: purple
-	rgb(60, 48, 89)
+	// level 4: dark purple #2B0438
+	rgb(43, 4, 56)
 
 };
 
-// current background colour (starts with pink)
+// current background colour (starts with blue)
 static Colour currentColour = backgroundColours[0];
 
 // function for smooth colour blending
