@@ -36,14 +36,14 @@ Technology is prohibited.
 extern rapidjson::Document level1Config;
 
 static float LoadPlayerHP() {
-	float hp = level1Config["level_1"]["player"]["hp"].GetFloat();
+	float hp = level1Config["player"]["hp"].GetFloat();
 	return (hp > 0.0f) ? hp : 20.0f; 
 }
 
 //loads melee damage from file (Player melee attack)
 static float LoadMeleeDamage()
 {
-	float dmg = level1Config["level_1"]["player"]["melee_damage"].GetFloat();
+	float dmg = level1Config["player"]["melee_damage"].GetFloat();
 	return (dmg > 0.0f)? dmg:5.0f; //fallback to 5 ifnone
 }
 
@@ -52,7 +52,7 @@ void Player_Init(Player& player, float startX, float startY)
 	player.facingRight = true; // current player asset faces right on load
 
 	// player gun bullets
-	player.maxBullets = level1Config["level_1"]["player"]["bullet"]["max_count"].GetInt(); // player gun limit
+	player.maxBullets = level1Config["player"]["bullet"]["max_count"].GetInt(); // player gun limit
 	player.fireTimer = 0.0f;
 
 	//playerBullets.clear();
@@ -86,7 +86,7 @@ void Player_Init(Player& player, float startX, float startY)
 	player.meleeDamage = LoadMeleeDamage();
 
 	//gun
-	const auto& playerJson = level1Config["level_1"]["player"];
+	const auto& playerJson = level1Config["player"];
 	const auto& bulletJson = playerJson["bullet"];
 
 	player.bulletSpeed = bulletJson["speed"].GetFloat();

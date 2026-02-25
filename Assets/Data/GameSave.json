@@ -7,26 +7,7 @@
         "levels_completed": 0,
         "player_lives": 3
     },
-    "ui": {
-      "minimap": {
-        "active": true,
-        "x": -700.0,
-        "y": 370.0,
-        "width": 180.0,
-        "height": 140.0,
-        "worldMinX": -780.0,
-        "worldMaxX": 780.0,
-        "worldMinY": -350.0,
-        "worldMaxY": 2000.0,
-        "dotSize": 10.0
-      }
-    },
-    "checkpoints": [
-        { "x": -450.0, "y": -10.0, "width": 40.0, "height": 40.0 }
-    ],
-    "level_1": {
-        "completed": false,
-        "player": {
+    "player": {
             "x": 0.0,
             "y": -300.0,
             "hp": 20.0,
@@ -56,6 +37,25 @@
                 ]
             }
         },
+    "ui": {
+      "minimap": {
+        "active": true,
+        "x": -700.0,
+        "y": 370.0,
+        "width": 180.0,
+        "height": 140.0,
+        "worldMinX": -780.0,
+        "worldMaxX": 780.0,
+        "worldMinY": -350.0,
+        "worldMaxY": 2000.0,
+        "dotSize": 10.0
+      }
+    },
+    "checkpoints": [
+        { "x": -450.0, "y": -10.0, "width": 40.0, "height": 40.0 }
+    ],
+    "level_1": {
+        "completed": false,
         "enemies": [
             {
                 "type": "easy",
@@ -99,41 +99,33 @@
         ]
     },
     "level_2": {
-        "completed": false,
-        "player": {
-            "x": 0.0,
-            "y": -300.0,
-            "hp": 20.0,
-            "melee_damage": 5
-        },
-        "enemies": [
-            {
-                "type": "easy",
-                "x": 250.0,
-                "y": 120.0,
-                "hp": 60.0,
-                "speed": 1.8,
-                "bullet_speed": 400.0,
-                "bullet_damage": 2.0
-            }
-        ],
+    "completed": false,
+    "enemies": [
+        {
+            "type": "easy",
+            "x": 250.0,
+            "y": 120.0,
+            "hp": 60.0,
+            "speed": 1.8,
+            "bullet_speed": 400.0,
+            "bullet_damage": 2.0
+        }
+    ],
         "platforms": [
-            { "x": 255.0, "y": 610.0, "width": 400.0, "height": 40.0 },
-            { "x": -350.0, "y": 700.0, "width": 300.0, "height": 40.0 },
-            { "x": 650.0, "y": 700.0, "width": 200.0, "height": 40.0 },
-            { "x": 190.0, "y": 840.0, "width": 500.0, "height": 40.0 },
-            { "x": -240.0, "y": 950.0, "width": 200.0, "height": 40.0 },
-            { "x": 500.0, "y": 999.0, "width": 300.0, "height": 40.0 }
-        ]
+        { "x": 255.0, "y": 610.0, "width": 400.0, "height": 40.0, "active": true },
+        { "x": -350.0, "y": 700.0, "width": 300.0, "height": 40.0, "active": true },
+        { "x": 650.0, "y": 700.0, "width": 200.0, "height": 40.0, "active": true },
+        { "x": 190.0, "y": 840.0, "width": 500.0, "height": 40.0, "active": false },
+        { "x": -240.0, "y": 950.0, "width": 200.0, "height": 40.0, "active": false },
+        { "x": 500.0, "y": 999.0, "width": 300.0, "height": 40.0, "active": true }
+    ],
+    "buttons": [
+        { "x": 255.0, "y": 640.0, "width": 60.0, "height": 20.0, "platformIndex": 3 },
+        { "x": -350.0, "y": 730.0, "width": 60.0, "height": 20.0, "platformIndex": 4 }
+    ]
     },
     "level_3": {
         "completed": false,
-        "player": {
-            "x": 0.0,
-            "y": -300.0,
-            "hp": 20.0,
-            "melee_damage": 5
-        },
         "enemies": [],
         "platforms": [
             { "x": 0.0, "y": 1100.0, "width": 200.0, "height": 40.0 },
@@ -146,12 +138,6 @@
     },
     "level_4": {
         "completed": false,
-        "player": {
-            "x": 0.0,
-            "y": -300.0,
-            "hp": 20.0,
-            "melee_damage": 5
-        },
         "enemies": [
           {
             "type": "boss",

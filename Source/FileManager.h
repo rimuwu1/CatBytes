@@ -17,6 +17,7 @@ Technology is prohibited.
 #include "pch.h"
 #include "Player.h"
 #include "enemy.h"
+#include "Platforms.h"
 #include <vector>
 #include <string>
 
@@ -46,6 +47,7 @@ namespace GameSave
         int                        currentLevel,
         const Player& player,
         const std::vector<Enemy>& enemies,
+        const std::vector<Platform>& platforms,
         const std::string& filepath = "Assets/Data/GameSave.json");
 
     void ResetSave(const std::string& configPath = "Assets/Data/GameConfig.json",

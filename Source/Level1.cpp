@@ -87,46 +87,14 @@ static AEGfxTexture* lowHpOverlayTexture = nullptr;
 static AEGfxTexture* playerGunTexture = nullptr;
 static AEGfxTexture* playerGunAttackTexture = nullptr;
 
-/*
-// platforms array
-static std::vector<Platform> level1Platforms = {
-	{    0.0f, -200.0f, 500.0f, 40.0f },
-	{ -450.0f,  -50.0f, 250.0f, 40.0f },
-	{  100.0f,	 85.0f, 450.0f, 40.0f },
-	{  600.0f,	190.0f, 300.0f, 40.0f },
-	{  175.0f,	300.0f, 250.0f, 40.0f },
-	{ -300.0f,	450.0f, 520.0f, 40.0f }
-};
-*/
 // platforms array - will be loaded from JSON
 static std::vector<Platform> wallPlatforms;
 static std::vector<PlatformObstacle> level1Obstacles;
 static std::vector<Checkpoint> checkpoints;
-static std::vector<Platform> level2Platforms = {
-	{  255.0f,  610.0f, 400.0f, 40.0f, true},
-	{ -350.0f,  700.0f, 300.0f, 40.0f, true },
-	{  650.0f,  700.0f, 200.0f, 40.0f, true },
-	{  190.0f,  840.0f, 500.0f, 40.0f, false }, // toggled by button
-	{ -240.0f,  950.0f, 200.0f, 40.0f, false}, // toggled by button
-	{  500.0f,  999.0f, 300.0f, 40.0f, true }
-};
-static std::vector<PlatformButton> level2Buttons = {
-	{ 255.0f, 640.0f, 60.0f, 20.0f, 3 },   // on platform 0, toggles platform index 3
-	{ -350.0f, 730.0f, 60.0f, 20.0f, 4 },   // on platform 1 (y=700, top=720, button center=730)
-};
-static std::vector<Platform> level3Platforms = {
-	{    0.0f,  1100.0f, 200.0f, 40.0f },
-	{  300.0f,  1250.0f, 325.0f, 40.0f },
-	{ -300.0f,  1250.0f, 325.0f, 40.0f },
-	{    0.0f,  1390.5f, 150.0f, 40.0f },
-	{  300.0f,  1499.9f, 250.0f, 40.0f },
-	{ -300.0f,  1499.9f, 250.0f, 40.0f }
-};
-static std::vector<Platform> bossPlatforms = {
-	{  600.0f,  1650.0f, 250.0f, 40.0f },
-	{ -600.0f,  1650.0f, 250.0f, 40.0f },
-	{    0.0f,  1800.0f, 1000.0f, 40.0f }
-};
+static std::vector<Platform> level2Platforms;
+static std::vector<PlatformButton> level2Buttons;
+static std::vector<Platform> level3Platforms;
+static std::vector<Platform> bossPlatforms;
 
 static bool s_SaveRequested = false;
 
@@ -153,6 +121,8 @@ void Level1_Load()
 		rapidjson::IStreamWrapper isw(ifs);
 		level1Config.ParseStream(isw);
 	}
+
+	ifs.close();
 
     std::cout << "Level1:Load" << std::endl;
 }
@@ -247,8 +217,8 @@ void Level1_Initialize()
 
 
 
-	float playerX = level1Config["level_1"]["player"]["x"].GetFloat();
-	float playerY = level1Config["level_1"]["player"]["y"].GetFloat();
+	float playerX = level1Config["player"]["x"].GetFloat();
+	float playerY = level1Config["player"]["y"].GetFloat();
 	Player_Init(lv1Player, playerX, playerY);
 	lv1Player.grounded = 1;
 
@@ -324,6 +294,67 @@ void Level1_Initialize()
 
 				level1Platforms.push_back(newPlatform);
 			}
+		}
+	}
+
+	// ----- Level 2 Platforms -----
+	const rapidjson::Value& lvl2 = level1Config["level_2"];
+	if (lvl2.HasMember("platforms") && lvl2["platforms"].IsArray()) {
+		level2Platforms.clear();
+		for (auto& p : lvl2["platforms"].GetArray()) {
+			Platform pf{};
+			pf.x = p["x"].GetFloat();
+			pf.y = p["y"].GetFloat();
+			pf.w = p["width"].GetFloat();
+			pf.h = p["height"].GetFloat();
+			// Read active flag; default to true if missing
+			pf.active = p.HasMember("active") ? p["active"].GetBool() : true;
+			level2Platforms.push_back(pf);
+		}
+	}
+
+	// ----- Level 2 Buttons -----
+	if (lvl2.HasMember("buttons") && lvl2["buttons"].IsArray()) {
+		level2Buttons.clear();
+		for (auto& b : lvl2["buttons"].GetArray()) {
+			PlatformButton btn{};
+			btn.x = b["x"].GetFloat();
+			btn.y = b["y"].GetFloat();
+			btn.w = b["width"].GetFloat();
+			btn.h = b["height"].GetFloat();
+			btn.platformIndex = b["platformIndex"].GetInt();
+			btn.wasPressed = false;          // fresh state
+			level2Buttons.push_back(btn);
+		}
+	}
+
+	// ----- Level 3 Platforms -----
+	const rapidjson::Value& lvl3 = level1Config["level_3"];
+	if (lvl3.HasMember("platforms") && lvl3["platforms"].IsArray()) {
+		level3Platforms.clear();
+		for (auto& p : lvl3["platforms"].GetArray()) {
+			Platform pf{};
+			pf.x = p["x"].GetFloat();
+			pf.y = p["y"].GetFloat();
+			pf.w = p["width"].GetFloat();
+			pf.h = p["height"].GetFloat();
+			pf.active = p.HasMember("active") ? p["active"].GetBool() : true;
+			level3Platforms.push_back(pf);
+		}
+	}
+
+	// ----- Level 4 (Boss) Platforms -----
+	const rapidjson::Value& lvl4 = level1Config["level_4"];
+	if (lvl4.HasMember("platforms") && lvl4["platforms"].IsArray()) {
+		bossPlatforms.clear();
+		for (auto& p : lvl4["platforms"].GetArray()) {
+			Platform pf{};
+			pf.x = p["x"].GetFloat();
+			pf.y = p["y"].GetFloat();
+			pf.w = p["width"].GetFloat();
+			pf.h = p["height"].GetFloat();
+			pf.active = p.HasMember("active") ? p["active"].GetBool() : true;
+			bossPlatforms.push_back(pf);
 		}
 	}
 
@@ -413,6 +444,13 @@ void Level1_Initialize()
 // ----------------------------------------------------------------------------
 void Level1_Update()
 {	
+	//restart flag
+	if (g_resetLevelOnNextUpdate) {
+		enemyBullets.clear(); //static vector so clear here
+		Level1_Load(); //reparse json file to check if new position saved
+		Level1_Initialize(); //reinit current level (all vectors properly cleared properly in init)
+		g_resetLevelOnNextUpdate = false; //clear flag
+	}
 	// Player Update
 	static float playerPrevY = 0.0f;
 	playerPrevY = lv1Player.pos.y;
@@ -523,8 +561,31 @@ void Level1_Update()
 		if (!checkpointSaved || s_SaveRequested) {
 			checkpointSaved = true;
 			s_SaveRequested = false;
-			GameSave::Metadata meta{ "1.0", "", 1, 4, 0, 3 };
-			GameSave::SaveGame(meta, 1, lv1Player, { EasyEnemy, HardEnemy });
+
+			int currentSection = Background_CurrentSection(); // 0=Level1, 1=Level2, 2=Level3, 3=Level4
+			int currentLevel = currentSection + 1;
+
+			// Select platform vector
+			std::vector<Platform>* currentPlatforms = nullptr;
+			switch (currentLevel) {
+			case 1: currentPlatforms = &level1Platforms; break;
+			case 2: currentPlatforms = &level2Platforms; break;
+			case 3: currentPlatforms = &level3Platforms; break;
+			case 4: currentPlatforms = &bossPlatforms;   break;
+			default: currentPlatforms = &level1Platforms; break;
+			}
+
+			// Build enemy list for this level (example – expand as needed)
+			std::vector<Enemy> currentEnemies;
+			switch (currentLevel) {
+			case 1: currentEnemies = { EasyEnemy, HardEnemy }; break;
+			case 2: /* TODO: add level2 enemy if exists */     break;
+			case 3: /* no enemies */ break;
+			case 4: currentEnemies = { BossEnemy }; break;
+			}
+
+			GameSave::Metadata meta{ "1.0", "", currentLevel, 4, 0, 3 };
+			GameSave::SaveGame(meta, currentLevel, lv1Player, currentEnemies, *currentPlatforms);
 			GameSave::Notify_Show(GameSave::NotifyType::SAVED);
 		}
 	}
@@ -862,6 +923,5 @@ void Level1_Unload()
 	hardEnemyAttackTexture = nullptr;
 	lowHpOverlayTexture = nullptr;
 
-	ifs.close();
 	std::cout << "Level1:Unload" << std::endl;
 }

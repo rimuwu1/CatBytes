@@ -24,6 +24,7 @@ Technology is prohibited.
 #include "MainMenu.h"
 #include "SplashScreen.h"
 #include "WinLose.h"
+#include "PauseMenu.h"
 
 int current = 0, previous = 0, next = 0;
 
@@ -110,6 +111,14 @@ void GSM_Update()
 	case GS_RESTART: // State indicating the game should restart
 		break;
 	case GS_QUIT: // State indicating the game should quit/exit
+		break;
+	case GS_PAUSE:
+		fpLoad = Pause_Load;
+		fpInitialize = Pause_Initialize;
+		fpUpdate = Pause_Update;
+		fpDraw = Pause_Draw;
+		fpFree = Pause_Free;
+		fpUnload = Pause_Unload;
 		break;
 	default: // Handle any undefined state IDs
 		break;

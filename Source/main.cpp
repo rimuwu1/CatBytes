@@ -3,6 +3,7 @@
 #include "Input.h"
 #include "System.h"
 
+static int preservedState = -1;   // -1 means no state is preserved
 // ----------------------------------------------------------------------------
 // Main entry point for the application
 // Implements the game state machine with main game loop
@@ -23,41 +24,57 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	GSM_Initialize(current);
 
 	// Main game loop - runs until quit state is reached
-	while (current != GS_QUIT)
-	{
-		// If not restarting, set up and load new state
-		if (current != GS_RESTART) {
-			GSM_Update();   // Update GSM to set function pointers for current state
-			fpLoad();       // Load resources for the current state
-		}
-		else {
-			// Restart logic: revert to previous state
-			next = previous;    // Set next to the state we were in before restart
-			current = previous; // Also update current to the previous state
-		}
+    while (current != GS_QUIT)
+    {
+        // ----- ENTERING A STATE -----
+        bool enteringPreserved = (current == preservedState);
+        if (!enteringPreserved)
+        {
+            if (current != GS_RESTART)
+            {
+                GSM_Update();
+                fpLoad();
+            }
+            else
+            {
+                next = previous;
+                current = previous;
+            }
+            fpInitialize();
+        }
+        else
+        {
+            //state is loaded
+            GSM_Update();
+            preservedState = -1;   // clear the flag
+        }
 
-		// Initialize the current game state
-		fpInitialize();
+        // ----- STATE LOOP -----
+        while (next == current)
+        {
+            Input_Handle();
+            fpUpdate();
+            fpDraw();
+        }
 
-		// State loop - runs while staying in the same game state
-		while (next == current) {
-			Input_Handle();     // Process user input for this frame
-			fpUpdate();         // Update game logic for current state
-			fpDraw();           // Render current game state
-		}
+        // ----- LEAVING A STATE -----
+        if (next == GS_PAUSE)
+        {
+            // Going to pause: keep the current state’s data alive
+            preservedState = current;
+            // skip fpFree and fpUnload
+        }
+        else
+        {
+            fpFree();
+            if (next != GS_RESTART)
+                fpUnload();
+        }
 
-		// Clean up current state before transitioning
-		fpFree();               // Free dynamic resources
-
-		// Unload persistent resources unless restarting
-		if (next != GS_RESTART) {
-			fpUnload();         // Unload static resources
-		}
-
-		// Update state tracking for next iteration
-		previous = current;     // Store current state as previous
-		current = next;         // Transition to next state
-	}
+        // ----- TRANSITION -----
+        previous = current;
+        current = next;
+    }
 
 	// Clean up system resources before exiting
 	System_Exit();

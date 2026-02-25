@@ -1,4 +1,4 @@
-/* Start Header ************************************************************************/
+﻿/* Start Header ************************************************************************/
 /*!
 \file FileManager.cpp
 \author Joash ng, joash.ng, 2502780
@@ -15,6 +15,7 @@ Technology is prohibited.
 /* End Header **************************************************************************/
 #include "FileManager.h"
 #include "Player.h"
+#include "Platforms.h"
 #include "enemy.h"
 #include "Fonts.h"
 #include "rapidjson/document.h"
@@ -58,6 +59,7 @@ namespace GameSave
         int                        currentLevel,
         const Player& player,
         const std::vector<Enemy>& enemies,
+        const std::vector<Platform>& platforms,
         const std::string& filepath)
     {
         // ------------------------------------------------------------------
@@ -79,30 +81,28 @@ namespace GameSave
             }
         }
 
-        //rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
+        // ------------------------------------------------------------------
+        // 2. Update the top‑level player (global)
+        // ------------------------------------------------------------------
+        if (doc.HasMember("player") && doc["player"].IsObject())
+        {
+            rapidjson::Value& playerObj = doc["player"];
+            playerObj["x"] = player.pos.x;
+            playerObj["y"] = player.pos.y;
+            playerObj["hp"] = player.hp;
+        }
+        // If "player" doesn't exist (old save?), we could create it, but the config always has it.
 
         // ------------------------------------------------------------------
-        // 2. Update player and enemies in place on the original doc,
-        //    so the values are ready to be copied into the ordered doc.
+        // 3. Update enemies and platform active states for the current level
         // ------------------------------------------------------------------
         std::string levelKey = "level_" + std::to_string(currentLevel);
-        const char* key = levelKey.c_str();
-
-        if (doc.HasMember(key))
+        if (doc.HasMember(levelKey.c_str()))
         {
-            rapidjson::Value& levelObj = doc[key];
-
-            // Player: only x, y, hp - everything else untouched
-            if (levelObj.HasMember("player"))
-            {
-                rapidjson::Value& playerObj = levelObj["player"];
-                playerObj["x"] = player.pos.x;
-                playerObj["y"] = player.pos.y;
-                playerObj["hp"] = player.hp;
-            }
+            rapidjson::Value& levelObj = doc[levelKey.c_str()];
 
             // Enemies: only x, y, hp matched by index
-            if (levelObj.HasMember("enemies"))
+            if (levelObj.HasMember("enemies") && levelObj["enemies"].IsArray())
             {
                 rapidjson::Value& enemiesArr = levelObj["enemies"];
                 for (rapidjson::SizeType i = 0; i < enemiesArr.Size(); i++)
@@ -113,10 +113,30 @@ namespace GameSave
                     enemiesArr[i]["hp"] = enemies[i].hitPoints;
                 }
             }
+
+            // Platforms: update active states
+            if (levelObj.HasMember("platforms") && levelObj["platforms"].IsArray())
+            {
+                rapidjson::Value& platformsArr = levelObj["platforms"];
+                if (platformsArr.Size() == platforms.size())
+                {
+                    for (rapidjson::SizeType i = 0; i < platformsArr.Size(); ++i)
+                    {
+                        if (platformsArr[i].IsObject())
+                        {
+                            if (platformsArr[i].HasMember("active"))
+                                platformsArr[i]["active"] = platforms[i].active;
+                            else
+                                platformsArr[i].AddMember("active", platforms[i].active, doc.GetAllocator());
+                        }
+                    }
+                }
+            }
         }
 
         // ------------------------------------------------------------------
-        // 3. Rebuild a new document in the correct key order.
+        // 4. Rebuild a new document in the correct key order.
+        //    (This part remains the same – it preserves all top‑level keys)
         // ------------------------------------------------------------------
         rapidjson::Document ordered(rapidjson::kObjectType);
         rapidjson::Document::AllocatorType& oa = ordered.GetAllocator();
@@ -131,7 +151,7 @@ namespace GameSave
         metaObj.AddMember("player_lives", metadata.player_lives, oa);
         ordered.AddMember("metadata", metaObj, oa);
 
-        // level keys in fixed order, deep-copied from the updated doc
+        // level keys in fixed order
         const char* levelOrder[] = { "level_1", "level_2", "level_3", "level_4" };
         for (const char* lvlKey : levelOrder)
         {
@@ -142,7 +162,7 @@ namespace GameSave
             }
         }
 
-        // preserve any other top-level keys (e.g. checkpoints)
+        // preserve any other top‑level keys (player, ui, checkpoints, etc.)
         for (auto it = doc.MemberBegin(); it != doc.MemberEnd(); ++it)
         {
             const char* memberName = it->name.GetString();
@@ -155,7 +175,7 @@ namespace GameSave
         }
 
         // ------------------------------------------------------------------
-        // 4. Serialize and write back to file
+        // 5. Serialize and write back to file
         // ------------------------------------------------------------------
         rapidjson::StringBuffer buffer;
         rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buffer);
