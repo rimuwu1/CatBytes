@@ -1,9 +1,9 @@
 /* Start Header ************************************************************************/
 /*!
 \file PlayerMelee.cpp
-\author Tse Xuan Qi Tristin, tse.x, 2503757
-\par tse.x@digipen.edu
-\date Junuary, 24, 2026
+\author Joash ng, joash.ng, 2502780
+\par joash.ng@digipen.edu
+\date Febuary, 27, 2026
 \brief Implements functions for the player's melee attacks, including attack updates,
        hitbox calculations, collision detection with enemies, and applying damage.
 

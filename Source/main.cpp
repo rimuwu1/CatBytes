@@ -1,3 +1,17 @@
+/* Start Header ************************************************************************/
+/*!
+\file main.cpp
+\author Joash ng, joash.ng, 2502780
+\par joash.ng@digipen.edu
+\date 19/02/2026
+\brief Main entry point for game, implements the game loop which handles state switching, preservation and restarting.
+
+Copyright (C) 2026 DigiPen Institute of Technology.
+Reproduction or disclosure of this file or its contents
+without the prior written consent of DigiPen Institute of
+Technology is prohibited.
+*/
+/* End Header **************************************************************************/
 #include "pch.h"
 #include "GameStateManager.h"
 #include "Input.h"

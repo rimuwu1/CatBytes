@@ -3,8 +3,10 @@
 \file       Platforms.h
 \author     Peh Yu Xuan, Lovette, p.yuxuanlovette, 2502079
 			Sim Hui Min, Huimin, s.huimin, 2503506
+			Joash Ng, joash.ng, 2502780
 \par        p.yuxuanlovette@digipen.edu
 			s.huimin@digipen.edu
+			joash.ng@digipen.edu
 \date       January 26 2026
 \brief
 

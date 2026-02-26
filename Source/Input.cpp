@@ -6,7 +6,7 @@
 \par joash.ng@digipen.edu
 	 tse.x@digipen.edu
 \date 21/01/2026
-\brief This file implements the functions for Input Handling, which processes user inputs.
+\brief This file implements the functions for Input Handling, which processes global user inputs.
 
 Copyright (C) 2026 DigiPen Institute of Technology.
 Reproduction or disclosure of this file or its contents
