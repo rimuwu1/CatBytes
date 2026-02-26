@@ -16,93 +16,119 @@ Technology is prohibited.
 
 #include "pch.h"
 #include "PlayerMelee.h"
+#include "MeshManager.h"
 #include <cmath>
-#include <vector> 
+#include <vector>
 
-void PlayerMelee_Init(Player & player)
+// ----------------------------------------------------------------------------
+// Returns the world-space AABB of the slash sprite as it is drawn.
+// Matches exactly the position and size used in Player_Draw.
+// Returns false if the slash is not active or the sprite doesn't exist.
+// ----------------------------------------------------------------------------
+static bool GetSlashAABB(const Player& player, float& outX, float& outY, float& outHalfW, float& outHalfH)
 {
-    //reset attack state flags
+    if (!player.isAttacking || !player.slashSprite)
+        return false;
+
+    const float slashWidth = player.width;      // match player size for slash hitbox
+    const float slashHeight = player.height;
+    const float offset = 20.0f;          // distance from player edge
+
+    outHalfW = slashWidth * 0.5f;
+    outHalfH = slashHeight * 0.5f;
+
+    switch (player.slashDirection) {
+    case SlashDirection::HORIZONTAL:
+        outX = player.pos.x + (player.facingRight ? player.width * 0.5f + offset : -player.width * 0.5f - offset);
+        outY = player.pos.y;
+        break;
+    case SlashDirection::UP:
+        outX = player.pos.x;
+        outY = player.pos.y + player.height * 0.5f + offset;
+        break;
+    case SlashDirection::DOWN:
+        outX = player.pos.x;
+        outY = player.pos.y - player.height * 0.5f - offset;
+        break;
+    default:
+        return false;
+    }
+    return true;
+}
+
+// ----------------------------------------------------------------------------
+// AABB vs AABB overlap test using centre + half-extents.
+// ----------------------------------------------------------------------------
+static bool AABBOverlap(float ax, float ay, float aHW, float aHH,
+    float bx, float by, float bHW, float bHH)
+{
+    return (fabs(ax - bx) < (aHW + bHW)) &&
+        (fabs(ay - by) < (aHH + bHH));
+}
+
+// ----------------------------------------------------------------------------
+void PlayerMelee_Init(Player& player)
+{
     player.isAttacking = false;
     player.attackTimer = 0.0f;
-    player.meleeHasHitThisSwing = false;
 }
 
+// ----------------------------------------------------------------------------
+// Collision check against a single enemy.
+// Uses the slash sprite's drawn AABB — if the sprite is visible and overlaps
+// the enemy, damage is applied once per swing.
+// ----------------------------------------------------------------------------
 void PlayerMelee_Update(Player& player, Enemy& enemy)
 {
-    //only proceed if player is attacking, weapon equipped, and enemy alive
-    if (player.weapon != PlayerWeapon::MELEE || !player.weaponEquipped || !player.isAttacking || !enemy.isAlive)
+    if (!enemy.isAlive)
         return;
 
-    //prevent hitting the same enemy multiple times in a single swing
-    if (player.meleeHasHitThisSwing)
+
+    float slashX, slashY, slashHW, slashHH;
+    if (!GetSlashAABB(player, slashX, slashY, slashHW, slashHH))
         return;
 
-    //define melee hitbox dimensions(rn its just player+weapon length)
-    const float weaponWidth = 30.0f;
-    const float weaponHeight = 80.0f;
-    const float offsetX = player.width * 0.5f + 40.0f; //position hitbox in front of player
+    float enemyHW = enemy.width * 0.5f;
+    float enemyHH = enemy.height * 0.5f;
 
-    //calculate hitbox center position based on player facing direction
-    float weaponX = player.pos.x + (player.facingRight ? offsetX : -offsetX);
-    float weaponY = player.pos.y;
-
-    //Half-dimensions for overlap check
-    float weaponHalfW = weaponWidth * 0.5f;
-    float weaponHalfH = weaponHeight * 0.5f;
-    float enemyHalfW = enemy.width * 0.5f;
-    float enemyHalfH = enemy.height * 0.5f;
-
-    //check AABB collision(axis-aligned bounding box)
-    bool overlapX = fabs(weaponX - enemy.pos.x) < (weaponHalfW + enemyHalfW);
-    bool overlapY = fabs(weaponY - enemy.pos.y) < (weaponHalfH + enemyHalfH);
-
-    //If hitbox overlaps enemy, apply damage
-    if (overlapX && overlapY)
+    if (AABBOverlap(slashX, slashY, slashHW, slashHH,
+        enemy.pos.x, enemy.pos.y, enemyHW, enemyHH))
     {
         Enemy_OnHit(enemy, player.meleeDamage);
-        player.meleeHasHitThisSwing = true;
     }
 }
 
+// ----------------------------------------------------------------------------
+// Collision check against a list of enemies.
+// Note: meleeHasHitThisSwing is shared (remove the flag check above
+// and track hit enemies individually instead).
+// ----------------------------------------------------------------------------
 void PlayerMelee_CheckCollisions(Player& player, std::vector<Enemy*>& enemies)
 {
+    float slashX, slashY, slashHW, slashHH;
+    if (!GetSlashAABB(player, slashX, slashY, slashHW, slashHH))
+        return;
+
     for (Enemy* enemy : enemies)
     {
-        PlayerMelee_Update(player, *enemy);
-    }
-}
+        if (!enemy || !enemy->isAlive) continue;
 
-void PlayerMelee_CheckBossCollision(Player& player, Enemy& boss)
-{
-    //only proceed if attacking, weapon equipped, and boss alive
-    if (player.weapon != PlayerWeapon::MELEE || !player.weaponEquipped || !player.isAttacking || !boss.isAlive)
-        return;
+        float enemyHW = enemy->width * 0.5f;
+        float enemyHH = enemy->height * 0.5f;
 
-    //prevent hitting the boss multiple times in one swing
-    if (player.meleeHasHitThisSwing)
-        return;
+        if (AABBOverlap(slashX, slashY, slashHW, slashHH,
+            enemy->pos.x, enemy->pos.y, enemyHW, enemyHH))
+        {
+            Enemy_OnHit(*enemy, player.meleeDamage);
 
-    //define hitbox dimensions
-    const float weaponWidth = 30.0f;
-    const float weaponHeight = 80.0f;
-    const float offsetX = player.width * 0.5f + 40.0f;
-
-    // compute hitbox center
-    float weaponX = player.pos.x + (player.facingRight ? offsetX : -offsetX);
-    float weaponY = player.pos.y;
-
-    float weaponHalfW = weaponWidth * 0.5f;
-    float weaponHalfH = weaponHeight * 0.5f;
-    float bossHalfW = boss.width * 0.5f;
-    float bossHalfH = boss.height * 0.5f;
-
-    bool overlapX = fabs(weaponX - boss.pos.x) < (weaponHalfW + bossHalfW);
-    bool overlapY = fabs(weaponY - boss.pos.y) < (weaponHalfH + bossHalfH);
-
-    //apply damage if collision occurs
-    if (overlapX && overlapY)
-    {
-        Enemy_OnHit(boss, player.meleeDamage); //boss is treated as an Enemy
-        player.meleeHasHitThisSwing = true;
+            // Down?slash jump: only once per swing
+            if (player.slashDirection == SlashDirection::DOWN && !player.downSlashJumped)
+            {
+                const float JUMP_FORCE = 650.0f;   // same as in Input.cpp
+                player.vel.y = JUMP_FORCE;
+                player.grounded = false;
+                player.downSlashJumped = true;
+            }
+        }
     }
 }

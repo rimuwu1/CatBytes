@@ -226,13 +226,6 @@ void Level1_Initialize()
 	lv1Player.mesh = nullptr;
 	lv1Player.texture = playerTexture;
 
-	lv1Player.meleeTexture = playerMeleeTexture;
-	lv1Player.meleeAttackTexture = playerMeleeAttackTexture;
-	lv1Player.meleeWeaponTexture = playerMeleeWeaponTexture;
-
-	lv1Player.gunTexture = playerGunTexture;
-	lv1Player.gunAttackTexture = playerGunAttackTexture;
-
 	// Bind the level player to the input system
 	Input_SetPlayer(&lv1Player);
 
@@ -618,9 +611,9 @@ void Level1_Update()
 		btn.wasPressed = isPressed;
 	}
 
-	std::vector<Enemy*> enemies = { &EasyEnemy, &HardEnemy };
+	std::vector<Enemy*> enemies = { &EasyEnemy, &HardEnemy, &BossEnemy };
 	PlayerMelee_CheckCollisions(lv1Player, enemies);
-	PlayerMelee_CheckBossCollision(lv1Player, BossEnemy);
+	
 
 	//enemy update
 	Enemy_Update(EasyEnemy, dt);//Enemy
@@ -821,7 +814,6 @@ void Level1_Draw()
 	CheckpointDraw(checkpoints);
 
 	MeshManager::Get().DrawSquare(0.0f, ground, 1600.0f, 50.0f, 0, 0, 0); // Draw Ground (Texture TBA?)
-	Player_Draw(lv1Player);
 
 	Enemy_Draw(EasyEnemy);//Enemy
 	for (const auto& bullet : enemyBullets)
@@ -866,6 +858,8 @@ void Level1_Draw()
 	DrawEnemyOverlay(HardEnemy);
 
 	BossEnemy_Draw(BossEnemy);
+
+	Player_Draw(lv1Player);
 
 	// Draw minimap
 	AEGfxSetCamPosition(0.0f, 0.0f); // for minimap

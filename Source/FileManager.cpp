@@ -136,7 +136,6 @@ namespace GameSave
 
         // ------------------------------------------------------------------
         // 4. Rebuild a new document in the correct key order.
-        //    (This part remains the same – it preserves all top‑level keys)
         // ------------------------------------------------------------------
         rapidjson::Document ordered(rapidjson::kObjectType);
         rapidjson::Document::AllocatorType& oa = ordered.GetAllocator();

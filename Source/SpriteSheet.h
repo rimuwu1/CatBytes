@@ -108,6 +108,8 @@ public:
     f32           GetSpriteUVWidth() const { return spriteUVWidth; }
     f32           GetSpriteUVHeight()const { return spriteUVHeight; }
     u32           GetCurrentFrame()  const { return currentFrame; }
+    float         GetClipDuration(const std::string& name) const;          // duration per frame
+    float         GetClipTotalDuration(const std::string& name) const;    // total time of clip
     std::string   GetCurrentClip()   const { return currentClip; }
     bool          IsPlaying()        const { return playing; }
 

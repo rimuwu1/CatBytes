@@ -50,12 +50,7 @@ public:
 
     void DrawSpriteSheet(SpriteSheet& sprite,
         float x, float y, float width, float height,
-        float opacity = 1.f);
-
-    void DrawTexturedSquarePivot(AEGfxTexture* texture,
-        float x, float y, float width, float height,
-        float rotationDeg, float pivotX, float pivotY,
-        float opacity = 1.0f);
+        float opacity = 1.f, float rotationDeg = 0.f);
 
 private:
     MeshManager() = default;

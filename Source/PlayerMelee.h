@@ -39,11 +39,5 @@ void PlayerMelee_Update(Player& player, Enemy& enemy);
 // ----------------------------------------------------------------------------
 void PlayerMelee_CheckCollisions(Player& player, std::vector<Enemy*>& enemies);
 
-// ----------------------------------------------------------------------------
-// Handles melee attacks against the boss.
-// Boss is treated as an Enemy; applies damage and sets hit flag if collision occurs
-// Only called for boss collisions
-// ----------------------------------------------------------------------------
-void PlayerMelee_CheckBossCollision(Player& player, Enemy& boss);
 
 

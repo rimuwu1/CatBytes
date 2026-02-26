@@ -148,8 +148,10 @@ void MeshManager::DrawTexturedSquare(AEGfxTexture* texture,
 }
 
 void MeshManager::DrawSpriteSheet(SpriteSheet& sprite,
-    float x, float y, float width, float height,
-    float opacity)
+    float x, float y,
+    float width, float height,
+    float opacity,
+    float rotationDeg)
 {
     float uvW = sprite.GetSpriteUVWidth();
     float uvH = sprite.GetSpriteUVHeight();
@@ -171,42 +173,22 @@ void MeshManager::DrawSpriteSheet(SpriteSheet& sprite,
     AEGfxSetTransparency(opacity);
     AEGfxTextureSet(sprite.GetTexture(), sprite.GetUVOffsetX(), sprite.GetUVOffsetY());
 
-    AEMtx33 scale, translate, transform;
+    // Build transformation matrix: Scale -> Rotate -> Translate
+    const float degToRad = 3.1415926535f / 180.0f;
+    float rotRad = rotationDeg * degToRad;
+
+    AEMtx33 scale, rotate, translate, transform;
     AEMtx33Scale(&scale, width, height);
+    AEMtx33Rot(&rotate, rotRad);                 // rotation around origin (center of sprite)
     AEMtx33Trans(&translate, x, y);
-    AEMtx33Concat(&transform, &translate, &scale);
+
+    // Combine: transform = translate * rotate * scale
+    AEMtx33 tmp;
+    AEMtx33Concat(&tmp, &rotate, &scale);        // tmp = rotate * scale
+    AEMtx33Concat(&transform, &translate, &tmp); // transform = translate * tmp
 
     AEGfxSetTransform(transform.m);
     AEGfxMeshDraw(mesh, AE_GFX_MDM_TRIANGLES);
 
     AEGfxMeshFree(mesh);
-}
-
-//delete when not needed (after removing the sword code)
-void MeshManager::DrawTexturedSquarePivot(AEGfxTexture* texture,
-    float x, float y, float width, float height,
-    float rotationDeg, float pivotX, float pivotY,
-    float opacity) {
-    AEGfxVertexList* mesh = GetMesh("square");
-    AEMtx33 scale, rot, trans, pivot, transform;
-
-    AEGfxSetRenderMode(AE_GFX_RM_TEXTURE);
-    AEGfxSetColorToMultiply(1, 1, 1, 1);
-    AEGfxSetColorToAdd(0, 0, 0, 0);
-    AEGfxSetBlendMode(AE_GFX_BM_BLEND);
-    AEGfxSetTransparency(opacity);
-    AEGfxTextureSet(texture, 0, 0);
-
-    AEMtx33Scale(&scale, width, height);
-    AEMtx33Trans(&pivot, -pivotX, -pivotY);
-    AEMtx33RotDeg(&rot, rotationDeg);
-    AEMtx33Trans(&trans, x, y);
-
-    // T * R * P * S
-    AEMtx33Concat(&transform, &pivot, &scale);
-    AEMtx33Concat(&transform, &rot, &transform);
-    AEMtx33Concat(&transform, &trans, &transform);
-
-    AEGfxSetTransform(transform.m);
-    AEGfxMeshDraw(mesh, AE_GFX_MDM_TRIANGLES);
 }

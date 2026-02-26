@@ -41,6 +41,26 @@ SpriteSheet::SpriteSheet(const std::string& filepath,
     RecalculateUV();
 }
 
+// -----------------------------------------------------------------------------
+float SpriteSheet::GetClipDuration(const std::string& name) const {
+    auto it = clips.find(name);
+    if (it != clips.end()) {
+        return it->second.frameDuration;
+    }
+    return 0.f;
+}
+
+// -----------------------------------------------------------------------------
+float SpriteSheet::GetClipTotalDuration(const std::string& name) const {
+    auto it = clips.find(name);
+    if (it != clips.end()) {
+        const Clip& clip = it->second;
+        float numFrames = static_cast<float>(clip.endFrame - clip.startFrame + 1);
+        return numFrames * clip.frameDuration;
+    }
+    return 0.f;
+}
+
 //add clip from overall spritesheet
 void SpriteSheet::AddClip(const std::string& name, u32 start, u32 end,
     float duration, bool loop) {

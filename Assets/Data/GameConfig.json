@@ -10,6 +10,8 @@
     "player": {
             "x": 0.0,
             "y": -300.0,
+            "width": 80.0,
+            "height": 80.0,
             "hp": 20.0,
             "melee_damage": 5,
             "bullet": {
@@ -25,17 +27,25 @@
         "rows": 3,
         "cols": 5,
         "clips": [
-            { "name": "idle", "start": 0, "end": 4, "speed": 0.1, "loop": true },
-            { "name": "walk", "start": 0, "end": 4, "speed": 0.1, "loop": true },
-            { "name": "weapon_switch", "start": 5, "end": 9, "speed": 0.08, "loop": false },
-            { "name": "melee_idle", "start": 0, "end": 0, "speed": 0.1, "loop": true },
-            { "name": "melee_walk", "start": 0, "end": 4, "speed": 0.1, "loop": true },
-            { "name": "melee_attack", "start": 10, "end": 14, "speed": 0.05, "loop": false },
-            { "name": "gun_idle", "start": 0, "end": 4, "speed": 0.1, "loop": true },
-            { "name": "gun_walk", "start": 0, "end": 4, "speed": 0.1, "loop": true },
-            { "name": "gun_attack", "start": 0, "end": 0, "speed": 0.03, "loop": false }
+            { "name": "idle", "start": 0, "end": 4, "duration": 0.1, "loop": true },
+            { "name": "walk", "start": 0, "end": 4, "duration": 0.1, "loop": true },
+            { "name": "weapon_switch", "start": 5, "end": 9, "duration": 0.08, "loop": false },
+            { "name": "melee_idle", "start": 0, "end": 0, "duration": 0.1, "loop": true },
+            { "name": "melee_walk", "start": 0, "end": 4, "duration": 0.1, "loop": true },
+            { "name": "melee_attack", "start": 10, "end": 14, "duration": 0.05, "loop": false },
+            { "name": "gun_idle", "start": 0, "end": 4, "duration": 0.1, "loop": true },
+            { "name": "gun_walk", "start": 0, "end": 4, "duration": 0.1, "loop": true },
+            { "name": "gun_attack", "start": 0, "end": 0, "duration": 0.03, "loop": false }
                 ]
-            }
+            },
+            "slash": {
+        "file": "Assets/Images/SlashSheet.png",
+        "rows": 1,
+        "cols": 5,
+        "clips": [
+            { "name": "slash", "start": 0, "end": 4, "duration": 0.02, "loop": false }
+        ]
+    }
         },
     "ui": {
       "minimap": {

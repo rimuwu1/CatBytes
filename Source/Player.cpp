@@ -65,12 +65,12 @@ void Player_Init(Player& player, float startX, float startY)
 		PlayerBullet_Init(b, player); // pass the player object
 	}
 
-	player.pos.x = startX;
-	player.pos.y = startY;
+	player.pos.x = level1Config["player"].HasMember("x") ? level1Config["player"]["x"].GetFloat() : startX;
+	player.pos.y = level1Config["player"].HasMember("y") ? level1Config["player"]["y"].GetFloat() : startY;
 	player.vel.x = 0.0f;
 	player.vel.y = 0.0f;
-	player.width = 80.0f;
-	player.height = 80.0f;
+	player.width = level1Config["player"].HasMember("width") ? level1Config["player"]["width"].GetFloat() : 80.0f;
+	player.height = level1Config["player"].HasMember("height") ? level1Config["player"]["height"].GetFloat() : 80.0f;
 	player.grounded = 1;
 
 	//load player hp
@@ -117,7 +117,7 @@ void Player_Init(Player& player, float startX, float startY)
 				c["name"].GetString(),
 				c["start"].GetInt(),
 				c["end"].GetInt(),
-				c["speed"].GetFloat(),
+				c["duration"].GetFloat(),
 				c["loop"].GetBool()
 			);
 		}
@@ -129,6 +129,30 @@ void Player_Init(Player& player, float startX, float startY)
 	player.wasWalking = false;
 	player.previousWeapon = PlayerWeapon::NONE;
 	player.weaponSwitchTriggered = false;
+
+	// --- slash sheet Loading ---
+	if (playerJson.HasMember("slash")) {
+		const auto& anims = playerJson["slash"];
+		player.slashSprite = std::make_unique<SpriteSheet>(
+			anims["file"].GetString(),
+			anims["rows"].GetInt(),
+			anims["cols"].GetInt()
+		);
+
+		const auto& clips = anims["clips"];
+		for (rapidjson::SizeType i = 0; i < clips.Size(); i++) {
+			const auto& c = clips[i];
+			player.slashSprite->AddClip(
+				c["name"].GetString(),
+				c["start"].GetInt(),
+				c["end"].GetInt(),
+				c["duration"].GetFloat(),
+				c["loop"].GetBool()
+			);
+		}
+	}
+	// play slash
+	player.spriteSheet->Play("slash", true);
 }
 
 void Player_Update(Player& player, float dt)
@@ -198,28 +222,40 @@ void Player_Update(Player& player, float dt)
 		PlayerBullet_Update(b, dt);
 	}
 
-	// melee weapon tilt/swing
+	// Melee attack input (only if weapon is MELEE)
 	if (player.weapon == PlayerWeapon::MELEE && player.weaponEquipped)
 	{
-		const float maxRotation = 100.0f; //swing (number) of degrees
-		float rotationSpeed = player.meleeWeaponRotationSpeed;
+		if (AEInputCheckTriggered(AEVK_LBUTTON))
+		{
+			player.isAttacking = true;
 
-		if (player.isAttacking)
-		{
-			// swing from vertical to horizontal
-			player.meleeWeaponRotation += rotationSpeed * dt;
-			if (player.meleeWeaponRotation > maxRotation)
-				player.meleeWeaponRotation = maxRotation;
-		}
-		else
-		{
-			// return to vertical
-			player.meleeWeaponRotation -= rotationSpeed * dt;
-			if (player.meleeWeaponRotation < 0.0f)
-				player.meleeWeaponRotation = 0.0f;
-			player.meleeHasHitThisSwing = false;
+
+			// handle slash direction based on held keys
+			if (AEInputCheckCurr('W'))
+				player.slashDirection = SlashDirection::UP;
+			else if (AEInputCheckCurr('S'))
+				player.slashDirection = SlashDirection::DOWN;
+			else // A or D (handle with flipping)
+				player.slashDirection = SlashDirection::HORIZONTAL;
+
+			// Reset jump flag for a new down‑slash
+			if (player.slashDirection == SlashDirection::DOWN)
+				player.downSlashJumped = false;
+
+			// Activate slash effect
+			if (player.slashSprite) {
+				player.slashSprite->Play("slash", true);
+				// Set player's attack timer to match slash duration
+				float totalTime = player.slashSprite->GetClipTotalDuration("slash");
+				player.attackTimer = totalTime;
+			}
 		}
 	}
+
+	if (player.slashSprite) {
+		player.slashSprite->Update(dt);
+	}
+	
 
 	// --- Determine walking state ---
 	bool isWalking = (fabs(player.vel.x) > 0.1f) && player.grounded;
@@ -286,7 +322,6 @@ void Player_Update(Player& player, float dt)
 	// Update state trackers
 	player.wasAttacking = player.isAttacking;
 	player.wasWalking = isWalking;
-
 }
 
 void Player_Draw(const Player& player)
@@ -324,45 +359,44 @@ void Player_Draw(const Player& player)
 
 
 	//melee weapon visual parameters
-
-	//size of the weapon sprite in world units
-	const float weaponWidth = 30.0f;
-	const float weaponHeight = 80.0f;
-
-	//rotation angle for the weapon
-	//flip direction when player faces left/right
-	float rotDeg = -player.meleeWeaponRotation;//can use + or - to rotate differently
-	if (!player.facingRight)
-		rotDeg = -rotDeg;
-
-
-	//Draw melee weapon sprite beside player when equipped
-		//draw melee weapon sprite (rotates around handle)
-
-	if (player.weapon == PlayerWeapon::MELEE &&
-		player.weaponEquipped &&
-		player.meleeWeaponTexture)
+// Draw slash effect if active
+	if (player.isAttacking && player.slashSprite)
 	{
-		//how far the weapon sits from the player body
-		float weaponOffsetX = player.facingRight
-			? player.width * 0.5f + 10.0f
-			: -player.width * 0.5f - 10.0f;
+		float slashX = player.pos.x;
+		float slashY = player.pos.y;
+		float rotation = 0.0f;
+		float offset = 20.0f;
 
-		//final weapon position in world space
-		float weaponX = player.pos.x + weaponOffsetX;
-		float weaponY = player.pos.y;
+		switch (player.slashDirection) {
+		case SlashDirection::HORIZONTAL:
+			slashX += (player.facingRight ? player.width * 0.5f + offset : -player.width * 0.5f - offset);
+			break;
+		case SlashDirection::UP:
+			slashY += player.height * 0.5f + offset;
+			rotation = 90.0f;
+			break;
+		case SlashDirection::DOWN:
+			slashY -= player.height * 0.5f + offset;
+			rotation = -90.0f;
+			break;
+		}
 
-		//draw weapon with rotation around its bottom-center
-		MeshManager::Get().DrawTexturedSquarePivot(
-			player.meleeWeaponTexture,
-			weaponX,
-			weaponY,
-			weaponWidth,
-			weaponHeight,
-			rotDeg,
-			0.0f,//pivot X: center of mesh
-			0.5f,// pivot Y(handle)
-			1.0f
+		float slashWidth = player.width;
+		float slashHeight = player.height;
+
+		// For horizontal, flip facing left
+		float scaleX = -slashWidth;
+		if (player.slashDirection == SlashDirection::HORIZONTAL && !player.facingRight)
+			scaleX = slashWidth;
+
+		MeshManager::Get().DrawSpriteSheet(
+			*player.slashSprite,
+			slashX,
+			slashY,
+			scaleX,
+			slashHeight,
+			1.0f,           // opacity
+			rotation 
 		);
 	}
 }
@@ -442,15 +476,4 @@ void Player_Free(Player& player)
 	player.bullets.clear();
 	player.bullets.shrink_to_fit();
 
-	player.spriteSheet.reset();
-
-
-	// do not unload shared textures or mesh here
-	
-	player.texture = nullptr;
-	player.meleeTexture = nullptr;
-	player.meleeAttackTexture = nullptr;
-	player.meleeWeaponTexture = nullptr;
-	player.gunTexture = nullptr;
-	player.gunAttackTexture = nullptr;
 }

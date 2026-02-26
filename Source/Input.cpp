@@ -100,13 +100,6 @@ void Input_Handle() {
 			s_CurrentPlayer->isAttacking = false; // melee attack off
 		}
 
-		// Melee attack (LMB)
-		if (s_CurrentPlayer->weapon == PlayerWeapon::MELEE &&
-			AEInputCheckTriggered(AEVK_LBUTTON))
-		{
-			s_CurrentPlayer->isAttacking = true;
-			s_CurrentPlayer->attackTimer = 0.4f; //short attack window
-		}
 
 		if (AEInputCheckTriggered('L')) {
 			Level1_RequestSave(); //Debug feature for level 1!! remove when not needed

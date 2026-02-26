@@ -33,19 +33,18 @@ enum class PlayerWeapon
 	GUN //gun weapon
 };
 
+enum class SlashDirection {
+	HORIZONTAL,
+	UP,
+	DOWN
+};
+
 struct Player
 {
 	bool facingRight = true; // player jpg direction (current asset faces right)
 
 	AEGfxVertexList* mesh = nullptr;// shared quad mesh
 	AEGfxTexture* texture = nullptr;//default player texture
-
-	AEGfxTexture* meleeTexture = nullptr;//melee equipped
-	AEGfxTexture* meleeAttackTexture = nullptr; //melee attack frame
-	AEGfxTexture* meleeWeaponTexture = nullptr; // separate melee weapon sprite
-
-	AEGfxTexture* gunTexture = nullptr;//gun equipped
-	AEGfxTexture* gunAttackTexture = nullptr;//gun attack frame
 
 	AEVec2 pos{ 0.0f, 0.0f };
 	AEVec2 vel{ 0.0f, 0.0f };
@@ -62,6 +61,7 @@ struct Player
 
 	//Melee attack state
 	bool isAttacking = false;//true while melee swing is active
+	bool downSlashJumped = false;   // true if down?slash has already caused a jump this swing
 	float attackTimer = 0.0f;//how long the attack lasts
 	float meleeDamage = 0.0f;//damage dealt to enemies
 	
@@ -76,20 +76,15 @@ struct Player
 
 	std::vector<PlayerBullet> bullets; // player gun
 
-	//melee weapon animation
-	float meleeWeaponYOffset = 0.0f;//current vertical offset
-	float meleeWeaponMaxDrop = 50.0f;// how far weapon goes down
-	bool meleeHasHitThisSwing = false; //prevents multi-hit per attack
-
-	float meleeWeaponRotation = 0.0f;// current rotation angle in degrees
-	float meleeWeaponRotationSpeed = 720.0f;//degrees per second for swing
 	// Sprite sheet for animations
 	std::unique_ptr<SpriteSheet> spriteSheet;
+	std::unique_ptr<SpriteSheet> slashSprite;
 
 	// State tracking for animation logic
 	bool wasAttacking = false;
 	bool wasWalking = false;
 	PlayerWeapon previousWeapon = PlayerWeapon::NONE;
+	SlashDirection slashDirection = SlashDirection::HORIZONTAL;
 	bool weaponSwitchTriggered = false;
 };
 
