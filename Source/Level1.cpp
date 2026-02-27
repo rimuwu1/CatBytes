@@ -30,6 +30,7 @@ Technology is prohibited.
 #include "TextureManager.h"
 #include "Input.h"
 #include "enemy.h"//Enemy
+#include "HUD.h"
 #include "Background.h"
 #include "LevelIndicator.h"
 #include "Minimap.h"
@@ -57,6 +58,7 @@ static Enemy BossEnemy;  // boss - temporary for demo as everything's in this fi
 static int previousSelection = -1;
 const float LEVEL2_START_Y = sectionHeight[0];
 
+static HUD gHUD;
 static Minimap gameMinimap;
 
 std::ifstream ifs;
@@ -141,6 +143,9 @@ void Level1_Initialize()
 
 	// initialise level indicator
 	LevelIndicator_Initialize();
+
+	// Initialize HUD
+	gHUD.InitFromConfig(level1Config);
 
 	// Initialise minimap
 	if (level1Config.HasMember("ui") && level1Config["ui"].HasMember("minimap"))
@@ -723,6 +728,9 @@ void Level1_Update()
 		BossEnemy_OnCollision(BossEnemy, lv1Player);
 	}
 
+	// Update HUD
+	gHUD.Update(dt, lv1Player);
+
 	// toggle use debug cam
 	if (AEInputCheckTriggered(AEVK_0)) {
 
@@ -860,6 +868,9 @@ void Level1_Draw()
 	BossEnemy_Draw(BossEnemy);
 
 	Player_Draw(lv1Player);
+
+	// Draw HUD
+	gHUD.Draw(MeshManager::Get(), globalCam.x, globalCam.y);
 
 	// Draw minimap
 	AEGfxSetCamPosition(0.0f, 0.0f); // for minimap
