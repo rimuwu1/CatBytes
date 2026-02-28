@@ -33,26 +33,12 @@ Technology is prohibited.
 #include "rapidjson/istreamwrapper.h"
 #include "SpriteSheet.h"
 
-extern rapidjson::Document level1Config;
-
-static float LoadPlayerHP() {
-	float hp = level1Config["player"]["hp"].GetFloat();
-	return (hp > 0.0f) ? hp : 20.0f; 
-}
-
-//loads melee damage from file (Player melee attack)
-static float LoadMeleeDamage()
-{
-	float dmg = level1Config["player"]["melee_damage"].GetFloat();
-	return (dmg > 0.0f)? dmg:5.0f; //fallback to 5 ifnone
-}
-
-void Player_Init(Player& player, float startX, float startY)
+void Player_Init(Player& player, const rapidjson::Value& config)
 {
 	player.facingRight = true; // current player asset faces right on load
 
 	// player gun bullets
-	player.maxBullets = level1Config["player"]["bullet"]["max_count"].GetInt(); // player gun limit
+	player.maxBullets = config["bullet"]["max_count"].GetInt(); // player gun limit
 	player.fireTimer = 0.0f;
 
 	//playerBullets.clear();
@@ -60,21 +46,17 @@ void Player_Init(Player& player, float startX, float startY)
 	player.bullets.clear();
 	player.bullets.resize(player.maxBullets);
 
-	for (auto& b : player.bullets)
-	{
-		PlayerBullet_Init(b, player); // pass the player object
-	}
-
-	player.pos.x = level1Config["player"].HasMember("x") ? level1Config["player"]["x"].GetFloat() : startX;
-	player.pos.y = level1Config["player"].HasMember("y") ? level1Config["player"]["y"].GetFloat() : startY;
+	player.pos.x = config.HasMember("x") ? config["x"].GetFloat() : 0.0f;
+	player.pos.y = config.HasMember("y") ? config["y"].GetFloat() : -300.0f;
 	player.vel.x = 0.0f;
 	player.vel.y = 0.0f;
-	player.width = level1Config["player"].HasMember("width") ? level1Config["player"]["width"].GetFloat() : 80.0f;
-	player.height = level1Config["player"].HasMember("height") ? level1Config["player"]["height"].GetFloat() : 80.0f;
+	player.width = config.HasMember("width") ? config["width"].GetFloat() : 80.0f;
+	player.height = config.HasMember("height") ? config["height"].GetFloat() : 80.0f;
 	player.grounded = 1;
 
-	//load player hp
-	player.hp = LoadPlayerHP();
+	//load player hp & dmg
+	player.hp = config["hp"].GetFloat();
+	player.meleeDamage = config["melee_damage"].GetFloat();
 
 	// Weapon state
 	player.weapon = PlayerWeapon::NONE;
@@ -83,10 +65,9 @@ void Player_Init(Player& player, float startX, float startY)
 	//melee attack state
 	player.isAttacking = false;
 	player.attackTimer = 0.0f;
-	player.meleeDamage = LoadMeleeDamage();
 
 	//gun
-	const auto& playerJson = level1Config["player"];
+	const auto& playerJson = config;
 	const auto& bulletJson = playerJson["bullet"];
 
 	player.bulletSpeed = bulletJson["speed"].GetFloat();
@@ -152,7 +133,7 @@ void Player_Init(Player& player, float startX, float startY)
 		}
 	}
 	// play slash
-	player.spriteSheet->Play("slash", true);
+	player.slashSprite->Play("slash", true);
 }
 
 void Player_Update(Player& player, float dt)

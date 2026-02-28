@@ -17,6 +17,7 @@ Technology is prohibited.
 #include "pch.h"
 #include "GameStateManager.h"
 #include "GameStateList.h"
+#include "MainGame.h"
 #include "Level1.h"
 #include "Level2.h"
 #include "Level3.h"
@@ -68,37 +69,13 @@ void GSM_Update()
 		fpFree = MainMenu_Free;
 		fpUnload = MainMenu_Unload;
 		break;
-	case GS_LEVEL1: // Level 1 game state
-		fpLoad = Level1_Load;
-		fpInitialize = Level1_Initialize;
-		fpUpdate = Level1_Update;
-		fpDraw = Level1_Draw;
-		fpFree = Level1_Free;
-		fpUnload = Level1_Unload;
-		break;
-	case GS_LEVEL2: // Level 2 game state
-		fpLoad = Level2_Load;
-		fpInitialize = Level2_Initialize;
-		fpUpdate = Level2_Update;
-		fpDraw = Level2_Draw;
-		fpFree = Level2_Free;
-		fpUnload = Level2_Unload;
-		break;
-	case GS_LEVEL3: // Level 3 game state
-		fpLoad = Level3_Load;
-		fpInitialize = Level3_Initialize;
-		fpUpdate = Level3_Update;
-		fpDraw = Level3_Draw;
-		fpFree = Level3_Free;
-		fpUnload = Level3_Unload;
-		break;
-	case GS_LEVEL4: // Level 4 game state
-		fpLoad = Boss_Load;
-		fpInitialize = Boss_Initialize;
-		fpUpdate = Boss_Update;
-		fpDraw = Boss_Draw;
-		fpFree = Boss_Free;
-		fpUnload = Boss_Unload;
+	case GS_MAINGAME: // Level 1 game state
+		fpLoad = MainGame_Load;
+		fpInitialize = MainGame_Initialize;
+		fpUpdate = MainGame_Update;
+		fpDraw = MainGame_Draw;
+		fpFree = MainGame_Free;
+		fpUnload = MainGame_Unload;
 		break;
 	case GS_WINLOSE:
 		fpLoad = WinLose_Load;

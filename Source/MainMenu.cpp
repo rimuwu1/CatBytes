@@ -52,7 +52,7 @@ void MainMenu_Update()
         g_hoveredButton = 1;  
         if (AEInputCheckTriggered(AEVK_LBUTTON))
         {
-            next = GS_LEVEL1;
+            next = GS_MAINGAME;
         }
     }
     // CONTROLS button

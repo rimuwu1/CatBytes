@@ -20,6 +20,7 @@ Technology is prohibited.
 #include "AEEngine.h"
 #include <vector>
 #include "Level1.h"
+#include "MainGame.h"
 #include "FileManager.h"
 
 static Player* s_CurrentPlayer = nullptr;
@@ -45,7 +46,7 @@ void Input_Handle() {
 	if (AEInputCheckTriggered(AEVK_ESCAPE)) {
 		if(current == GS_SPLASHSCREEN)
 		next = GS_MAINMENU;
-		else if (current == GS_LEVEL1 || current == GS_LEVEL2 || current == GS_LEVEL3 || current == GS_LEVEL4) {
+		else if (current == GS_MAINGAME) {
 			next = GS_PAUSE;
 		}
 	}
@@ -102,7 +103,7 @@ void Input_Handle() {
 
 
 		if (AEInputCheckTriggered('L')) {
-			Level1_RequestSave(); //Debug feature for level 1!! remove when not needed
+			MainGame_RequestSave();
 		}
 		if (AEInputCheckTriggered('M')) {
 			GameSave::ResetSave(); //Debug feature for level 1!! remove when not needed

@@ -13,11 +13,11 @@ Technology is prohibited.
 */
 /* End Header **************************************************************************/
 #pragma once
-/*
+
 void MainGame_Load();
 void MainGame_Initialize();
 void MainGame_Update();
 void MainGame_Draw();
 void MainGame_Free();
 void MainGame_Unload();
-*/
+void MainGame_RequestSave();

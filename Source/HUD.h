@@ -13,7 +13,7 @@ struct Player;
 class HUD
 {
 public:
-	void InitFromConfig(const rapidjson::Value& level1Config);
+	void InitFromConfig(const rapidjson::Value& configDoc);
 	void Update(float /*dt*/, const Player& player);
 	void Draw(MeshManager& meshManager, float camX, float camY) const;
 	bool IsActive() const { return active; }

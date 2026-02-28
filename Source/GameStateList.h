@@ -22,10 +22,7 @@ enum GS_STATES
 {
 	GS_SPLASHSCREEN, // Splash Screen state
 	GS_MAINMENU,    // Main Menu state
-	GS_LEVEL1,		// Level 1 game state 
-	GS_LEVEL2,      // Level 2 game state
-	GS_LEVEL3,      // Level 3 game state
-	GS_LEVEL4,      // Level 4 game state
+	GS_MAINGAME,    // Main Game State
 	GS_WINLOSE,     // Win/Lose game state
 	GS_QUIT,        // Quit state to exit the game
 	GS_RESTART,     // Restart state to reload current level 

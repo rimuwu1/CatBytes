@@ -48,7 +48,7 @@ void HUD::ApplyHeartsState(int state)
 	heartsSheet->Stop();
 }
 
-void HUD::InitFromConfig(const rapidjson::Value& level1Config)
+void HUD::InitFromConfig(const rapidjson::Value& configDoc)
 {
 	active = true;
 	heartsActive = true;
@@ -60,11 +60,11 @@ void HUD::InitFromConfig(const rapidjson::Value& level1Config)
 	heartsSheet.reset();
 	lastHeartsState = -1;
 
-	if (!level1Config.HasMember("ui"))
+	if (!configDoc.HasMember("ui"))
 	{
 		return;
 	}
-	const rapidjson::Value& uiJson = level1Config["ui"];
+	const rapidjson::Value& uiJson = configDoc["ui"];
 
 	//InitHearts(uiJson);
 

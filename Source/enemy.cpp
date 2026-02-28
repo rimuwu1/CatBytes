@@ -2,7 +2,9 @@
 /*!
 \file enemy.cpp
 \author Tse Xuan Qi Tristin, tse.x, 2503757
-\par tse.x@digipen.edu
+        Joash ng, joash.ng, 2502780
+\par    tse.x@digipen.edu
+        joash.ng@digipen.edu
 \date Junuary, 24, 2026
 \brief Implements a simple patrolling(?) enemy.
 The enemy moves automatically left and right between patrol bounds 
@@ -16,6 +18,7 @@ Technology is prohibited.
 
 #include "pch.h"
 #include "enemy.h"
+#include "ObjectManager.h"
 #include "MeshManager.h"
 #include "Player.h"
 #include <fstream>
@@ -24,75 +27,270 @@ Technology is prohibited.
 #include "rapidjson/filereadstream.h"
 #include "rapidjson/istreamwrapper.h"
 
-extern rapidjson::Document level1Config;
+extern rapidjson::Document configDoc;
 
 // -----------------------------------------------------------------------------
-// initialize enemy
+// initialize easy enemy
 // sets position, size, direction, alive status, loads speed and textures
 // -----------------------------------------------------------------------------
-void Enemy_Init(Enemy& enemy, float startX, float startY)
-{
-    enemy.facesLeft = true; // for flipping img. easy enemy (veryslightly if u squint..) faces left
+void Enemy_Init(Enemy& enemy, const rapidjson::Value& config) {
+    enemy.facesLeft = true;
 
-    enemy.pos = { startX, startY };// set position
-    enemy.width = 80.0f;//enemy width
-    enemy.height = 80.0f;//enemy height
+    // Position (required, but provide fallback)
+    if (config.HasMember("x") && config["x"].IsFloat())
+        enemy.pos.x = config["x"].GetFloat();
+    else {
+        enemy.pos.x = 0.0f;
+        printf("Warning: Enemy missing 'x', defaulting to 0\n");
+    }
+    if (config.HasMember("y") && config["y"].IsFloat())
+        enemy.pos.y = config["y"].GetFloat();
+    else {
+        enemy.pos.y = 0.0f;
+        printf("Warning: Enemy missing 'y', defaulting to 0\n");
+    }
 
-    //load movement speed from file; default to 100 if file missing or invalid
-    enemy.moveSpeed = level1Config["level_1"]["enemies"][0]["speed"].GetFloat();
-    if (enemy.moveSpeed <= 0.0f) enemy.moveSpeed = 100.0f;
+    // Size
+    if (config.HasMember("width") && config["width"].IsFloat())
+        enemy.width = config["width"].GetFloat();
+    else {
+        enemy.width = 80.0f;
+        printf("Warning: Enemy missing 'width', defaulting to 80\n");
+    }
+    if (config.HasMember("height") && config["height"].IsFloat())
+        enemy.height = config["height"].GetFloat();
+    else {
+        enemy.height = 80.0f;
+        printf("Warning: Enemy missing 'height', defaulting to 80\n");
+    }
 
-    enemy.shootCooldown = 1.5f;//shoots every 1.5 seconds
+    // Movement speed
+    if (config.HasMember("speed") && config["speed"].IsFloat())
+        enemy.moveSpeed = config["speed"].GetFloat();
+    else {
+        enemy.moveSpeed = 100.0f;
+        printf("Warning: Enemy missing 'speed', defaulting to 100\n");
+    }
+
+    // Hit points
+    if (config.HasMember("hp") && config["hp"].IsFloat())
+        enemy.hitPoints = config["hp"].GetFloat();
+    else {
+        enemy.hitPoints = 3.0f;
+        printf("Warning: Enemy missing 'hp', defaulting to 3\n");
+    }
+
+    // Shooting parameters (optional)
+    if (config.HasMember("shoot_cooldown") && config["shoot_cooldown"].IsFloat())
+        enemy.shootCooldown = config["shoot_cooldown"].GetFloat();
+    else
+        enemy.shootCooldown = 1.0f;
+
+    if (config.HasMember("bullet_speed") && config["bullet_speed"].IsFloat())
+        enemy.bulletSpeed = config["bullet_speed"].GetFloat();
+    else
+        enemy.bulletSpeed = 400.0f; // default
+
+    if (config.HasMember("bullet_damage") && config["bullet_damage"].IsFloat())
+        enemy.bulletDamage = config["bullet_damage"].GetFloat();
+    else
+        enemy.bulletDamage = 1.0f;
+
+    if (config.HasMember("bullet_range") && config["bullet_range"].IsFloat())
+        enemy.bulletRange = config["bullet_range"].GetFloat();
+    else
+        enemy.bulletRange = 1600.0f;
+
     enemy.shootTimer = enemy.shootCooldown;
-
-    //load hit points from file; default to 3.0
-    enemy.hitPoints = level1Config["level_1"]["enemies"][0]["hp"].GetFloat();
-    if (enemy.hitPoints <= 0.0f) enemy.hitPoints = 3.0f;
-
-    enemy.direction = 1;//start moving right
+    enemy.direction = 1;
     enemy.isAlive = 1;
     enemy.hitStunTimer = 0.0f;
     enemy.isPlayerColliding = false;
+    enemy.type = EnemyType::Easy;
+}
+
+void HardEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
+    // Position
+    if (config.HasMember("x") && config["x"].IsFloat())
+        enemy.pos.x = config["x"].GetFloat();
+    else {
+        enemy.pos.x = 0.0f;
+        printf("Warning: HardEnemy missing 'x', defaulting to 0\n");
+    }
+    if (config.HasMember("y") && config["y"].IsFloat())
+        enemy.pos.y = config["y"].GetFloat();
+    else {
+        enemy.pos.y = 0.0f;
+        printf("Warning: HardEnemy missing 'y', defaulting to 0\n");
+    }
+
+    // Size
+    if (config.HasMember("width") && config["width"].IsFloat())
+        enemy.width = config["width"].GetFloat();
+    else {
+        enemy.width = 80.0f;
+        printf("Warning: HardEnemy missing 'width', defaulting to 80\n");
+    }
+    if (config.HasMember("height") && config["height"].IsFloat())
+        enemy.height = config["height"].GetFloat();
+    else {
+        enemy.height = 80.0f;
+        printf("Warning: HardEnemy missing 'height', defaulting to 80\n");
+    }
+
+    // Movement speed
+    if (config.HasMember("speed") && config["speed"].IsFloat())
+        enemy.moveSpeed = config["speed"].GetFloat();
+    else {
+        enemy.moveSpeed = 150.0f;
+        printf("Warning: HardEnemy missing 'speed', defaulting to 150\n");
+    }
+
+    // Hit points
+    if (config.HasMember("hp") && config["hp"].IsFloat())
+        enemy.hitPoints = config["hp"].GetFloat();
+    else {
+        enemy.hitPoints = 5.0f;
+        printf("Warning: HardEnemy missing 'hp', defaulting to 5\n");
+    }
+
+    // Collision damage
+    if (config.HasMember("damage") && config["damage"].IsFloat())
+        enemy.damage = config["damage"].GetFloat();
+    else {
+        enemy.damage = 3.0f;
+        printf("Warning: HardEnemy missing 'damage', defaulting to 3\n");
+    }
+
+    enemy.shootCooldown = 0.0f; // no shooting
+    enemy.direction = 1;
+    enemy.isAlive = 1;
+    enemy.hitStunTimer = 0.0f;
+    enemy.isPlayerColliding = false;
+    enemy.type = EnemyType::Hard;
+}
+
+void BossEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
+    // Position
+    if (config.HasMember("x") && config["x"].IsFloat())
+        enemy.pos.x = config["x"].GetFloat();
+    else {
+        enemy.pos.x = 0.0f;
+        printf("Warning: Boss missing 'x', defaulting to 0\n");
+    }
+    if (config.HasMember("y") && config["y"].IsFloat())
+        enemy.pos.y = config["y"].GetFloat();
+    else {
+        enemy.pos.y = 0.0f;
+        printf("Warning: Boss missing 'y', defaulting to 0\n");
+    }
+
+    // Size
+    if (config.HasMember("width") && config["width"].IsFloat())
+        enemy.width = config["width"].GetFloat();
+    else {
+        enemy.width = 120.0f;
+        printf("Warning: Boss missing 'width', defaulting to 120\n");
+    }
+    if (config.HasMember("height") && config["height"].IsFloat())
+        enemy.height = config["height"].GetFloat();
+    else {
+        enemy.height = 120.0f;
+        printf("Warning: Boss missing 'height', defaulting to 120\n");
+    }
+
+    // Movement speed
+    if (config.HasMember("speed") && config["speed"].IsFloat())
+        enemy.moveSpeed = config["speed"].GetFloat();
+    else {
+        enemy.moveSpeed = 120.0f;
+        printf("Warning: Boss missing 'speed', defaulting to 120\n");
+    }
+
+    // Hit points
+    if (config.HasMember("hp") && config["hp"].IsFloat())
+        enemy.hitPoints = config["hp"].GetFloat();
+    else {
+        enemy.hitPoints = 30.0f;
+        printf("Warning: Boss missing 'hp', defaulting to 30\n");
+    }
+
+    // Collision damage
+    if (config.HasMember("damage") && config["damage"].IsFloat())
+        enemy.damage = config["damage"].GetFloat();
+    else {
+        enemy.damage = 8.0f;
+        printf("Warning: Boss missing 'damage', defaulting to 8\n");
+    }
+
+    enemy.shootCooldown = 0.0f;
+    enemy.direction = 1;
+    enemy.isAlive = 1;
+    enemy.hitStunTimer = 0.0f;
+    enemy.isPlayerColliding = false;
+    enemy.type = EnemyType::Boss;
 }
 
 // -----------------------------------------------------------------------------
 // Update enemy: automatic left/right patrol
 // -----------------------------------------------------------------------------
-void Enemy_Update(Enemy& enemy, float dt)
-{
-    enemy.facesLeft = false; // hard enemy jpg faces right (for now anyways)
-
-    if (!enemy.isAlive) return;//skip if dead
-
-    //handle hit stun (freeze)
-    if (enemy.hitStunTimer > 0.0f)
-    {
+void Enemy_Update(Enemy& enemy, float dt) {
+    if (!enemy.isAlive) return;
+    if (enemy.hitStunTimer > 0.0f) {
         enemy.hitStunTimer -= dt;
         if (enemy.hitStunTimer <= 0.0f) enemy.hitStunTimer = 0.0f;
-        return; // do not move while stunned
+        return;
     }
 
-    enemy.shootTimer -= dt;
-
-    //time to shoot
-    if (enemy.shootTimer <= 0.0f)
-    {
-        //tell the level to spawn a bullet(not here)
-        enemy.shootTimer = enemy.shootCooldown;
+    // Shooting (if applicable)
+    if (enemy.shootCooldown > 0.0f) {
+        enemy.shootTimer -= dt;
+        if (enemy.shootTimer <= 0.0f) {
+            ObjectManager::Get().SpawnEnemyBullet(enemy, enemy.bulletSpeed, enemy.bulletDamage, enemy.bulletRange);
+            enemy.shootTimer = enemy.shootCooldown;
+        }
     }
 
-    //move horizontally based on direction and speed
+    // Patrol movement
     enemy.pos.x += enemy.direction * enemy.moveSpeed * dt;
+    // Patrol bounds (could be from config, but keep hardcoded for now)
+    float patrolMinX = -400.0f, patrolMaxX = 400.0f;
+    if (enemy.pos.x >= patrolMaxX) enemy.direction = -1;
+    else if (enemy.pos.x <= patrolMinX) enemy.direction = 1;
+}
 
-    //patrol bounds (hardcoded)
-    float patrolMinX = -400.0f;
-    float patrolMaxX = 400.0f;
+void HardEnemy_Update(Enemy& enemy, float dt) {
+    if (!enemy.isAlive) return;
+    if (enemy.hitStunTimer > 0.0f) {
+        enemy.hitStunTimer -= dt;
+        if (enemy.hitStunTimer <= 0.0f) {
+            enemy.hitStunTimer = 0.0f;
+            enemy.texture = enemy.normalTexture;
+        }
+        return;
+    }
+    enemy.pos.x += enemy.direction * enemy.moveSpeed * dt;
+    float patrolMinX = -400.0f, patrolMaxX = 400.0f;
+    if (enemy.pos.x >= patrolMaxX) enemy.direction = -1;
+    else if (enemy.pos.x <= patrolMinX) enemy.direction = 1;
+}
 
-    //flip direction when reaching patrol bounds
-    if (enemy.pos.x >= patrolMaxX)
-        enemy.direction = -1;//move left
-    else if (enemy.pos.x <= patrolMinX)
-        enemy.direction = 1;// move right
+// -----------------------------------------------------------------------------
+// Update boss enemy each frame
+// Patrols left and right within a wider range than regular enemies
+// Freezes briefly on hit stun
+// -----------------------------------------------------------------------------
+void BossEnemy_Update(Enemy& enemy, float dt) {
+    if (!enemy.isAlive) return;
+    if (enemy.hitStunTimer > 0.0f) {
+        enemy.hitStunTimer -= dt;
+        if (enemy.hitStunTimer <= 0.0f) enemy.hitStunTimer = 0.0f;
+        return;
+    }
+    enemy.pos.x += enemy.direction * enemy.moveSpeed * dt;
+    float patrolMinX = -400.0f, patrolMaxX = 400.0f;
+    if (enemy.pos.x >= patrolMaxX) enemy.direction = -1;
+    else if (enemy.pos.x <= patrolMinX) enemy.direction = 1;
 }
 
 // -----------------------------------------------------------------------------
@@ -169,64 +367,6 @@ void Enemy_SetGraphics(Enemy& enemy, AEGfxTexture* normalTex, AEGfxTexture* atta
     enemy.lowHpTexture = lowHpTex;
 }
 
-void HardEnemy_Init(Enemy& enemy, float startX, float startY)
-{
-    enemy.pos = { startX, startY };
-    enemy.width = 80.0f;
-    enemy.height = 80.0f;
-
-    //load speed and HP from files; fallback if missing
-    enemy.moveSpeed = level1Config["level_1"]["enemies"][1]["speed"].GetFloat();
-    if (enemy.moveSpeed <= 0.0f) enemy.moveSpeed = 100.0f;
-
-    enemy.hitPoints = level1Config["level_1"]["enemies"][1]["hp"].GetFloat();
-    if (enemy.hitPoints <= 0.0f) enemy.hitPoints = 5.0f;
-
-    enemy.shootCooldown = 0.0f;//HardEnemy does collision damage instead
-    enemy.shootTimer = 0.0f;
-    enemy.direction = 1;
-    enemy.isAlive = 1;
-    enemy.hitStunTimer = 0.0f;
-    enemy.isPlayerColliding = false;
-    enemy.damage = level1Config["level_1"]["enemies"][1]["damage"].GetFloat();
-    if (enemy.damage <= 0.0f) enemy.damage = 3.0f;//default damage for ahrd enemy
-}
-
-
-void HardEnemy_Update(Enemy& enemy, float dt)
-{
-    if (!enemy.isAlive) return;
-
-    //handle hit stun/attack pause
-    if (enemy.hitStunTimer > 0.0f)
-    {
-        enemy.hitStunTimer -= dt;
-
-        //wheb stun finishes
-        if (enemy.hitStunTimer <= 0.0f)
-        {
-            enemy.hitStunTimer = 0.0f;
-
-            //switch back to normal texture
-            enemy.texture = enemy.normalTexture;
-        }
-
-        return; // do not move while stunned
-    }
-
-    // patrol movement (only when NOT stunned)
-    enemy.pos.x += enemy.direction * enemy.moveSpeed * dt;
-
-    //patrol bounds
-    float patrolMinX = -400.0f;
-    float patrolMaxX = 400.0f;
-
-    if (enemy.pos.x >= patrolMaxX)
-        enemy.direction = -1;
-    else if (enemy.pos.x <= patrolMinX)
-        enemy.direction = 1;
-}
-
 
 void HardEnemy_OnCollision(Enemy& enemy, Player& player)
 {
@@ -247,7 +387,7 @@ void HardEnemy_OnCollision(Enemy& enemy, Player& player)
 
 
 // -----------------------------------------------------------------------------
-// Free static resources (mesh and texture)
+// Free static resources (mesh and texture) remove after spritesheet
 // -----------------------------------------------------------------------------
 void Enemy_Free(Enemy& enemy)
 {

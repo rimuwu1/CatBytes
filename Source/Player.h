@@ -21,6 +21,7 @@ Technology is prohibited.
 #include "AEEngine.h"
 #include "PlayerBullet.h"
 #include "SpriteSheet.h"
+#include "rapidjson/document.h"
 #include <vector>
 #include <memory>
 
@@ -44,9 +45,6 @@ enum class SlashDirection {
 struct Player
 {
 	bool facingRight = true; // player jpg direction (current asset faces right)
-
-	AEGfxVertexList* mesh = nullptr;// shared quad mesh
-	AEGfxTexture* texture = nullptr;//default player texture
 
 	AEVec2 pos{ 0.0f, 0.0f };
 	AEVec2 vel{ 0.0f, 0.0f };
@@ -92,7 +90,7 @@ struct Player
 
 struct Enemy; // forward declaration
 
-void Player_Init(Player& player, float startX, float startY);
+void Player_Init(Player& player, const rapidjson::Value& config);
 void Player_Update(Player& player, float dt);
 void Player_Draw(const Player& player);
 void Player_Free(Player& player);
