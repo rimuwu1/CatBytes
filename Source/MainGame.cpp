@@ -220,7 +220,5 @@ void MainGame_Free()
 
 void MainGame_Unload()
 {
-    TextureManager::Get().UnloadAll();
-    MeshManager::Get().UnloadAll();
     std::cout << "MainGame:Unload" << std::endl;
 }
