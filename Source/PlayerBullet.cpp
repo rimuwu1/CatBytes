@@ -19,8 +19,7 @@ Technology is prohibited.
 #include "Player.h"
 
 // shared resources
-static AEGfxVertexList* bulletMesh = nullptr;
-static AEGfxTexture* bulletTexture = nullptr;
+static AEGfxTexture* bulletTexture;
 
 void PlayerBullet_Init(PlayerBullet& bullet, const Player& player)
 {
@@ -49,12 +48,6 @@ void PlayerBullet_Draw(const PlayerBullet& bullet)
 {
     if (!bullet.active) return;
 
-    /*
-    if (!bulletMesh)
-        bulletMesh = util::CreateSquareMesh();
-        */
-
-    if (!bulletTexture)
         bulletTexture = TextureManager::Get().LoadTexture("Assets/Images/PlayerBullet.jpg");
 
     MeshManager::Get().DrawTexturedSquare(
@@ -69,26 +62,9 @@ void PlayerBullet_Draw(const PlayerBullet& bullet)
 
 void PlayerBullet_Free(PlayerBullet&)
 {
-    /*
-    if (bulletTexture)
-    {
-        AEGfxTextureUnload(bulletTexture);
-        bulletTexture = nullptr;
-    }
-
-    if (bulletMesh)
-    {
-        AEGfxMeshFree(bulletMesh);
-        bulletMesh = nullptr;
-    }
-    */
 }
 
 //frees the static resources
 void PlayerBullet_FreeShared()
 {
-    if (bulletTexture)
-    {
-        bulletTexture = nullptr;
-    }
 }

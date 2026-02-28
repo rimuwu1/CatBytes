@@ -1,3 +1,17 @@
+/* Start Header ************************************************************************/
+/*!
+\file       EnvironmentManager.cpp
+\author     Joash ng, joash.ng, 2502780
+\par        joash.ng@digipen.edu
+\date       Feb 26 2026
+\brief		This file handles all the environment stuff like platforms obstacles and walls .
+
+Copyright (C) 2026 DigiPen Institute of Technology.
+Reproduction or disclosure of this file or its contents
+without the prior written consent of DigiPen Institute of
+Technology is prohibited.
+*/
+/* End Header **************************************************************************/
 #include "pch.h"
 #include "EnvironmentManager.h"
 #include "MeshManager.h"
@@ -207,21 +221,10 @@ void EnvironmentManager::Draw(float camX, float camY, float playerX, float playe
 
     // HUD, minimap, level indicator
     m_HUD.Draw(MeshManager::Get(), camX, camY);
-    Minimap_Draw(m_Minimap, playerX, playerY);
+    Minimap_Draw(m_Minimap, playerX, playerY, camX, camY);
     LevelIndicator_Draw();
 }
 
-// ------------------------------------------------------------------------
-void EnvironmentManager::Free()
-{
-    // Nothing to free for now (textures are managed by TextureManager)
-}
-
-// ------------------------------------------------------------------------
-void EnvironmentManager::Unload()
-{
-    // Platform textures are unloaded by TextureManager; no action needed.
-}
 
 // ------------------------------------------------------------------------
 // Private background methods
@@ -249,6 +252,37 @@ void EnvironmentManager::UpdateBackground(float cameraY)
 void EnvironmentManager::DrawBackground() const
 {
     AEGfxSetBackgroundColor(m_currentColour.r, m_currentColour.g, m_currentColour.b);
+}
+
+// ------------------------------------------------------------------------
+bool EnvironmentManager::HandleCheckpoint(bool checkpointHit, bool& externalSaveRequest)
+{
+    bool shouldSave = false;
+
+    if (checkpointHit || externalSaveRequest || m_saveRequested)
+    {
+        if (!m_checkpointSaved || externalSaveRequest || m_saveRequested)
+        {
+            m_checkpointSaved = true;
+            shouldSave = true;
+
+            // Consume external request if any
+            externalSaveRequest = false;
+            m_saveRequested = false;
+        }
+    }
+    else
+    {
+        m_checkpointSaved = false;  // reset cooldown when no checkpoint/save requested
+    }
+
+    return shouldSave;
+}
+
+// ------------------------------------------------------------------------
+void EnvironmentManager::RequestSave()
+{
+    m_saveRequested = true;
 }
 
 // ------------------------------------------------------------------------
@@ -283,4 +317,16 @@ void EnvironmentManager::UpdateLevelIndicator(float dt)
 void EnvironmentManager::DrawLevelIndicator() const
 {
     LevelIndicator_Draw();
+}
+
+//cleanup
+void EnvironmentManager::Clear() {
+    m_level1Platforms.clear();
+    m_level2Platforms.clear();
+    m_level3Platforms.clear();
+    m_bossPlatforms.clear();
+    m_wallPlatforms.clear();
+    m_level1Obstacles.clear();
+    m_checkpoints.clear();
+    m_level2Buttons.clear();
 }

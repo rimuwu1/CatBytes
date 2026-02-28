@@ -1,3 +1,17 @@
+/* Start Header ************************************************************************/
+/*!
+\file       EnvironmentManager.h
+\author     Joash ng, joash.ng, 2502780
+\par        joash.ng@digipen.edu
+\date       Feb 26 2026
+\brief		This file declares rhe Environmanager Namespace which handles all the environment stuff like platforms obstacles and walls through a singleton instance.
+
+Copyright (C) 2026 DigiPen Institute of Technology.
+Reproduction or disclosure of this file or its contents
+without the prior written consent of DigiPen Institute of
+Technology is prohibited.
+*/
+/* End Header **************************************************************************/
 #pragma once
 #include <vector>
 #include "HUD.h"
@@ -10,30 +24,47 @@
 
 class EnvironmentManager {
 public:
+    static EnvironmentManager& Get() {
+        static EnvironmentManager instance;
+        return instance;
+    }
+    // Delete copy/move constructors and assignment
+    EnvironmentManager(const EnvironmentManager&) = delete;
+    EnvironmentManager& operator=(const EnvironmentManager&) = delete;
+
     void LoadFromConfig(const rapidjson::Value& config);   // expects the whole game config document
     void Initialize();
     void Update(float dt, const Player& player, float cameraY);
     void Draw(float camX, float camY, float playerX, float playerY);
-    void Free();
-    void Unload();
 
     // Accessors for collision and gameplay systems
     const std::vector<Platform>& GetLevel1Platforms() const { return m_level1Platforms; }
     const std::vector<Platform>& GetLevel2Platforms() const { return m_level2Platforms; }
+    const std::vector<PlatformButton>& GetLevel2Buttons() const { return m_level2Buttons; }
     const std::vector<Platform>& GetLevel3Platforms() const { return m_level3Platforms; }
     const std::vector<Platform>& GetBossPlatforms()  const { return m_bossPlatforms; }
     const std::vector<Platform>& GetWallPlatforms()  const { return m_wallPlatforms; }
     const std::vector<PlatformObstacle>& GetObstacles() const { return m_level1Obstacles; }
     const std::vector<Checkpoint>& GetCheckpoints() const { return m_checkpoints; }
 
-    // Non?const access for buttons (they modify platforms)
+    // Non?const accessors for vectors that may be modified (add 3 and 4 here when needed)
+    std::vector<Platform>& GetLevel2Platforms() { return m_level2Platforms; }
     std::vector<PlatformButton>& GetLevel2Buttons() { return m_level2Buttons; }
-    const std::vector<PlatformButton>& GetLevel2Buttons() const { return m_level2Buttons; }
 
-    // Current background section (0?based)
+    // Current background section (0 based)
     int GetCurrentSection() const { return m_currentSection; }
 
+    // Checkpoint handling
+    bool HandleCheckpoint(bool checkpointHit, bool& externalSaveRequest); // returns true if save should be performed
+    void RequestSave();  // sets internal save request flag
+
+    //clean up functions
+    void Clear();   // clears all environment vectors
+
 private:
+    EnvironmentManager() = default;   // private constructor
+    ~EnvironmentManager() = default;
+
     // Background system (embedded from Background.cpp)
     void UpdateBackground(float cameraY);
     void DrawBackground() const;
@@ -60,6 +91,9 @@ private:
     std::vector<PlatformObstacle> m_level1Obstacles;
     std::vector<Checkpoint>       m_checkpoints;
     std::vector<PlatformButton>   m_level2Buttons;
+
+    bool m_checkpointSaved = false;       // replaces static local in MainGame
+    bool m_saveRequested = false;         // internal save request flag
 
     int m_previousSelection = -1;   // for level indicator
     int m_currentSection = 0;

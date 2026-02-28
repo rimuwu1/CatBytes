@@ -2,7 +2,9 @@
 /*!
 \file	Minimap.cpp
 \author Kerwin Wong Jia Jie, kerwinjiajie.wong, 2502740
+        Joash ng, joash.ng, 2502780
 \par	kerwinajijie.wong@digipen.edu
+        joash.ng@digipen.edu
 \date	February, 19, 2026
 \brief	This file contains the function definitions for rendering the in-game minimap
 		that maps player world position proportionally within defined world bounds.
@@ -30,41 +32,44 @@ static float ClampMinimap(float t)
 	return t;
 }
 
-void Minimap_Draw(const Minimap& mm, float playerWorldX, float playerWorldY)
+void Minimap_Draw(const Minimap& mm, float playerWorldX, float playerWorldY, float camX, float camY)
 {
-	if (!mm.active)
+    if (!mm.active)
 	{
-		return;
+        return;
 	}
 
+	float worldX = camX + mm.x;
+	float worldY = camY + mm.y;
+
 	// Minimap panel
-	MeshManager::Get().DrawSquare(mm.x, mm.y, mm.w, mm.h, 70, 70, 90);
+	MeshManager::Get().DrawSquare(worldX, worldY, mm.w, mm.h, 70, 70, 90);
 
 	// Range for normalising between world & minimap
-	float rangeX = (mm.worldMaxX - mm.worldMinX);
+    float rangeX = (mm.worldMaxX - mm.worldMinX);
 	if (rangeX <= 0.0001f)
 	{
 		rangeX = 1.0f;
 	}
 
-	float rangeY = (mm.worldMaxY - mm.worldMinY);
+    float rangeY = (mm.worldMaxY - mm.worldMinY);
 	if (rangeY <= 0.0001f)
 	{
 		rangeY = 1.0f;
 	}
 
 	// Normalise player position
-	float tx = (playerWorldX - mm.worldMinX) / rangeX;
-	tx = ClampMinimap(tx);
+    float tx = (playerWorldX - mm.worldMinX) / rangeX;
+    tx = ClampMinimap(tx);
 
-	float ty = (playerWorldY - mm.worldMinY) / rangeY;
-	ty = ClampMinimap(ty);
+    float ty = (playerWorldY - mm.worldMinY) / rangeY;
+    ty = ClampMinimap(ty);
 
-	float panelLeft = mm.x - mm.w * 0.5f;
-	float panelBottom = mm.y - mm.h * 0.5f;
+	float panelLeft = worldX - mm.w * 0.5f;
+	float panelBottom = worldY - mm.h * 0.5f;
 
-	float dotX = panelLeft + (tx * mm.w);
-	float dotY = panelBottom + (ty * mm.h);
+    float dotX = panelLeft + (tx * mm.w);
+    float dotY = panelBottom + (ty * mm.h);
 
-	MeshManager::Get().DrawSquare(dotX, dotY, mm.dotSize, mm.dotSize, 255, 0, 0);
+    MeshManager::Get().DrawSquare(dotX, dotY, mm.dotSize, mm.dotSize, 255, 0, 0);
 }

@@ -22,7 +22,10 @@ Technology is prohibited.
 
 class ObjectManager {
 public:
-    static ObjectManager& Get();
+    static ObjectManager& Get() {
+        static ObjectManager instance;
+        return instance;
+    }
 
     // Clears current objects and creates new ones from the given level JSON data
     void LoadFromJSON(const rapidjson::Value& levelData);
@@ -39,9 +42,12 @@ public:
     // Bullet spawning for enemies
     void SpawnEnemyBullet(const Enemy& source, float speed, float damage, float maxRange);
 
+    //check boss status
+    bool IsBossDefeated() const;
+
     // Cleanup helpers
-    void RemoveDeadEnemies();
     void RemoveInactiveBullets();
+    void Clear();   // clears enemies and bullets
 
 private:
     ObjectManager() = default;

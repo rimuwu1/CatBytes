@@ -19,6 +19,7 @@ Technology is prohibited.
 #include "EnemyBullet.h"
 #include "PlayerBullet.h"
 #include "PlayerMelee.h"
+#include "EnvironmentManager.h"
 #include <vector>
 
 namespace CollisionManager
@@ -58,4 +59,19 @@ namespace CollisionManager
 
     // Player melee collisions with enemies
     void HandlePlayerMeleeEnemyCollisions(Player& player, std::vector<Enemy>& enemies);
+
+    //----------wrapper for all collisions------------
+    struct CollisionResults {
+        bool obstacleHit;   // true if player hit an obstacle
+        bool checkpointHit; // true if player touched a checkpoint
+    };
+
+    CollisionResults HandleAllCollisions(
+        Player& player,
+        float playerPrevY,
+        EnvironmentManager& env,
+        std::vector<Enemy>& enemies,
+        std::vector<EnemyBullet>& enemyBullets
+    );
+
 }

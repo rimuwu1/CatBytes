@@ -199,4 +199,47 @@ namespace CollisionManager
         for (auto& e : enemies) enemyPtrs.push_back(&e);
         PlayerMelee_CheckCollisions(player, enemyPtrs);   // from PlayerMelee.h
     }
+
+    CollisionResults HandleAllCollisions(
+        Player& player,
+        float playerPrevY,
+        EnvironmentManager& env,
+        std::vector<Enemy>& enemies,
+        std::vector<EnemyBullet>& enemyBullets)
+    {
+        CollisionResults results = { false, false };
+
+        // Ground (fixed values – could become env constants)
+        HandleGround(player, -350.0f, 50.0f, playerPrevY);
+
+        // Platforms (standard falling check)
+        HandlePlatforms(player, playerPrevY, env.GetLevel1Platforms());
+
+        // Landing on any platform (combined correction)
+        HandleLandingOnAnyPlatform(player, playerPrevY,
+            env.GetLevel1Platforms(),
+            env.GetLevel2Platforms(),
+            env.GetLevel3Platforms(),
+            env.GetBossPlatforms());
+
+        // Obstacles – store result
+        results.obstacleHit = HandleObstacles(player, env.GetObstacles());
+
+        // Walls
+        HandleWalls(player, env.GetWallPlatforms());
+
+        // Checkpoints – store result
+        results.checkpointHit = HandleCheckpoints(player, env.GetCheckpoints());
+
+        // Buttons – these modify env's buttons and level2 platforms
+        HandleButtons(player, env.GetLevel2Buttons(), env.GetLevel2Platforms());
+
+        // Enemy collisions
+        HandlePlayerEnemyCollisions(player, enemies);
+        HandleEnemyBulletPlayerCollisions(enemyBullets, player);
+        HandlePlayerBulletEnemyCollisions(player, enemies);
+        HandlePlayerMeleeEnemyCollisions(player, enemies);
+
+        return results;
+    }
 }

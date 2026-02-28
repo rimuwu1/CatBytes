@@ -52,6 +52,8 @@ public:
         float x, float y, float width, float height,
         float opacity = 1.f, float rotationDeg = 0.f);
 
+    //cleanup functions
+    void UnloadAll();
 private:
     MeshManager() = default;
     ~MeshManager();

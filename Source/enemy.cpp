@@ -103,8 +103,14 @@ void Enemy_Init(Enemy& enemy, const rapidjson::Value& config) {
 
     enemy.shootTimer = enemy.shootCooldown;
     enemy.direction = 1;
-    enemy.isAlive = 1;
-    enemy.hitStunTimer = 0.0f;
+
+    if (enemy.hitPoints <= 0.0f) {
+        enemy.hitPoints = 0.0f;
+        enemy.isAlive = false;
+    }
+    else {
+        enemy.isAlive = true;
+    }
     enemy.isPlayerColliding = false;
     enemy.type = EnemyType::Easy;
 }
@@ -164,8 +170,13 @@ void HardEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
 
     enemy.shootCooldown = 0.0f; // no shooting
     enemy.direction = 1;
-    enemy.isAlive = 1;
-    enemy.hitStunTimer = 0.0f;
+    if (enemy.hitPoints <= 0.0f) {
+        enemy.hitPoints = 0.0f;
+        enemy.isAlive = false;
+    }
+    else {
+        enemy.isAlive = true;
+    }
     enemy.isPlayerColliding = false;
     enemy.type = EnemyType::Hard;
 }
@@ -225,8 +236,13 @@ void BossEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
 
     enemy.shootCooldown = 0.0f;
     enemy.direction = 1;
-    enemy.isAlive = 1;
-    enemy.hitStunTimer = 0.0f;
+    if (enemy.hitPoints <= 0.0f) {
+        enemy.hitPoints = 0.0f;
+        enemy.isAlive = false;
+    }
+    else {
+        enemy.isAlive = true;
+    }
     enemy.isPlayerColliding = false;
     enemy.type = EnemyType::Boss;
 }

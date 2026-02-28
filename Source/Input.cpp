@@ -21,6 +21,7 @@ Technology is prohibited.
 #include <vector>
 #include "MainGame.h"
 #include "FileManager.h"
+#include "EnvironmentManager.h"
 
 static Player* s_CurrentPlayer = nullptr;
 
@@ -102,7 +103,7 @@ void Input_Handle() {
 
 
 		if (AEInputCheckTriggered('L')) {
-			MainGame_RequestSave();
+			EnvironmentManager::Get().RequestSave();
 		}
 		if (AEInputCheckTriggered('M')) {
 			GameSave::ResetSave(); //Debug feature for level 1!! remove when not needed

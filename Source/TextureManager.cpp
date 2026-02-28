@@ -16,7 +16,8 @@ Technology is prohibited.
 #include "TextureManager.h"
 
 TextureManager::~TextureManager() {
-    UnloadAll();
+    if (!textureMap.empty())  // only unload if not already cleaned up
+        UnloadAll();
 }
 
 AEGfxTexture* TextureManager::LoadTexture(const std::string& filepath) {

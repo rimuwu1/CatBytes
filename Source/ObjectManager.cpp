@@ -20,11 +20,6 @@ Technology is prohibited.
 
 extern rapidjson::Document configDoc;   // global config loaded once
 
-ObjectManager& ObjectManager::Get() {
-    static ObjectManager instance;
-    return instance;
-}
-
 void ObjectManager::AddEnemyFromJSON(const rapidjson::Value& enemyData) {
     std::string type = enemyData["type"].GetString();
     Enemy newEnemy;
@@ -107,18 +102,17 @@ void ObjectManager::Update(float dt) {
             b.active = false;
     }
 
-    RemoveDeadEnemies();
     RemoveInactiveBullets();
 }
 
 void ObjectManager::Draw() {
-    Player_Draw(player);
     for (const auto& e : enemies) {
         if (e.isAlive) Enemy_Draw(e);
     }
     for (const auto& b : enemyBullets) {
         if (b.active) EnemyBullet_Draw(b);
     }
+    Player_Draw(player);
 }
 
 void ObjectManager::SpawnEnemyBullet(const Enemy& source, float speed, float damage, float maxRange) {
@@ -133,12 +127,25 @@ void ObjectManager::SpawnEnemyBullet(const Enemy& source, float speed, float dam
     enemyBullets.push_back(bullet);
 }
 
-void ObjectManager::RemoveDeadEnemies() {
-    enemies.erase(std::remove_if(enemies.begin(), enemies.end(),
-        [](const Enemy& e) { return !e.isAlive; }), enemies.end());
+bool ObjectManager::IsBossDefeated() const {
+    bool bossExists = false;
+    bool bossDead = true;
+    for (const auto& enemy : enemies) {
+        if (enemy.type == EnemyType::Boss) {
+            bossExists = true;
+            if (enemy.isAlive) bossDead = false;
+        }
+    }
+    return bossExists && bossDead;
 }
 
 void ObjectManager::RemoveInactiveBullets() {
     enemyBullets.erase(std::remove_if(enemyBullets.begin(), enemyBullets.end(),
         [](const EnemyBullet& b) { return !b.active; }), enemyBullets.end());
+}
+
+void ObjectManager::Clear() {
+    enemies.clear();
+    enemyBullets.clear();
+    // player is a member, no need to clear its resources here (Player_Free handles it)
 }

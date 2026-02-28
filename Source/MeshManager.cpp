@@ -16,10 +16,8 @@ Technology is prohibited.
 #include <cmath>
 
 MeshManager::~MeshManager() {
-    for (auto const& pair : meshMap) {
-        if (pair.second) AEGfxMeshFree(pair.second);
-    }
-    meshMap.clear();
+    if (!meshMap.empty())
+        UnloadAll();
 }
 
 AEGfxVertexList* MeshManager::GetMesh(const std::string& name) {
@@ -191,4 +189,11 @@ void MeshManager::DrawSpriteSheet(SpriteSheet& sprite,
     AEGfxMeshDraw(mesh, AE_GFX_MDM_TRIANGLES);
 
     AEGfxMeshFree(mesh);
+}
+
+void MeshManager::UnloadAll() {
+    for (auto const& pair : meshMap) {
+        if (pair.second) AEGfxMeshFree(pair.second);
+    }
+    meshMap.clear();
 }

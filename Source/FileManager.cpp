@@ -63,26 +63,45 @@ namespace GameSave
         const std::string& filepath)
     {
         // ------------------------------------------------------------------
-        // 1. Read the existing file so all static data is preserved
+        // 1. Load the static configuration (GameConfig.json) as the base document
         // ------------------------------------------------------------------
         rapidjson::Document doc(rapidjson::kObjectType);
-
         {
-            std::ifstream inFile(filepath);
-            if (inFile.is_open())
+            std::ifstream configFile("Assets/Data/GameConfig.json");
+            if (!configFile.is_open())
             {
-                std::string content(
-                    (std::istreambuf_iterator<char>(inFile)),
-                    std::istreambuf_iterator<char>());
-                inFile.close();
+                std::cout << "[SaveGame] ERROR: Could not open GameConfig.json\n";
+                return;
+            }
+            std::string content(
+                (std::istreambuf_iterator<char>(configFile)),
+                std::istreambuf_iterator<char>());
+            configFile.close();
 
-                if (doc.Parse(content.c_str()).HasParseError())
-                    doc.SetObject();
+            if (doc.Parse(content.c_str()).HasParseError())
+            {
+                std::cout << "[SaveGame] ERROR: Failed to parse GameConfig.json\n";
+                return;
             }
         }
 
         // ------------------------------------------------------------------
-        // 2. Update the top‑level player (global)
+        // 2. Update metadata (dynamic fields only)
+        // ------------------------------------------------------------------
+        if (doc.HasMember("metadata") && doc["metadata"].IsObject())
+        {
+            rapidjson::Value& meta = doc["metadata"];
+            // save_date is always regenerated
+            meta["save_date"] = rapidjson::Value(GetCurrentDateTimeString().c_str(), doc.GetAllocator());
+            // update other dynamic metadata from the passed structure
+            meta["current_level"] = metadata.current_level;
+            meta["levels_completed"] = metadata.levels_completed;
+            meta["player_lives"] = metadata.player_lives;
+            // game_version and total_levels remain as in config (static)
+        }
+
+        // ------------------------------------------------------------------
+        // 3. Update player position and HP
         // ------------------------------------------------------------------
         if (doc.HasMember("player") && doc["player"].IsObject())
         {
@@ -90,101 +109,84 @@ namespace GameSave
             playerObj["x"] = player.pos.x;
             playerObj["y"] = player.pos.y;
             playerObj["hp"] = player.hp;
+            // all other player fields (width, animations, etc.) stay as in config
         }
-        // If "player" doesn't exist (old save?), we could create it, but the config always has it.
 
         // ------------------------------------------------------------------
-        // 3. Update enemies and platform active states for the current level
+        // 4. Set "completed" flag for all levels based on levels_completed
+        // ------------------------------------------------------------------
+        std::string levelPrefix = "level_";
+        for (auto it = doc.MemberBegin(); it != doc.MemberEnd(); ++it)
+        {
+            if (it->name.GetStringLength() > levelPrefix.size() &&
+                strncmp(it->name.GetString(), levelPrefix.c_str(), levelPrefix.size()) == 0)
+            {
+                // Extract level number
+                int lvl = std::atoi(it->name.GetString() + levelPrefix.size());
+                bool completed = (lvl <= metadata.levels_completed);
+                if (it->value.IsObject())
+                {
+                    rapidjson::Value& lvlObj = it->value;
+                    if (!lvlObj.HasMember("completed"))
+                        lvlObj.AddMember("completed", completed, doc.GetAllocator());
+                    else
+                        lvlObj["completed"] = completed;
+                }
+            }
+        }
+
+        // ------------------------------------------------------------------
+        // 5. Update dynamic data for the current level
         // ------------------------------------------------------------------
         std::string levelKey = "level_" + std::to_string(currentLevel);
-        if (doc.HasMember(levelKey.c_str()))
+        if (doc.HasMember(levelKey.c_str()) && doc[levelKey.c_str()].IsObject())
         {
             rapidjson::Value& levelObj = doc[levelKey.c_str()];
 
-            // Enemies: only x, y, hp matched by index
+            // Enemies: update x, y, hp (index‑matched)
             if (levelObj.HasMember("enemies") && levelObj["enemies"].IsArray())
             {
                 rapidjson::Value& enemiesArr = levelObj["enemies"];
-                for (rapidjson::SizeType i = 0; i < enemiesArr.Size(); i++)
+                for (rapidjson::SizeType i = 0; i < enemiesArr.Size(); ++i)
                 {
                     if (i >= static_cast<rapidjson::SizeType>(enemies.size())) break;
                     enemiesArr[i]["x"] = enemies[i].pos.x;
                     enemiesArr[i]["y"] = enemies[i].pos.y;
                     enemiesArr[i]["hp"] = enemies[i].hitPoints;
+                    // all other enemy properties remain as in config
                 }
             }
 
-            // Platforms: update active states
+            // Platforms: add/update active state
             if (levelObj.HasMember("platforms") && levelObj["platforms"].IsArray())
             {
                 rapidjson::Value& platformsArr = levelObj["platforms"];
-                if (platformsArr.Size() == platforms.size())
+                if (platformsArr.Size() == static_cast<rapidjson::SizeType>(platforms.size()))
                 {
                     for (rapidjson::SizeType i = 0; i < platformsArr.Size(); ++i)
                     {
-                        if (platformsArr[i].IsObject())
-                        {
-                            if (platformsArr[i].HasMember("active"))
-                                platformsArr[i]["active"] = platforms[i].active;
-                            else
-                                platformsArr[i].AddMember("active", platforms[i].active, doc.GetAllocator());
-                        }
+                        if (!platformsArr[i].IsObject()) continue;
+                        if (!platformsArr[i].HasMember("active"))
+                            platformsArr[i].AddMember("active", platforms[i].active, doc.GetAllocator());
+                        else
+                            platformsArr[i]["active"] = platforms[i].active;
                     }
                 }
             }
         }
 
         // ------------------------------------------------------------------
-        // 4. Rebuild a new document in the correct key order.
-        // ------------------------------------------------------------------
-        rapidjson::Document ordered(rapidjson::kObjectType);
-        rapidjson::Document::AllocatorType& oa = ordered.GetAllocator();
-
-        // metadata
-        rapidjson::Value metaObj(rapidjson::kObjectType);
-        metaObj.AddMember("game_version", rapidjson::Value(metadata.game_version.c_str(), oa), oa);
-        metaObj.AddMember("save_date", rapidjson::Value(GetCurrentDateTimeString().c_str(), oa), oa);
-        metaObj.AddMember("current_level", metadata.current_level, oa);
-        metaObj.AddMember("total_levels", metadata.total_levels, oa);
-        metaObj.AddMember("levels_completed", metadata.levels_completed, oa);
-        metaObj.AddMember("player_lives", metadata.player_lives, oa);
-        ordered.AddMember("metadata", metaObj, oa);
-
-        // level keys in fixed order
-        const char* levelOrder[] = { "level_1", "level_2", "level_3", "level_4" };
-        for (const char* lvlKey : levelOrder)
-        {
-            if (doc.HasMember(lvlKey))
-            {
-                rapidjson::Value copiedLevel(doc[lvlKey], oa);
-                ordered.AddMember(rapidjson::Value(lvlKey, oa), copiedLevel, oa);
-            }
-        }
-
-        // preserve any other top‑level keys (player, ui, checkpoints, etc.)
-        for (auto it = doc.MemberBegin(); it != doc.MemberEnd(); ++it)
-        {
-            const char* memberName = it->name.GetString();
-            if (!ordered.HasMember(memberName))
-            {
-                rapidjson::Value copiedKey(memberName, oa);
-                rapidjson::Value copiedVal(it->value, oa);
-                ordered.AddMember(copiedKey, copiedVal, oa);
-            }
-        }
-
-        // ------------------------------------------------------------------
-        // 5. Serialize and write back to file
+        // 6. Serialize and write to the save file
         // ------------------------------------------------------------------
         rapidjson::StringBuffer buffer;
         rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buffer);
         writer.SetIndent(' ', 4);
-        ordered.Accept(writer);
+        doc.Accept(writer);
 
         std::ofstream outFile(filepath);
         if (!outFile.is_open())
         {
-            std::cout << "[SaveGame] ERROR: Could not open file: " << filepath << std::endl;
+            std::cout << "[SaveGame] ERROR: Could not open save file: " << filepath << std::endl;
             return;
         }
         outFile << buffer.GetString();

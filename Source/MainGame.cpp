@@ -43,11 +43,6 @@ Technology is prohibited.
 
 rapidjson::Document configDoc;   // defined elsewhere, extern used if needed
 
-static EnvironmentManager gEnv;
-static bool s_SaveRequested = false;
-
-void MainGame_RequestSave() { s_SaveRequested = true; }
-
 void MainGame_Load()
 {
     std::ifstream ifs;
@@ -65,13 +60,13 @@ void MainGame_Load()
     ifs.close();
 
     // Load all environment data (platforms, obstacles, checkpoints, buttons)
-    gEnv.LoadFromConfig(configDoc);
+    EnvironmentManager::Get().LoadFromConfig(configDoc);
     std::cout << "MainGame:Load" << std::endl;
 }
 
 void MainGame_Initialize()
 {
-    gEnv.Initialize();
+    EnvironmentManager::Get().Initialize();
 
     // Load player + level 1 enemies first (this also sets up the player)
     ObjectManager::Get().LoadFromJSON(configDoc["level_1"]);
@@ -106,8 +101,7 @@ void MainGame_Update()
     std::vector<Enemy>& enemies = ObjectManager::Get().GetAllEnemies();
     std::vector<EnemyBullet>& enemyBullets = ObjectManager::Get().GetAllEnemyBullets();
 
-    // Restart handling (if you keep the global flag)
-
+    // Restart handling
     if (g_resetLevelOnNextUpdate) {
         MainGame_Load();
         MainGame_Initialize();
@@ -121,95 +115,48 @@ void MainGame_Update()
     ObjectManager::Get().Update(dt);
 
     // ================== COLLISION HANDLING ==================
-    // Ground
-    CollisionManager::HandleGround(player, -350.0f, 50.0f, playerPrevY);
+    auto results = CollisionManager::HandleAllCollisions(
+        player,
+        playerPrevY,
+        EnvironmentManager::Get(),
+        ObjectManager::Get().GetAllEnemies(),
+        ObjectManager::Get().GetAllEnemyBullets()
+    );
 
-    // Platforms (standard when falling)
-    CollisionManager::HandlePlatforms(player, playerPrevY, gEnv.GetLevel1Platforms());
-
-    // Landing on any platform (combined correction)
-    CollisionManager::HandleLandingOnAnyPlatform(player, playerPrevY,
-        gEnv.GetLevel1Platforms(),
-        gEnv.GetLevel2Platforms(),
-        gEnv.GetLevel3Platforms(),
-        gEnv.GetBossPlatforms());
-
-    // Obstacles
-    if (CollisionManager::HandleObstacles(player, gEnv.GetObstacles())) {
+    // React to collision results
+    if (results.obstacleHit)
+    {
         textScreenMessage = "You Lose";
         next = GS_WINLOSE;
     }
 
-    // Walls
-    CollisionManager::HandleWalls(player, gEnv.GetWallPlatforms());
-
-    // Checkpoints & save
-    static bool checkpointSaved = false;
-    if (CollisionManager::HandleCheckpoints(player, gEnv.GetCheckpoints()) || s_SaveRequested) {
-        if (!checkpointSaved || s_SaveRequested) {
-            checkpointSaved = true;
-            s_SaveRequested = false;
-
-            int currentSection = gEnv.GetCurrentSection();
-            int currentLevel = currentSection + 1;
-            std::vector<Platform>* currentPlatforms = nullptr;
-            switch (currentLevel) {
-            case 1: currentPlatforms = const_cast<std::vector<Platform>*>(&gEnv.GetLevel1Platforms()); break;
-            case 2: currentPlatforms = const_cast<std::vector<Platform>*>(&gEnv.GetLevel2Platforms()); break;
-            case 3: currentPlatforms = const_cast<std::vector<Platform>*>(&gEnv.GetLevel3Platforms()); break;
-            case 4: currentPlatforms = const_cast<std::vector<Platform>*>(&gEnv.GetBossPlatforms());   break;
-            default: currentPlatforms = const_cast<std::vector<Platform>*>(&gEnv.GetLevel1Platforms()); break;
-            }
-
-            GameSave::Metadata meta{ "1.0", "", currentLevel, 4, 0, 3 };
-            GameSave::SaveGame(meta, currentLevel, player, enemies, *currentPlatforms);
-            GameSave::Notify_Show(GameSave::NotifyType::SAVED);
+    // ----- Checkpoint & save -----
+    static bool externalSaveRequest = false;  // if needed from UI
+    if (EnvironmentManager::Get().HandleCheckpoint(results.checkpointHit, externalSaveRequest))
+    {
+        int currentSection = EnvironmentManager::Get().GetCurrentSection();
+        int currentLevel = currentSection + 1;
+        const std::vector<Platform>* currentPlatforms = nullptr;
+        switch (currentLevel) {
+        case 1: currentPlatforms = &EnvironmentManager::Get().GetLevel1Platforms(); break;
+        case 2: currentPlatforms = &EnvironmentManager::Get().GetLevel2Platforms(); break;
+        case 3: currentPlatforms = &EnvironmentManager::Get().GetLevel3Platforms(); break;
+        case 4: currentPlatforms = &EnvironmentManager::Get().GetBossPlatforms();   break;
+        default: currentPlatforms = &EnvironmentManager::Get().GetLevel1Platforms(); break;
         }
-    }
-    else {
-        checkpointSaved = false;
-    }
 
-    // Level 2 buttons
-    auto& buttons = gEnv.GetLevel2Buttons();
-    auto& level2Plats = const_cast<std::vector<Platform>&>(gEnv.GetLevel2Platforms());
-    CollisionManager::HandleButtons(player, buttons, level2Plats);
-
-    // Enemy collisions
-    CollisionManager::HandlePlayerEnemyCollisions(player, enemies);
-    CollisionManager::HandleEnemyBulletPlayerCollisions(enemyBullets, player);
-    CollisionManager::HandlePlayerBulletEnemyCollisions(player, enemies);
-    CollisionManager::HandlePlayerMeleeEnemyCollisions(player, enemies);
-
-    // Enemy shooting (easy enemies)
-    for (auto& enemy : enemies) {
-        if (!enemy.isAlive) continue;
-        if (enemy.type == EnemyType::Easy) {
-            enemy.shootTimer -= dt;
-            if (enemy.shootTimer <= 0.0f) {
-                ObjectManager::Get().SpawnEnemyBullet(enemy,
-                    enemy.bulletSpeed,
-                    enemy.bulletDamage,
-                    1600.0f);
-                enemy.shootTimer = enemy.shootCooldown;
-            }
-        }
+        GameSave::Metadata meta{ "1.0", "", currentLevel, 4, 0, 3 };
+        GameSave::SaveGame(meta, currentLevel, player, enemies, *currentPlatforms);
+        GameSave::Notify_Show(GameSave::NotifyType::SAVED);
     }
 
-    // Check boss death ? win
-    bool bossExists = false, bossDead = true;
-    for (auto& enemy : enemies) {
-        if (enemy.type == EnemyType::Boss) {
-            bossExists = true;
-            if (enemy.isAlive) bossDead = false;
-        }
-    }
-    if (bossExists && bossDead) {
+    // Check boss death -> win
+    if (ObjectManager::Get().IsBossDefeated()) {
         textScreenMessage = "You Win";
         next = GS_WINLOSE;
     }
 
-    // Fall below camera ? lose
+    // Fall below camera -> lose
     if (!globalCam.debugCam) {
         const float halfScreenHeight = 900.0f * 0.5f;
         float camBottomY = globalCam.y - halfScreenHeight;
@@ -228,7 +175,7 @@ void MainGame_Update()
 
     // Update environment (background colour, HUD, level indicator)
     float backgroundY = globalCam.debugCam ? globalCam.y : player.pos.y;
-    gEnv.Update(dt, player, backgroundY);
+    EnvironmentManager::Get().Update(dt, player, backgroundY);
 
     // Save notification
     GameSave::Notify_Update(dt);
@@ -253,39 +200,9 @@ void MainGame_Draw()
     Player& player = ObjectManager::Get().GetPlayer();
 
     // Environment draws background, platforms, HUD, minimap, level indicator
-    gEnv.Draw(globalCam.x, globalCam.y, player.pos.x, player.pos.y);
-
-    // Draw enemies
-    for (const auto& enemy : ObjectManager::Get().GetAllEnemies()) {
-        if (enemy.isAlive) Enemy_Draw(enemy);
-    }
-
-    // Draw enemy bullets
-    for (const auto& bullet : ObjectManager::Get().GetAllEnemyBullets()) {
-        if (bullet.active) EnemyBullet_Draw(bullet);
-    }
-
-    // Low?HP overlays
-    for (const auto& enemy : ObjectManager::Get().GetAllEnemies()) {
-        if (!enemy.isAlive) continue;
-        float overlayAlpha = 0.0f;
-        if (enemy.hitStunTimer > 0.0f)
-            overlayAlpha = enemy.hitStunTimer / 0.5f;
-        else if (enemy.hitPoints == 1)
-            overlayAlpha = 0.25f;
-        if (overlayAlpha > 0.0f && enemy.lowHpTexture) {
-            MeshManager::Get().DrawTexturedSquare(
-                enemy.lowHpTexture,
-                enemy.pos.x, enemy.pos.y,
-                enemy.width, enemy.height,
-                overlayAlpha
-            );
-        }
-    }
-
-    // Draw player
-    Player_Draw(player);
-
+    EnvironmentManager::Get().Draw(globalCam.x, globalCam.y, player.pos.x, player.pos.y);
+    //draw player and enemies
+    ObjectManager::Get().Draw();
     // Save notification (on top)
     GameSave::Notify_Draw();
 
@@ -295,14 +212,15 @@ void MainGame_Draw()
 
 void MainGame_Free()
 {
-    Player_Free(ObjectManager::Get().GetPlayer());
-    gEnv.Free();
+    Player_Free(ObjectManager::Get().GetPlayer());   // frees player’s bullet list etc.
+    ObjectManager::Get().Clear();                    // clears enemies and enemy bullets
+    EnvironmentManager::Get().Clear();                // clears platforms, obstacles, etc.
     std::cout << "MainGame:Free" << std::endl;
 }
 
 void MainGame_Unload()
 {
-    PlayerBullet_FreeShared();
-    gEnv.Unload();
+    TextureManager::Get().UnloadAll();
+    MeshManager::Get().UnloadAll();
     std::cout << "MainGame:Unload" << std::endl;
 }

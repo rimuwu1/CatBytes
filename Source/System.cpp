@@ -15,6 +15,8 @@ Technology is prohibited.
 #include "pch.h"
 #include "GameStateManager.h"
 #include "Fonts.h" 
+#include "TextureManager.h"
+#include "MeshManager.h"
 
 // ----------------------------------------------------------------------------
 // Initializes the game system and its subsystems
@@ -39,7 +41,8 @@ void System_Initialize(HINSTANCE hInstance, int nCmdShow, bool createConsole)
 void System_Exit()
 {
 	Fonts_Unload();
-
+	TextureManager::Get().UnloadAll();
+	MeshManager::Get().UnloadAll();
 	AESysExit();
 	std::cout << "System:Exit" << std::endl;  // Log system exit/cleanup
 }

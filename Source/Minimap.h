@@ -2,7 +2,9 @@
 /*!
 \file	Minimap.h
 \author Kerwin Wong Jia Jie, kerwinjiajie.wong, 2502740
+        Joash ng, joash.ng, 2502780
 \par	kerwinajijie.wong@digipen.edu
+        joash.ng@digipen.edu
 \date	February, 19, 2026
 \brief	This file contains the function declarations for rendering the in-game minimap
 		that maps player world position proportionally within defined world bounds.
@@ -32,4 +34,4 @@ struct Minimap {
 	//float worldMaxY = 2000.0f;
 };
 
-void Minimap_Draw(const Minimap& mm, float playerWorldX, float playerWorldY);
+void Minimap_Draw(const Minimap& mm, float playerWorldX, float playerWorldY, float camX, float camY);
