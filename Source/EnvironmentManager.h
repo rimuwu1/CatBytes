@@ -15,7 +15,6 @@ Technology is prohibited.
 #pragma once
 #include <vector>
 #include "HUD.h"
-#include "Minimap.h"
 #include "Platforms.h"
 #include "SpriteSheet.h"
 #include "rapidjson/document.h"
@@ -81,7 +80,6 @@ private:
 
     // Environment data
     HUD      m_HUD;
-    Minimap  m_Minimap;
 
     std::vector<Platform>         m_level1Platforms;
     std::vector<Platform>         m_level2Platforms;

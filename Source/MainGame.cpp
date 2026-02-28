@@ -10,7 +10,7 @@
      s.huimin@digipen.edu
      tse.x@digipen.edu
      p.yuxuanlovette@digipen.edu
-     kerwinajijie.wong@digipen.edu
+     kerwinjiajie.wong@digipen.edu
 \date 21/01/2026
 \brief This file implements the functions for the main gamestate of the game.
 
@@ -199,7 +199,7 @@ void MainGame_Draw()
 
     Player& player = ObjectManager::Get().GetPlayer();
 
-    // Environment draws background, platforms, HUD, minimap, level indicator
+    // Environment draws background, platforms, HUD, level indicator
     EnvironmentManager::Get().Draw(globalCam.x, globalCam.y, player.pos.x, player.pos.y);
     //draw player and enemies
     ObjectManager::Get().Draw();

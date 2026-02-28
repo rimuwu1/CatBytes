@@ -29,21 +29,6 @@ void EnvironmentManager::LoadFromConfig(const rapidjson::Value& config)
     if (config.HasMember("ui"))
         m_HUD.InitFromConfig(config);
 
-    // ---- Minimap ----
-    if (config.HasMember("ui") && config["ui"].HasMember("minimap")) {
-        const auto& minimap = config["ui"]["minimap"];
-        if (minimap.HasMember("active"))    m_Minimap.active = minimap["active"].GetBool();
-        if (minimap.HasMember("x"))         m_Minimap.x = minimap["x"].GetFloat();
-        if (minimap.HasMember("y"))         m_Minimap.y = minimap["y"].GetFloat();
-        if (minimap.HasMember("width"))     m_Minimap.w = minimap["width"].GetFloat();
-        if (minimap.HasMember("height"))    m_Minimap.h = minimap["height"].GetFloat();
-        if (minimap.HasMember("worldMinX")) m_Minimap.worldMinX = minimap["worldMinX"].GetFloat();
-        if (minimap.HasMember("worldMaxX")) m_Minimap.worldMaxX = minimap["worldMaxX"].GetFloat();
-        if (minimap.HasMember("worldMinY")) m_Minimap.worldMinY = minimap["worldMinY"].GetFloat();
-        if (minimap.HasMember("worldMaxY")) m_Minimap.worldMaxY = minimap["worldMaxY"].GetFloat();
-        if (minimap.HasMember("dotSize"))   m_Minimap.dotSize = minimap["dotSize"].GetFloat();
-    }
-
     // ---- Level 1 platforms ----
     if (config.HasMember("level_1") && config["level_1"].HasMember("platforms")) {
         const auto& platforms = config["level_1"]["platforms"];
@@ -219,9 +204,8 @@ void EnvironmentManager::Draw(float camX, float camY, float playerX, float playe
     // Ground
     MeshManager::Get().DrawSquare(0.0f, -350.0f, 1600.0f, 50.0f, 0, 0, 0);
 
-    // HUD, minimap, level indicator
+    // HUD, level indicator
     m_HUD.Draw(MeshManager::Get(), camX, camY);
-    Minimap_Draw(m_Minimap, playerX, playerY, camX, camY);
     LevelIndicator_Draw();
 }
 

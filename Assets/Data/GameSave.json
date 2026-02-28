@@ -48,18 +48,6 @@
     }
         },
     "ui": {
-      "minimap": {
-        "active": true,
-        "x": -700.0,
-        "y": 370.0,
-        "width": 180.0,
-        "height": 140.0,
-        "worldMinX": -780.0,
-        "worldMaxX": 780.0,
-        "worldMinY": -350.0,
-        "worldMaxY": 2000.0,
-        "dotSize": 10.0
-      },
       "hearts": {
         "active": true,
         "x": 680.0,
@@ -71,11 +59,64 @@
           "rows": 1,
           "cols": 4,
           "clips": [
-            { "name": "hp3", "start": 0, "end": 0, "speed": 1.0, "loop": false },
-            { "name": "hp2", "start": 1, "end": 1, "speed": 1.0, "loop": false },
-            { "name": "hp1", "start": 2, "end": 2, "speed": 1.0, "loop": false },
-            { "name": "hp0", "start": 3, "end": 3, "speed": 1.0, "loop": false }
+            {
+              "name": "hp3",
+              "start": 0,
+              "end": 0,
+              "speed": 1.0,
+              "loop": false
+            },
+            {
+              "name": "hp2",
+              "start": 1,
+              "end": 1,
+              "speed": 1.0,
+              "loop": false
+            },
+            {
+              "name": "hp1",
+              "start": 2,
+              "end": 2,
+              "speed": 1.0,
+              "loop": false
+            },
+            {
+              "name": "hp0",
+              "start": 3,
+              "end": 3,
+              "speed": 1.0,
+              "loop": false
+            }
           ]
+        }
+      },
+       "progressBar": {
+        "active": true,
+        "x": -720,
+        "y": 0,
+        "w": 32,
+        "h": 450,
+        "minY": 0,
+        "maxY": 7500,
+        "gap": 0,
+        "paddingX": 2,
+        "paddingY": 2,
+        "overlapY": 1,
+        "segments": [
+          { "endY": 1900 },
+          { "endY": 4550 },
+          { "endY": 7500 }
+        ],
+        "colours": [
+          { "r": 189, "g": 231, "b": 255 },
+          { "r": 87, "g": 119, "b": 165 },
+          { "r": 104, "g": 26, "b": 163 },
+          { "r": 43, "g": 4, "b": 56 }
+        ],
+        "animations": {
+          "file": "Assets/Images/progressBarSheet.png",
+          "rows": 1,
+          "cols": 1
         }
       }
     },

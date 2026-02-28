@@ -26,7 +26,6 @@
     <ClCompile Include="..\Source\main.cpp" />
     <ClCompile Include="..\Source\MainGame.cpp" />
     <ClCompile Include="..\Source\MeshManager.cpp" />
-    <ClCompile Include="..\Source\Minimap.cpp" />
     <ClCompile Include="..\Source\ObjectManager.cpp" />
     <ClCompile Include="..\Source\PauseMenu.cpp" />
     <ClCompile Include="..\Source\pch.cpp" />
@@ -58,7 +57,6 @@
     <ClInclude Include="..\Source\MainGame.h" />
     <ClInclude Include="..\Source\MainMenu.h" />
     <ClInclude Include="..\Source\MeshManager.h" />
-    <ClInclude Include="..\Source\Minimap.h" />
     <ClInclude Include="..\Source\ObjectManager.h" />
     <ClInclude Include="..\Source\PauseMenu.h" />
     <ClInclude Include="..\Source\pch.h" />
