@@ -17,7 +17,6 @@ Technology is prohibited.
 #include "GameStateManager.h"
 #include "MeshManager.h"
 #include "TextureManager.h"
-#include "Level1.h"	
 #include <cmath>
 #include "Fonts.h"
 
