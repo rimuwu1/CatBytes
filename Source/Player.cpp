@@ -5,7 +5,7 @@
 		Tse Xuan Qi Tristin, tse.x, 2503757
 		Sim Hui Min, s.huimin, 2503506
 		Joash Ng, joash.ng, 2502780
-\par kerwinajijie.wong@digipen.edu
+\par kerwinjiajie.wong@digipen.edu
 	 tse.x@digipen.edu
 	 s.huimin@digipen.edu
 	 joash.ng@digipen.edu

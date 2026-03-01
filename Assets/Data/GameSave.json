@@ -90,7 +90,7 @@
           ]
         }
       },
-       "progressBar": {
+      "progressBar": {
         "active": true,
         "x": -720,
         "y": 0,
@@ -102,6 +102,7 @@
         "paddingX": 2,
         "paddingY": 2,
         "overlapY": 1,
+        "trackerRadius": 5,
         "segments": [
           { "endY": 1900 },
           { "endY": 4550 },
@@ -109,6 +110,18 @@
         ],
         "animations": {
           "file": "Assets/Images/progressBarSheet.png",
+          "rows": 1,
+          "cols": 1
+        }
+      },
+      "pauseButton": {
+        "active": true,
+        "x": -720,
+        "y": 400,
+        "w": 48,
+        "h": 48,
+        "animations": {
+          "file": "Assets/Images/pauseButtonSheet.png",
           "rows": 1,
           "cols": 1
         }

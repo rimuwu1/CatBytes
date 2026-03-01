@@ -2,7 +2,7 @@
 /*!
 \file Camera.h
 \author Kerwin Wong Jia Jie, kerwinjiajie.wong, 2502740
-\par kerwinajijie.wong@digipen.edu
+\par kerwinajiajie.wong@digipen.edu
 \date January, 25, 2026
 \brief This file contains the function declarations for Camera Handling, which is used
 		to control the view position in the game.

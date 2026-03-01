@@ -2,7 +2,7 @@
 /*!
 \file Camera.cpp
 \author Kerwin Wong Jia Jie, kerwinjiajie.wong, 2502740
-\par kerwinajijie.wong@digipen.edu
+\par kerwinjiajie.wong@digipen.edu
 \date January, 25, 2026
 \brief This file contains the function definitions for Camera Handling, which is used
 		to control the view position in the game.

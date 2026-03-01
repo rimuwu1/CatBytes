@@ -30,26 +30,27 @@ struct Player;
 class HUD
 {
 public:
+	bool IsPauseButtonClicked(float camX, float camY) const;
 	void InitFromConfig(const rapidjson::Value& configDoc);
 	void Update(float /*dt*/, const Player& player);
 	void Draw(MeshManager& meshManager, float camX, float camY) const;
 	bool IsActive() const { return active; }
 
 private:
-	// Hearts UI
+	// ---- Hearts UI ---- //
 	std::unique_ptr<SpriteSheet> heartsSheet;
 	bool active = true;
 	bool heartsActive = true;
-	float heartsOffsetX = 650.0f;
-	float heartsOffsetY = 400.0f;
-	float heartsWidth = 150.0f;
-	float heartsHeight = 40.0f;
+	float heartsOffsetX = 680.0f;
+	float heartsOffsetY = 410.0f;
+	float heartsWidth = 128.0f;
+	float heartsHeight = 128.0f;
 	int lastHeartsState = -1;
 
 	static int ClampHeartsStateFromPlayer(const Player& player);
 	void ApplyHeartsState(int state);
 
-	// Progress Bar UI
+	// ---- Progress Bar UI ---- //
 	struct ProgressBar
 	{
 		bool active = false;
@@ -77,8 +78,23 @@ private:
 	ProgressBar progressBar;
 	float pbarPlayerY = 0.0f;
 
+	// ---- Pause Button UI ---- //
+	struct PauseButton
+	{
+		bool active = true;
+		float offsetX = -750.0f;
+		float offsetY = 420.0f;
+		float width = 32.0f;
+		float height = 32.0f;
+		std::unique_ptr<SpriteSheet> pauseSheet;
+		bool ready = false;
+	};
+
+	PauseButton pauseButton;
+
 private:
 	static float ClampProgressBar(float v);
 	static float SegmentProgress(float y, float a, float b);
 	void InitProgressBarFromConfig(const rapidjson::Value& uiJson);
+	void InitPauseButtonFromConfig(const rapidjson::Value& uiJson);
 };

@@ -199,6 +199,14 @@ void MainGame_Update()
     float backgroundY = globalCam.debugCam ? globalCam.y : player.pos.y;
     EnvironmentManager::Get().Update(dt, player, backgroundY);
 
+    // Pause button -> changes gamestate to pause
+    HUD& hud = EnvironmentManager::Get().GetHUD();
+
+    if (hud.IsPauseButtonClicked(globalCam.x, globalCam.y)) {
+        GameStateManager::Get().next = GS_PAUSE;
+        return;
+    }
+
     GameSave::Notify_Update(dt);
 
     if (AEInputCheckTriggered(AEVK_6)) {

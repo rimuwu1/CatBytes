@@ -4,7 +4,7 @@
 \author Kerwin Wong Jia Jie, kerwinjiajie.wong, 2502740
 		Tse Xuan Qi Tristin, tse.x, 2503757
 		Joash ng, joash.ng, 2502780
-\par    kerwinajijie.wong@digipen.edu
+\par    kerwinjiajie.wong@digipen.edu
 	    tse.x@digipen.edu
 		joash.ng@digipen.edu
 \date January, 23, 2026

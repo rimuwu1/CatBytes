@@ -2,7 +2,9 @@
 /*!
 \file       EnvironmentManager.h
 \author     Joash ng, joash.ng, 2502780
+            Kerwin Wong Jia Jie, kerwinjiajie.wong, 2502740
 \par        joash.ng@digipen.edu
+            kerwinjiajie.wong@digipen.edu
 \date       Feb 26 2026
 \brief		This file declares rhe Environmanager Namespace which handles all the environment stuff like platforms obstacles and walls through a singleton instance.
 
@@ -52,6 +54,10 @@ public:
 
     // Current background section (0 based)
     int GetCurrentSection() const { return m_currentSection; }
+
+    // Accessor for HUD & UI elements
+    HUD & GetHUD() { return m_HUD; }
+    const HUD& GetHUD() const { return m_HUD; }
 
     // Checkpoint handling
     bool HandleCheckpoint(bool checkpointHit, bool& externalSaveRequest); // returns true if save should be performed

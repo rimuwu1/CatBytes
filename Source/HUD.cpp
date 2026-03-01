@@ -21,7 +21,25 @@ Technology is prohibited.
 
 #include <rapidjson/document.h>
 
-// Helper functions for Hearts UI
+// ---- Helper functions (General) ---- //
+// Converts mouse position to in-game coordinates
+static void MousePosition(float camX, float camY, float& outX, float& outY)
+{
+	int mx, my;
+	AEInputGetCursorPosition(&mx, &my);
+
+	const float windowWidth = (float)AEGfxGetWindowWidth();
+	const float windowHeight = (float)AEGfxGetWindowHeight();
+
+	const float left = camX - windowWidth * 0.5f;
+	const float top = camY + windowHeight * 0.5f;
+
+	outX = left + (float)mx;
+	outY = top - (float)my;
+}
+
+// ---- Helper functions for Hearts UI ---- 
+// Clamps hearts (0 to 3)
 int HUD::ClampHeartsStateFromPlayer(const Player& player)
 {
 	int hpInt = static_cast<int>(player.hp);
@@ -37,6 +55,7 @@ int HUD::ClampHeartsStateFromPlayer(const Player& player)
 	return hpInt;
 }
 
+// Applies individual frame to the equivalent heart state
 void HUD::ApplyHeartsState(int state)
 {
 	if (!heartsSheet)
@@ -65,7 +84,8 @@ void HUD::ApplyHeartsState(int state)
 	heartsSheet->Stop();
 }
 
-// Helper functions for Progress Bar UI
+// ---- Helper functions for Progress Bar UI ---- //
+// Clamps progress bar (0 to 1)
 float HUD::ClampProgressBar(float v)
 {
 	if (v < 0.0f)
@@ -80,6 +100,7 @@ float HUD::ClampProgressBar(float v)
 	return v;
 }
 
+// Tracks player progress through individual segments
 float HUD::SegmentProgress(float y, float a, float b)
 {
 	if (b <= a)
@@ -90,7 +111,9 @@ float HUD::SegmentProgress(float y, float a, float b)
 	return ClampProgressBar((y - a) / (b - a));
 }
 
-// ProgressBar config
+
+// ------------------------------------------------------------------------
+// ---- ProgressBar config ---- //
 void HUD::InitProgressBarFromConfig(const rapidjson::Value& uiJson)
 {
 	if (!uiJson.HasMember("progressBar"))
@@ -192,21 +215,74 @@ void HUD::InitProgressBarFromConfig(const rapidjson::Value& uiJson)
 
 }
 
+// ---- Pause Button config ---- //
+void HUD::InitPauseButtonFromConfig(const rapidjson::Value& uiJson)
+{
+	if (!uiJson.HasMember("pauseButton"))
+	{
+		return;
+	}
 
-// HUD
+	const rapidjson::Value& pauseBtn = uiJson["pauseButton"];
+
+	if (pauseBtn.HasMember("active"))
+	{
+		pauseButton.active = pauseBtn["active"].GetBool();
+	}
+	if (pauseBtn.HasMember("x"))
+	{
+		pauseButton.offsetX = pauseBtn["x"].GetFloat();
+	}
+	if (pauseBtn.HasMember("y"))
+	{
+		pauseButton.offsetY = pauseBtn["y"].GetFloat();
+	}
+	if (pauseBtn.HasMember("w"))
+	{
+		pauseButton.width = pauseBtn["w"].GetFloat();
+	}
+	if (pauseBtn.HasMember("h"))
+	{
+		pauseButton.height = pauseBtn["h"].GetFloat();
+	}
+
+	if (pauseBtn.HasMember("animations"))
+	{
+		const rapidjson::Value& anims = pauseBtn["animations"];
+
+		if (anims.HasMember("file") && anims.HasMember("rows") && anims.HasMember("cols"))
+		{
+			pauseButton.pauseSheet.reset(new SpriteSheet(
+				anims["file"].GetString(),
+				(u32)anims["rows"].GetInt(),
+				(u32)anims["cols"].GetInt()
+			));
+
+			pauseButton.pauseSheet->AddClip("frame", 0, 0, 0.0f, true);
+			pauseButton.pauseSheet->Play("frame", true);
+			pauseButton.pauseSheet->Stop();
+
+			pauseButton.ready = true;
+		}
+
+	}
+
+}
+
+// ---- HUD config ---- //
 void HUD::InitFromConfig(const rapidjson::Value& configDoc)
 {
 	active = true;
 
 	// Hearts UI
 	heartsActive = true;
-	heartsOffsetX = 650.0f;
-	heartsOffsetY = 400.0f;
-	heartsWidth = 150.0f;
-	heartsHeight = 40.0f;
+	//heartsOffsetX = 680.0f;
+	//heartsOffsetY = 410.0f;
+	//heartsWidth = 128.0f;
+	//heartsHeight = 128.0f;
 
-	heartsSheet.reset();
-	lastHeartsState = -1;
+	//heartsSheet.reset();
+	//lastHeartsState = -1;
 
 	// Progress Bar UI
 	progressBar = ProgressBar();
@@ -281,6 +357,7 @@ void HUD::InitFromConfig(const rapidjson::Value& configDoc)
 	}
 
 	InitProgressBarFromConfig(uiJson);
+	InitPauseButtonFromConfig(uiJson);
 }
 
 void HUD::Update(float /*dt*/, const Player& player)
@@ -307,7 +384,7 @@ void HUD::Draw(MeshManager& meshManager, float camX, float camY) const
 		return;
 	}
 
-	// Hearts UI
+	// ---- Hearts ---- //
 	if (heartsActive && heartsSheet)
 	{
 		const float x = camX + heartsOffsetX;
@@ -316,7 +393,7 @@ void HUD::Draw(MeshManager& meshManager, float camX, float camY) const
 		MeshManager::Get().DrawSpriteSheet(*heartsSheet, x, y, heartsWidth, heartsHeight, 1.0f);
 	}
 
-	// Progress Bar UI
+	// ---- Progress Bar ---- //
 	if (progressBar.active)
 	{
 		const float hx = camX + progressBar.offsetX;
@@ -331,10 +408,11 @@ void HUD::Draw(MeshManager& meshManager, float camX, float camY) const
 		// Tracker position
 		float trackerY;
 
-		const float y0 = progressBar.minY;
-		const float y1 = progressBar.segmentEndY[0];
-		const float y2 = progressBar.segmentEndY[1];
-		const float y3 = progressBar.segmentEndY[2];
+		// Split progress bar into segments
+		const float y0 = progressBar.minY;			 // bottom of progress bar
+		const float y1 = progressBar.segmentEndY[0]; // first segment (bottom) - level 1
+		const float y2 = progressBar.segmentEndY[1]; // second segment (middle) - level 2
+		const float y3 = progressBar.segmentEndY[2]; // third segment (top) - level 3
 
 		if (pbarPlayerY <= y1)
 		{
@@ -364,6 +442,7 @@ void HUD::Draw(MeshManager& meshManager, float camX, float camY) const
 			trackerY = maxTrackY;
 		}
 
+		// Draw progress bar
 		if (progressBar.pbarReady && progressBar.pbarSheet)
 		{
 			MeshManager::Get().DrawSpriteSheet(
@@ -371,8 +450,46 @@ void HUD::Draw(MeshManager& meshManager, float camX, float camY) const
 			);
 		}
 
+		// Draw tracker
 		meshManager.DrawCircle(hx, trackerY, progressBar.trackerRadius * 2.0f,
 			progressBar.trackerR, progressBar.trackerG, progressBar.trackerB);
 	}
 
+	// ---- Pause Button ---- //
+	if (pauseButton.active && pauseButton.ready && pauseButton.pauseSheet)
+	{
+		MeshManager::Get().DrawSpriteSheet(
+			*pauseButton.pauseSheet,
+			camX + pauseButton.offsetX, camY + pauseButton.offsetY,
+			pauseButton.width, pauseButton.height, 1.0f
+		);
+	}
+
+}
+
+bool HUD::IsPauseButtonClicked(float camX, float camY) const
+{
+	if (!active || !pauseButton.active || !pauseButton.ready || !pauseButton.pauseSheet)
+		return false;
+
+	if (!AEInputCheckTriggered(AEVK_LBUTTON))
+		return false;
+
+	float mouseX, mouseY;
+	MousePosition(camX, camY, mouseX, mouseY);
+
+	// Pause button center
+	const float cx = camX + pauseButton.offsetX;
+	const float cy = camY + pauseButton.offsetY;
+
+	const float halfW = pauseButton.width * 0.5f;
+	const float halfH = pauseButton.height * 0.5f;
+
+	const float left = cx - halfW;
+	const float right = cx + halfW;
+	const float bottom = cy - halfH;
+	const float top = cy + halfH;
+
+	// AABB collision
+	return (mouseX >= left && mouseX <= right && mouseY >= bottom && mouseY <= top);
 }
