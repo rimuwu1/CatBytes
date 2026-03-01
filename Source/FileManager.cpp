@@ -33,6 +33,10 @@ Technology is prohibited.
 namespace GameSave
 {
     std::atomic<bool> g_SaveInProgress{ false };
+
+    bool IsSaveInProgress() {
+        return g_SaveInProgress;
+    }
     // -------------------------------------------------------------------------
     // Helper: get current datetime as "DD-MM-YYYY HH:MM:SS"
     // -------------------------------------------------------------------------
@@ -49,6 +53,24 @@ namespace GameSave
         }
         // Fallback in case of error
         return "01-01-1970 00:00:00";
+    }
+
+    // Convert before spawning the thread
+    static PlayerSaveData ExtractPlayerData(const Player& p) {
+        return { p.pos.x, p.pos.y, p.hp };
+    }
+
+    static std::vector<EnemySaveData> ExtractEnemyData(const std::vector<Enemy>& enemies) {
+        std::vector<EnemySaveData> out;
+        out.reserve(enemies.size());
+        for (const auto& e : enemies) {
+            GameSave::EnemySaveData data;
+            data.x = e.pos.x;
+            data.y = e.pos.y;
+            data.hp = e.hitPoints;
+            out.push_back(data);
+        }
+        return out;
     }
 
     // -------------------------------------------------------------------------

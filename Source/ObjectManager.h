@@ -28,8 +28,9 @@ public:
     }
 
     // Clears current objects and creates new ones from the given level JSON data
-    void LoadFromJSON(const rapidjson::Value& levelData);
+    void LoadFromConfig(const rapidjson::Document&);
     void AddEnemyFromJSON(const rapidjson::Value& enemyData);
+    void Initialize();
 
     void Update(float dt);
     void Draw();

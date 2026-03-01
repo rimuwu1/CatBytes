@@ -28,6 +28,6 @@ Technology is prohibited.
 #include "AEEngine.h"
 #include "GameStateList.h"
 
-extern bool g_resetLevelOnNextUpdate;
+extern bool g_newGame;
 
 #endif //PCH_H

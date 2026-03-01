@@ -31,7 +31,7 @@ public:
     EnvironmentManager(const EnvironmentManager&) = delete;
     EnvironmentManager& operator=(const EnvironmentManager&) = delete;
 
-    void LoadFromConfig(const rapidjson::Value& config);   // expects the whole game config document
+    void LoadFromConfig(const rapidjson::Document&);
     void Initialize();
     void Update(float dt, const Player& player, float cameraY);
     void Draw(float camX, float camY, float playerX, float playerY);

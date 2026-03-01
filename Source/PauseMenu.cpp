@@ -20,7 +20,7 @@ Technology is prohibited.
 #include "AudioManager.h"
 #include "Audio.h"
 
-bool g_resetLevelOnNextUpdate = false;
+bool g_newGame = false;
 static int frameCounter = 0;
 static int g_hoveredButton = 0;
 static int g_PreviousHoveredButton = 0;
@@ -82,7 +82,7 @@ void Pause_Update()
         if (AEInputCheckTriggered(AEVK_LBUTTON))
         {
             AudioManager::Get().PlayAudio(g_ClickSound, false);
-            g_resetLevelOnNextUpdate = true; //flag to restart
+            g_newGame = true; //flag to restart
             GameSave::ResetSave(); //clear all saves and start from beginning
             GameStateManager::Get().next = GameStateManager::Get().previous; // Go back to level
         }
@@ -96,7 +96,7 @@ void Pause_Update()
         if (AEInputCheckTriggered(AEVK_LBUTTON))
         {
             AudioManager::Get().PlayAudio(g_ClickSound, false);
-            g_resetLevelOnNextUpdate = true; //flag to restart
+            g_newGame = true; //flag to restart
             GameStateManager::Get().next = GS_MAINMENU;
         }
     }

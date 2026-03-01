@@ -20,10 +20,10 @@ Technology is prohibited.
 #include "Platforms.h"
 #include <vector>
 #include <string>
+#include <atomic>
 
 namespace GameSave
 {
-
     enum class NotifyType { NONE, SAVED, RESET };
 
     void        Notify_Show(NotifyType type);   // call after SaveGame / ResetSave
@@ -49,23 +49,7 @@ namespace GameSave
         float   hp;
     };
 
-    // Convert before spawning the thread
-    static PlayerSaveData ExtractPlayerData(const Player& p) {
-        return { p.pos.x, p.pos.y, p.hp };
-    }
-
-    static std::vector<EnemySaveData> ExtractEnemyData(const std::vector<Enemy>& enemies) {
-        std::vector<EnemySaveData> out;
-        out.reserve(enemies.size());
-        for (const auto& e : enemies) {
-            GameSave::EnemySaveData data;
-            data.x = e.pos.x;
-            data.y = e.pos.y;
-            data.hp = e.hitPoints;
-            out.push_back(data);
-        }
-        return out;
-    }
+    bool IsSaveInProgress();
 
     // Saves metadata, player state, and enemy state for the given level.
     // Platforms, walls, and obstacles are preserved from the existing file.

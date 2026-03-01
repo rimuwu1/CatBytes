@@ -22,6 +22,7 @@ Technology is prohibited.
 /* End Header **************************************************************************/
 
 #include <fstream>
+#include <thread>
 #include "pch.h"
 #include "Input.h"
 #include "GameStateManager.h"
@@ -49,60 +50,75 @@ extern AEAudio g_MainMenuMusic;
 
 rapidjson::Document configDoc;   // defined elsewhere, extern used if needed
 
-void MainGame_Load()
+// ------------------------------------------------------------------------
+// Reads GameSave.json if it exists, otherwise falls back to GameConfig.json.
+// Clears configDoc first to prevent stale cached values bleeding through.
+// ------------------------------------------------------------------------
+static void ParseConfigFromDisk()
 {
-    std::ifstream ifs;
-    ifs.open("Assets/Data/GameSave.json");
-    if (ifs.is_open()) {
-        rapidjson::IStreamWrapper isw(ifs);
-        configDoc.ParseStream(isw);
-    }
-    else {
+    // Wait for any in-flight async save to finish before reading
+    while (GameSave::IsSaveInProgress())
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+
+    // Clear stale data so the previous parse never bleeds into a fresh load
+    configDoc.SetObject();
+
+    std::ifstream ifs("Assets/Data/GameSave.json");
+    if (!ifs.is_open()) {
         ifs.clear();
         ifs.open("Assets/Data/GameConfig.json");
-        rapidjson::IStreamWrapper isw(ifs);
-        configDoc.ParseStream(isw);
     }
-    ifs.close();
+    rapidjson::IStreamWrapper isw(ifs);
+    configDoc.ParseStream(isw);
 
-    // Load all environment data (platforms, obstacles, checkpoints, buttons)
+    // Fallback if the file was corrupt or mid-write
+    if (configDoc.HasParseError() || !configDoc.IsObject()) {
+        configDoc.SetObject();
+        std::ifstream fallback("Assets/Data/GameConfig.json");
+        rapidjson::IStreamWrapper isw2(fallback);
+        configDoc.ParseStream(isw2);
+    }
+}
+
+// ------------------------------------------------------------------------
+// Applies the already-parsed configDoc to all managers + resets camera/input.
+// ------------------------------------------------------------------------
+static void ApplyConfigToManagers()
+{
     EnvironmentManager::Get().LoadFromConfig(configDoc);
+    ObjectManager::Get().LoadFromConfig(configDoc);
+
+    // Bind player to input
+    Input_SetPlayer(&ObjectManager::Get().GetPlayer());
+
+    const float ground = -350.0f;
+    const float groundHeight = 50.0f;
+    const float halfScreenHeight = 900.0f * 0.5f;
+    float groundTop = ground + groundHeight * 0.5f;
+    Camera_Init(globalCam, ObjectManager::Get().GetPlayer().pos.x, groundTop + halfScreenHeight);
+}
+
+// ------------------------------------------------------------------------
+
+void MainGame_Load()
+{
+    // One-time setup only: textures, level indicator. NOT the JSON parse.
+    // Load is skipped by the GSM on re-entry from another state,
+    // so anything that must run every time belongs in Initialize instead.
+    EnvironmentManager::Get().Initialize();
     std::cout << "MainGame:Load" << std::endl;
 }
 
 void MainGame_Initialize()
 {
-    EnvironmentManager::Get().Initialize();
-
-    // Load player + level 1 enemies first (this also sets up the player)
-    ObjectManager::Get().LoadFromJSON(configDoc["level_1"]);
-
+    ParseConfigFromDisk();
+    ApplyConfigToManagers();
     //Stop main menu music
     AudioManager::Get().StopAudio(g_MainMenuMusic);
     //Start game music (looped)
-        g_GameMusic = AudioManager::Get().LoadAudio(Audio::GAME_MUSIC, true);
-        AudioManager::Get().PlayAudio(g_GameMusic, true); // loop = true
-        g_GameMusicPlaying = true;
-
-    // Append enemies from other levels individually (don't re-init player)
-    for (auto& enemy : configDoc["level_2"]["enemies"].GetArray())
-        ObjectManager::Get().AddEnemyFromJSON(enemy);
-    for (auto& enemy : configDoc["level_3"]["enemies"].GetArray())
-        ObjectManager::Get().AddEnemyFromJSON(enemy);
-    for (auto& enemy : configDoc["level_4"]["enemies"].GetArray())
-        ObjectManager::Get().AddEnemyFromJSON(enemy);
-
-    // Bind player to input
-    Input_SetPlayer(&ObjectManager::Get().GetPlayer());
-
-    // Camera initial position (ground level)
-    const float ground = -350.0f;
-    const float groundHeight = 50.0f;
-    float groundTop = ground + groundHeight * 0.5f;
-    const float halfScreenHeight = 900.0f * 0.5f;
-    float cameraStartY = groundTop + halfScreenHeight;
-    Camera_Init(globalCam, ObjectManager::Get().GetPlayer().pos.x, cameraStartY);
-
+    g_GameMusic = AudioManager::Get().LoadAudio(Audio::GAME_MUSIC, true);
+    AudioManager::Get().PlayAudio(g_GameMusic, true); // loop = true
+    g_GameMusicPlaying = true;
     std::cout << "MainGame:Initialize" << std::endl;
 }
 
@@ -115,16 +131,14 @@ void MainGame_Update()
     std::vector<EnemyBullet>& enemyBullets = ObjectManager::Get().GetAllEnemyBullets();
 
     // Restart handling
-    if (g_resetLevelOnNextUpdate) {
-        MainGame_Load();
+    if (g_newGame) {
         MainGame_Initialize();
-        g_resetLevelOnNextUpdate = false;
+        g_newGame = false;
         return;
     }
 
     float playerPrevY = player.pos.y;
 
-    // Update objects
     ObjectManager::Get().Update(dt);
 
     // ================== COLLISION HANDLING ==================
@@ -136,7 +150,6 @@ void MainGame_Update()
         ObjectManager::Get().GetAllEnemyBullets()
     );
 
-    // React to collision results
     if (results.obstacleHit)
     {
         textScreenMessage = "You Lose";
@@ -144,17 +157,17 @@ void MainGame_Update()
     }
 
     // ----- Checkpoint & save -----
-    static bool externalSaveRequest = false;  // if needed from UI
+    static bool externalSaveRequest = false;
     if (EnvironmentManager::Get().HandleCheckpoint(results.checkpointHit, externalSaveRequest))
     {
         int currentSection = EnvironmentManager::Get().GetCurrentSection();
         int currentLevel = currentSection + 1;
         const std::vector<Platform>* currentPlatforms = nullptr;
         switch (currentLevel) {
-        case 1: currentPlatforms = &EnvironmentManager::Get().GetLevel1Platforms(); break;
-        case 2: currentPlatforms = &EnvironmentManager::Get().GetLevel2Platforms(); break;
-        case 3: currentPlatforms = &EnvironmentManager::Get().GetLevel3Platforms(); break;
-        case 4: currentPlatforms = &EnvironmentManager::Get().GetBossPlatforms();   break;
+        case 1:  currentPlatforms = &EnvironmentManager::Get().GetLevel1Platforms(); break;
+        case 2:  currentPlatforms = &EnvironmentManager::Get().GetLevel2Platforms(); break;
+        case 3:  currentPlatforms = &EnvironmentManager::Get().GetLevel3Platforms(); break;
+        case 4:  currentPlatforms = &EnvironmentManager::Get().GetBossPlatforms();   break;
         default: currentPlatforms = &EnvironmentManager::Get().GetLevel1Platforms(); break;
         }
 
@@ -163,13 +176,11 @@ void MainGame_Update()
         GameSave::Notify_Show(GameSave::NotifyType::SAVED);
     }
 
-    // Check boss death -> win
     if (ObjectManager::Get().IsBossDefeated()) {
         textScreenMessage = "You Win";
         GameStateManager::Get().next = GS_WINLOSE;
     }
 
-    // Fall below camera -> lose
     if (!globalCam.debugCam) {
         const float halfScreenHeight = 900.0f * 0.5f;
         float camBottomY = globalCam.y - halfScreenHeight;
@@ -180,20 +191,16 @@ void MainGame_Update()
         }
     }
 
-    // Camera update
     if (AEInputCheckTriggered(AEVK_0)) globalCam.debugCam = !globalCam.debugCam;
     if (globalCam.debugCam) Camera_Debug(globalCam, dt);
     else Camera_FollowPlayer(globalCam, player.pos.x, player.pos.y, dt);
     Camera_Apply(globalCam);
 
-    // Update environment (background colour, HUD, level indicator)
     float backgroundY = globalCam.debugCam ? globalCam.y : player.pos.y;
     EnvironmentManager::Get().Update(dt, player, backgroundY);
 
-    // Save notification
     GameSave::Notify_Update(dt);
 
-    // Debug teleports
     if (AEInputCheckTriggered(AEVK_6)) {
         player.pos.x = 0.0f; player.pos.y = 1900.0f;
         player.vel.x = 0.0f; player.vel.y = 0.0f;
@@ -211,12 +218,8 @@ void MainGame_Draw()
     AESysFrameStart();
 
     Player& player = ObjectManager::Get().GetPlayer();
-
-    // Environment draws background, platforms, HUD, level indicator
     EnvironmentManager::Get().Draw(globalCam.x, globalCam.y, player.pos.x, player.pos.y);
-    //draw player and enemies
     ObjectManager::Get().Draw();
-    // Save notification (on top)
     GameSave::Notify_Draw();
 
     std::cout << "MainGame:Draw" << std::endl;
@@ -225,9 +228,9 @@ void MainGame_Draw()
 
 void MainGame_Free()
 {
-    Player_Free(ObjectManager::Get().GetPlayer());   // frees player’s bullet list etc.
-    ObjectManager::Get().Clear();                    // clears enemies and enemy bullets
-    EnvironmentManager::Get().Clear();                // clears platforms, obstacles, etc.
+    Player_Free(ObjectManager::Get().GetPlayer());
+    ObjectManager::Get().Clear();
+    EnvironmentManager::Get().Clear();
     std::cout << "MainGame:Free" << std::endl;
 }
 

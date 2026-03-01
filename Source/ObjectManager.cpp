@@ -16,13 +16,16 @@ Technology is prohibited.
 #include "TextureManager.h"
 #include "MeshManager.h"
 #include "PlayerBullet.h"
-#include "EnemyBullet.h"   // for EnemyBullet_Draw
+#include "EnemyBullet.h"
 
-extern rapidjson::Document configDoc;   // global config loaded once
-
-void ObjectManager::AddEnemyFromJSON(const rapidjson::Value& enemyData) {
+// ------------------------------------------------------------------------
+// Helper: construct and push a single enemy from a JSON value.
+// Shared by LoadFromConfig and AddEnemyFromJSON.
+// ------------------------------------------------------------------------
+void ObjectManager::AddEnemyFromJSON(const rapidjson::Value& enemyData)
+{
     std::string type = enemyData["type"].GetString();
-    Enemy newEnemy;
+    Enemy newEnemy{};
 
     if (type == "easy") {
         Enemy_Init(newEnemy, enemyData);
@@ -38,60 +41,59 @@ void ObjectManager::AddEnemyFromJSON(const rapidjson::Value& enemyData) {
     else if (type == "boss") {
         BossEnemy_Init(newEnemy, enemyData);
         newEnemy.texture = TextureManager::Get().LoadTexture("Assets/Images/Boss.jpg");
-        // Boss may not use low?HP overlay; leave lowHpTexture null
     }
 
-    newEnemy.normalTexture = newEnemy.texture;
+    newEnemy.normalTexture = newEnemy.texture;   // hard enemy reverts to this on idle
     enemies.push_back(newEnemy);
 }
 
-void ObjectManager::LoadFromJSON(const rapidjson::Value& levelData) {
-    // Clear previous state
+// ------------------------------------------------------------------------
+// LoadFromConfig  — takes the full document, owns all level traversal.
+// Re-initialises player and rebuilds the enemy list from scratch.
+// Safe to call on restart without re-loading textures.
+// ------------------------------------------------------------------------
+void ObjectManager::LoadFromConfig(const rapidjson::Document& doc)
+{
     enemies.clear();
     enemyBullets.clear();
 
-    // --- Player: use global config (which contains x,y, stats) ---
-    Player_Init(player, configDoc["player"]);
+    // Player comes from the top-level "player" block
+    Player_Init(player, doc["player"]);
 
-    // --- Enemies ---
-    if (levelData.HasMember("enemies") && levelData["enemies"].IsArray()) {
-        const auto& enemiesJson = levelData["enemies"];
-        for (rapidjson::SizeType i = 0; i < enemiesJson.Size(); ++i) {
-            const auto& e = enemiesJson[i];
-            std::string type = e["type"].GetString();
-            Enemy newEnemy;
-
-            if (type == "easy") {
-                Enemy_Init(newEnemy, e);
-                newEnemy.texture = TextureManager::Get().LoadTexture("Assets/Images/easyenemy.jpg");
-                newEnemy.lowHpTexture = TextureManager::Get().LoadTexture("Assets/Images/LowHpOverlay.jpg");
-            }
-            else if (type == "hard") {
-                HardEnemy_Init(newEnemy, e);
-                newEnemy.texture = TextureManager::Get().LoadTexture("Assets/Images/hardenemy.jpg");
-                newEnemy.attackTexture = TextureManager::Get().LoadTexture("Assets/Images/HardEnemyAttack.jpg");
-                newEnemy.lowHpTexture = TextureManager::Get().LoadTexture("Assets/Images/LowHpOverlay.jpg");
-            }
-            else if (type == "boss") {
-                BossEnemy_Init(newEnemy, e);
-                newEnemy.texture = TextureManager::Get().LoadTexture("Assets/Images/Boss.jpg");
-            }
-
-            newEnemy.normalTexture = newEnemy.texture;   // for hard enemy to revert
-            enemies.push_back(newEnemy);
-        }
+    // Gather enemies from every level key present in the document
+    const char* levelKeys[] = { "level_1", "level_2", "level_3", "level_4" };
+    for (const char* key : levelKeys) {
+        if (!doc.HasMember(key))             continue;
+        const auto& level = doc[key];
+        if (!level.HasMember("enemies"))     continue;
+        if (!level["enemies"].IsArray())     continue;
+        for (const auto& e : level["enemies"].GetArray())
+            AddEnemyFromJSON(e);
     }
 }
 
-void ObjectManager::Update(float dt) {
+// ------------------------------------------------------------------------
+// Initialize  — one-time setup that must only run at startup, not on reset.
+// Currently a no-op for ObjectManager (player/enemies are data-driven),
+// but kept for symmetry with EnvironmentManager and future expansion.
+// ------------------------------------------------------------------------
+void ObjectManager::Initialize()
+{
+    // Nothing needed yet — all state comes from LoadFromConfig.
+    // Add audio init, particle system setup, etc. here if required.
+}
+
+// ------------------------------------------------------------------------
+void ObjectManager::Update(float dt)
+{
     Player_Update(player, dt);
 
     for (auto& e : enemies) {
         if (!e.isAlive) continue;
         switch (e.type) {
-        case EnemyType::Easy:  Enemy_Update(e, dt); break;
-        case EnemyType::Hard:  HardEnemy_Update(e, dt); break;
-        case EnemyType::Boss:  BossEnemy_Update(e, dt); break;
+        case EnemyType::Easy: Enemy_Update(e, dt);     break;
+        case EnemyType::Hard: HardEnemy_Update(e, dt); break;
+        case EnemyType::Boss: BossEnemy_Update(e, dt); break;
         }
     }
 
@@ -105,7 +107,9 @@ void ObjectManager::Update(float dt) {
     RemoveInactiveBullets();
 }
 
-void ObjectManager::Draw() {
+// ------------------------------------------------------------------------
+void ObjectManager::Draw()
+{
     for (const auto& e : enemies) {
         if (e.isAlive) Enemy_Draw(e);
     }
@@ -115,8 +119,10 @@ void ObjectManager::Draw() {
     Player_Draw(player);
 }
 
-void ObjectManager::SpawnEnemyBullet(const Enemy& source, float speed, float damage, float maxRange) {
-    EnemyBullet bullet;
+// ------------------------------------------------------------------------
+void ObjectManager::SpawnEnemyBullet(const Enemy& source, float speed, float damage, float maxRange)
+{
+    EnemyBullet bullet{};
     bullet.pos = source.pos;
     bullet.startPos = source.pos;
     bullet.direction = source.direction;
@@ -127,25 +133,32 @@ void ObjectManager::SpawnEnemyBullet(const Enemy& source, float speed, float dam
     enemyBullets.push_back(bullet);
 }
 
-bool ObjectManager::IsBossDefeated() const {
+// ------------------------------------------------------------------------
+bool ObjectManager::IsBossDefeated() const
+{
     bool bossExists = false;
     bool bossDead = true;
-    for (const auto& enemy : enemies) {
-        if (enemy.type == EnemyType::Boss) {
+    for (const auto& e : enemies) {
+        if (e.type == EnemyType::Boss) {
             bossExists = true;
-            if (enemy.isAlive) bossDead = false;
+            if (e.isAlive) bossDead = false;
         }
     }
     return bossExists && bossDead;
 }
 
-void ObjectManager::RemoveInactiveBullets() {
-    enemyBullets.erase(std::remove_if(enemyBullets.begin(), enemyBullets.end(),
-        [](const EnemyBullet& b) { return !b.active; }), enemyBullets.end());
+// ------------------------------------------------------------------------
+void ObjectManager::RemoveInactiveBullets()
+{
+    enemyBullets.erase(
+        std::remove_if(enemyBullets.begin(), enemyBullets.end(),
+            [](const EnemyBullet& b) { return !b.active; }),
+        enemyBullets.end());
 }
 
-void ObjectManager::Clear() {
+// ------------------------------------------------------------------------
+void ObjectManager::Clear()
+{
     enemies.clear();
     enemyBullets.clear();
-    // player is a member, no need to clear its resources here (Player_Free handles it)
 }
