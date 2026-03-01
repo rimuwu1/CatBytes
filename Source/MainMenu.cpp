@@ -3,9 +3,6 @@
 #include "GameStateManager.h"
 #include "Fonts.h"
 
-extern int current;
-extern int previous;
-extern int next;
 
 static int frameCounter = 0;
 static int g_hoveredButton = 0;
@@ -52,7 +49,7 @@ void MainMenu_Update()
         g_hoveredButton = 1;  
         if (AEInputCheckTriggered(AEVK_LBUTTON))
         {
-            next = GS_MAINGAME;
+            GameStateManager::Get().next = GS_MAINGAME;
         }
     }
     // CONTROLS button
@@ -82,7 +79,7 @@ void MainMenu_Update()
         g_hoveredButton = 4; 
         if (AEInputCheckTriggered(AEVK_LBUTTON))
         {
-            next = GS_QUIT;
+            GameStateManager::Get().next = GS_QUIT;
         }
     }
     std::cout << "Main Menu:Update" << std::endl;

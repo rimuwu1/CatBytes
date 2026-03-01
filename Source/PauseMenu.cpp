@@ -18,10 +18,6 @@ Technology is prohibited.
 #include "Fonts.h"
 #include "FileManager.h"
 
-extern int current;
-extern int previous;
-extern int next;
-
 bool g_resetLevelOnNextUpdate = false;
 static int frameCounter = 0;
 static int g_hoveredButton = 0;
@@ -63,7 +59,7 @@ void Pause_Update()
         g_hoveredButton = 1;
         if (AEInputCheckTriggered(AEVK_LBUTTON))
         {
-            next = previous; // Resume game
+            GameStateManager::Get().next = GameStateManager::Get().previous; // Resume game
         }
     }
     // RESTART button
@@ -76,7 +72,7 @@ void Pause_Update()
         {
             g_resetLevelOnNextUpdate = true; //flag to restart
             GameSave::ResetSave(); //clear all saves and start from beginning
-            next = previous; // Go back to level
+            GameStateManager::Get().next = GameStateManager::Get().previous; // Go back to level
         }
     }
     // MAIN MENU button
@@ -88,7 +84,7 @@ void Pause_Update()
         if (AEInputCheckTriggered(AEVK_LBUTTON))
         {
             g_resetLevelOnNextUpdate = true; //flag to restart
-            next = GS_MAINMENU;
+            GameStateManager::Get().next = GS_MAINMENU;
         }
     }
     // EXIT button
@@ -99,14 +95,14 @@ void Pause_Update()
         g_hoveredButton = 4;
         if (AEInputCheckTriggered(AEVK_LBUTTON))
         {
-            next = GS_QUIT;
+            GameStateManager::Get().next = GS_QUIT;
         }
     }
 
     // Handle ESC key to resume
     if (AEInputCheckTriggered(AEVK_ESCAPE))
     {
-        next = previous;
+        GameStateManager::Get().next = GameStateManager::Get().previous;
     }
 
     std::cout << "Pause Menu:Update" << std::endl;

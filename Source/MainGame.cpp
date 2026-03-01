@@ -127,7 +127,7 @@ void MainGame_Update()
     if (results.obstacleHit)
     {
         textScreenMessage = "You Lose";
-        next = GS_WINLOSE;
+        GameStateManager::Get().next = GS_WINLOSE;
     }
 
     // ----- Checkpoint & save -----
@@ -146,14 +146,14 @@ void MainGame_Update()
         }
 
         GameSave::Metadata meta{ "1.0", "", currentLevel, 4, 0, 3 };
-        GameSave::SaveGame(meta, currentLevel, player, enemies, *currentPlatforms);
+        GameSave::SaveGameAsync(meta, currentLevel, player, enemies, *currentPlatforms);
         GameSave::Notify_Show(GameSave::NotifyType::SAVED);
     }
 
     // Check boss death -> win
     if (ObjectManager::Get().IsBossDefeated()) {
         textScreenMessage = "You Win";
-        next = GS_WINLOSE;
+        GameStateManager::Get().next = GS_WINLOSE;
     }
 
     // Fall below camera -> lose
@@ -163,7 +163,7 @@ void MainGame_Update()
         float playerTopY = player.pos.y + player.height * 0.5f;
         if (playerTopY < camBottomY) {
             textScreenMessage = "You Lose";
-            next = GS_WINLOSE;
+            GameStateManager::Get().next = GS_WINLOSE;
         }
     }
 

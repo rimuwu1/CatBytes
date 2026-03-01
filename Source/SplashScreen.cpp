@@ -109,7 +109,7 @@ void SplashScreen_Draw()
 
     /* Transition to main menu after the full cycle finished (after phase 3 completes) */
     if (totalElapsedTime >= CYCLE_DURATION) {
-		next = GS_MAINMENU;
+		GameStateManager::Get().next = GS_MAINMENU;
     }
 	AESysFrameEnd();
 	std::cout << "Splash Screen: Draw" << std::endl;

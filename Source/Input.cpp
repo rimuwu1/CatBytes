@@ -39,21 +39,21 @@ void Input_SetPlayer(Player* player)
 void Input_Handle() {
 	// check if forcing the application to quit
 	if (0 == AESysDoesWindowExist()) {
-	    next = GS_QUIT;
+	    GameStateManager::Get().next = GS_QUIT;
     }
 
 	// ESC goes back to main menu (from anywhere)
 	if (AEInputCheckTriggered(AEVK_ESCAPE)) {
-		if(current == GS_SPLASHSCREEN)
-		next = GS_MAINMENU;
-		else if (current == GS_MAINGAME) {
-			next = GS_PAUSE;
+		if(GameStateManager::Get().current == GS_SPLASHSCREEN)
+		GameStateManager::Get().next = GS_MAINMENU;
+		else if (GameStateManager::Get().current == GS_MAINGAME) {
+			GameStateManager::Get().next = GS_PAUSE;
 		}
 	}
 
 	// Q to quit the game
 	if (AEInputCheckTriggered('Q')) {
-		next = GS_QUIT;
+		GameStateManager::Get().next = GS_QUIT;
 	}
 
 	// Process player movement input if a player is bound

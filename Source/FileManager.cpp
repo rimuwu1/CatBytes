@@ -25,12 +25,14 @@ Technology is prohibited.
 #include <string>
 #include <vector>
 #include <ctime>
-
+#include <thread>
+#include <atomic>
+#include <mutex>
 
 
 namespace GameSave
 {
-
+    std::atomic<bool> g_SaveInProgress{ false };
     // -------------------------------------------------------------------------
     // Helper: get current datetime as "DD-MM-YYYY HH:MM:SS"
     // -------------------------------------------------------------------------
@@ -54,11 +56,11 @@ namespace GameSave
     //
     // Saves metadata + the current level's player hp/pos and enemy hp/pos.
     // -------------------------------------------------------------------------
-    void SaveGame(
+    void SaveGame_Internal(
         const Metadata& metadata,
         int                        currentLevel,
-        const Player& player,
-        const std::vector<Enemy>& enemies,
+        const PlayerSaveData& player,      // lightweight
+        const std::vector<EnemySaveData>& enemies,   // lightweight
         const std::vector<Platform>& platforms,
         const std::string& filepath)
     {
@@ -103,13 +105,11 @@ namespace GameSave
         // ------------------------------------------------------------------
         // 3. Update player position and HP
         // ------------------------------------------------------------------
-        if (doc.HasMember("player") && doc["player"].IsObject())
-        {
+        if (doc.HasMember("player") && doc["player"].IsObject()) {
             rapidjson::Value& playerObj = doc["player"];
-            playerObj["x"] = player.pos.x;
-            playerObj["y"] = player.pos.y;
+            playerObj["x"] = player.x;
+            playerObj["y"] = player.y;
             playerObj["hp"] = player.hp;
-            // all other player fields (width, animations, etc.) stay as in config
         }
 
         // ------------------------------------------------------------------
@@ -150,9 +150,9 @@ namespace GameSave
                 for (rapidjson::SizeType i = 0; i < enemiesArr.Size(); ++i)
                 {
                     if (i >= static_cast<rapidjson::SizeType>(enemies.size())) break;
-                    enemiesArr[i]["x"] = enemies[i].pos.x;
-                    enemiesArr[i]["y"] = enemies[i].pos.y;
-                    enemiesArr[i]["hp"] = enemies[i].hitPoints;
+                    enemiesArr[i]["x"] = enemies[i].x;
+                    enemiesArr[i]["y"] = enemies[i].y;
+                    enemiesArr[i]["hp"] = enemies[i].hp;
                     // all other enemy properties remain as in config
                 }
             }
@@ -191,6 +191,30 @@ namespace GameSave
         }
         outFile << buffer.GetString();
         outFile.close();
+    }
+
+    //async wrapper to run the save on a different thread (prevent freezing)
+    void SaveGameAsync(
+        const Metadata& metadata,
+        int                          currentLevel,
+        const Player& player,     // still takes Player by ref
+        const std::vector<Enemy>& enemies,
+        const std::vector<Platform>& platforms,
+        const std::string& filepath)
+    {
+        if (g_SaveInProgress.load()) return;
+        g_SaveInProgress.store(true);
+
+        // Extract only what's needed - these are trivially copyable
+        PlayerSaveData              playerData = ExtractPlayerData(player);
+        std::vector<EnemySaveData>  enemyData = ExtractEnemyData(enemies);
+        std::vector<Platform>       platCopy = platforms;
+
+        std::thread([=]() mutable {
+            SaveGame_Internal(metadata, currentLevel,
+                playerData, enemyData, platCopy, filepath);
+            g_SaveInProgress.store(false);
+            }).detach();
     }
 
     void ResetSave(const std::string& configPath,

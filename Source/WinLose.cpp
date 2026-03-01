@@ -34,7 +34,7 @@ void WinLose_Update()
 	// press any key to go back to main menu
 	if (AEInputCheckTriggered(AEVK_SPACE) || AEInputCheckTriggered(AEVK_RETURN))
 	{
-		next = GS_MAINMENU;
+		GameStateManager::Get().next = GS_MAINMENU;
 	}
 }
 

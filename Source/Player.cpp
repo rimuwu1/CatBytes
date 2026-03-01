@@ -397,7 +397,7 @@ void Player_ApplyDamage(Player& player, float damage)
 	{
 		player.hp = 0.0f;
 		//trigger death: return to main menu
-		next = GS_MAINMENU;
+		GameStateManager::Get().next = GS_MAINMENU;
 	}
 }
 

@@ -40,12 +40,47 @@ namespace GameSave
         int player_lives;
     };
 
+    struct PlayerSaveData {
+        float x, y, hp;
+    };
+
+    struct EnemySaveData {
+        float x, y;
+        float   hp;
+    };
+
+    // Convert before spawning the thread
+    static PlayerSaveData ExtractPlayerData(const Player& p) {
+        return { p.pos.x, p.pos.y, p.hp };
+    }
+
+    static std::vector<EnemySaveData> ExtractEnemyData(const std::vector<Enemy>& enemies) {
+        std::vector<EnemySaveData> out;
+        out.reserve(enemies.size());
+        for (const auto& e : enemies) {
+            GameSave::EnemySaveData data;
+            data.x = e.pos.x;
+            data.y = e.pos.y;
+            data.hp = e.hitPoints;
+            out.push_back(data);
+        }
+        return out;
+    }
+
     // Saves metadata, player state, and enemy state for the given level.
     // Platforms, walls, and obstacles are preserved from the existing file.
-    void SaveGame(
+    void SaveGame_Internal(
         const Metadata& metadata,
         int                        currentLevel,
-        const Player& player,
+        const PlayerSaveData& player,      // lightweight
+        const std::vector<EnemySaveData>& enemies,   // lightweight
+        const std::vector<Platform>& platforms,
+        const std::string& filepath = "Assets/Data/GameSave.json");
+
+    void SaveGameAsync(
+        const Metadata& metadata,
+        int                        currentLevel,
+        const Player& player,     // still takes Player by ref
         const std::vector<Enemy>& enemies,
         const std::vector<Platform>& platforms,
         const std::string& filepath = "Assets/Data/GameSave.json");
