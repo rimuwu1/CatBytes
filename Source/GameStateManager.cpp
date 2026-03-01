@@ -22,6 +22,8 @@ Technology is prohibited.
 #include "SplashScreen.h"
 #include "WinLose.h"
 #include "PauseMenu.h"
+#include "Controls.h"
+#include "Credits.h"
 
 // ----------------------------------------------------------------------------
 // Initializes the Game State Manager with a starting state
@@ -78,6 +80,22 @@ void GameStateManager::Update()
         fpUnload = WinLose_Unload;
         break;
     case GS_RESTART:
+        break;
+    case GS_CONTROLS:
+        fpLoad = Controls_Load;
+        fpInitialize = Controls_Initialize;
+        fpUpdate = Controls_Update;
+        fpDraw = Controls_Draw;
+        fpFree = Controls_Free;
+        fpUnload = Controls_Unload;
+        break;
+    case GS_CREDITS:
+        fpLoad = Credits_Load;
+        fpInitialize = Credits_Initialize;
+        fpUpdate = Credits_Update;
+        fpDraw = Credits_Draw;
+        fpFree = Credits_Free;
+        fpUnload = Credits_Unload;
         break;
     case GS_QUIT:
         break;

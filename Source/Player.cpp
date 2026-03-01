@@ -31,6 +31,13 @@ Technology is prohibited.
 #include "rapidjson/filereadstream.h"
 #include "rapidjson/istreamwrapper.h"
 #include "SpriteSheet.h"
+#include "AudioManager.h"
+#include "Audio.h"
+
+static AEAudio s_GunAttackSound{};
+static AEAudio s_MeleeAttackSound{};
+static bool s_PlayerAudioLoaded = false;
+
 
 void Player_Init(Player& player, const rapidjson::Value& config)
 {
@@ -133,6 +140,12 @@ void Player_Init(Player& player, const rapidjson::Value& config)
 	}
 	// play slash
 	player.slashSprite->Play("slash", true);
+	if (!s_PlayerAudioLoaded)
+	{
+		s_GunAttackSound = AudioManager::Get().LoadAudio(Audio::PLAYER_GUN_ATTACK, false);
+		s_MeleeAttackSound = AudioManager::Get().LoadAudio(Audio::PLAYER_MELEE_ATTACK, false);
+		s_PlayerAudioLoaded = true;
+	}
 }
 
 void Player_Update(Player& player, float dt)
@@ -189,6 +202,7 @@ void Player_Update(Player& player, float dt)
 					b.vel.y = 0.0f;
 
 					player.fireTimer = player.fireCooldown;
+					AudioManager::Get().PlayAudio(s_GunAttackSound, false);
 					break; // only fire one bullet per click
 				}
 			}
@@ -209,6 +223,7 @@ void Player_Update(Player& player, float dt)
 		{
 			player.isAttacking = true;
 
+			AudioManager::Get().PlayAudio(s_MeleeAttackSound, false);
 
 			// handle slash direction based on held keys
 			if (AEInputCheckCurr('W'))

@@ -40,6 +40,12 @@ Technology is prohibited.
 #include "rapidjson/document.h"
 #include "rapidjson/filereadstream.h"
 #include "rapidjson/istreamwrapper.h"
+#include "AudioManager.h"
+#include "Audio.h"
+
+AEAudio g_GameMusic{};
+bool g_GameMusicPlaying = false;
+extern AEAudio g_MainMenuMusic;
 
 rapidjson::Document configDoc;   // defined elsewhere, extern used if needed
 
@@ -70,6 +76,13 @@ void MainGame_Initialize()
 
     // Load player + level 1 enemies first (this also sets up the player)
     ObjectManager::Get().LoadFromJSON(configDoc["level_1"]);
+
+    //Stop main menu music
+    AudioManager::Get().StopAudio(g_MainMenuMusic);
+    //Start game music (looped)
+        g_GameMusic = AudioManager::Get().LoadAudio(Audio::GAME_MUSIC, true);
+        AudioManager::Get().PlayAudio(g_GameMusic, true); // loop = true
+        g_GameMusicPlaying = true;
 
     // Append enemies from other levels individually (don't re-init player)
     for (auto& enemy : configDoc["level_2"]["enemies"].GetArray())

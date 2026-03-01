@@ -407,10 +407,4 @@ void HardEnemy_OnCollision(Enemy& enemy, Player& player)
 // -----------------------------------------------------------------------------
 void Enemy_Free(Enemy& enemy)
 {
-    // Textures are owned globally (e.g., in Level1_Unload).
-    // Here we just nullify pointers to avoid stale references.
-    enemy.texture = nullptr;
-    enemy.normalTexture = nullptr;
-    enemy.attackTexture = nullptr;
-    enemy.lowHpTexture = nullptr;
 }

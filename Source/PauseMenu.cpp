@@ -17,10 +17,15 @@ Technology is prohibited.
 #include "GameStateManager.h"
 #include "Fonts.h"
 #include "FileManager.h"
+#include "AudioManager.h"
+#include "Audio.h"
 
 bool g_resetLevelOnNextUpdate = false;
 static int frameCounter = 0;
 static int g_hoveredButton = 0;
+static int g_PreviousHoveredButton = 0;
+static AEAudio g_HoverSound{};
+static AEAudio g_ClickSound{};
 
 // Pause menu buttons
 const float BUTTON_X = -0.4f;           // center-aligned
@@ -36,6 +41,11 @@ void Pause_Load()
 
 void Pause_Initialize()
 {
+    //initialize hover audio
+    g_HoverSound = AudioManager::Get().LoadAudio(Audio::HOVER_BUTTON, false);
+    g_ClickSound = AudioManager::Get().LoadAudio(Audio::CLICK_BUTTON, false);
+    g_PreviousHoveredButton = 0;
+
     std::cout << "Pause Menu:Initialize" << std::endl;
 }
 
@@ -59,6 +69,7 @@ void Pause_Update()
         g_hoveredButton = 1;
         if (AEInputCheckTriggered(AEVK_LBUTTON))
         {
+            AudioManager::Get().PlayAudio(g_ClickSound, false);
             GameStateManager::Get().next = GameStateManager::Get().previous; // Resume game
         }
     }
@@ -70,6 +81,7 @@ void Pause_Update()
         g_hoveredButton = 2;
         if (AEInputCheckTriggered(AEVK_LBUTTON))
         {
+            AudioManager::Get().PlayAudio(g_ClickSound, false);
             g_resetLevelOnNextUpdate = true; //flag to restart
             GameSave::ResetSave(); //clear all saves and start from beginning
             GameStateManager::Get().next = GameStateManager::Get().previous; // Go back to level
@@ -83,6 +95,7 @@ void Pause_Update()
         g_hoveredButton = 3;
         if (AEInputCheckTriggered(AEVK_LBUTTON))
         {
+            AudioManager::Get().PlayAudio(g_ClickSound, false);
             g_resetLevelOnNextUpdate = true; //flag to restart
             GameStateManager::Get().next = GS_MAINMENU;
         }
@@ -95,6 +108,7 @@ void Pause_Update()
         g_hoveredButton = 4;
         if (AEInputCheckTriggered(AEVK_LBUTTON))
         {
+            AudioManager::Get().PlayAudio(g_ClickSound, false);
             GameStateManager::Get().next = GS_QUIT;
         }
     }
@@ -104,6 +118,14 @@ void Pause_Update()
     {
         GameStateManager::Get().next = GameStateManager::Get().previous;
     }
+
+    //play hover sound when entering a new button
+    if (g_hoveredButton != 0 && g_hoveredButton != g_PreviousHoveredButton)
+    {
+        AudioManager::Get().PlayAudio(g_HoverSound, false);
+    }
+
+    g_PreviousHoveredButton = g_hoveredButton;
 
     std::cout << "Pause Menu:Update" << std::endl;
 }

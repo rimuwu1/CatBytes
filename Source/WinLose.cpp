@@ -18,19 +18,44 @@ Technology is prohibited.
 #include "GameStateList.h"
 #include "WinLose.h"
 #include "Fonts.h"
+#include "AudioManager.h"
+#include "Audio.h"
 
 const char* textScreenMessage = "You Lose";
 
+static AEAudio s_WinSound{};
+static AEAudio s_LoseSound{};
+static bool s_SoundPlayed = false;
+
 void WinLose_Load()
 {
+    s_WinSound = AudioManager::Get().LoadAudio(Audio::WIN_EFFECT, false);
+    s_LoseSound = AudioManager::Get().LoadAudio(Audio::LOSE_EFFECT, false);
 }
 
 void WinLose_Initialize()
 {
+    s_SoundPlayed = false;
 }
 
 void WinLose_Update()
 {
+    //play win/lose sound once when entering screen
+    if (!s_SoundPlayed)
+    {
+        if (strcmp(textScreenMessage, "You Win") == 0)
+        {
+            AudioManager::Get().PlayAudio(s_WinSound, false);
+        }
+        else
+        {
+            AudioManager::Get().PlayAudio(s_LoseSound, false);
+        }
+
+        s_SoundPlayed = true;
+    }
+
+
 	// press any key to go back to main menu
 	if (AEInputCheckTriggered(AEVK_SPACE) || AEInputCheckTriggered(AEVK_RETURN))
 	{

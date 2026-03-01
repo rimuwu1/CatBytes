@@ -11,9 +11,13 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\Source\Audio.cpp" />
+    <ClCompile Include="..\Source\AudioManager.cpp" />
     <ClCompile Include="..\Source\Background.cpp" />
     <ClCompile Include="..\Source\Camera.cpp" />
     <ClCompile Include="..\Source\CollisionManager.cpp" />
+    <ClCompile Include="..\Source\Controls.cpp" />
+    <ClCompile Include="..\Source\Credits.cpp" />
     <ClCompile Include="..\Source\enemy.cpp" />
     <ClCompile Include="..\Source\EnemyBullet.cpp" />
     <ClCompile Include="..\Source\EnvironmentManager.cpp" />
@@ -41,9 +45,13 @@
     <ClCompile Include="..\Source\WinLose.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\Source\Audio.h" />
+    <ClInclude Include="..\Source\AudioManager.h" />
     <ClInclude Include="..\Source\Background.h" />
     <ClInclude Include="..\Source\Camera.h" />
     <ClInclude Include="..\Source\CollisionManager.h" />
+    <ClInclude Include="..\Source\Controls.h" />
+    <ClInclude Include="..\Source\Credits.h" />
     <ClInclude Include="..\Source\enemy.h" />
     <ClInclude Include="..\Source\EnemyBullet.h" />
     <ClInclude Include="..\Source\EnvironmentManager.h" />

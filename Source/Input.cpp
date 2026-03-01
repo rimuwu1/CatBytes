@@ -22,12 +22,18 @@ Technology is prohibited.
 #include "MainGame.h"
 #include "FileManager.h"
 #include "EnvironmentManager.h"
+#include "AudioManager.h"
+#include "Audio.h"
 
 static Player* s_CurrentPlayer = nullptr;
+static AEAudio s_JumpSound{};
 
 void Input_SetPlayer(Player* player)
 {
 	s_CurrentPlayer = player;
+
+	//load jump sound
+	s_JumpSound = AudioManager::Get().LoadAudio(Audio::JUMP, false);
 }
 
 
@@ -78,6 +84,9 @@ void Input_Handle() {
 		{
 			s_CurrentPlayer->vel.y = JUMP_FORCE;
 			s_CurrentPlayer->grounded = 0;
+
+			//play jump sound
+			AudioManager::Get().PlayAudio(s_JumpSound, false);
 		}
 
 		//Weapon equip / unequip toggle

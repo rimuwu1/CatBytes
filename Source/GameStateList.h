@@ -24,6 +24,8 @@ enum GS_STATES
 	GS_MAINMENU,    // Main Menu state
 	GS_MAINGAME,    // Main Game State
 	GS_WINLOSE,     // Win/Lose game state
+	GS_CONTROLS,	//Control Menu state
+	GS_CREDITS,		// Credits
 	GS_QUIT,        // Quit state to exit the game
 	GS_RESTART,     // Restart state to reload current level 
 	GS_PAUSE        // Pause state to pause current level

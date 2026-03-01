@@ -1,11 +1,37 @@
-﻿#include "pch.h"
+﻿/* Start Header ************************************************************************/
+/*!
+\file MainMenu.cpp
+\author Sim Hui Min, s.huimin, 2503506
+        Tse Xuan Qi Tristin, tse.x, 2503757
+\par s.huimin@digipen.edu
+     tse.x@digipen.edu
+\date 24/01/2026
+\brief 
+
+Copyright (C) 2026 DigiPen Institute of Technology.
+Reproduction or disclosure of this file or its contents
+without the prior written consent of DigiPen Institute of
+Technology is prohibited.
+*/
+/* End Header **************************************************************************/
+
+#include "pch.h"
 #include "MainMenu.h"
 #include "GameStateManager.h"
 #include "Fonts.h"
-
+#include "AudioManager.h"
+#include "Audio.h"
 
 static int frameCounter = 0;
 static int g_hoveredButton = 0;
+AEAudio g_MainMenuMusic{};
+static AEAudio g_HoverSound{};
+static AEAudio g_ClickSound{};
+static int g_PreviousHoveredButton = 0;
+
+//main game music
+extern AEAudio g_GameMusic;
+extern bool g_GameMusicPlaying;
 
 // main menu buttons
 const float BUTTON_X = -0.9f;           // left-aligned with title
@@ -22,6 +48,24 @@ void MainMenu_Load()
 void MainMenu_Initialize()
 {
     frameCounter = 0;
+
+    // stop game music if still playing
+    if (g_GameMusicPlaying)
+    {
+        AudioManager::Get().StopAudio(g_GameMusic);
+        g_GameMusicPlaying = false;
+    }
+
+    // Start main menu music
+        g_MainMenuMusic = AudioManager::Get().LoadAudio(Audio::MAIN_MENU_MUSIC, true);
+        AudioManager::Get().PlayAudio(g_MainMenuMusic, true);
+
+    g_HoverSound = AudioManager::Get().LoadAudio(Audio::HOVER_BUTTON, false);
+    g_ClickSound = AudioManager::Get().LoadAudio(Audio::CLICK_BUTTON, false);
+    g_PreviousHoveredButton = 0;
+
+
+
     std::cout << "Main Menu:Initialize" << std::endl;
 }
 
@@ -49,6 +93,7 @@ void MainMenu_Update()
         g_hoveredButton = 1;  
         if (AEInputCheckTriggered(AEVK_LBUTTON))
         {
+            AudioManager::Get().PlayAudio(g_ClickSound, false);
             GameStateManager::Get().next = GS_MAINGAME;
         }
     }
@@ -59,7 +104,9 @@ void MainMenu_Update()
         g_hoveredButton = 2;  
         if (AEInputCheckTriggered(AEVK_LBUTTON))
         {
+            AudioManager::Get().PlayAudio(g_ClickSound, false);
             // TODO: Controls state
+            GameStateManager::Get().next = GS_CONTROLS;
         }
     }
     // CREDITS button
@@ -69,7 +116,9 @@ void MainMenu_Update()
         g_hoveredButton = 3; 
         if (AEInputCheckTriggered(AEVK_LBUTTON))
         {
+            AudioManager::Get().PlayAudio(g_ClickSound, false);
             // TODO: Credits state
+            GameStateManager::Get().next = GS_CREDITS;
         }
     }
     // EXIT button
@@ -82,6 +131,15 @@ void MainMenu_Update()
             GameStateManager::Get().next = GS_QUIT;
         }
     }
+
+    //play hover sound when hovering over a new button
+    if (g_hoveredButton != 0 && g_hoveredButton != g_PreviousHoveredButton)
+    {
+        AudioManager::Get().PlayAudio(g_HoverSound, false);
+    }
+
+    g_PreviousHoveredButton = g_hoveredButton;
+
     std::cout << "Main Menu:Update" << std::endl;
 }
 
