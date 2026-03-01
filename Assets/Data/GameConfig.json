@@ -107,12 +107,6 @@
           { "endY": 4550 },
           { "endY": 7500 }
         ],
-        "colours": [
-          { "r": 189, "g": 231, "b": 255 },
-          { "r": 87, "g": 119, "b": 165 },
-          { "r": 104, "g": 26, "b": 163 },
-          { "r": 43, "g": 4, "b": 56 }
-        ],
         "animations": {
           "file": "Assets/Images/progressBarSheet.png",
           "rows": 1,

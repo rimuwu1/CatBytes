@@ -49,11 +49,7 @@ private:
 	static int ClampHeartsStateFromPlayer(const Player& player);
 	void ApplyHeartsState(int state);
 
-	// Progress Bar
-	struct Colour {
-		float r, g, b, a;
-	};
-
+	// Progress Bar UI
 	struct ProgressBar
 	{
 		bool active = false;
@@ -65,18 +61,11 @@ private:
 		float maxY = 7500.0f;
 
 		float gap = 0.0f;
-		//float padding = 4.0f;
 		float paddingX = 2.0f;
 		float paddingY = 2.0f;
 		float overlapY = 1.0f;
 
 		std::array<float, 3> segmentEndY{ 1900.0f, 4550.0f, 7500.0f };
-		std::array<Colour, 3> barColours =
-		{
-			Colour{0.7f, 0.2f, 0.8f, 1.0f},
-			Colour{0.4f, 0.5f, 0.8f, 1.0f},
-			Colour{0.8f, 0.9f, 1.0f, 1.0f}
-		};
 
 		float trackerRadius = 5.0f;
 		int trackerR = 255, trackerG = 255, trackerB = 255;
@@ -91,7 +80,5 @@ private:
 private:
 	static float ClampProgressBar(float v);
 	static float SegmentProgress(float y, float a, float b);
-	static int To255(float v01);
-	static Colour RGB255(int r, int g, int b, int a = 255);
 	void InitProgressBarFromConfig(const rapidjson::Value& uiJson);
 };

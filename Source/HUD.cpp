@@ -90,22 +90,6 @@ float HUD::SegmentProgress(float y, float a, float b)
 	return ClampProgressBar((y - a) / (b - a));
 }
 
-int HUD::To255(float v01)
-{
-	v01 = ClampProgressBar(v01);
-	return (int)(v01 * 255.0f + 0.5f);
-}
-
-HUD::Colour HUD::RGB255(int r, int g, int b, int a)
-{
-	return Colour{
-		r / 255.0f,
-		g / 255.0f,
-		b / 255.0f,
-		a / 255.0f
-	};
-}
-
 // ProgressBar config
 void HUD::InitProgressBarFromConfig(const rapidjson::Value& uiJson)
 {
@@ -184,41 +168,6 @@ void HUD::InitProgressBarFromConfig(const rapidjson::Value& uiJson)
 	}
 
 	progressBar.segmentEndY[2] = progressBar.maxY;
-	progressBar.barColours =
-	{
-		// level 1: blue #BDE7FF
-		RGB255(189, 231, 255),
-
-		// level 2: dark blue #5777A5
-		RGB255(87, 119, 165),
-
-		// level 3: purple #681AA3
-		RGB255(104, 26, 163),
-
-		//// level 4: dark purple #2B0438
-		//RGB255(43, 4, 56)
-	};
-
-	if (pbar.HasMember("colours") && pbar["colours"].IsArray())
-	{
-		const rapidjson::Value& clr = pbar["colours"];
-		if (clr.Size() >= 3)
-		{
-			for (int i = 0; i < 3; i++)
-			{
-				const rapidjson::Value& c = clr[i];
-				if (c.HasMember("r") && c.HasMember("g") && c.HasMember("b"))
-				{
-					progressBar.barColours[i] = RGB255
-					(
-						c["r"].GetInt(),
-						c["g"].GetInt(),
-						c["b"].GetInt()
-					);
-				}
-			}
-		}
-	}
 
 	if (pbar.HasMember("animations"))
 	{
@@ -379,31 +328,13 @@ void HUD::Draw(MeshManager& meshManager, float camX, float camY) const
 		const float segmentHeight = (pbarHeight - 2.0f * progressBar.gap) / 3.0f;
 		const float pbarBottom = hy - pbarHeight * 0.5f;
 
-		const float innerWidth = pbarWidth - 2.0f * progressBar.paddingX;
-		const float innerHeight = segmentHeight - /*2.0f **/ progressBar.paddingY;
-
-		for (int i = 0; i < 3; i++)
-		{
-			const float segmentBottom = pbarBottom + i * (segmentHeight + progressBar.gap);
-
-			float drawHeight = innerHeight;
-			if (i < 2)
-			{
-				drawHeight += progressBar.overlapY;
-			}
-
-			float centerY = segmentBottom + progressBar.paddingY + drawHeight * 0.5f;
-
-			const Colour& c = progressBar.barColours[i];
-			meshManager.DrawSquare(hx, centerY, innerWidth, drawHeight, To255(c.r), To255(c.g), To255(c.b));
-		}
+		// Tracker position
+		float trackerY;
 
 		const float y0 = progressBar.minY;
 		const float y1 = progressBar.segmentEndY[0];
 		const float y2 = progressBar.segmentEndY[1];
 		const float y3 = progressBar.segmentEndY[2];
-
-		float trackerY;
 
 		if (pbarPlayerY <= y1)
 		{
@@ -433,9 +364,6 @@ void HUD::Draw(MeshManager& meshManager, float camX, float camY) const
 			trackerY = maxTrackY;
 		}
 
-		meshManager.DrawCircle(hx, trackerY, progressBar.trackerRadius * 2.0f,
-			progressBar.trackerR, progressBar.trackerG, progressBar.trackerB);
-
 		if (progressBar.pbarReady && progressBar.pbarSheet)
 		{
 			MeshManager::Get().DrawSpriteSheet(
@@ -443,6 +371,8 @@ void HUD::Draw(MeshManager& meshManager, float camX, float camY) const
 			);
 		}
 
+		meshManager.DrawCircle(hx, trackerY, progressBar.trackerRadius * 2.0f,
+			progressBar.trackerR, progressBar.trackerG, progressBar.trackerB);
 	}
 
 }
