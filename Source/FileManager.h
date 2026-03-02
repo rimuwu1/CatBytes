@@ -32,16 +32,14 @@ namespace GameSave
     NotifyType  Notify_GetCurrent();
 
     struct Metadata {
-        std::string game_version;
         std::string save_date;
         int current_level;
-        int total_levels;
         int levels_completed;
         int player_lives;
     };
 
     struct PlayerSaveData {
-        float x, y, hp;
+        float x, y,hp;
     };
 
     struct EnemySaveData {

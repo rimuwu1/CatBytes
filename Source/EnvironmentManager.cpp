@@ -198,17 +198,16 @@ void EnvironmentManager::DrawBackground() const
 }
 
 // ------------------------------------------------------------------------
-bool EnvironmentManager::HandleCheckpoint(bool checkpointHit, bool& externalSaveRequest)
+bool EnvironmentManager::HandleCheckpoint(bool checkpointHit)
 {
     bool shouldSave = false;
 
-    if (checkpointHit || externalSaveRequest || m_saveRequested)
+    if (checkpointHit || m_saveRequested)
     {
-        if (!m_checkpointSaved || externalSaveRequest || m_saveRequested)
+        if (!m_checkpointSaved || m_saveRequested)
         {
             m_checkpointSaved = true;
             shouldSave = true;
-            externalSaveRequest = false;
             m_saveRequested = false;
         }
     }

@@ -1,7 +1,7 @@
 {
     "metadata": {
         "game_version": "1.0",
-        "save_date": "27-01-2026 00:00:00",
+        "save_date": "00-00-0000 00:00:00",
         "current_level": 1,
         "total_levels": 4,
         "levels_completed": 0,
@@ -43,7 +43,7 @@
         "rows": 1,
         "cols": 5,
         "clips": [
-            { "name": "slash", "start": 0, "end": 4, "duration": 0.02, "loop": false }
+            { "name": "slash", "start": 0, "end": 4, "duration": 0.03, "loop": false }
         ]
     }
         },

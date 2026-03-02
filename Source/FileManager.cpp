@@ -52,7 +52,7 @@ namespace GameSave
             return std::string(buf);
         }
         // Fallback in case of error
-        return "01-01-1970 00:00:00";
+        return "00-00-0000 00:00:00";
     }
 
     // Convert before spawning the thread
@@ -64,7 +64,7 @@ namespace GameSave
         std::vector<EnemySaveData> out;
         out.reserve(enemies.size());
         for (const auto& e : enemies) {
-            GameSave::EnemySaveData data;
+            GameSave::EnemySaveData data{};
             data.x = e.pos.x;
             data.y = e.pos.y;
             data.hp = e.hitPoints;

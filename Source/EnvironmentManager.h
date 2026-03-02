@@ -60,7 +60,7 @@ public:
     const HUD& GetHUD() const { return m_HUD; }
 
     // Checkpoint handling
-    bool HandleCheckpoint(bool checkpointHit, bool& externalSaveRequest); // returns true if save should be performed
+    bool HandleCheckpoint(bool checkpointHit);
     void RequestSave();  // sets internal save request flag
 
     //clean up functions

@@ -64,6 +64,7 @@ struct Player
 	bool downSlashJumped = false;   // true if down?slash has already caused a jump this swing
 	float attackTimer = 0.0f;//how long the attack lasts
 	float meleeDamage = 0.0f;//damage dealt to enemies
+	float meleeCooldownTimer = 0.0f;
 	
 	// player gun
 	int maxBullets = 0;

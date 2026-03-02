@@ -37,6 +37,7 @@ Technology is prohibited.
 static AEAudio s_GunAttackSound{};
 static AEAudio s_MeleeAttackSound{};
 static bool s_PlayerAudioLoaded = false;
+static const float MELEE_COOLDOWN = 0.3f;
 
 
 void Player_Init(Player& player, const rapidjson::Value& config)
@@ -71,6 +72,7 @@ void Player_Init(Player& player, const rapidjson::Value& config)
 	//melee attack state
 	player.isAttacking = false;
 	player.attackTimer = 0.0f;
+	player.meleeCooldownTimer = 0.0f;
 
 	//gun
 	const auto& playerJson = config;
@@ -219,9 +221,14 @@ void Player_Update(Player& player, float dt)
 	// Melee attack input (only if weapon is MELEE)
 	if (player.weapon == PlayerWeapon::MELEE && player.weaponEquipped)
 	{
-		if (AEInputCheckTriggered(AEVK_LBUTTON))
+		// Decrement cooldown timer
+		if (player.meleeCooldownTimer > 0.0f)
+			player.meleeCooldownTimer -= dt;
+
+		if (AEInputCheckTriggered(AEVK_LBUTTON) && player.meleeCooldownTimer <= 0.0f)
 		{
 			player.isAttacking = true;
+			player.meleeCooldownTimer = MELEE_COOLDOWN;   // start cooldown
 
 			AudioManager::Get().PlayAudio(s_MeleeAttackSound, false);
 

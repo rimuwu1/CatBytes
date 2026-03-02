@@ -42,6 +42,11 @@ public:
         float rotationDeg = 0.0f,
         int r = 128, int g = 128, int b = 128);    // default gray
 
+    void DrawLine(float x1, float y1, float x2, float y2,
+        float thickness, int r = 255, int g = 0, int b = 0, //default red
+        float opacity = 1.0f);
+   
+
     // ----- Textured drawing helpers with defaults -----
 
     void DrawTexturedSquare(AEGfxTexture* texture,
@@ -51,6 +56,12 @@ public:
     void DrawSpriteSheet(SpriteSheet& sprite,
         float x, float y, float width, float height,
         float opacity = 1.f, float rotationDeg = 0.f);
+
+    void DrawTexturedLine(AEGfxTexture* texture,
+        float x1, float y1, float x2, float y2,
+        float thickness,
+        float tileLength,
+        float opacity = 1.0f);
 
     //cleanup functions
     void UnloadAll();
@@ -63,4 +74,5 @@ private:
     AEGfxVertexList* CreateSquareMesh();
     AEGfxVertexList* CreateCircleMesh();
     AEGfxVertexList* CreateTriangleMesh();
+    AEGfxVertexList* CreateLineMesh();
 };

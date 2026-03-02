@@ -48,45 +48,52 @@ AEAudio g_GameMusic{};
 bool g_GameMusicPlaying = false;
 extern AEAudio g_MainMenuMusic;
 
-rapidjson::Document configDoc;   // defined elsewhere, extern used if needed
+namespace {
+    rapidjson::Document configDoc;   // static to this file
 
-// ------------------------------------------------------------------------
+    // ------------------------------------------------------------------------
 // Reads GameSave.json if it exists, otherwise falls back to GameConfig.json.
 // Clears configDoc first to prevent stale cached values bleeding through.
 // ------------------------------------------------------------------------
-static void ParseConfigFromDisk()
-{
-    // Wait for any in-flight async save to finish before reading
-    while (GameSave::IsSaveInProgress())
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    static void ParseConfigFromDisk()
+    {
+        // Wait for any in-flight async save to finish before reading
+        while (GameSave::IsSaveInProgress())
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
-    // Clear stale data so the previous parse never bleeds into a fresh load
-    configDoc.SetObject();
-
-    std::ifstream ifs("Assets/Data/GameSave.json");
-    if (!ifs.is_open()) {
-        ifs.clear();
-        ifs.open("Assets/Data/GameConfig.json");
-    }
-    rapidjson::IStreamWrapper isw(ifs);
-    configDoc.ParseStream(isw);
-
-    // Fallback if the file was corrupt or mid-write
-    if (configDoc.HasParseError() || !configDoc.IsObject()) {
+        // Clear stale data so the previous parse never bleeds into a fresh load
         configDoc.SetObject();
-        std::ifstream fallback("Assets/Data/GameConfig.json");
-        rapidjson::IStreamWrapper isw2(fallback);
-        configDoc.ParseStream(isw2);
+
+        std::ifstream ifs("Assets/Data/GameSave.json");
+        if (!ifs.is_open()) {
+            ifs.clear();
+            ifs.open("Assets/Data/GameConfig.json");
+        }
+        rapidjson::IStreamWrapper isw(ifs);
+        configDoc.ParseStream(isw);
+
+        // Fallback if the file was corrupt or mid-write
+        if (configDoc.HasParseError() || !configDoc.IsObject()) {
+            configDoc.SetObject();
+            std::ifstream fallback("Assets/Data/GameConfig.json");
+            rapidjson::IStreamWrapper isw2(fallback);
+            configDoc.ParseStream(isw2);
+        }
     }
-}
+
+    const rapidjson::Document& GetConfigDoc() {
+        return configDoc;
+    }
+} // anon namespace
+
 
 // ------------------------------------------------------------------------
-// Applies the already-parsed configDoc to all managers + resets camera/input.
+// Applies the already-parsed GetConfigDoc() to all managers + resets camera/input.
 // ------------------------------------------------------------------------
 static void ApplyConfigToManagers()
 {
-    EnvironmentManager::Get().LoadFromConfig(configDoc);
-    ObjectManager::Get().LoadFromConfig(configDoc);
+    EnvironmentManager::Get().LoadFromConfig(GetConfigDoc());
+    ObjectManager::Get().LoadFromConfig(GetConfigDoc());
 
     // Bind player to input
     Input_SetPlayer(&ObjectManager::Get().GetPlayer());
@@ -127,8 +134,8 @@ void MainGame_Update()
     float dt = (float)AEFrameRateControllerGetFrameTime();
 
     Player& player = ObjectManager::Get().GetPlayer();
-    std::vector<Enemy>& enemies = ObjectManager::Get().GetAllEnemies();
-    std::vector<EnemyBullet>& enemyBullets = ObjectManager::Get().GetAllEnemyBullets();
+    auto& enemies = ObjectManager::Get().GetAllEnemies();
+    //auto& enemyBullets = ObjectManager::Get().GetAllEnemyBullets();
 
     // Restart handling
     if (g_newGame) {
@@ -157,8 +164,7 @@ void MainGame_Update()
     }
 
     // ----- Checkpoint & save -----
-    static bool externalSaveRequest = false;
-    if (EnvironmentManager::Get().HandleCheckpoint(results.checkpointHit, externalSaveRequest))
+    if (EnvironmentManager::Get().HandleCheckpoint(results.checkpointHit))
     {
         int currentSection = EnvironmentManager::Get().GetCurrentSection();
         int currentLevel = currentSection + 1;
@@ -171,7 +177,7 @@ void MainGame_Update()
         default: currentPlatforms = &EnvironmentManager::Get().GetLevel1Platforms(); break;
         }
 
-        GameSave::Metadata meta{ "1.0", "", currentLevel, 4, 0, 3 };
+        GameSave::Metadata meta{ "", currentLevel, currentSection, static_cast<int>(ObjectManager::Get().GetPlayerHP())};
         GameSave::SaveGameAsync(meta, currentLevel, player, enemies, *currentPlatforms);
         GameSave::Notify_Show(GameSave::NotifyType::SAVED);
     }

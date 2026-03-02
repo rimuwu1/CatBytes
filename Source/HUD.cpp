@@ -270,7 +270,7 @@ void HUD::InitPauseButtonFromConfig(const rapidjson::Value& uiJson)
 }
 
 // ---- HUD config ---- //
-void HUD::InitFromConfig(const rapidjson::Value& configDoc)
+void HUD::InitFromConfig(const rapidjson::Value& doc)
 {
 	active = true;
 
@@ -288,11 +288,11 @@ void HUD::InitFromConfig(const rapidjson::Value& configDoc)
 	progressBar = ProgressBar();
 	progressBar.active = false;
 
-	if (!configDoc.HasMember("ui"))
+	if (!doc.HasMember("ui"))
 	{
 		return;
 	}
-	const rapidjson::Value& uiJson = configDoc["ui"];
+	const rapidjson::Value& uiJson = doc["ui"];
 
 	if (!uiJson.HasMember("hearts"))
 	{

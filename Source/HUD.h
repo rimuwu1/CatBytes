@@ -31,7 +31,7 @@ class HUD
 {
 public:
 	bool IsPauseButtonClicked(float camX, float camY) const;
-	void InitFromConfig(const rapidjson::Value& configDoc);
+	void InitFromConfig(const rapidjson::Value& doc);
 	void Update(float /*dt*/, const Player& player);
 	void Draw(MeshManager& meshManager, float camX, float camY) const;
 	bool IsActive() const { return active; }

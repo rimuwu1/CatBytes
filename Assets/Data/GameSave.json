@@ -1,7 +1,7 @@
 {
     "metadata": {
         "game_version": "1.0",
-        "save_date": "27-01-2026 00:00:00",
+        "save_date": "00-00-0000 00:00:00",
         "current_level": 1,
         "total_levels": 4,
         "levels_completed": 0,
@@ -43,7 +43,7 @@
         "rows": 1,
         "cols": 5,
         "clips": [
-            { "name": "slash", "start": 0, "end": 4, "duration": 0.02, "loop": false }
+            { "name": "slash", "start": 0, "end": 4, "duration": 0.03, "loop": false }
         ]
     }
         },
@@ -137,6 +137,8 @@
                 "type": "easy",
                 "x": 200.0,
                 "y": -290.0,
+                "width": 80.0,
+                "height": 80.0,
                 "hp": 10.0,
                 "speed": 90.0,
                 "bullet_speed": 400.0,
@@ -146,6 +148,8 @@
                 "type": "hard",
                 "x": 400.0,
                 "y": -290.0,
+                "width": 80.0,
+                "height": 80.0,
                 "hp": 20.0,
                 "speed": 150.0,
                 "damage": 1.0
@@ -197,6 +201,8 @@
             "type": "easy",
             "x": 250.0,
             "y": 120.0,
+            "width": 80.0,
+            "height": 80.0,
             "hp": 60.0,
             "speed": 1.8,
             "bullet_speed": 400.0,
@@ -256,6 +262,8 @@
             "type": "boss",
             "x": 250.0,
             "y": 1880.0,
+            "width": 120.0,
+            "height": 120.0,
             "hp": 30.0,
             "speed": 120.0,
             "damage": 8

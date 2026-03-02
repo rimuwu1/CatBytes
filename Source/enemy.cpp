@@ -27,8 +27,6 @@ Technology is prohibited.
 #include "rapidjson/filereadstream.h"
 #include "rapidjson/istreamwrapper.h"
 
-extern rapidjson::Document configDoc;
-
 // -----------------------------------------------------------------------------
 // initialize easy enemy
 // sets position, size, direction, alive status, loads speed and textures
@@ -405,6 +403,6 @@ void HardEnemy_OnCollision(Enemy& enemy, Player& player)
 // -----------------------------------------------------------------------------
 // Free static resources (mesh and texture) remove after spritesheet
 // -----------------------------------------------------------------------------
-void Enemy_Free(Enemy& enemy)
-{
-}
+//void Enemy_Free(Enemy& enemy)
+//{
+//}

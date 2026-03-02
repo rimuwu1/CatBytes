@@ -37,8 +37,14 @@ public:
 
     // Accessors for collision and other systems
     Player& GetPlayer() { return player; }
+    float GetPlayerHP() const { return player.hp; }
+    const std::vector<Enemy>& GetAllEnemies() const { return enemies; }
+    const std::vector<EnemyBullet>& GetAllEnemyBullets() const { return enemyBullets; }
+
+    // Setters
     std::vector<Enemy>& GetAllEnemies() { return enemies; }
     std::vector<EnemyBullet>& GetAllEnemyBullets() { return enemyBullets; }
+
 
     // Bullet spawning for enemies
     void SpawnEnemyBullet(const Enemy& source, float speed, float damage, float maxRange);
