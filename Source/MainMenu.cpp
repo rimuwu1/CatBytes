@@ -19,6 +19,8 @@
 #include "AudioManager.h"
 #include "Audio.h"
 #include "FileManager.h"
+#include "UIManager.h"
+#include "Camera.h"
 
 #include <fstream>
 #include <sstream>
@@ -120,6 +122,9 @@ void MainMenu_Initialize()
     g_ClickSound = AudioManager::Get().LoadAudio(Audio::CLICK_BUTTON, false);
     g_PreviousHoveredButton = 0;
 
+    // Clear any leftover popup state from a previous visit to this screen
+    UIManager::Get().Reset();
+
     // ----- Check for valid save file -----
     g_ShowContinue = false;
     std::ifstream saveFile("Assets/Data/GameSave.json");
@@ -165,6 +170,11 @@ void MainMenu_Initialize()
 
 void MainMenu_Update()
 {
+    //Let UIManager process any active popup first
+    AEGfxSetCamPosition(0.0f, 0.0f); //clear camera settings
+    if (UIManager::Get().Update(0,0)) {
+        return;
+    }
     frameCounter++;
 
     s32 mouseX, mouseY;
@@ -212,8 +222,22 @@ void MainMenu_Update()
             break;
         case BTN_NEWGAME:
             AudioManager::Get().PlayAudio(g_ClickSound, false);
-            GameSave::ResetSave("Assets/Data/GameConfig.json", "Assets/Data/GameSave.json");
-            GameStateManager::Get().next = GS_MAINGAME;
+            if (g_ShowContinue) {
+                UIManager::Get().ShowConfirmation(
+                    "Start New Game?",
+                    "All saved progress will be cleared!",
+                    []() {
+                        g_newGame = true;
+                        GameSave::ResetSave();
+                        GameStateManager::Get().next = GS_MAINGAME;
+                    },
+                    []() { /* cancel – do nothing */ }
+                );
+            }
+            else {
+                GameSave::ResetSave();
+                GameStateManager::Get().next = GS_MAINGAME;
+            }
             break;
         case BTN_CONTROLS:
             AudioManager::Get().PlayAudio(g_ClickSound, false);
@@ -224,7 +248,14 @@ void MainMenu_Update()
             GameStateManager::Get().next = GS_CREDITS;
             break;
         case BTN_EXIT:
-            GameStateManager::Get().next = GS_QUIT;
+                UIManager::Get().ShowConfirmation(
+                    "Quit Game?",
+                    "Are You Sure You Want To Quit?",
+                    []() {
+                        GameStateManager::Get().next = GS_QUIT;
+                    },
+                    []() { /* cancel – do nothing */ }
+                );
             break;
         }
     }
@@ -340,7 +371,8 @@ void MainMenu_Draw()
             AEGfxPrint(g_FontMedium, "EXIT", BUTTON_X, EXIT_Y_NO_CONTINUE, 1.0f, r, g, b, 1.0f);
         }
     }
-
+    //pop up draw
+    UIManager::Get().Draw(0, 0);
     AESysFrameEnd();
     std::cout << "Main Menu:Draw" << std::endl;
 }

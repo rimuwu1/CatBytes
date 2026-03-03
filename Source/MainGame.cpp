@@ -43,6 +43,7 @@ Technology is prohibited.
 #include "rapidjson/istreamwrapper.h"
 #include "AudioManager.h"
 #include "Audio.h"
+#include "UIManager.h"
 
 AEAudio g_GameMusic{};
 bool g_GameMusicPlaying = false;
@@ -88,15 +89,12 @@ namespace {
 
 
 // ------------------------------------------------------------------------
-// Applies the already-parsed GetConfigDoc() to all managers + resets camera/input.
+// Applies the already-parsed GetConfigDoc() to all managers + resets camera
 // ------------------------------------------------------------------------
 static void ApplyConfigToManagers()
 {
     EnvironmentManager::Get().LoadFromConfig(GetConfigDoc());
     ObjectManager::Get().LoadFromConfig(GetConfigDoc());
-
-    // Bind player to input
-    Input_SetPlayer(&ObjectManager::Get().GetPlayer());
 
     const float ground = -350.0f;
     const float groundHeight = 50.0f;
@@ -118,6 +116,8 @@ void MainGame_Load()
 
 void MainGame_Initialize()
 {
+    // Clear any leftover popup state from a previous visit to this screen
+    UIManager::Get().Reset();
     ParseConfigFromDisk();
     ApplyConfigToManagers();
     //Stop main menu music
@@ -131,6 +131,13 @@ void MainGame_Initialize()
 
 void MainGame_Update()
 {
+    //Let UIManager process any active popup first
+    if (UIManager::Get().Update(globalCam.x, globalCam.y)) {
+        return;
+    }
+    if(AEInputCheckTriggered(AEVK_ESCAPE)){ //moved from input cos update pause is tweaking
+        UIManager::Get().ShowPause();
+    }
     float dt = (float)AEFrameRateControllerGetFrameTime();
 
     Player& player = ObjectManager::Get().GetPlayer();
@@ -177,7 +184,7 @@ void MainGame_Update()
         default: currentPlatforms = &EnvironmentManager::Get().GetLevel1Platforms(); break;
         }
 
-        GameSave::Metadata meta{ "", currentLevel, currentSection, static_cast<int>(ObjectManager::Get().GetPlayerHP())};
+        GameSave::Metadata meta{ "", currentLevel, currentSection, static_cast<int>(ObjectManager::Get().GetPlayerHP()) };
         GameSave::SaveGameAsync(meta, currentLevel, player, enemies, *currentPlatforms);
         GameSave::Notify_Show(GameSave::NotifyType::SAVED);
     }
@@ -209,7 +216,7 @@ void MainGame_Update()
     HUD& hud = EnvironmentManager::Get().GetHUD();
 
     if (hud.IsPauseButtonClicked(globalCam.x, globalCam.y)) {
-        GameStateManager::Get().next = GS_PAUSE;
+        UIManager::Get().ShowPause();
         return;
     }
 
@@ -235,13 +242,17 @@ void MainGame_Draw()
     EnvironmentManager::Get().Draw(globalCam.x, globalCam.y, player.pos.x, player.pos.y);
     ObjectManager::Get().Draw();
     GameSave::Notify_Draw();
-
+    //pop up draw over everything
+    UIManager::Get().Draw(globalCam.x, globalCam.y);
     std::cout << "MainGame:Draw" << std::endl;
     AESysFrameEnd();
 }
 
 void MainGame_Free()
 {
+    globalCam.x = 0.0f;
+    globalCam.y = 0.0f;
+    AEGfxSetCamPosition(0.0f, 0.0f);
     Player_Free(ObjectManager::Get().GetPlayer());
     ObjectManager::Get().Clear();
     EnvironmentManager::Get().Clear();

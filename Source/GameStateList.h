@@ -28,5 +28,4 @@ enum GS_STATES
 	GS_CREDITS,		// Credits
 	GS_QUIT,        // Quit state to exit the game
 	GS_RESTART,     // Restart state to reload current level 
-	GS_PAUSE        // Pause state to pause current level
 };

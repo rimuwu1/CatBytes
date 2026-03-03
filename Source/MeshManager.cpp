@@ -84,11 +84,12 @@ AEGfxVertexList* MeshManager::CreateLineMesh() {
 
 // --- Drawing implementations ---
 void MeshManager::DrawSquare(float x, float y, float width, float height,
-    int r, int g, int b) {
+    int r, int g, int b, float opacity) {
     AEGfxVertexList* mesh = GetMesh("square");
     AEMtx33 scale, translate, transform;
 
     AEGfxSetRenderMode(AE_GFX_RM_COLOR);
+    AEGfxSetTransparency(opacity);
     AEGfxSetColorToMultiply(r / 255.0f, g / 255.0f, b / 255.0f, 1.0f);
     AEGfxSetColorToAdd(0, 0, 0, 0);
 
@@ -101,11 +102,12 @@ void MeshManager::DrawSquare(float x, float y, float width, float height,
 }
 
 void MeshManager::DrawCircle(float x, float y, float diameter,
-    int r, int g, int b) {
+    int r, int g, int b, float opacity) {
     AEGfxVertexList* mesh = GetMesh("circle");
     AEMtx33 scale, translate, transform;
 
     AEGfxSetRenderMode(AE_GFX_RM_COLOR);
+    AEGfxSetTransparency(opacity);
     AEGfxSetColorToMultiply(r / 255.0f, g / 255.0f, b / 255.0f, 1.0f);
     AEGfxSetColorToAdd(0, 0, 0, 0);
 
@@ -118,11 +120,12 @@ void MeshManager::DrawCircle(float x, float y, float diameter,
 }
 
 void MeshManager::DrawTriangle(float x, float y, float width, float height,
-    float rotationDeg, int r, int g, int b) {
+    float rotationDeg, int r, int g, int b, float opacity) {
     AEGfxVertexList* mesh = GetMesh("triangle");
     AEMtx33 scale, rotate, translate, transform;
 
     AEGfxSetRenderMode(AE_GFX_RM_COLOR);
+    AEGfxSetTransparency(opacity);
     AEGfxSetColorToMultiply(r / 255.0f, g / 255.0f, b / 255.0f, 1.0f);
     AEGfxSetColorToAdd(0, 0, 0, 0);
 

@@ -24,17 +24,10 @@ Technology is prohibited.
 #include "EnvironmentManager.h"
 #include "AudioManager.h"
 #include "Audio.h"
+#include "UIManager.h"
+#include "ObjectManager.h"
 
-static Player* s_CurrentPlayer = nullptr;
-static AEAudio s_JumpSound{};
-
-void Input_SetPlayer(Player* player)
-{
-	s_CurrentPlayer = player;
-
-	//load jump sound
-	s_JumpSound = AudioManager::Get().LoadAudio(Audio::JUMP, false);
-}
+static AEAudio s_JumpSound = AudioManager::Get().LoadAudio(Audio::JUMP, false);
 
 
 // ----------------------------------------------------------------------------
@@ -45,45 +38,47 @@ void Input_SetPlayer(Player* player)
 void Input_Handle() {
 	// check if forcing the application to quit
 	if (0 == AESysDoesWindowExist()) {
-	    GameStateManager::Get().next = GS_QUIT;
-    }
-
-	// ESC goes back to main menu (from anywhere)
-	if (AEInputCheckTriggered(AEVK_ESCAPE)) {
-		if(GameStateManager::Get().current == GS_SPLASHSCREEN)
-		GameStateManager::Get().next = GS_MAINMENU;
-		else if (GameStateManager::Get().current == GS_MAINGAME) {
-			GameStateManager::Get().next = GS_PAUSE;
-		}
-	}
-
-	// Q to quit the game
-	if (AEInputCheckTriggered('Q')) {
 		GameStateManager::Get().next = GS_QUIT;
 	}
 
-	// Process player movement input if a player is bound
-	if (s_CurrentPlayer)
+	// ESC goes back to main menu (from anywhere)
+	if (AEInputCheckTriggered(AEVK_ESCAPE)) {
+		if (GameStateManager::Get().current == GS_SPLASHSCREEN)
+			GameStateManager::Get().next = GS_MAINMENU;
+	}
+
+	// Q to quit the game -- show confirmation popup
+	if (AEInputCheckTriggered('Q')) {
+		UIManager::Get().ShowConfirmation(
+			"Quit Game",
+			"Are you sure you want to quit?",
+			[]() { GameStateManager::Get().next = GS_QUIT; },
+			[]() {} // cancel: do nothing
+		);
+	}
+
+	// Process player movement input
 	{
+		Player& player = ObjectManager::Get().GetPlayer();
 		const float MOVE_SPEED = 400.0f;
 		const float JUMP_FORCE = 650.0f;
 
 		// Reset horizontal velocity each frame; input determines movement
-		s_CurrentPlayer->vel.x = 0.0f;
+		player.vel.x = 0.0f;
 
 		// Horizontal movement (A/D)
 		if (AEInputCheckCurr('A')) {
-			s_CurrentPlayer->vel.x -= MOVE_SPEED;
+			player.vel.x -= MOVE_SPEED;
 		}
 		if (AEInputCheckCurr('D')) {
-			s_CurrentPlayer->vel.x += MOVE_SPEED;
+			player.vel.x += MOVE_SPEED;
 		}
 
 		// Jumping (Space) - only when grounded
-		if (s_CurrentPlayer->grounded && AEInputCheckCurr(AEVK_SPACE))
+		if (player.grounded && AEInputCheckCurr(AEVK_SPACE))
 		{
-			s_CurrentPlayer->vel.y = JUMP_FORCE;
-			s_CurrentPlayer->grounded = 0;
+			player.vel.y = JUMP_FORCE;
+			player.grounded = 0;
 
 			//play jump sound
 			AudioManager::Get().PlayAudio(s_JumpSound, false);
@@ -93,21 +88,21 @@ void Input_Handle() {
 		//weapon switch: 1 = none, 2 = melee, 3 = gun
 		if (AEInputCheckTriggered('1'))
 		{
-			s_CurrentPlayer->weapon = PlayerWeapon::NONE;
-			s_CurrentPlayer->weaponEquipped = false;
-			s_CurrentPlayer->isAttacking = false;
+			player.weapon = PlayerWeapon::NONE;
+			player.weaponEquipped = false;
+			player.isAttacking = false;
 		}
 		if (AEInputCheckTriggered('2'))
 		{
-			s_CurrentPlayer->weapon = PlayerWeapon::MELEE;
-			s_CurrentPlayer->weaponEquipped = true;
-			s_CurrentPlayer->isAttacking = false; // reset attack state
+			player.weapon = PlayerWeapon::MELEE;
+			player.weaponEquipped = true;
+			player.isAttacking = false; // reset attack state
 		}
 		if (AEInputCheckTriggered('3'))
 		{
-			s_CurrentPlayer->weapon = PlayerWeapon::GUN;
-			s_CurrentPlayer->weaponEquipped = true;
-			s_CurrentPlayer->isAttacking = false; // melee attack off
+			player.weapon = PlayerWeapon::GUN;
+			player.weaponEquipped = true;
+			player.isAttacking = false; // melee attack off
 		}
 
 

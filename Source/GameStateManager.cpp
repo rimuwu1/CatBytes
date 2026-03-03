@@ -99,14 +99,6 @@ void GameStateManager::Update()
         break;
     case GS_QUIT:
         break;
-    case GS_PAUSE:
-        fpLoad = Pause_Load;
-        fpInitialize = Pause_Initialize;
-        fpUpdate = Pause_Update;
-        fpDraw = Pause_Draw;
-        fpFree = Pause_Free;
-        fpUnload = Pause_Unload;
-        break;
     default:
         break;
     }

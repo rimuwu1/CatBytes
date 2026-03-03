@@ -81,9 +81,6 @@
     <ClCompile Include="..\Source\TextureManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Source\Minimap.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\Source\SpriteSheet.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -106,6 +103,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Source\AudioManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\Controls.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\Credits.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\UIManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -176,9 +182,6 @@
     <ClInclude Include="..\Source\TextureManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\Source\Minimap.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\Source\SpriteSheet.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -201,6 +204,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\Source\AudioManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\Controls.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\Credits.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\UIManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

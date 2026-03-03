@@ -33,14 +33,14 @@ public:
     // ----- Colour drawing helpers with defaults -----
 
     void DrawSquare(float x, float y, float width, float height,
-        int r = 255, int g = 0, int b = 0);          // default red
+        int r = 255, int g = 0, int b = 0, float opacity = 1.0f);          // default red
 
     void DrawCircle(float x, float y, float diameter,
-        int r = 255, int g = 0, int b = 0);          // default red
+        int r = 255, int g = 0, int b = 0, float opacity = 1.0f);          // default red
 
     void DrawTriangle(float x, float y, float width, float height,
         float rotationDeg = 0.0f,
-        int r = 128, int g = 128, int b = 128);    // default gray
+        int r = 128, int g = 128, int b = 128, float opacity = 1.0f);    // default gray
 
     void DrawLine(float x1, float y1, float x2, float y2,
         float thickness, int r = 255, int g = 0, int b = 0, //default red
