@@ -21,7 +21,6 @@ Technology is prohibited.
 #include "MainMenu.h"
 #include "SplashScreen.h"
 #include "WinLose.h"
-#include "PauseMenu.h"
 #include "Controls.h"
 #include "Credits.h"
 
