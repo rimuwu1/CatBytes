@@ -223,11 +223,11 @@ void MainGame_Update()
     GameSave::Notify_Update(dt);
 
     if (AEInputCheckTriggered(AEVK_6)) {
-        player.pos.x = 0.0f; player.pos.y = 1900.0f;
+        player.pos.x = 0.0f; player.pos.y = 4600.0f; // start of level 3 teleport
         player.vel.x = 0.0f; player.vel.y = 0.0f;
     }
     if (AEInputCheckTriggered(AEVK_7)) {
-        player.pos.x = 0.0f; player.pos.y = -300.0f;
+        player.pos.x = 0.0f; player.pos.y = 4600.0f; 
         player.vel.x = 0.0f; player.vel.y = 0.0f;
     }
 

@@ -75,7 +75,7 @@ void Input_Handle() {
 		}
 
 		// Jumping (Space) - only when grounded
-		if (player.grounded && AEInputCheckCurr(AEVK_SPACE))
+		if (player.grounded && AEInputCheckTriggered(AEVK_SPACE))
 		{
 			player.vel.y = JUMP_FORCE;
 			player.grounded = 0;

@@ -209,6 +209,8 @@ namespace CollisionManager
     {
         CollisionResults results = { false, false };
 
+        player.grounded = 0; // assume player is not grounded at start of collision check - prevent player from jumping mid-air
+
         // Ground (fixed values – could become env constants)
         HandleGround(player, -350.0f, 50.0f, playerPrevY);
 

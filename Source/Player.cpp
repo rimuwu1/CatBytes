@@ -119,6 +119,11 @@ void Player_Init(Player& player, const rapidjson::Value& config)
 	player.previousWeapon = PlayerWeapon::NONE;
 	player.weaponSwitchTriggered = false;
 
+	// idle tail animation system (to switch between idle anim 1 and idle anim 2 every few loops of 1st anim)
+	player.idleLoopCount = 0;
+	player.idleLoopsBeforeTail = 5 + (rand() % 6); // random between 5-10
+	player.playingTailAnim = false;
+
 	// --- slash sheet Loading ---
 	if (playerJson.HasMember("slash")) {
 		const auto& anims = playerJson["slash"];
@@ -148,16 +153,33 @@ void Player_Init(Player& player, const rapidjson::Value& config)
 		s_MeleeAttackSound = AudioManager::Get().LoadAudio(Audio::PLAYER_MELEE_ATTACK, false);
 		s_PlayerAudioLoaded = true;
 	}
+
+	// hurt state
+	player.isHurt = false;
+	player.hurtTimer = 0.0f;
+	player.wasHurt = false;
+
+	// animation state tracking
+	player.lastFrame = 0;
+	player.weaponSwitchInProgress = false;
+	player.downSlashJumped = false;
 }
 
 void Player_Update(Player& player, float dt)
 {
-	const float GRAVITY = -1200.0f;
+	const float GRAVITY = -1300.0f;
 
 	// Gravity
 	player.vel.y += GRAVITY * dt;
 
-
+	// hurt state
+	if (player.isHurt) {
+		player.hurtTimer -= dt;
+		if (player.hurtTimer <= 0.0f) {
+			player.hurtTimer = 0.0f;
+			player.isHurt = false;
+		}
+	}
 	// Integrate velocity to position
 	player.pos.x += player.vel.x * dt;
 	player.pos.y += player.vel.y * dt;
@@ -235,7 +257,7 @@ void Player_Update(Player& player, float dt)
 			// handle slash direction based on held keys
 			if (AEInputCheckCurr('W'))
 				player.slashDirection = SlashDirection::UP;
-			else if (AEInputCheckCurr('S'))
+			else if (AEInputCheckCurr('S') && !player.grounded) // only allow downslash mid-air
 				player.slashDirection = SlashDirection::DOWN;
 			else // A or D (handle with flipping)
 				player.slashDirection = SlashDirection::HORIZONTAL;
@@ -259,64 +281,282 @@ void Player_Update(Player& player, float dt)
 	}
 	
 
-	// --- Determine walking state ---
+	// --- Determine walking and jumping state ---
 	bool isWalking = (fabs(player.vel.x) > 0.1f) && player.grounded;
 	// (you can adjust threshold as needed)
+	bool isInAir = !player.grounded; 
 
 	// --- Detect weapon switch ---
-	if (player.weapon != player.previousWeapon) {
+	//if (player.weapon != player.previousWeapon) {
+	//	player.weaponSwitchTriggered = true;
+	//	//player.previousWeapon = player.weapon;
+	//}
+	if (!player.weaponSwitchInProgress && player.weapon != player.previousWeapon) {
 		player.weaponSwitchTriggered = true;
-		player.previousWeapon = player.weapon;
+		player.weaponSwitchInProgress = true;
 	}
 
 	// --- Decide desired clip ---
-	std::string desiredClip;
+	std::string desiredClip = "";
 	bool forceRestart = false;
 
-	// Handle weapon switch animation
+	//// Handle weapon switch animation
+	//if (player.weaponSwitchTriggered) {
+	//	desiredClip = "weapon_switch";
+	//	// Force restart only if we just entered this clip
+	//	if (player.spriteSheet->GetCurrentClip() != "weapon_switch") {
+	//		forceRestart = true;
+	//	}
+	//	// If the switch clip has finished playing, clear the trigger
+	//	if (player.spriteSheet->GetCurrentClip() == "weapon_switch" && !player.spriteSheet->IsPlaying()) {
+	//		player.weaponSwitchTriggered = false;
+	//	}
+	//}
+	//else {
+	//	// Normal state based on weapon and actions
+	//	switch (player.weapon) {
+	//	case PlayerWeapon::NONE:
+	//		desiredClip = isWalking ? "walk" : "idle";
+	//		break;
+	//	case PlayerWeapon::MELEE:
+	//		if (player.isAttacking) {
+	//			desiredClip = "meleeLEFT";
+	//			if (!player.wasAttacking) forceRestart = true;
+	//		}
+	//		else {
+	//			desiredClip = isWalking ? "walkClaw" : "clawIdle";
+	//		}
+	//		break;
+	//	case PlayerWeapon::GUN:
+	//		if (player.fireTimer > 0.0f) {
+	//			desiredClip = "gun_attack";
+	//			// Restart when firing starts (fireTimer == fireCooldown)
+	//			if (fabs(player.fireTimer - player.fireCooldown) < 0.001f) {
+	//				forceRestart = true;
+	//			}
+	//		}
+	//		else {
+	//			desiredClip = isWalking ? "gun_walk" : "gun_idle";
+	//		}
+	//		break;
+	//	}
+	//}
+
+	// handle weapon switch animation (reworked)
 	if (player.weaponSwitchTriggered) {
-		desiredClip = "weapon_switch";
-		// Force restart only if we just entered this clip
-		if (player.spriteSheet->GetCurrentClip() != "weapon_switch") {
-			forceRestart = true;
-		}
-		// If the switch clip has finished playing, clear the trigger
-		if (player.spriteSheet->GetCurrentClip() == "weapon_switch" && !player.spriteSheet->IsPlaying()) {
+		// if player jumps during weapon switch, cancel the switch animation
+		if (isInAir && player.vel.y > 0) {  
 			player.weaponSwitchTriggered = false;
+			player.weaponSwitchInProgress = false;
+		}
+		else {
+			if (player.weapon == PlayerWeapon::NONE) {
+				// switching to normal
+				if (player.previousWeapon == PlayerWeapon::MELEE)
+					desiredClip = "claw2normal";
+				else if (player.previousWeapon == PlayerWeapon::GUN)
+					desiredClip = "gun2normal";
+			}
+			else if (player.weapon == PlayerWeapon::MELEE) {
+				// switching to melee
+				if (player.previousWeapon == PlayerWeapon::NONE)
+					desiredClip = "normal2claw";
+				else if (player.previousWeapon == PlayerWeapon::GUN)
+					desiredClip = "gun2claw";
+			}
+			else if (player.weapon == PlayerWeapon::GUN) {
+				// switching to gun
+				if (player.previousWeapon == PlayerWeapon::NONE)
+					desiredClip = "normal2gun";
+				else if (player.previousWeapon == PlayerWeapon::MELEE)
+					desiredClip = "claw2gun";
+			}
+
+			// force restart only if we just entered this clip
+			if (!desiredClip.empty() && player.spriteSheet->GetCurrentClip() != desiredClip) {
+				forceRestart = true; 
+			}
+
+			// if the switch clip has finished playing, clear the trigger and update previousWeapon
+			if (player.weaponSwitchTriggered &&
+				player.spriteSheet->GetCurrentClip() == desiredClip &&
+				!player.spriteSheet->IsPlaying()) {
+				player.weaponSwitchTriggered = false;
+				player.weaponSwitchInProgress = false;
+				player.previousWeapon = player.weapon;
+			}
 		}
 	}
-	else {
-		// Normal state based on weapon and actions
-		switch (player.weapon) {
-		case PlayerWeapon::NONE:
-			desiredClip = isWalking ? "walk" : "idle";
-			break;
-		case PlayerWeapon::MELEE:
-			if (player.isAttacking) {
-				desiredClip = "melee_attack";
-				if (!player.wasAttacking) forceRestart = true;
-			}
-			else {
-				desiredClip = isWalking ? "melee_walk" : "melee_idle";
-			}
-			break;
-		case PlayerWeapon::GUN:
-			if (player.fireTimer > 0.0f) {
-				desiredClip = "gun_attack";
-				// Restart when firing starts (fireTimer == fireCooldown)
-				if (fabs(player.fireTimer - player.fireCooldown) < 0.001f) {
+		// hurt animation 
+		if (player.isHurt && desiredClip.empty()) { 
+			desiredClip = "hurt";
+			if (!player.wasHurt) forceRestart = true;
+		}
+		// gun attack override everything except hurt
+		else if (player.weapon == PlayerWeapon::GUN && player.fireTimer > 0.0f && desiredClip.empty())
+		{
+			desiredClip = "gunShoot";
+
+			// restart when firing starts
+			if (fabs(player.fireTimer - player.fireCooldown) < 0.001f)
+				forceRestart = true;
+
+			player.playingTailAnim = false;
+			player.idleLoopCount = 0;
+		}
+		// melee aerial attacks (up/down) animate while jumping
+		else if (isInAir && player.weapon == PlayerWeapon::MELEE && player.isAttacking && desiredClip.empty()) {
+			if (player.slashDirection == SlashDirection::UP)
+				desiredClip = "clawAttackUP";
+			else if (player.slashDirection == SlashDirection::DOWN)
+				desiredClip = "clawAttackDOWN";
+			else
+				desiredClip = "clawAttack"; // horizontal aerial attack
+
+			if (!player.wasAttacking) forceRestart = true;
+		}
+		// jump animation when in air
+		else if (isInAir && !player.weaponSwitchTriggered) {
+			// check if moving sideways (A or D held)
+			bool movingSideways = AEInputCheckCurr('A') || AEInputCheckCurr('D');
+			if (movingSideways) {
+				desiredClip = "jumpSIDE";
+				// if already playing jumpSIDE and reached the end, freeze it
+				if (player.spriteSheet->GetCurrentClip() == "jumpSIDE") {
+					u32 currentFrame = player.spriteSheet->GetCurrentFrame();
+					// frame 17 is the last frame of jumpSIDE (start: 15, end: 17)
+					if (currentFrame >= 17) {
+						player.spriteSheet->SetPaused(true);
+					}
+					else {
+						forceRestart = false;
+					}
+				}
+				else {
 					forceRestart = true;
 				}
 			}
 			else {
-				desiredClip = isWalking ? "gun_walk" : "gun_idle";
+				desiredClip = "jumpFRONT";
+				// if already playing jumpFRONT and reached the end, freeze it
+				if (player.spriteSheet->GetCurrentClip() == "jumpFRONT") {
+					u32 currentFrame = player.spriteSheet->GetCurrentFrame();
+					// frame 12 is the last frame of jumpFRONT (start: 10, end: 12)
+					if (currentFrame >= 12) {
+						forceRestart = false;
+						player.spriteSheet->SetPaused(true);
+					}
+					else {
+						forceRestart = false;
+					}
+				}
+				else {
+					forceRestart = true;
+				}
 			}
-			break;
 		}
-	}
+		if (desiredClip.empty()) {
+			// when landing, unpause the spritesheet
+			if (player.spriteSheet->IsPaused()) {
+				player.spriteSheet->SetPaused(false);
+			}
+			// normal state based on weapon and actions
+			switch (player.weapon) {
+			case PlayerWeapon::NONE:
+				if (isWalking) {
+					desiredClip = "walk";
+					player.playingTailAnim = false;
+					player.idleLoopCount = 0;
+				}
+				else {
+					// idle tail animation logic
+					if (player.playingTailAnim) {
+						desiredClip = "idle2";
+						// check if tail animation finished (non-looping clip stops)
+						if (player.spriteSheet->GetCurrentClip() == "idle2" && 
+							!player.spriteSheet->IsPlaying()) {
+							player.playingTailAnim = false;
+							player.idleLoopCount = 0;
+							player.idleLoopsBeforeTail = 5 + (rand() % 6); // new random count
+							desiredClip = "idle";
+							forceRestart = true;
+						}
+					}
+					else {
+						desiredClip = "idle";
+						// track frame changes to detect loop completion
+						u32 lastFrame = player.lastFrame;
+						u32 currentFrame = player.spriteSheet->GetCurrentFrame();
+						// if frame wrapped back to start (loop completed)
+						if (currentFrame < lastFrame && player.spriteSheet->GetCurrentClip() == "idle") {
+							player.idleLoopCount++;
+							// trigger tail animation after random loops
+							if (player.idleLoopCount >= player.idleLoopsBeforeTail) {
+								player.playingTailAnim = true;
+								desiredClip = "idle2";
+								forceRestart = true;
+							}
+						}
+						player.lastFrame = currentFrame;
+					}
+				}
+				break;
+
+			case PlayerWeapon::MELEE:
+				// auto-end attack when animation finishes
+				if (player.isAttacking && !player.spriteSheet->IsPlaying()) {
+					player.isAttacking = false;
+				}
+
+				if (player.isAttacking) {
+					// choose attack animation based on slash direction
+					if (player.slashDirection == SlashDirection::UP)
+						desiredClip = "clawAttackUP";
+					else
+						desiredClip = "clawAttack"; // horizontal
+					if (!player.wasAttacking) forceRestart = true;
+					player.playingTailAnim = false;
+					player.idleLoopCount = 0;
+				}
+				else if (isWalking) {
+					desiredClip = "clawWalk";
+					player.playingTailAnim = false;
+					player.idleLoopCount = 0;
+				}
+				else {
+					desiredClip = "clawIdle";
+					player.playingTailAnim = false;
+					player.idleLoopCount = 0;
+				}
+				break;
+
+			case PlayerWeapon::GUN:
+				if (player.fireTimer > 0.0f) {
+					desiredClip = "gunShoot";
+
+					if (fabs(player.fireTimer - player.fireCooldown) < 0.001f)
+						forceRestart = true;
+
+					player.playingTailAnim = false;
+					player.idleLoopCount = 0;
+				}
+				else if (isWalking) {
+					desiredClip = "gunWalk";
+					player.playingTailAnim = false;
+					player.idleLoopCount = 0;
+				}
+				else {
+					desiredClip = "gunIdle";
+					player.playingTailAnim = false;
+					player.idleLoopCount = 0;
+				}
+
+				break;
+			}
+		}
 
 	// Play the clip and update animation
-	if (player.spriteSheet) {
+	if (player.spriteSheet && !desiredClip.empty()) {
 		player.spriteSheet->Play(desiredClip, forceRestart);
 		player.spriteSheet->Update(dt);
 	}
@@ -324,6 +564,7 @@ void Player_Update(Player& player, float dt)
 	// Update state trackers
 	player.wasAttacking = player.isAttacking;
 	player.wasWalking = isWalking;
+	player.wasHurt = player.isHurt;
 }
 
 void Player_Draw(const Player& player)
@@ -347,7 +588,18 @@ void Player_Draw(const Player& player)
 
 	// Draw player using sprite sheet
 	if (player.spriteSheet) {
-		float scaleX = player.facingRight ? -player.width : player.width;
+		float scaleX;
+
+		// special case: gun shooting needs to be flipped opposite to facing direction (else player shoots in wrong direction..) 
+		if (player.weapon == PlayerWeapon::GUN && player.fireTimer > 0.0f) {
+			// flip opposite: if facing right, flip left (negative), if facing left, flip right (positive)
+			scaleX = player.facingRight ? player.width : -player.width;
+		}
+		else {
+			// normal flip based on facing direction
+			scaleX = player.facingRight ? -player.width : player.width;
+		}
+
 		MeshManager::Get().DrawSpriteSheet(
 			*player.spriteSheet,
 			player.pos.x,
@@ -410,6 +662,10 @@ void Player_ApplyDamage(Player& player, float damage)
 		return;
 
 	player.hp -= damage;
+
+	// trigger hurt animation
+	player.isHurt = true;
+	player.hurtTimer = player.spriteSheet->GetClipTotalDuration("hurt");
 
 	//show hit text for 0.5 seconds
 	//player.hitTextTimer = 0.5f;

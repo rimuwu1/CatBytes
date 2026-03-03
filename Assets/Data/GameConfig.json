@@ -10,7 +10,7 @@
     "player": {
             "x": 0.0,
             "y": -300.0,
-            "width": 80.0,
+            "width": 50.0,
             "height": 80.0,
             "hp": 3.0,
             "melee_damage": 5,
@@ -24,18 +24,29 @@
             },  
             "animations": {
         "file": "Assets/Images/PlayerSheet.png",
-        "rows": 3,
+        "rows": 20,
         "cols": 5,
         "clips": [
             { "name": "idle", "start": 0, "end": 4, "duration": 0.1, "loop": true },
-            { "name": "walk", "start": 0, "end": 4, "duration": 0.1, "loop": true },
-            { "name": "weapon_switch", "start": 5, "end": 9, "duration": 0.08, "loop": false },
-            { "name": "melee_idle", "start": 0, "end": 0, "duration": 0.1, "loop": true },
-            { "name": "melee_walk", "start": 0, "end": 4, "duration": 0.1, "loop": true },
-            { "name": "melee_attack", "start": 10, "end": 14, "duration": 0.05, "loop": false },
-            { "name": "gun_idle", "start": 0, "end": 4, "duration": 0.1, "loop": true },
-            { "name": "gun_walk", "start": 0, "end": 4, "duration": 0.1, "loop": true },
-            { "name": "gun_attack", "start": 0, "end": 0, "duration": 0.03, "loop": false }
+            { "name": "idle2", "start": 5, "end": 9, "duration": 0.1, "loop": false },
+            { "name": "jumpFRONT", "start": 10, "end": 12, "duration": 0.1, "loop": false },
+            { "name": "jumpSIDE", "start": 15, "end": 17, "duration": 0.1, "loop": false },
+            { "name": "walk", "start": 20, "end": 23, "duration": 0.1, "loop": true },
+            { "name": "hurt", "start": 25, "end": 27, "duration": 0.1, "loop": false },
+            { "name": "clawIdle", "start": 30, "end": 34, "duration": 0.1, "loop": true },
+            { "name": "clawAttack", "start": 35, "end": 37, "duration": 0.1, "loop": false },
+            { "name": "clawAttackUP", "start": 40, "end": 42, "duration": 0.1, "loop": false },
+            { "name": "clawAttackDOWN", "start": 45, "end": 47, "duration": 0.1, "loop": false },
+            { "name": "clawWalk", "start": 50, "end": 53, "duration": 0.1, "loop": true },
+            { "name": "gunIdle", "start": 55, "end": 59, "duration": 0.1, "loop": true },
+            { "name": "gunWalk", "start": 60, "end": 63, "duration": 0.1, "loop": true },
+            { "name": "gunShoot", "start": 65, "end": 67, "duration": 0.1, "loop": false },
+            { "name": "normal2claw", "start": 70, "end": 72, "duration": 0.1, "loop": false },
+            { "name": "normal2gun", "start": 75, "end": 78, "duration": 0.1, "loop": false },
+            { "name": "claw2normal", "start": 80, "end": 82, "duration": 0.1, "loop": false },
+            { "name": "claw2gun", "start": 85, "end": 89, "duration": 0.1, "loop": false },
+            { "name": "gun2normal", "start": 90, "end": 93, "duration": 0.1, "loop": false },
+            { "name": "gun2claw", "start": 90, "end": 93, "duration": 0.1, "loop": false }
                 ]
             },
             "slash": {

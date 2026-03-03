@@ -4,9 +4,11 @@
 \author Kerwin Wong Jia Jie, kerwinjiajie.wong, 2502740
 		Tse Xuan Qi Tristin, tse.x, 2503757
 		Joash ng, joash.ng, 2502780
+		Sim Hui Min, s.huimin, 2503506
 \par    kerwinjiajie.wong@digipen.edu
 	    tse.x@digipen.edu
 		joash.ng@digipen.edu
+		s.huimin@digipen.edu
 \date January, 23, 2026
 \brief This file contains the function declarations for the Player movements, physics,
 		input handling, and rendering.
@@ -87,6 +89,20 @@ struct Player
 	PlayerWeapon previousWeapon = PlayerWeapon::NONE;
 	SlashDirection slashDirection = SlashDirection::HORIZONTAL;
 	bool weaponSwitchTriggered = false;
+	bool weaponSwitchInProgress = false;
+
+	// tail idle animation
+	int idleLoopCount = 0;
+	int idleLoopsBeforeTail = 5;
+	bool playingTailAnim = false;
+
+	// hurt state
+	bool isHurt = false;
+	bool wasHurt = false;
+	float hurtTimer = 0.0f;
+
+	// player
+	u32 lastFrame = 0;
 };
 
 struct Enemy; // forward declaration
