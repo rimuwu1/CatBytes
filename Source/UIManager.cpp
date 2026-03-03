@@ -53,7 +53,7 @@ static AEAudio s_PauseHoverSound{};
 static AEAudio s_PauseClickSound{};
 static bool    s_PauseSoundsLoaded = false;
 
-extern bool g_newGame;
+bool g_newGame = false;
 
 static float PxToNdcX(float px, float winW) { return px / (winW * 0.5f); }
 static float PxToNdcY(float py, float winH) { return py / (winH * 0.5f); }
