@@ -27,8 +27,8 @@ Technology is prohibited.
 #include "UIManager.h"
 #include "ObjectManager.h"
 
-static AEAudio s_JumpSound = AudioManager::Get().LoadAudio(Audio::JUMP, false);
-
+static AEAudio s_JumpSound{};
+static bool s_JumpSoundLoaded = false;
 
 // ----------------------------------------------------------------------------
 // Handles all user input processing for the current frame
@@ -36,6 +36,13 @@ static AEAudio s_JumpSound = AudioManager::Get().LoadAudio(Audio::JUMP, false);
 // or gamepad input and update game state accordingly
 // ----------------------------------------------------------------------------
 void Input_Handle() {
+
+	//check so it doesnt load every frame
+	if (!s_JumpSoundLoaded)
+	{
+		s_JumpSound = AudioManager::Get().LoadAudio(Audio::JUMP, false);
+		s_JumpSoundLoaded = true;
+	}
 	// check if forcing the application to quit
 	if (0 == AESysDoesWindowExist()) {
 		GameStateManager::Get().next = GS_QUIT;

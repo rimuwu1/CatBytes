@@ -29,12 +29,12 @@ void ObjectManager::AddEnemyFromJSON(const rapidjson::Value& enemyData)
 
     if (type == "easy") {
         Enemy_Init(newEnemy, enemyData);
-        newEnemy.texture = TextureManager::Get().LoadTexture("Assets/Images/easyenemy.jpg");
+        newEnemy.texture = TextureManager::Get().LoadTexture("Assets/Images/EasyEnemy.png");
         newEnemy.lowHpTexture = TextureManager::Get().LoadTexture("Assets/Images/LowHpOverlay.jpg");
     }
     else if (type == "hard") {
         HardEnemy_Init(newEnemy, enemyData);
-        newEnemy.texture = TextureManager::Get().LoadTexture("Assets/Images/hardenemy.jpg");
+        newEnemy.texture = TextureManager::Get().LoadTexture("Assets/Images/HardEnemy.png");
         newEnemy.attackTexture = TextureManager::Get().LoadTexture("Assets/Images/HardEnemyAttack.jpg");
         newEnemy.lowHpTexture = TextureManager::Get().LoadTexture("Assets/Images/LowHpOverlay.jpg");
     }

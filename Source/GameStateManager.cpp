@@ -2,7 +2,9 @@
 /*!
 \file GameStateManager.cpp
 \author Joash ng, joash.ng, 2502780
+        Tse Xuan Qi Tristin, tse.x, 2503757
 \par joash.ng@digipen.edu
+     tse.x@digipen.edu
 \date 21/01/2026
 \brief  This file implements the GameStateManager singleton, responsible for managing
         the flow of different game states and their associated load/init/update/draw/
