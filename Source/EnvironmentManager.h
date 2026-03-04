@@ -36,7 +36,7 @@ public:
     void LoadFromConfig(const rapidjson::Document&);
     void Initialize();
     void Update(float dt, const Player& player, float cameraY);
-    void Draw(float camX, float camY, float playerX, float playerY);
+    void Draw(float camX, float camY, PlayerWeapon weapon/* float playerX, float playerY*/);
 
     // Accessors for collision and gameplay systems
     const std::vector<Platform>& GetLevel1Platforms() const { return m_level1Platforms; }

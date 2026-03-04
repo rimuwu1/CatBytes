@@ -167,7 +167,7 @@ void Player_Init(Player& player, const rapidjson::Value& config)
 
 void Player_Update(Player& player, float dt)
 {
-	const float GRAVITY = -1300.0f;
+	const float GRAVITY = -1200.0f;
 
 	// Gravity
 	player.vel.y += GRAVITY * dt;

@@ -16,6 +16,7 @@ Technology is prohibited.
 #pragma once
 
 #include "AEEngine.h"
+#include "Player.h"
 #include <memory>
 #include <rapidjson/document.h>
 
@@ -31,33 +32,63 @@ class HUD
 {
 public:
 	bool IsPauseButtonClicked(float camX, float camY) const;
+
 	void InitFromConfig(const rapidjson::Value& doc);
 	void Update(float /*dt*/, const Player& player);
-	void Draw(MeshManager& meshManager, float camX, float camY) const;
-	bool IsActive() const { return active; }
+	void Draw(MeshManager& meshManager, float camX, float camY, PlayerWeapon weapon) const;
+
+	bool IsActive() const { return hudActive; }
 
 private:
-	// ---- Hearts UI ---- //
-	std::unique_ptr<SpriteSheet> heartsSheet;
-	bool active = true;
-	bool heartsActive = true;
-	float heartsOffsetX = 680.0f;
-	float heartsOffsetY = 410.0f;
-	float heartsWidth = 128.0f;
-	float heartsHeight = 128.0f;
-	int lastHeartsState = -1;
+	bool hudActive = true;
 
-	static int ClampHeartsStateFromPlayer(const Player& player);
-	void ApplyHeartsState(int state);
+	// ---- Hearts UI ---- //
+	struct Hearts
+	{
+		bool active = true;
+
+		float offsetX = 680.0f;
+		float offsetY = 410.0f;
+		float width = 128.0f;
+		float height = 128.0f;
+
+		std::unique_ptr<SpriteSheet> heartsSheet;
+
+		int lastHeartsState = -1;
+	};
+
+	Hearts hearts;
+
+	// ---- Weapon Switch UI ---- //
+	struct WeaponSwitch
+	{
+		bool active = true;
+
+		float offsetX = 650.0f;
+		float offsetY = -420.0f;
+
+		float slotSize = 100.0f;
+		float iconSize = 60.0f;
+
+		AEGfxTexture* slotTexture = nullptr;
+		AEGfxTexture* meleeIcon = nullptr;
+		AEGfxTexture* gunIcon = nullptr;
+
+		bool ready = false;
+	};
+
+	WeaponSwitch weaponSwitch;
 
 	// ---- Progress Bar UI ---- //
 	struct ProgressBar
 	{
 		bool active = false;
+
 		float offsetX = -650.0f;
 		float offsetY = 0.0f;
 		float width = 16.0f;
 		float height = 80.0f;
+
 		float minY = 0.0f;
 		float maxY = 7500.0f;
 
@@ -71,7 +102,8 @@ private:
 		float trackerRadius = 5.0f;
 		int trackerR = 255, trackerG = 255, trackerB = 255;
 
-		std::unique_ptr<SpriteSheet> pbarSheet;
+		//std::unique_ptr<SpriteSheet> pbarSheet;
+		AEGfxTexture* texture = nullptr;
 		bool pbarReady = false;
 	};
 
@@ -86,15 +118,28 @@ private:
 		float offsetY = 420.0f;
 		float width = 32.0f;
 		float height = 32.0f;
-		std::unique_ptr<SpriteSheet> pauseSheet;
+
+		//std::unique_ptr<SpriteSheet> pauseSheet;
+		AEGfxTexture* texture = nullptr;
 		bool ready = false;
 	};
 
 	PauseButton pauseButton;
 
 private:
+	static int ClampHeartsStateFromPlayer(const Player& player);
+	void ApplyHeartsState(int state);
+
 	static float ClampProgressBar(float v);
 	static float SegmentProgress(float y, float a, float b);
+
+	void InitHeartsFromConfig(const rapidjson::Value& uiJson);
+	void InitWeaponSwitchFromConfig(const rapidjson::Value& uiJson);
 	void InitProgressBarFromConfig(const rapidjson::Value& uiJson);
 	void InitPauseButtonFromConfig(const rapidjson::Value& uiJson);
+
+	void DrawHearts(float camX, float camY) const;
+	void DrawWeaponSwitch(float camX, float camY, PlayerWeapon weapon) const;
+	void DrawProgressBar(MeshManager& meshManager, float camX, float camY) const;
+	void DrawPauseButton(float camX, float camY) const;
 };

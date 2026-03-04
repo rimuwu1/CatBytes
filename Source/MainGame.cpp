@@ -239,7 +239,7 @@ void MainGame_Draw()
     AESysFrameStart();
 
     Player& player = ObjectManager::Get().GetPlayer();
-    EnvironmentManager::Get().Draw(globalCam.x, globalCam.y, player.pos.x, player.pos.y);
+    EnvironmentManager::Get().Draw(globalCam.x, globalCam.y, player.weapon);
     ObjectManager::Get().Draw();
     GameSave::Notify_Draw();
     //pop up draw over everything

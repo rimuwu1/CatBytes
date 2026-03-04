@@ -155,7 +155,7 @@ void EnvironmentManager::Update(float dt, const Player& player, float cameraY)
 }
 
 // ------------------------------------------------------------------------
-void EnvironmentManager::Draw(float camX, float camY, float /*playerX*/, float /*playerY*/)
+void EnvironmentManager::Draw(float camX, float camY, PlayerWeapon weapon)
 {
     DrawBackground();
 
@@ -171,7 +171,7 @@ void EnvironmentManager::Draw(float camX, float camY, float /*playerX*/, float /
 
     MeshManager::Get().DrawSquare(0.0f, -350.0f, 1600.0f, 50.0f, 0, 0, 0);
 
-    m_HUD.Draw(MeshManager::Get(), camX, camY);
+    m_HUD.Draw(MeshManager::Get(), camX, camY, weapon);
     LevelIndicator_Draw();
 }
 

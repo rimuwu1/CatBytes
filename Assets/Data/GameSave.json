@@ -101,6 +101,16 @@
           ]
         }
       },
+      "weaponSwitch": {
+        "active": true,
+        "x": 650,
+        "y": -380,
+        "slotSize": 80,
+        "iconSize": 45,
+        "slotTexture": "Assets/Images/weaponSlot.png",
+        "meleeIcon": "Assets/Images/meleeIcon.png",
+        "gunIcon": "Assets/Images/gunIcon.png"
+      },
       "progressBar": {
         "active": true,
         "x": -720,
@@ -119,11 +129,7 @@
           { "endY": 4550 },
           { "endY": 7500 }
         ],
-        "animations": {
-          "file": "Assets/Images/progressBarSheet.png",
-          "rows": 1,
-          "cols": 1
-        }
+        "texture": "Assets/Images/progressBar.png"
       },
       "pauseButton": {
         "active": true,
@@ -131,11 +137,7 @@
         "y": 400,
         "w": 48,
         "h": 48,
-        "animations": {
-          "file": "Assets/Images/pauseButtonSheet.png",
-          "rows": 1,
-          "cols": 1
-        }
+        "texture": "Assets/Images/pauseButton.png"
       }
     },
     "checkpoints": [

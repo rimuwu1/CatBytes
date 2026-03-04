@@ -58,30 +58,30 @@ int HUD::ClampHeartsStateFromPlayer(const Player& player)
 // Applies individual frame to the equivalent heart state
 void HUD::ApplyHeartsState(int state)
 {
-	if (!heartsSheet)
+	if (!hearts.heartsSheet)
 	{
 		return;
 	}
-	if (state == lastHeartsState)
+	if (state == hearts.lastHeartsState)
 	{
 		return;
 	}
 
-	lastHeartsState = state;
+	hearts.lastHeartsState = state;
 
 	switch (state)
 	{
-	case 3: heartsSheet->Play("hp3", true);
+	case 3: hearts.heartsSheet->Play("hp3", true);
 		break;
-	case 2: heartsSheet->Play("hp2", true);
+	case 2: hearts.heartsSheet->Play("hp2", true);
 		break;
-	case 1: heartsSheet->Play("hp1", true);
+	case 1: hearts.heartsSheet->Play("hp1", true);
 		break;
-	default: heartsSheet->Play("hp0", true);
+	default: hearts.heartsSheet->Play("hp0", true);
 		break;
 	}
 
-	heartsSheet->Stop();
+	hearts.heartsSheet->Stop();
 }
 
 // ---- Helper functions for Progress Bar UI ---- //
@@ -111,8 +111,124 @@ float HUD::SegmentProgress(float y, float a, float b)
 	return ClampProgressBar((y - a) / (b - a));
 }
 
-
 // ------------------------------------------------------------------------
+// ---- Hearts config ---- //
+void HUD::InitHeartsFromConfig(const rapidjson::Value& uiJson)
+{
+	if (!uiJson.HasMember("hearts"))
+	{
+		return;
+	}
+
+	const rapidjson::Value& heartsJson = uiJson["hearts"];
+
+	if (heartsJson.HasMember("active"))
+	{
+		hearts.active = heartsJson["active"].GetBool();
+	}
+
+	if (heartsJson.HasMember("x"))
+	{
+		hearts.offsetX = heartsJson["x"].GetFloat();
+	}
+	if (heartsJson.HasMember("y"))
+	{
+		hearts.offsetY = heartsJson["y"].GetFloat();
+	}
+	if (heartsJson.HasMember("w"))
+	{
+		hearts.width = heartsJson["w"].GetFloat();
+	}
+	if (heartsJson.HasMember("h"))
+	{
+		hearts.height = heartsJson["h"].GetFloat();
+	}
+
+	if (heartsJson.HasMember("animations"))
+	{
+		const rapidjson::Value& anims = heartsJson["animations"];
+
+		if (anims.HasMember("file") && anims.HasMember("rows") && anims.HasMember("cols"))
+		{
+			hearts.heartsSheet.reset(new SpriteSheet(
+				anims["file"].GetString(),
+				(u32)anims["rows"].GetInt(),
+				(u32)anims["cols"].GetInt()
+			));
+
+			if (anims.HasMember("clips"))
+			{
+				const rapidjson::Value& clips = anims["clips"];
+				for (rapidjson::SizeType i = 0; i < clips.Size(); i++)
+				{
+					const rapidjson::Value& c = clips[i];
+					hearts.heartsSheet->AddClip(
+						c["name"].GetString(),
+						(u32)c["start"].GetInt(),
+						(u32)c["end"].GetInt(),
+						c["speed"].GetFloat(),
+						c["loop"].GetBool()
+					);
+				}
+			}
+
+			hearts.heartsSheet->Play("hp3", true);
+			hearts.heartsSheet->Stop();
+			hearts.lastHeartsState = 3;
+		}
+	}
+
+}
+
+// ---- Weapon Switch config ---- //
+void HUD::InitWeaponSwitchFromConfig(const rapidjson::Value& uiJson)
+{
+	if (!uiJson.HasMember("weaponSwitch"))
+	{
+		return;
+	}
+
+	const rapidjson::Value& weapon = uiJson["weaponSwitch"];
+
+	if (weapon.HasMember("active"))
+	{
+		weaponSwitch.active = weapon["active"].GetBool();
+	}
+	if (weapon.HasMember("x"))
+	{
+		weaponSwitch.offsetX = weapon["x"].GetFloat();
+	}
+	if (weapon.HasMember("y"))
+	{
+		weaponSwitch.offsetY = weapon["y"].GetFloat();
+	}
+	if (weapon.HasMember("slotSize"))
+	{
+		weaponSwitch.slotSize = weapon["slotSize"].GetFloat();
+	}
+	if (weapon.HasMember("iconSize"))
+	{
+		weaponSwitch.iconSize = weapon["iconSize"].GetFloat();
+	}
+	if (weapon.HasMember("slotTexture"))
+	{
+		weaponSwitch.slotTexture =
+			TextureManager::Get().LoadTexture(weapon["slotTexture"].GetString());
+	}
+	if (weapon.HasMember("meleeIcon"))
+	{
+		weaponSwitch.meleeIcon =
+			TextureManager::Get().LoadTexture(weapon["meleeIcon"].GetString());
+	}
+	if (weapon.HasMember("gunIcon"))
+	{
+		weaponSwitch.gunIcon =
+			TextureManager::Get().LoadTexture(weapon["gunIcon"].GetString());
+	}
+
+	weaponSwitch.ready = true;
+}
+
 // ---- ProgressBar config ---- //
 void HUD::InitProgressBarFromConfig(const rapidjson::Value& uiJson)
 {
@@ -122,6 +238,7 @@ void HUD::InitProgressBarFromConfig(const rapidjson::Value& uiJson)
 	}
 
 	const rapidjson::Value& pbar = uiJson["progressBar"];
+
 
 	if (pbar.HasMember("active"))
 	{
@@ -192,25 +309,10 @@ void HUD::InitProgressBarFromConfig(const rapidjson::Value& uiJson)
 
 	progressBar.segmentEndY[2] = progressBar.maxY;
 
-	if (pbar.HasMember("animations"))
+	if (pbar.HasMember("texture"))
 	{
-		const rapidjson::Value& anims = pbar["animations"];
-
-		if (anims.HasMember("file") && anims.HasMember("rows") && anims.HasMember("cols"))
-		{
-			progressBar.pbarSheet.reset(new SpriteSheet(
-				anims["file"].GetString(),
-				(u32)anims["rows"].GetInt(),
-				(u32)anims["cols"].GetInt()
-			));
-
-			progressBar.pbarSheet->AddClip("frame", 0, 0, 0.0f, true);
-			progressBar.pbarSheet->Play("frame", true);
-			progressBar.pbarSheet->Stop();
-
-			progressBar.pbarReady = true;
-		}
-
+		progressBar.texture = TextureManager::Get().LoadTexture(pbar["texture"].GetString());
+		progressBar.pbarReady = true;
 	}
 
 }
@@ -246,25 +348,10 @@ void HUD::InitPauseButtonFromConfig(const rapidjson::Value& uiJson)
 		pauseButton.height = pauseBtn["h"].GetFloat();
 	}
 
-	if (pauseBtn.HasMember("animations"))
+	if (pauseBtn.HasMember("texture"))
 	{
-		const rapidjson::Value& anims = pauseBtn["animations"];
-
-		if (anims.HasMember("file") && anims.HasMember("rows") && anims.HasMember("cols"))
-		{
-			pauseButton.pauseSheet.reset(new SpriteSheet(
-				anims["file"].GetString(),
-				(u32)anims["rows"].GetInt(),
-				(u32)anims["cols"].GetInt()
-			));
-
-			pauseButton.pauseSheet->AddClip("frame", 0, 0, 0.0f, true);
-			pauseButton.pauseSheet->Play("frame", true);
-			pauseButton.pauseSheet->Stop();
-
-			pauseButton.ready = true;
-		}
-
+		pauseButton.texture = TextureManager::Get().LoadTexture(pauseBtn["texture"].GetString());
+		pauseButton.ready = true;
 	}
 
 }
@@ -272,17 +359,10 @@ void HUD::InitPauseButtonFromConfig(const rapidjson::Value& uiJson)
 // ---- HUD config ---- //
 void HUD::InitFromConfig(const rapidjson::Value& doc)
 {
-	active = true;
+	hudActive = true;
 
 	// Hearts UI
-	heartsActive = true;
-	//heartsOffsetX = 680.0f;
-	//heartsOffsetY = 410.0f;
-	//heartsWidth = 128.0f;
-	//heartsHeight = 128.0f;
-
-	//heartsSheet.reset();
-	//lastHeartsState = -1;
+	hearts.active = true;
 
 	// Progress Bar UI
 	progressBar = ProgressBar();
@@ -294,82 +374,22 @@ void HUD::InitFromConfig(const rapidjson::Value& doc)
 	}
 	const rapidjson::Value& uiJson = doc["ui"];
 
-	if (!uiJson.HasMember("hearts"))
-	{
-		return;
-	}
-	const rapidjson::Value& heartsJson = uiJson["hearts"];
-
-	if (heartsJson.HasMember("active"))
-	{
-		heartsActive = heartsJson["active"].GetBool();
-	}
-
-	if (heartsJson.HasMember("x"))
-	{
-		heartsOffsetX = heartsJson["x"].GetFloat();
-	}
-	if (heartsJson.HasMember("y"))
-	{
-		heartsOffsetY = heartsJson["y"].GetFloat();
-	}
-	if (heartsJson.HasMember("w"))
-	{
-		heartsWidth = heartsJson["w"].GetFloat();
-	}
-	if (heartsJson.HasMember("h"))
-	{
-		heartsHeight = heartsJson["h"].GetFloat();
-	}
-
-	if (heartsJson.HasMember("animations"))
-	{
-		const rapidjson::Value& anims = heartsJson["animations"];
-
-		if (anims.HasMember("file") && anims.HasMember("rows") && anims.HasMember("cols"))
-		{
-			heartsSheet.reset(new SpriteSheet(
-				anims["file"].GetString(),
-				(u32)anims["rows"].GetInt(),
-				(u32)anims["cols"].GetInt()
-			));
-
-			if (anims.HasMember("clips"))
-			{
-				const rapidjson::Value& clips = anims["clips"];
-				for (rapidjson::SizeType i = 0; i < clips.Size(); i++)
-				{
-					const rapidjson::Value& c = clips[i];
-					heartsSheet->AddClip(
-						c["name"].GetString(),
-						(u32)c["start"].GetInt(),
-						(u32)c["end"].GetInt(),
-						c["speed"].GetFloat(),
-						c["loop"].GetBool()
-					);
-				}
-			}
-
-			heartsSheet->Play("hp3", true);
-			heartsSheet->Stop();
-			lastHeartsState = 3;
-		}
-	}
-
+	InitHeartsFromConfig(uiJson);
+	InitWeaponSwitchFromConfig(uiJson);
 	InitProgressBarFromConfig(uiJson);
 	InitPauseButtonFromConfig(uiJson);
 }
 
 void HUD::Update(float /*dt*/, const Player& player)
 {
-	if (!active)
+	if (!hudActive)
 	{
 		return;
 	}
 
 	pbarPlayerY = player.pos.y;
 
-	if (heartsActive && heartsSheet)
+	if (hearts.active && hearts.heartsSheet)
 	{
 		const int state = ClampHeartsStateFromPlayer(player);
 		ApplyHeartsState(state);
@@ -377,22 +397,103 @@ void HUD::Update(float /*dt*/, const Player& player)
 
 }
 
-void HUD::Draw(MeshManager& meshManager, float camX, float camY) const
+// ------------------------------------------------------------------------
+// ---- Draw HUD ---- //
+void HUD::Draw(MeshManager& meshManager, float camX, float camY, PlayerWeapon weapon) const
 {
-	if (!active)
+	if (!hudActive)
 	{
 		return;
 	}
 
-	// ---- Hearts ---- //
-	if (heartsActive && heartsSheet)
-	{
-		const float x = camX + heartsOffsetX;
-		const float y = camY + heartsOffsetY;
+	DrawHearts(camX, camY);
+	DrawWeaponSwitch(camX, camY, weapon);
+	DrawProgressBar(meshManager, camX, camY);
+	DrawPauseButton(camX, camY);
+}
 
-		MeshManager::Get().DrawSpriteSheet(*heartsSheet, x, y, heartsWidth, heartsHeight, 1.0f);
+// ---- Draw Hearts ---- //
+void HUD::DrawHearts(float camX, float camY) const
+{
+	if (hearts.active && hearts.heartsSheet)
+	{
+		const float x = camX + hearts.offsetX;
+		const float y = camY + hearts.offsetY;
+
+		MeshManager::Get().DrawSpriteSheet(*hearts.heartsSheet, x, y, hearts.width, hearts.height, 1.0f);
+	}
+}
+
+// ---- Draw Weapon Switch ---- //
+void HUD::DrawWeaponSwitch(float camX, float camY, PlayerWeapon weapon) const
+{
+	if (weaponSwitch.active && weaponSwitch.ready)
+	{
+		const float hx = camX + weaponSwitch.offsetX;
+		const float hy = camY + weaponSwitch.offsetY;
+
+		const float slotSize = weaponSwitch.slotSize;
+		const float iconSize = weaponSwitch.iconSize;
+
+		const float meleeX = hx - slotSize;
+		const float gunX = hx;
+
+		// Highlight selected weapon
+		if (weapon == PlayerWeapon::MELEE)
+		{
+			MeshManager::Get().DrawSquare(
+				meleeX, hy, 
+				slotSize + 8.0f, slotSize + 8.0f, 
+				1.0, 0.8f, 0.2f
+			);
+		}
+		if (weapon == PlayerWeapon::GUN)
+		{
+			MeshManager::Get().DrawSquare(
+				gunX, hy,
+				slotSize + 8.0f, slotSize + 8.0f,
+				1.0, 0.8f, 0.2f
+			);
+		}
+
+		// Draw weapon slots
+		if (weaponSwitch.slotTexture)
+		{
+			MeshManager::Get().DrawTexturedSquare(
+				weaponSwitch.slotTexture, 
+				meleeX, hy, slotSize, slotSize
+			);
+
+			MeshManager::Get().DrawTexturedSquare(
+				weaponSwitch.slotTexture, 
+				gunX, hy, slotSize, slotSize
+			);
+		}
+
+		// Draw weapon icons
+		if (weaponSwitch.meleeIcon)
+		{
+			MeshManager::Get().DrawTexturedSquare(
+				weaponSwitch.meleeIcon,
+				meleeX, hy, iconSize, iconSize
+			);
+		}
+
+		if (weaponSwitch.gunIcon)
+		{
+			MeshManager::Get().DrawTexturedSquare(
+				weaponSwitch.gunIcon,
+				gunX, hy, iconSize, iconSize
+			);
+		}
+
 	}
 
+}
+
+// ---- Draw Progress Bar ---- //
+void HUD::DrawProgressBar(MeshManager& meshManager, float camX, float camY) const
+{
 	// ---- Progress Bar ---- //
 	if (progressBar.active)
 	{
@@ -443,10 +544,10 @@ void HUD::Draw(MeshManager& meshManager, float camX, float camY) const
 		}
 
 		// Draw progress bar
-		if (progressBar.pbarReady && progressBar.pbarSheet)
+		if (progressBar.pbarReady && progressBar.texture)
 		{
-			MeshManager::Get().DrawSpriteSheet(
-				*progressBar.pbarSheet, hx, hy, pbarWidth, pbarHeight, 1.0f
+			MeshManager::Get().DrawTexturedSquare(
+				progressBar.texture, hx, hy, pbarWidth, pbarHeight
 			);
 		}
 
@@ -454,22 +555,25 @@ void HUD::Draw(MeshManager& meshManager, float camX, float camY) const
 		meshManager.DrawCircle(hx, trackerY, progressBar.trackerRadius * 2.0f,
 			progressBar.trackerR, progressBar.trackerG, progressBar.trackerB);
 	}
+}
 
+// ---- Draw Pause Button ---- //
+void HUD::DrawPauseButton(float camX, float camY) const
+{
 	// ---- Pause Button ---- //
-	if (pauseButton.active && pauseButton.ready && pauseButton.pauseSheet)
+	if (pauseButton.active && pauseButton.ready && pauseButton.texture)
 	{
-		MeshManager::Get().DrawSpriteSheet(
-			*pauseButton.pauseSheet,
+		MeshManager::Get().DrawTexturedSquare(
+			pauseButton.texture,
 			camX + pauseButton.offsetX, camY + pauseButton.offsetY,
 			pauseButton.width, pauseButton.height, 1.0f
 		);
 	}
-
 }
 
 bool HUD::IsPauseButtonClicked(float camX, float camY) const
 {
-	if (!active || !pauseButton.active || !pauseButton.ready || !pauseButton.pauseSheet)
+	if (!hudActive || !pauseButton.active || !pauseButton.ready || !pauseButton.texture)
 		return false;
 
 	if (!AEInputCheckTriggered(AEVK_LBUTTON))
