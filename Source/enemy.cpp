@@ -20,6 +20,7 @@ Technology is prohibited.
 #include "enemy.h"
 #include "ObjectManager.h"
 #include "MeshManager.h"
+#include "PhysicsManager.h"
 #include "Player.h"
 #include <fstream>
 #include <iostream>
@@ -100,6 +101,7 @@ void Enemy_Init(Enemy& enemy, const rapidjson::Value& config) {
         enemy.bulletRange = 1600.0f;
 
     enemy.shootTimer = enemy.shootCooldown;
+    enemy.vel = { 0.0f, 0.0f };
     enemy.direction = 1;
 
     if (enemy.hitPoints <= 0.0f) {
@@ -167,6 +169,7 @@ void HardEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
     }
 
     enemy.shootCooldown = 0.0f; // no shooting
+    enemy.vel = { 0.0f, 0.0f };
     enemy.direction = 1;
     if (enemy.hitPoints <= 0.0f) {
         enemy.hitPoints = 0.0f;
@@ -233,6 +236,7 @@ void BossEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
     }
 
     enemy.shootCooldown = 0.0f;
+    enemy.vel = { 0.0f, 0.0f };
     enemy.direction = 1;
     if (enemy.hitPoints <= 0.0f) {
         enemy.hitPoints = 0.0f;
@@ -265,7 +269,10 @@ void Enemy_Update(Enemy& enemy, float dt) {
         }
     }
 
-    // Patrol movement
+    enemy.vel.x = enemy.direction * enemy.moveSpeed;
+    PhysicsManager::Get().Integrate(enemy.pos, enemy.vel, dt);
+
+    // Patrol movement (TODO, now still hardcoded)
     enemy.pos.x += enemy.direction * enemy.moveSpeed * dt;
     // Patrol bounds (could be from config, but keep hardcoded for now)
     float patrolMinX = -400.0f, patrolMaxX = 400.0f;
@@ -283,6 +290,8 @@ void HardEnemy_Update(Enemy& enemy, float dt) {
         }
         return;
     }
+    enemy.vel.x = enemy.direction * enemy.moveSpeed;
+    PhysicsManager::Get().Integrate(enemy.pos, enemy.vel, dt);
     enemy.pos.x += enemy.direction * enemy.moveSpeed * dt;
     float patrolMinX = -400.0f, patrolMaxX = 400.0f;
     if (enemy.pos.x >= patrolMaxX) enemy.direction = -1;
@@ -301,6 +310,8 @@ void BossEnemy_Update(Enemy& enemy, float dt) {
         if (enemy.hitStunTimer <= 0.0f) enemy.hitStunTimer = 0.0f;
         return;
     }
+    enemy.vel.x = enemy.direction * enemy.moveSpeed;
+    PhysicsManager::Get().Integrate(enemy.pos, enemy.vel, dt);
     enemy.pos.x += enemy.direction * enemy.moveSpeed * dt;
     float patrolMinX = -400.0f, patrolMaxX = 400.0f;
     if (enemy.pos.x >= patrolMaxX) enemy.direction = -1;

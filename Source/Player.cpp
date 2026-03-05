@@ -33,6 +33,8 @@ Technology is prohibited.
 #include "SpriteSheet.h"
 #include "AudioManager.h"
 #include "Audio.h"
+#include "DebugManager.h"
+#include "PhysicsManager.h"
 
 static AEAudio s_GunAttackSound{};
 static AEAudio s_MeleeAttackSound{};
@@ -167,10 +169,13 @@ void Player_Init(Player& player, const rapidjson::Value& config)
 
 void Player_Update(Player& player, float dt)
 {
-	const float GRAVITY = -1300.0f;
+	PhysicsManager& physics = PhysicsManager::Get();
 
-	// Gravity
-	player.vel.y += GRAVITY * dt;
+	// Apply gravity (skipped while grounded so velocity does not accumulate)
+	physics.ApplyGravity(player.vel.y, static_cast<bool>(player.grounded), dt);
+
+	// Cap fall speed to terminal velocity
+	physics.ClampFallSpeed(player.vel.y);
 
 	// hurt state
 	if (player.isHurt) {
@@ -180,9 +185,9 @@ void Player_Update(Player& player, float dt)
 			player.isHurt = false;
 		}
 	}
-	// Integrate velocity to position
-	player.pos.x += player.vel.x * dt;
-	player.pos.y += player.vel.y * dt;
+
+	// Euler-integrate velocity -> position
+	physics.Integrate(player.pos, player.vel, dt);
 
 	//For hit text
 	//if (player.hitTextTimer > 0.0f)
@@ -279,12 +284,12 @@ void Player_Update(Player& player, float dt)
 	if (player.slashSprite) {
 		player.slashSprite->Update(dt);
 	}
-	
+
 
 	// --- Determine walking and jumping state ---
 	bool isWalking = (fabs(player.vel.x) > 0.1f) && player.grounded;
 	// (you can adjust threshold as needed)
-	bool isInAir = !player.grounded; 
+	bool isInAir = !player.grounded;
 
 	// --- Detect weapon switch ---
 	//if (player.weapon != player.previousWeapon) {
@@ -294,6 +299,11 @@ void Player_Update(Player& player, float dt)
 	if (!player.weaponSwitchInProgress && player.weapon != player.previousWeapon) {
 		player.weaponSwitchTriggered = true;
 		player.weaponSwitchInProgress = true;
+	}
+
+	//unpause to prevent being stuck on frame
+	if (player.spriteSheet->IsPaused()) {
+		player.spriteSheet->SetPaused(false);
 	}
 
 	// --- Decide desired clip ---
@@ -345,7 +355,7 @@ void Player_Update(Player& player, float dt)
 	// handle weapon switch animation (reworked)
 	if (player.weaponSwitchTriggered) {
 		// if player jumps during weapon switch, cancel the switch animation
-		if (isInAir && player.vel.y > 0) {  
+		if (isInAir && player.vel.y > 0) {
 			player.weaponSwitchTriggered = false;
 			player.weaponSwitchInProgress = false;
 		}
@@ -374,7 +384,7 @@ void Player_Update(Player& player, float dt)
 
 			// force restart only if we just entered this clip
 			if (!desiredClip.empty() && player.spriteSheet->GetCurrentClip() != desiredClip) {
-				forceRestart = true; 
+				forceRestart = true;
 			}
 
 			// if the switch clip has finished playing, clear the trigger and update previousWeapon
@@ -387,173 +397,173 @@ void Player_Update(Player& player, float dt)
 			}
 		}
 	}
-		// hurt animation 
-		if (player.isHurt && desiredClip.empty()) { 
-			desiredClip = "hurt";
-			if (!player.wasHurt) forceRestart = true;
-		}
-		// gun attack override everything except hurt
-		else if (player.weapon == PlayerWeapon::GUN && player.fireTimer > 0.0f && desiredClip.empty())
-		{
-			desiredClip = "gunShoot";
+	// hurt animation 
+	if (player.isHurt && desiredClip.empty()) {
+		desiredClip = "hurt";
+		if (!player.wasHurt) forceRestart = true;
+	}
+	// gun attack override everything except hurt
+	else if (player.weapon == PlayerWeapon::GUN && player.fireTimer > 0.0f && desiredClip.empty())
+	{
+		desiredClip = "gunShoot";
 
-			// restart when firing starts
-			if (fabs(player.fireTimer - player.fireCooldown) < 0.001f)
-				forceRestart = true;
+		// restart when firing starts
+		if (fabs(player.fireTimer - player.fireCooldown) < 0.001f)
+			forceRestart = true;
 
-			player.playingTailAnim = false;
-			player.idleLoopCount = 0;
-		}
-		// melee aerial attacks (up/down) animate while jumping
-		else if (isInAir && player.weapon == PlayerWeapon::MELEE && player.isAttacking && desiredClip.empty()) {
-			if (player.slashDirection == SlashDirection::UP)
-				desiredClip = "clawAttackUP";
-			else if (player.slashDirection == SlashDirection::DOWN)
-				desiredClip = "clawAttackDOWN";
-			else
-				desiredClip = "clawAttack"; // horizontal aerial attack
+		player.playingTailAnim = false;
+		player.idleLoopCount = 0;
+	}
+	// melee aerial attacks (up/down) animate while jumping
+	else if (isInAir && player.weapon == PlayerWeapon::MELEE && player.isAttacking && desiredClip.empty()) {
+		if (player.slashDirection == SlashDirection::UP)
+			desiredClip = "clawAttackUP";
+		else if (player.slashDirection == SlashDirection::DOWN)
+			desiredClip = "clawAttackDOWN";
+		else
+			desiredClip = "clawAttack"; // horizontal aerial attack
 
-			if (!player.wasAttacking) forceRestart = true;
-		}
-		// jump animation when in air
-		else if (isInAir && !player.weaponSwitchTriggered) {
-			// check if moving sideways (A or D held)
-			bool movingSideways = AEInputCheckCurr('A') || AEInputCheckCurr('D');
-			if (movingSideways) {
-				desiredClip = "jumpSIDE";
-				// if already playing jumpSIDE and reached the end, freeze it
-				if (player.spriteSheet->GetCurrentClip() == "jumpSIDE") {
-					u32 currentFrame = player.spriteSheet->GetCurrentFrame();
-					// frame 17 is the last frame of jumpSIDE (start: 15, end: 17)
-					if (currentFrame >= 17) {
-						player.spriteSheet->SetPaused(true);
-					}
-					else {
-						forceRestart = false;
-					}
+		if (!player.wasAttacking) forceRestart = true;
+	}
+	// jump animation when in air
+	else if (isInAir && !player.weaponSwitchTriggered) {
+		// check if moving sideways (A or D held)
+		bool movingSideways = AEInputCheckCurr('A') || AEInputCheckCurr('D');
+		if (movingSideways) {
+			desiredClip = "jumpSIDE";
+			// if already playing jumpSIDE and reached the end, freeze it
+			if (player.spriteSheet->GetCurrentClip() == "jumpSIDE") {
+				u32 currentFrame = player.spriteSheet->GetCurrentFrame();
+				// frame 17 is the last frame of jumpSIDE (start: 15, end: 17)
+				if (currentFrame >= 17) {
+					player.spriteSheet->SetPaused(true);
 				}
 				else {
-					forceRestart = true;
+					forceRestart = false;
 				}
 			}
 			else {
-				desiredClip = "jumpFRONT";
-				// if already playing jumpFRONT and reached the end, freeze it
-				if (player.spriteSheet->GetCurrentClip() == "jumpFRONT") {
-					u32 currentFrame = player.spriteSheet->GetCurrentFrame();
-					// frame 12 is the last frame of jumpFRONT (start: 10, end: 12)
-					if (currentFrame >= 12) {
-						forceRestart = false;
-						player.spriteSheet->SetPaused(true);
-					}
-					else {
-						forceRestart = false;
-					}
-				}
-				else {
-					forceRestart = true;
-				}
+				forceRestart = true;
 			}
 		}
-		if (desiredClip.empty()) {
-			// when landing, unpause the spritesheet
-			if (player.spriteSheet->IsPaused()) {
-				player.spriteSheet->SetPaused(false);
-			}
-			// normal state based on weapon and actions
-			switch (player.weapon) {
-			case PlayerWeapon::NONE:
-				if (isWalking) {
-					desiredClip = "walk";
-					player.playingTailAnim = false;
-					player.idleLoopCount = 0;
+		else {
+			desiredClip = "jumpFRONT";
+			// if already playing jumpFRONT and reached the end, freeze it
+			if (player.spriteSheet->GetCurrentClip() == "jumpFRONT") {
+				u32 currentFrame = player.spriteSheet->GetCurrentFrame();
+				// frame 12 is the last frame of jumpFRONT (start: 10, end: 12)
+				if (currentFrame >= 12) {
+					forceRestart = false;
+					player.spriteSheet->SetPaused(true);
 				}
 				else {
-					// idle tail animation logic
-					if (player.playingTailAnim) {
-						desiredClip = "idle2";
-						// check if tail animation finished (non-looping clip stops)
-						if (player.spriteSheet->GetCurrentClip() == "idle2" && 
-							!player.spriteSheet->IsPlaying()) {
-							player.playingTailAnim = false;
-							player.idleLoopCount = 0;
-							player.idleLoopsBeforeTail = 5 + (rand() % 6); // new random count
-							desiredClip = "idle";
+					forceRestart = false;
+				}
+			}
+			else {
+				forceRestart = true;
+			}
+		}
+	}
+	if (desiredClip.empty()) {
+		// when landing, unpause the spritesheet
+		if (player.spriteSheet->IsPaused()) {
+			player.spriteSheet->SetPaused(false);
+		}
+		// normal state based on weapon and actions
+		switch (player.weapon) {
+		case PlayerWeapon::NONE:
+			if (isWalking) {
+				desiredClip = "walk";
+				player.playingTailAnim = false;
+				player.idleLoopCount = 0;
+			}
+			else {
+				// idle tail animation logic
+				if (player.playingTailAnim) {
+					desiredClip = "idle2";
+					// check if tail animation finished (non-looping clip stops)
+					if (player.spriteSheet->GetCurrentClip() == "idle2" &&
+						!player.spriteSheet->IsPlaying()) {
+						player.playingTailAnim = false;
+						player.idleLoopCount = 0;
+						player.idleLoopsBeforeTail = 5 + (rand() % 6); // new random count
+						desiredClip = "idle";
+						forceRestart = true;
+					}
+				}
+				else {
+					desiredClip = "idle";
+					// track frame changes to detect loop completion
+					u32 lastFrame = player.lastFrame;
+					u32 currentFrame = player.spriteSheet->GetCurrentFrame();
+					// if frame wrapped back to start (loop completed)
+					if (currentFrame < lastFrame && player.spriteSheet->GetCurrentClip() == "idle") {
+						player.idleLoopCount++;
+						// trigger tail animation after random loops
+						if (player.idleLoopCount >= player.idleLoopsBeforeTail) {
+							player.playingTailAnim = true;
+							desiredClip = "idle2";
 							forceRestart = true;
 						}
 					}
-					else {
-						desiredClip = "idle";
-						// track frame changes to detect loop completion
-						u32 lastFrame = player.lastFrame;
-						u32 currentFrame = player.spriteSheet->GetCurrentFrame();
-						// if frame wrapped back to start (loop completed)
-						if (currentFrame < lastFrame && player.spriteSheet->GetCurrentClip() == "idle") {
-							player.idleLoopCount++;
-							// trigger tail animation after random loops
-							if (player.idleLoopCount >= player.idleLoopsBeforeTail) {
-								player.playingTailAnim = true;
-								desiredClip = "idle2";
-								forceRestart = true;
-							}
-						}
-						player.lastFrame = currentFrame;
-					}
+					player.lastFrame = currentFrame;
 				}
-				break;
-
-			case PlayerWeapon::MELEE:
-				// auto-end attack when animation finishes
-				if (player.isAttacking && !player.spriteSheet->IsPlaying()) {
-					player.isAttacking = false;
-				}
-
-				if (player.isAttacking) {
-					// choose attack animation based on slash direction
-					if (player.slashDirection == SlashDirection::UP)
-						desiredClip = "clawAttackUP";
-					else
-						desiredClip = "clawAttack"; // horizontal
-					if (!player.wasAttacking) forceRestart = true;
-					player.playingTailAnim = false;
-					player.idleLoopCount = 0;
-				}
-				else if (isWalking) {
-					desiredClip = "clawWalk";
-					player.playingTailAnim = false;
-					player.idleLoopCount = 0;
-				}
-				else {
-					desiredClip = "clawIdle";
-					player.playingTailAnim = false;
-					player.idleLoopCount = 0;
-				}
-				break;
-
-			case PlayerWeapon::GUN:
-				if (player.fireTimer > 0.0f) {
-					desiredClip = "gunShoot";
-
-					if (fabs(player.fireTimer - player.fireCooldown) < 0.001f)
-						forceRestart = true;
-
-					player.playingTailAnim = false;
-					player.idleLoopCount = 0;
-				}
-				else if (isWalking) {
-					desiredClip = "gunWalk";
-					player.playingTailAnim = false;
-					player.idleLoopCount = 0;
-				}
-				else {
-					desiredClip = "gunIdle";
-					player.playingTailAnim = false;
-					player.idleLoopCount = 0;
-				}
-
-				break;
 			}
+			break;
+
+		case PlayerWeapon::MELEE:
+			// auto-end attack when animation finishes
+			if (player.isAttacking && !player.spriteSheet->IsPlaying()) {
+				player.isAttacking = false;
+			}
+
+			if (player.isAttacking) {
+				// choose attack animation based on slash direction
+				if (player.slashDirection == SlashDirection::UP)
+					desiredClip = "clawAttackUP";
+				else
+					desiredClip = "clawAttack"; // horizontal
+				if (!player.wasAttacking) forceRestart = true;
+				player.playingTailAnim = false;
+				player.idleLoopCount = 0;
+			}
+			else if (isWalking) {
+				desiredClip = "clawWalk";
+				player.playingTailAnim = false;
+				player.idleLoopCount = 0;
+			}
+			else {
+				desiredClip = "clawIdle";
+				player.playingTailAnim = false;
+				player.idleLoopCount = 0;
+			}
+			break;
+
+		case PlayerWeapon::GUN:
+			if (player.fireTimer > 0.0f) {
+				desiredClip = "gunShoot";
+
+				if (fabs(player.fireTimer - player.fireCooldown) < 0.001f)
+					forceRestart = true;
+
+				player.playingTailAnim = false;
+				player.idleLoopCount = 0;
+			}
+			else if (isWalking) {
+				desiredClip = "gunWalk";
+				player.playingTailAnim = false;
+				player.idleLoopCount = 0;
+			}
+			else {
+				desiredClip = "gunIdle";
+				player.playingTailAnim = false;
+				player.idleLoopCount = 0;
+			}
+
+			break;
 		}
+	}
 
 	// Play the clip and update animation
 	if (player.spriteSheet && !desiredClip.empty()) {
@@ -609,7 +619,7 @@ void Player_Draw(const Player& player)
 			1.0f
 		);
 	}
-	
+
 
 
 	//melee weapon visual parameters
@@ -650,7 +660,7 @@ void Player_Draw(const Player& player)
 			scaleX,
 			slashHeight,
 			1.0f,           // opacity
-			rotation 
+			rotation
 		);
 	}
 }
@@ -660,61 +670,62 @@ void Player_ApplyDamage(Player& player, float damage)
 {
 	if (player.hp <= 0.0f)
 		return;
+	if (!DebugManager::Get().IsGodModeActive()) {
+		player.hp -= damage;
 
-	player.hp -= damage;
+		// trigger hurt animation
+		player.isHurt = true;
+		player.hurtTimer = player.spriteSheet->GetClipTotalDuration("hurt");
 
-	// trigger hurt animation
-	player.isHurt = true;
-	player.hurtTimer = player.spriteSheet->GetClipTotalDuration("hurt");
+		//show hit text for 0.5 seconds
+		//player.hitTextTimer = 0.5f;
 
-	//show hit text for 0.5 seconds
-	//player.hitTextTimer = 0.5f;
-
-	//TEMPORARY death condition
-	if (player.hp <= 0.0f)
-	{
-		player.hp = 0.0f;
-		//trigger death: return to main menu
-		GameStateManager::Get().next = GS_MAINMENU;
+		//TEMPORARY death condition
+		if (player.hp <= 0.0f)
+		{
+			player.hp = 0.0f;
+			//trigger death: return to main menu
+			GameStateManager::Get().next = GS_MAINMENU;
+		}
 	}
 }
 
- void Player_CheckBulletCollisions(Player& player, Enemy& enemy)
- {
-	 printf("CheckBulletCollisions called, enemy alive=%d, hp=%.1f\n", enemy.isAlive, enemy.hitPoints);
-	 for (auto& b : player.bullets)
-	 {
-		 if (!b.active) continue;
+void Player_CheckBulletCollisions(Player& player, Enemy& enemy)
+{
+	printf("CheckBulletCollisions called, enemy alive=%d, hp=%.1f\n", enemy.isAlive, enemy.hitPoints);
+	for (auto& b : player.bullets)
+	{
+		if (!b.active) continue;
 
-		 printf("  bullet active at (%.1f, %.1f), enemy at (%.1f, %.1f)\n",
-			 b.pos.x, b.pos.y, enemy.pos.x, enemy.pos.y);
+		printf("  bullet active at (%.1f, %.1f), enemy at (%.1f, %.1f)\n",
+			b.pos.x, b.pos.y, enemy.pos.x, enemy.pos.y);
 
-		 if (!enemy.isAlive) continue;
+		if (!enemy.isAlive) continue;
 
-		 float halfW_b = b.width * 0.5f;
-		 float halfH_b = b.height * 0.5f;
-		 float halfW_e = enemy.width * 0.5f;
-		 float halfH_e = enemy.height * 0.5f;
+		float halfW_b = b.width * 0.5f;
+		float halfH_b = b.height * 0.5f;
+		float halfW_e = enemy.width * 0.5f;
+		float halfH_e = enemy.height * 0.5f;
 
-		 bool overlapX = fabs(b.pos.x - enemy.pos.x) < (halfW_b + halfW_e);
-		 bool overlapY = fabs(b.pos.y - enemy.pos.y) < (halfH_b + halfH_e);
+		bool overlapX = fabs(b.pos.x - enemy.pos.x) < (halfW_b + halfW_e);
+		bool overlapY = fabs(b.pos.y - enemy.pos.y) < (halfH_b + halfH_e);
 
-		 printf("  overlapX=%d overlapY=%d | distX=%.1f need<%.1f | distY=%.1f need<%.1f\n",
-			 overlapX, overlapY,
-			 fabs(b.pos.x - enemy.pos.x), (halfW_b + halfW_e),
-			 fabs(b.pos.y - enemy.pos.y), (halfH_b + halfH_e));
+		printf("  overlapX=%d overlapY=%d | distX=%.1f need<%.1f | distY=%.1f need<%.1f\n",
+			overlapX, overlapY,
+			fabs(b.pos.x - enemy.pos.x), (halfW_b + halfW_e),
+			fabs(b.pos.y - enemy.pos.y), (halfH_b + halfH_e));
 
-		 if (overlapX && overlapY)
-		 {
-			 printf("  HIT! damage=%.1f\n", b.damage);
-			 enemy.hitPoints -= b.damage;
-			 b.active = false;
+		if (overlapX && overlapY)
+		{
+			printf("  HIT! damage=%.1f\n", b.damage);
+			enemy.hitPoints -= b.damage;
+			b.active = false;
 
-			 if (enemy.hitPoints <= 0.0f)
-				 enemy.isAlive = 0;
-		 }
-	 }
- }
+			if (enemy.hitPoints <= 0.0f)
+				enemy.isAlive = 0;
+		}
+	}
+}
 
 // ----------------------------------------------------------------------------
 // Releases all dynamically allocated resources used by the player

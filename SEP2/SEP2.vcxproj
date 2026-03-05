@@ -18,6 +18,7 @@
     <ClCompile Include="..\Source\CollisionManager.cpp" />
     <ClCompile Include="..\Source\Controls.cpp" />
     <ClCompile Include="..\Source\Credits.cpp" />
+    <ClCompile Include="..\Source\DebugManager.cpp" />
     <ClCompile Include="..\Source\enemy.cpp" />
     <ClCompile Include="..\Source\EnemyBullet.cpp" />
     <ClCompile Include="..\Source\EnvironmentManager.cpp" />
@@ -32,6 +33,7 @@
     <ClCompile Include="..\Source\MeshManager.cpp" />
     <ClCompile Include="..\Source\ObjectManager.cpp" />
     <ClCompile Include="..\Source\pch.cpp" />
+    <ClCompile Include="..\Source\PhysicsManager.cpp" />
     <ClCompile Include="..\Source\Platforms.cpp" />
     <ClCompile Include="..\Source\Player.cpp" />
     <ClCompile Include="..\Source\MainMenu.cpp" />
@@ -52,6 +54,7 @@
     <ClInclude Include="..\Source\CollisionManager.h" />
     <ClInclude Include="..\Source\Controls.h" />
     <ClInclude Include="..\Source\Credits.h" />
+    <ClInclude Include="..\Source\DebugManager.h" />
     <ClInclude Include="..\Source\enemy.h" />
     <ClInclude Include="..\Source\EnemyBullet.h" />
     <ClInclude Include="..\Source\EnvironmentManager.h" />
@@ -67,6 +70,7 @@
     <ClInclude Include="..\Source\MeshManager.h" />
     <ClInclude Include="..\Source\ObjectManager.h" />
     <ClInclude Include="..\Source\pch.h" />
+    <ClInclude Include="..\Source\PhysicsManager.h" />
     <ClInclude Include="..\Source\Platforms.h" />
     <ClInclude Include="..\Source\Player.h" />
     <ClInclude Include="..\Source\PlayerBullet.h" />
@@ -130,7 +134,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>false</ConformanceMode>
       <AdditionalIncludeDirectories>$(SolutionDir)Extern\rapidjson\include</AdditionalIncludeDirectories>
-      <LanguageStandard>Default</LanguageStandard>
+      <LanguageStandard>stdcpp14</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -153,7 +157,7 @@ xcopy "$(SolutionDir)Extern\AlphaEngine\lib\fmodL.dll" "$(OutDir)" /s /r /y /q</
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>false</ConformanceMode>
       <AdditionalIncludeDirectories>$(SolutionDir)Extern\rapidjson\include</AdditionalIncludeDirectories>
-      <LanguageStandard>Default</LanguageStandard>
+      <LanguageStandard>stdcpp14</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

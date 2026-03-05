@@ -44,6 +44,7 @@ Technology is prohibited.
 #include "AudioManager.h"
 #include "Audio.h"
 #include "UIManager.h"
+#include "DebugManager.h"
 
 AEAudio g_GameMusic{};
 bool g_GameMusicPlaying = false;
@@ -120,6 +121,7 @@ void MainGame_Initialize()
     UIManager::Get().Reset();
     ParseConfigFromDisk();
     ApplyConfigToManagers();
+    DebugManager::Get().Initialize();
     //Stop main menu music
     AudioManager::Get().StopAudio(g_MainMenuMusic);
     //Start game music (looped)
@@ -135,10 +137,12 @@ void MainGame_Update()
     if (UIManager::Get().Update(globalCam.x, globalCam.y)) {
         return;
     }
-    if(AEInputCheckTriggered(AEVK_ESCAPE)){ //moved from input cos update pause is tweaking
+    
+    float dt = (float)AEFrameRateControllerGetFrameTime();
+    if (DebugManager::Get().Update(dt)) return;
+    if (AEInputCheckTriggered(AEVK_ESCAPE)) { //moved from input cos update pause is tweaking
         UIManager::Get().ShowPause();
     }
-    float dt = (float)AEFrameRateControllerGetFrameTime();
 
     Player& player = ObjectManager::Get().GetPlayer();
     auto& enemies = ObjectManager::Get().GetAllEnemies();
@@ -239,10 +243,12 @@ void MainGame_Draw()
     AESysFrameStart();
 
     Player& player = ObjectManager::Get().GetPlayer();
-    EnvironmentManager::Get().Draw(globalCam.x, globalCam.y, player.weapon);
+    EnvironmentManager::Get().Draw(globalCam.x, globalCam.y, player.weapon, 900.0f * 0.5f);
     ObjectManager::Get().Draw();
     GameSave::Notify_Draw();
     //pop up draw over everything
+    DebugManager::Get().DrawWorldOverlays(globalCam.x, globalCam.y);
+    DebugManager::Get().Draw(globalCam.x, globalCam.y);
     UIManager::Get().Draw(globalCam.x, globalCam.y);
     std::cout << "MainGame:Draw" << std::endl;
     AESysFrameEnd();

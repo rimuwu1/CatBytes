@@ -39,6 +39,7 @@ struct Enemy
     AEGfxTexture* lowHpTexture = nullptr;
 
     AEVec2 pos = { 0.0f, 0.0f };
+    AEVec2 vel = { 0.0f, 0.0f };
     float width = 0.0f;
     float height = 0.0f;
 
@@ -75,5 +76,5 @@ void BossEnemy_Update(Enemy& enemy, float dt);
 void Enemy_Draw(const Enemy& enemy);
 void Enemy_SetGraphics(Enemy& enemy, AEGfxTexture* normalTex, AEGfxTexture* attackTex = nullptr, AEGfxTexture* lowHpTex = nullptr);
 void Enemy_OnHit(Enemy& enemy, float damage);
-void Enemy_Free(Enemy& enemy);
+//void Enemy_Free(Enemy& enemy);
 void HardEnemy_OnCollision(Enemy& enemy, Player& player);

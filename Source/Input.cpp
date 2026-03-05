@@ -26,6 +26,7 @@ Technology is prohibited.
 #include "Audio.h"
 #include "UIManager.h"
 #include "ObjectManager.h"
+#include "PhysicsManager.h"
 
 static AEAudio s_JumpSound{};
 static bool s_JumpSoundLoaded = false;
@@ -67,28 +68,23 @@ void Input_Handle() {
 	// Process player movement input
 	{
 		Player& player = ObjectManager::Get().GetPlayer();
-		const float MOVE_SPEED = 400.0f;
-		const float JUMP_FORCE = 650.0f;
+		PhysicsManager& physics = PhysicsManager::Get();
+		const float MOVE_SPEED = PhysicsManager::Get().GetMoveSpeed();
 
-		// Reset horizontal velocity each frame; input determines movement
-		player.vel.x = 0.0f;
+		// Horizontal velocity is fully input-driven each frame (no drag/friction needed)
+		const bool moveLeft = AEInputCheckCurr('A') != 0;
+		const bool moveRight = AEInputCheckCurr('D') != 0;
+		player.vel.x = physics.ComputeHorizontalVelocity(moveLeft, moveRight, MOVE_SPEED);
 
-		// Horizontal movement (A/D)
-		if (AEInputCheckCurr('A')) {
-			player.vel.x -= MOVE_SPEED;
-		}
-		if (AEInputCheckCurr('D')) {
-			player.vel.x += MOVE_SPEED;
-		}
-
-		// Jumping (Space) - only when grounded
-		if (player.grounded && AEInputCheckTriggered(AEVK_SPACE))
+		// Jumping (Space) — PhysicsManager validates grounded state internally
+		if (AEInputCheckTriggered(AEVK_SPACE))
 		{
-			player.vel.y = JUMP_FORCE;
-			player.grounded = 0;
-
-			//play jump sound
-			AudioManager::Get().PlayAudio(s_JumpSound, false);
+			bool grounded = static_cast<bool>(player.grounded);
+			if (physics.TryJump(player.vel.y, grounded))
+			{
+				player.grounded = grounded ? 1 : 0;
+				AudioManager::Get().PlayAudio(s_JumpSound, false);
+			}
 		}
 
 		//Weapon equip / unequip toggle

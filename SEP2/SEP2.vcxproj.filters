@@ -111,6 +111,12 @@
     <ClCompile Include="..\Source\UIManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Source\DebugManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\PhysicsManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Source\pch.h">
@@ -207,6 +213,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\Source\UIManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\DebugManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\PhysicsManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

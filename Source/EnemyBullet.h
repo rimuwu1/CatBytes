@@ -17,6 +17,9 @@ Technology is prohibited.
 #include "pch.h"
 #include "AEEngine.h" //for AEVec2
 
+const float BULLET_WIDTH = 30.0f;
+const float BULLET_HEIGHT = 10.0f;
+
 struct EnemyBullet
 {
     AEVec2 pos;
@@ -26,6 +29,8 @@ struct EnemyBullet
     float damage;
     float maxRange;
     bool active;
+    float width = BULLET_WIDTH;
+    float height = BULLET_HEIGHT;
 };
 
 void EnemyBullet_Draw(const EnemyBullet& bullet);

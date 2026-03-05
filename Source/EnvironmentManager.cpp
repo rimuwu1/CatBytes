@@ -90,7 +90,7 @@ void EnvironmentManager::LoadFromConfig(const rapidjson::Document& doc)
             m_level1Buttons.push_back(btn);
         }
     }
-    
+
     // ---- Obstacles (level_1 only) ----
     if (doc.HasMember("level_1") && doc["level_1"].HasMember("obstacles")) {
         m_level1Obstacles.clear();
@@ -104,7 +104,7 @@ void EnvironmentManager::LoadFromConfig(const rapidjson::Document& doc)
             m_level1Obstacles.push_back(obs);
         }
     }
-    
+
     // ---- Level 2 buttons ----
     if (doc.HasMember("level_2") && doc["level_2"].HasMember("buttons")) {
         m_level2Buttons.clear();
@@ -119,7 +119,7 @@ void EnvironmentManager::LoadFromConfig(const rapidjson::Document& doc)
             m_level2Buttons.push_back(btn);
         }
     }
-    
+
     // ---- Obstacles (level_2 only) ----
     if (doc.HasMember("level_2") && doc["level_2"].HasMember("obstacles")) {
         m_level2Obstacles.clear();
@@ -176,7 +176,7 @@ void EnvironmentManager::LoadFromConfig(const rapidjson::Document& doc)
             m_level3Obstacles.push_back(obs);
         }
     }
-    
+
     // ---- Checkpoints ----
     if (doc.HasMember("checkpoints")) {
         m_checkpoints.clear();
@@ -196,7 +196,7 @@ void EnvironmentManager::LoadFromConfig(const rapidjson::Document& doc)
 }
 
 // ------------------------------------------------------------------------
-// Initialize  — textures and one-time setup only, safe to call once at startup
+// Initialize textures and one-time setup only, safe to call once at startup
 // ------------------------------------------------------------------------
 void EnvironmentManager::Initialize()
 {
@@ -229,26 +229,64 @@ void EnvironmentManager::Update(float dt, const Player& player, float cameraY)
 }
 
 // ------------------------------------------------------------------------
-void EnvironmentManager::Draw(float camX, float camY, PlayerWeapon weapon)
+void EnvironmentManager::Draw(float camX, float camY, PlayerWeapon weapon, float screenHalfH)
 {
     DrawBackground();
 
-    Platforms_Draw(m_level1Platforms, m_leftTex, m_midTex, m_rightTex);
-    Platforms_Draw(m_level2Platforms, m_leftTex, m_midTex, m_rightTex);
-    Platforms_Draw(m_level3Platforms, m_leftTex, m_midTex, m_rightTex);
-    Platforms_Draw(m_bossPlatforms, m_leftTex, m_midTex, m_rightTex);
-    Platforms_Draw(m_wallPlatforms, m_leftTex, m_midTex, m_rightTex);
-	Platforms_Draw(m_level3WallPlatforms, m_leftTex, m_midTex, m_rightTex);
+    // Only draw objects whose AABB overlaps the camera frustum (plus a margin).
+    // This prevents all 4 levels worth of platforms being submitted every frame.
+    const float CULL_MARGIN = 200.0f;
+    const float cullHalf = screenHalfH + CULL_MARGIN;
 
-    PlatformButton_Draw(m_level1Buttons, m_level1Platforms);
-    PlatformButton_Draw(m_level2Buttons, m_level2Platforms);
-	PlatformButton_Draw(m_level3Buttons, m_level3Platforms);
+    auto inView = [&](float objY, float halfH) -> bool {
+        return (objY + halfH) >= (camY - cullHalf) &&
+            (objY - halfH) <= (camY + cullHalf);
+        };
 
-    PlatformsObstacle_Draw(m_level1Obstacles);
-    PlatformsObstacle_Draw(m_level2Obstacles);
-    PlatformsObstacle_Draw(m_level3Obstacles);
+    auto DrawPlatformsCulled = [&](const std::vector<Platform>& platforms) {
+        for (const auto& p : platforms) {
+            if (!p.active) continue;
+            if (inView(p.y, p.h * 0.5f))
+                Platforms_Draw({ p }, m_leftTex, m_midTex, m_rightTex);
+        }
+        };
 
-    CheckpointDraw(m_checkpoints);
+    auto DrawObstaclesCulled = [&](const std::vector<PlatformObstacle>& obstacles) {
+        for (const auto& o : obstacles)
+            if (inView(o.y, o.h * 0.5f))
+                PlatformsObstacle_Draw({ o });
+        };
+
+    auto DrawCheckpointsCulled = [&](const std::vector<Checkpoint>& cps) {
+        for (const auto& c : cps)
+            if (inView(c.y, c.h * 0.5f))
+                CheckpointDraw({ c });
+        };
+
+    // Buttons carry their own y/h so we can cull them independently.
+    auto DrawButtonsCulled = [&](const std::vector<PlatformButton>& buttons,
+        const std::vector<Platform>& platforms) {
+            for (const auto& b : buttons)
+                if (inView(b.y, b.h * 0.5f))
+                    PlatformButton_Draw({ b }, platforms);
+        };
+
+    DrawPlatformsCulled(m_level1Platforms);
+    DrawPlatformsCulled(m_level2Platforms);
+    DrawPlatformsCulled(m_level3Platforms);
+    DrawPlatformsCulled(m_bossPlatforms);
+    DrawPlatformsCulled(m_wallPlatforms);
+    DrawPlatformsCulled(m_level3WallPlatforms);
+
+    DrawButtonsCulled(m_level1Buttons, m_level1Platforms);
+    DrawButtonsCulled(m_level2Buttons, m_level2Platforms);
+    DrawButtonsCulled(m_level3Buttons, m_level3Platforms);
+
+    DrawObstaclesCulled(m_level1Obstacles);
+    DrawObstaclesCulled(m_level2Obstacles);
+    DrawObstaclesCulled(m_level3Obstacles);
+
+    DrawCheckpointsCulled(m_checkpoints);
 
     MeshManager::Get().DrawSquare(0.0f, -350.0f, 1600.0f, 50.0f, 0, 0, 0);
 

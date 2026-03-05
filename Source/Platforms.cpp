@@ -30,7 +30,7 @@ Technology is prohibited.
 
 void Platforms_Draw(const std::vector<Platform>& platforms, AEGfxTexture* leftTex, AEGfxTexture* midTex, AEGfxTexture* rightTex) {
 
-	static SpriteSheet hoverAnim("Assets/Images/HoverSheet.png", 1, 4, 0, 0.5f);
+	static SpriteSheet hoverAnim("Assets/Images/HoverSheet.png", 1, 4, 0, 2.0f);
 	
 	const float capWidth = 32.0f;   // width of left/right cap in world units
 	
