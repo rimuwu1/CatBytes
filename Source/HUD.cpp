@@ -441,18 +441,18 @@ void HUD::DrawWeaponSwitch(float camX, float camY, PlayerWeapon weapon) const
 		// Highlight selected weapon
 		if (weapon == PlayerWeapon::MELEE)
 		{
-			MeshManager::Get().DrawSquare(
+			MeshManager::Get().DrawCircle(
 				meleeX, hy, 
-				slotSize + 8.0f, slotSize + 8.0f, 
-				1.0, 0.8f, 0.2f
+				slotSize,
+				230, 206, 154
 			);
 		}
 		if (weapon == PlayerWeapon::GUN)
 		{
-			MeshManager::Get().DrawSquare(
+			MeshManager::Get().DrawCircle(
 				gunX, hy,
-				slotSize + 8.0f, slotSize + 8.0f,
-				1.0, 0.8f, 0.2f
+				slotSize,
+				230, 206, 154
 			);
 		}
 
