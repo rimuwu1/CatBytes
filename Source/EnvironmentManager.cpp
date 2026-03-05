@@ -2,7 +2,9 @@
 /*!
 \file       EnvironmentManager.cpp
 \author     Joash ng, joash.ng, 2502780
+            Peh Yu Xuan, Lovette, p.yuxuanlovette, 2502079
 \par        joash.ng@digipen.edu
+            p.yuxuanlovette@digipen.edu
 \date       Feb 26 2026
 \brief		This file handles all the environment stuff like platforms obstacles and walls.
 
@@ -74,6 +76,21 @@ void EnvironmentManager::LoadFromConfig(const rapidjson::Document& doc)
         }
     }
 
+    // ---- Level 1 buttons ----
+    if (doc.HasMember("level_1") && doc["level_1"].HasMember("buttons")) {
+        m_level1Buttons.clear();
+        for (const auto& b : doc["level_1"]["buttons"].GetArray()) {
+            PlatformButton btn{};
+            btn.x = b["x"].GetFloat();
+            btn.y = b["y"].GetFloat();
+            btn.w = b["width"].GetFloat();
+            btn.h = b["height"].GetFloat();
+            btn.platformIndex = b["platformIndex"].GetInt();
+            btn.wasPressed = false;
+            m_level1Buttons.push_back(btn);
+        }
+    }
+    
     // ---- Obstacles (level_1 only) ----
     if (doc.HasMember("level_1") && doc["level_1"].HasMember("obstacles")) {
         m_level1Obstacles.clear();
@@ -87,7 +104,7 @@ void EnvironmentManager::LoadFromConfig(const rapidjson::Document& doc)
             m_level1Obstacles.push_back(obs);
         }
     }
-
+    
     // ---- Level 2 buttons ----
     if (doc.HasMember("level_2") && doc["level_2"].HasMember("buttons")) {
         m_level2Buttons.clear();
@@ -102,7 +119,64 @@ void EnvironmentManager::LoadFromConfig(const rapidjson::Document& doc)
             m_level2Buttons.push_back(btn);
         }
     }
+    
+    // ---- Obstacles (level_2 only) ----
+    if (doc.HasMember("level_2") && doc["level_2"].HasMember("obstacles")) {
+        m_level2Obstacles.clear();
+        for (const auto& o : doc["level_2"]["obstacles"].GetArray()) {
+            PlatformObstacle obs{};
+            obs.x = o["x"].GetFloat();
+            obs.y = o["y"].GetFloat();
+            obs.w = o["width"].GetFloat();
+            obs.h = o["height"].GetFloat();
+            obs.r = o.HasMember("rotation") ? o["rotation"].GetFloat() : 0.0f;
+            m_level2Obstacles.push_back(obs);
+        }
+    }
 
+    // ---- Walls (level_3 only) ----
+    if (doc.HasMember("level_3") && doc["level_3"].HasMember("walls")) {
+        m_level3WallPlatforms.clear();
+        for (const auto& w : doc["level_3"]["walls"].GetArray()) {
+            Platform wall{};
+            wall.x = w["x"].GetFloat();
+            wall.y = w["y"].GetFloat();
+            wall.w = w["width"].GetFloat();
+            wall.h = w["height"].GetFloat();
+            wall.active = true;   // walls are always active
+            m_level3WallPlatforms.push_back(wall);
+        }
+    }
+
+    // ---- Level 3 buttons ----
+    if (doc.HasMember("level_3") && doc["level_3"].HasMember("buttons")) {
+        m_level3Buttons.clear();
+        for (const auto& b : doc["level_3"]["buttons"].GetArray()) {
+            PlatformButton btn{};
+            btn.x = b["x"].GetFloat();
+            btn.y = b["y"].GetFloat();
+            btn.w = b["width"].GetFloat();
+            btn.h = b["height"].GetFloat();
+            btn.platformIndex = b["platformIndex"].GetInt();
+            btn.wasPressed = false;
+            m_level3Buttons.push_back(btn);
+        }
+    }
+
+    // ---- Obstacles (level_3 only) ----
+    if (doc.HasMember("level_3") && doc["level_3"].HasMember("obstacles")) {
+        m_level3Obstacles.clear();
+        for (const auto& o : doc["level_3"]["obstacles"].GetArray()) {
+            PlatformObstacle obs{};
+            obs.x = o["x"].GetFloat();
+            obs.y = o["y"].GetFloat();
+            obs.w = o["width"].GetFloat();
+            obs.h = o["height"].GetFloat();
+            obs.r = o.HasMember("rotation") ? o["rotation"].GetFloat() : 0.0f;
+            m_level3Obstacles.push_back(obs);
+        }
+    }
+    
     // ---- Checkpoints ----
     if (doc.HasMember("checkpoints")) {
         m_checkpoints.clear();
@@ -164,9 +238,16 @@ void EnvironmentManager::Draw(float camX, float camY, PlayerWeapon weapon)
     Platforms_Draw(m_level3Platforms, m_leftTex, m_midTex, m_rightTex);
     Platforms_Draw(m_bossPlatforms, m_leftTex, m_midTex, m_rightTex);
     Platforms_Draw(m_wallPlatforms, m_leftTex, m_midTex, m_rightTex);
+	Platforms_Draw(m_level3WallPlatforms, m_leftTex, m_midTex, m_rightTex);
 
+    PlatformButton_Draw(m_level1Buttons, m_level1Platforms);
     PlatformButton_Draw(m_level2Buttons, m_level2Platforms);
+	PlatformButton_Draw(m_level3Buttons, m_level3Platforms);
+
     PlatformsObstacle_Draw(m_level1Obstacles);
+    PlatformsObstacle_Draw(m_level2Obstacles);
+    PlatformsObstacle_Draw(m_level3Obstacles);
+
     CheckpointDraw(m_checkpoints);
 
     MeshManager::Get().DrawSquare(0.0f, -350.0f, 1600.0f, 50.0f, 0, 0, 0);
@@ -258,7 +339,12 @@ void EnvironmentManager::Clear()
     m_level3Platforms.clear();
     m_bossPlatforms.clear();
     m_wallPlatforms.clear();
+    m_level3WallPlatforms.clear();
     m_level1Obstacles.clear();
+    m_level2Obstacles.clear();
+    m_level3Obstacles.clear();
     m_checkpoints.clear();
+    m_level1Buttons.clear();
     m_level2Buttons.clear();
+    m_level3Buttons.clear();
 }

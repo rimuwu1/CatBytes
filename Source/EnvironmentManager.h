@@ -3,8 +3,10 @@
 \file       EnvironmentManager.h
 \author     Joash ng, joash.ng, 2502780
             Kerwin Wong Jia Jie, kerwinjiajie.wong, 2502740
+            Peh Yu Xuan, Lovette, p.yuxuanlovette, 2502079
 \par        joash.ng@digipen.edu
             kerwinjiajie.wong@digipen.edu
+            p.yuxuanlovette@digipen.edu
 \date       Feb 26 2026
 \brief		This file declares rhe Environmanager Namespace which handles all the environment stuff like platforms obstacles and walls through a singleton instance.
 
@@ -40,12 +42,22 @@ public:
 
     // Accessors for collision and gameplay systems
     const std::vector<Platform>& GetLevel1Platforms() const { return m_level1Platforms; }
+    const std::vector<PlatformButton>& GetLevel1Buttons() const { return m_level1Buttons; }
+    const std::vector<PlatformObstacle>& GetLevel1Obstacles() const { return m_level1Obstacles; }
+
     const std::vector<Platform>& GetLevel2Platforms() const { return m_level2Platforms; }
     const std::vector<PlatformButton>& GetLevel2Buttons() const { return m_level2Buttons; }
+    const std::vector<PlatformObstacle>& GetLevel2Obstacles() const { return m_level2Obstacles; }
+
     const std::vector<Platform>& GetLevel3Platforms() const { return m_level3Platforms; }
+	const std::vector<PlatformButton>& GetLevel3Buttons() const { return m_level3Buttons; }
+	const std::vector<PlatformObstacle>& GetLevel3Obstacles() const { return m_level3Obstacles; }
+
     const std::vector<Platform>& GetBossPlatforms()  const { return m_bossPlatforms; }
+    
     const std::vector<Platform>& GetWallPlatforms()  const { return m_wallPlatforms; }
-    const std::vector<PlatformObstacle>& GetObstacles() const { return m_level1Obstacles; }
+	const std::vector<Platform>& GetLevel3WallPlatforms() const { return m_level3WallPlatforms; }
+     
     const std::vector<Checkpoint>& GetCheckpoints() const { return m_checkpoints; }
 
     // Non?const accessors for vectors that may be modified (add 3 and 4 here when needed)
@@ -92,9 +104,14 @@ private:
     std::vector<Platform>         m_level3Platforms;
     std::vector<Platform>         m_bossPlatforms;
     std::vector<Platform>         m_wallPlatforms;
+    std::vector<Platform>         m_level3WallPlatforms;
     std::vector<PlatformObstacle> m_level1Obstacles;
+    std::vector<PlatformObstacle> m_level2Obstacles;
+	std::vector<PlatformObstacle> m_level3Obstacles;
     std::vector<Checkpoint>       m_checkpoints;
+    std::vector<PlatformButton>   m_level1Buttons;
     std::vector<PlatformButton>   m_level2Buttons;
+	std::vector<PlatformButton>   m_level3Buttons;
 
     bool m_checkpointSaved = false;       // replaces static local in MainGame
     bool m_saveRequested = false;         // internal save request flag
@@ -104,7 +121,7 @@ private:
 
     // Background constants
     static constexpr int BACKGROUND_SECTIONS = 4;
-    float m_sectionHeights[BACKGROUND_SECTIONS] = { 1900.0f, 4550.0f, 7500.0f, 10500.0f };
+    float m_sectionHeights[BACKGROUND_SECTIONS] = { 1900.0f, 4550.0f, 9600.0f, 10600.0f };
 
     struct Colour { float r, g, b, a; };
     Colour m_backgroundColours[BACKGROUND_SECTIONS] = {

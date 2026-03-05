@@ -8,7 +8,7 @@
 			s.huimin@digipen.edu
 			joash.ng@digipen.edu
 \date       January 26 2026
-\brief
+\brief		This file contains the structs & function declarations needed for the platforms.
 
 Copyright (C) 2026 DigiPen Institute of Technology.
 Reproduction or disclosure of this file or its contents

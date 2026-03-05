@@ -4,7 +4,7 @@
 \author     Peh Yu Xuan, Lovette, p.yuxuanlovette, 2502079
 \par        p.yuxuanlovette@digipen.edu
 \date       January 25 2026
-\brief
+\brief		This file contains the function declarations needed for the level indicators.
 
 Copyright (C) 2026 DigiPen Institute of Technology.
 Reproduction or disclosure of this file or its contents

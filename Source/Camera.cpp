@@ -1,10 +1,12 @@
 /* Start Header ************************************************************************/
 /*!
-\file Camera.cpp
+\file	Camera.cpp
 \author Kerwin Wong Jia Jie, kerwinjiajie.wong, 2502740
-\par kerwinjiajie.wong@digipen.edu
-\date January, 25, 2026
-\brief This file contains the function definitions for Camera Handling, which is used
+		Peh Yu Xuan, Lovette, p.yuxuanlovette, 2502079 
+\par	kerwinjiajie.wong@digipen.edu
+		p.yuxuanlovette@digipen.edu
+\date	January, 25, 2026
+\brief	This file contains the function definitions for Camera Handling, which is used
 		to control the view position in the game.
 
 Copyright (C) 2026 DigiPen Institute of Technology.

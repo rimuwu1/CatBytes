@@ -32,13 +32,13 @@ float sectionHeight[backgroundSections]{
 	1900.0f,
 
 	// level 2 height limit
-	4550.0f,
+	4650.0f,
 
 	// level 3 height limit
-	7500.0f,	
+	9600.0f,	
 
 	// level 4 height limit
-	10500.0f		
+	10600.0f		
 	
 };
 

@@ -225,7 +225,9 @@ namespace CollisionManager
             env.GetBossPlatforms());
 
         // Obstacles – store result
-        results.obstacleHit = HandleObstacles(player, env.GetObstacles());
+        results.obstacleHit = HandleObstacles(player, env.GetLevel1Obstacles());
+        results.obstacleHit = HandleObstacles(player, env.GetLevel2Obstacles());
+        results.obstacleHit = HandleObstacles(player, env.GetLevel3Obstacles());
 
         // Walls
         HandleWalls(player, env.GetWallPlatforms());
