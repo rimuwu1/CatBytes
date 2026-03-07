@@ -37,10 +37,13 @@ void Camera_FollowPlayer(Camera& cam, float /*playerX*/, float playerY, float dt
 
 	float targetY = playerY + verticalOffset;
 
-	if (targetY > cam.y)
-	{
-		cam.y += (targetY - cam.y) * followSpeed * dt;
-	}
+	//// Fixed camera y positon
+	//if (targetY > cam.y)
+	//{
+	//	cam.y += (targetY - cam.y) * followSpeed * dt;
+	//}
+
+	cam.y += (targetY - cam.y) * followSpeed * dt;
 
 	const float ground = -350.0f;
 	const float groundHeight = 50.0f;
