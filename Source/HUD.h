@@ -34,7 +34,7 @@ public:
 	bool IsPauseButtonClicked(float camX, float camY) const;
 
 	void InitFromConfig(const rapidjson::Value& doc);
-	void Update(float dt, const Player& player, PlayerWeapon weapon);
+	void Update(float /*dt*/, const Player& player, PlayerWeapon weapon);
 	void Draw(MeshManager& meshManager, float camX, float camY, PlayerWeapon weapon) const;
 
 	bool IsActive() const { return hudActive; }

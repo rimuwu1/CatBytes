@@ -500,7 +500,7 @@ void HUD::InitPauseButtonFromConfig(const rapidjson::Value& uiJson)
 
 // ------------------------------------------------------------------------
 // ---- Update HUD ---- //
-void HUD::Update(float dt, const Player& player, PlayerWeapon weapon)
+void HUD::Update(float /*dt*/, const Player& player, PlayerWeapon weapon)
 {
 	if (!hudActive)
 	{
