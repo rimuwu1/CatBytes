@@ -211,7 +211,7 @@ namespace CollisionManager
 
         player.grounded = 0; // assume player is not grounded at start of collision check - prevent player from jumping mid-air
 
-        // Ground (fixed values – could become env constants)
+        // Ground (fixed values could become env constants)
         HandleGround(player, -350.0f, 50.0f, playerPrevY);
 
         // Platforms (standard falling check)
@@ -224,7 +224,7 @@ namespace CollisionManager
             env.GetLevel3Platforms(),
             env.GetBossPlatforms());
 
-        // Obstacles – store result
+        // Obstacles store result
         results.obstacleHit = HandleObstacles(player, env.GetLevel1Obstacles());
         results.obstacleHit = HandleObstacles(player, env.GetLevel2Obstacles());
         results.obstacleHit = HandleObstacles(player, env.GetLevel3Obstacles());
@@ -232,15 +232,185 @@ namespace CollisionManager
         // Walls
         HandleWalls(player, env.GetWallPlatforms());
 
-        // Checkpoints – store result
+        // Checkpoints store result
         results.checkpointHit = HandleCheckpoints(player, env.GetCheckpoints());
 
-        // Buttons – these modify env's buttons and level2 platforms
+        // Buttons these modify env's buttons and level2 platforms
         HandleButtons(player, env.GetLevel2Buttons(), env.GetLevel2Platforms());
 
         // Enemy collisions
         HandlePlayerEnemyCollisions(player, enemies);
         HandleEnemyBulletPlayerCollisions(enemyBullets, player);
+        HandlePlayerBulletEnemyCollisions(player, enemies);
+        HandlePlayerMeleeEnemyCollisions(player, enemies);
+
+        return results;
+    }
+
+    // ------------------------------------------------------------------------
+    // Spatial grid versions - only check objects in nearby cells
+    // ------------------------------------------------------------------------
+    void HandlePlatformsSpatial(Player& player, float playerPrevY, const SpatialGrid& grid)
+    {
+        if (player.vel.y <= 0.0f)
+        {
+            std::vector<const Platform*> nearby;
+            grid.GetNearbyPlatforms(player.pos.y, player.height, nearby);
+
+            for (const Platform* pf : nearby)
+            {
+                if (!pf->active) continue;
+                float pfLeft = pf->x - pf->w * 0.5f;
+                float pfRight = pf->x + pf->w * 0.5f;
+                float pfTop = pf->y + pf->h * 0.5f;
+                float playerLeft = player.pos.x - player.width * 0.5f;
+                float playerRight = player.pos.x + player.width * 0.5f;
+                float playerPrevBottom = playerPrevY - player.height * 0.5f;
+                float playerCurrBottom = player.pos.y - player.height * 0.5f;
+
+                bool overlapX = (playerRight >= pfLeft) && (playerLeft <= pfRight);
+                bool landedThisFrame = (playerPrevBottom >= pfTop) && (playerCurrBottom <= pfTop);
+
+                if (overlapX && landedThisFrame)
+                {
+                    player.pos.y = pfTop + player.height * 0.5f;
+                    player.vel.y = 0.0f;
+                    player.grounded = 1;
+                    return;
+                }
+            }
+        }
+    }
+
+    bool HandleObstaclesSpatial(Player& player, const SpatialGrid& grid)
+    {
+        std::vector<const PlatformObstacle*> nearby;
+        grid.GetNearbyObstacles(player.pos.y, player.height, nearby);
+
+        for (const PlatformObstacle* obs : nearby)
+        {
+            float obsLeft = obs->x - obs->w * 0.5f;
+            float obsRight = obs->x + obs->w * 0.5f;
+            float obsTop = obs->y + obs->h * 0.5f;
+            float obsBottom = obs->y - obs->h * 0.5f;
+            float playerLeft = player.pos.x - player.width * 0.5f;
+            float playerRight = player.pos.x + player.width * 0.5f;
+            float playerTop = player.pos.y + player.height * 0.5f;
+            float playerBottom = player.pos.y - player.height * 0.5f;
+
+            bool overlapX = (playerRight >= obsLeft) && (playerLeft <= obsRight);
+            bool overlapY = (playerTop >= obsBottom) && (playerBottom <= obsTop);
+
+            if (overlapX && overlapY)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    bool HandleCheckpointsSpatial(Player& player, const SpatialGrid& grid)
+    {
+        std::vector<const Checkpoint*> nearby;
+        grid.GetNearbyCheckpoints(player.pos.y, player.height, nearby);
+
+        for (const Checkpoint* cp : nearby)
+        {
+            float cpLeft = cp->x - cp->w * 0.5f;
+            float cpRight = cp->x + cp->w * 0.5f;
+            float cpTop = cp->y + cp->h * 0.5f;
+            float cpBottom = cp->y - cp->h * 0.5f;
+            float playerLeft = player.pos.x - player.width * 0.5f;
+            float playerRight = player.pos.x + player.width * 0.5f;
+            float playerTop = player.pos.y + player.height * 0.5f;
+            float playerBottom = player.pos.y - player.height * 0.5f;
+
+            bool overlapX = (playerRight >= cpLeft) && (playerLeft <= cpRight);
+            bool overlapY = (playerTop >= cpBottom) && (playerBottom <= cpTop);
+
+            if (overlapX && overlapY)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    void HandlePlayerEnemyCollisionsSpatial(Player& player, const SpatialGrid& grid)
+    {
+        std::vector<Enemy*> nearby;
+        grid.GetNearbyEnemies(player.pos.y, player.height, nearby);
+
+        for (auto* enemy : nearby)
+        {
+            if (!enemy->isAlive) continue;
+            if (enemy->type == EnemyType::Hard || enemy->type == EnemyType::Boss)
+            {
+                float playerHalfW = player.width * 0.5f;
+                float playerHalfH = player.height * 0.5f;
+                float enemyHalfW = enemy->width * 0.5f;
+                float enemyHalfH = enemy->height * 0.5f;
+                bool overlapX = fabs(enemy->pos.x - player.pos.x) < (enemyHalfW + playerHalfW);
+                bool overlapY = fabs(enemy->pos.y - player.pos.y) < (enemyHalfH + playerHalfH);
+                if (overlapX && overlapY)
+                {
+                    HardEnemy_OnCollision(*enemy, player);
+                }
+            }
+        }
+    }
+
+    void HandleEnemyBulletPlayerCollisionsSpatial(Player& player, const SpatialGrid& grid)
+    {
+        std::vector<EnemyBullet*> nearbyBullets;
+        grid.GetNearbyBullets(player.pos.y, player.height, nearbyBullets);
+
+        for (auto* bullet : nearbyBullets)
+        {
+            if (!bullet->active) continue;
+            float bulletHalfW = 20.0f;
+            float bulletHalfH = 20.0f;
+            float playerHalfW = player.width * 0.5f;
+            float playerHalfH = player.height * 0.5f;
+            bool overlapX = fabs(bullet->pos.x - player.pos.x) < (bulletHalfW + playerHalfW);
+            bool overlapY = fabs(bullet->pos.y - player.pos.y) < (bulletHalfH + playerHalfH);
+            if (overlapX && overlapY)
+            {
+                Player_ApplyDamage(player, bullet->damage);
+                bullet->active = false;
+            }
+        }
+    }
+
+    CollisionResults HandleAllCollisionsSpatial(
+        Player& player,
+        float playerPrevY,
+        EnvironmentManager& env,
+        std::vector<Enemy>& enemies)
+    {
+        CollisionResults results = { false, false };
+
+        player.grounded = 0;
+
+        HandleGround(player, -350.0f, 50.0f, playerPrevY);
+
+        const SpatialGrid& grid = env.GetSpatialGrid();
+        HandlePlatformsSpatial(player, playerPrevY, grid);
+
+        HandleLandingOnAnyPlatform(player, playerPrevY,
+            env.GetLevel1Platforms(),
+            env.GetLevel2Platforms(),
+            env.GetLevel3Platforms(),
+            env.GetBossPlatforms());
+
+        results.obstacleHit = HandleObstaclesSpatial(player, grid);
+        results.checkpointHit = HandleCheckpointsSpatial(player, grid);
+
+        HandleWalls(player, env.GetWallPlatforms());
+        HandleButtons(player, env.GetLevel2Buttons(), env.GetLevel2Platforms());
+
+        HandlePlayerEnemyCollisionsSpatial(player, grid);
+        HandleEnemyBulletPlayerCollisionsSpatial(player, grid);
         HandlePlayerBulletEnemyCollisions(player, enemies);
         HandlePlayerMeleeEnemyCollisions(player, enemies);
 

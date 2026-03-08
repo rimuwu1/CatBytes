@@ -19,8 +19,11 @@ Technology is prohibited.
 #include "MeshManager.h"
 #include "TextureManager.h"
 #include "LevelIndicator.h"
-#include "FileManager.h"
+#include "GameSaveManager.h"
 #include "Player.h"
+#include "enemy.h"
+#include "EnemyBullet.h"
+#include "ObjectManager.h"
 #include "rapidjson/document.h"
 #include "AEEngine.h"
 

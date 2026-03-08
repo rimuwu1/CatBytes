@@ -57,7 +57,7 @@
     <ClCompile Include="..\Source\EnemyBullet.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Source\FileManager.cpp">
+    <ClCompile Include="..\Source\GameSaveManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Source\Camera.cpp">
@@ -117,6 +117,9 @@
     <ClCompile Include="..\Source\PhysicsManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Source\SpatialGrid.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Source\pch.h">
@@ -161,7 +164,7 @@
     <ClInclude Include="..\Source\EnemyBullet.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\Source\FileManager.h">
+    <ClInclude Include="..\Source\GameSaveManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\Source\Camera.h">
@@ -219,6 +222,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\Source\PhysicsManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\SpatialGrid.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -20,7 +20,7 @@ Technology is prohibited.
 #include "AEEngine.h"
 #include <vector>
 #include "MainGame.h"
-#include "FileManager.h"
+#include "GameSaveManager.h"
 #include "EnvironmentManager.h"
 #include "AudioManager.h"
 #include "Audio.h"
@@ -113,8 +113,8 @@ void Input_Handle() {
 			EnvironmentManager::Get().RequestSave();
 		}
 		if (AEInputCheckTriggered('M')) {
-			GameSave::ResetSave(); //Debug feature for level 1!! remove when not needed
-			GameSave::Notify_Show(GameSave::NotifyType::RESET);
+			GameSaveManager::ResetSave(); //Debug feature for level 1!! remove when not needed
+			GameSaveManager::Notify_Show(GameSaveManager::NotifyType::RESET);
 		}
 	}
 

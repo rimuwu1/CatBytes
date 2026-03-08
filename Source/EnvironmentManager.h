@@ -21,6 +21,7 @@ Technology is prohibited.
 #include "HUD.h"
 #include "Platforms.h"
 #include "SpriteSheet.h"
+#include "SpatialGrid.h"
 #include "rapidjson/document.h"
 #include "AEEngine.h"
 
@@ -66,6 +67,10 @@ public:
 
     // Current background section (0 based)
     int GetCurrentSection() const { return m_currentSection; }
+
+    // Spatial partitioning
+    SpatialGrid& GetSpatialGrid() { return m_spatialGrid; }
+    const SpatialGrid& GetSpatialGrid() const { return m_spatialGrid; }
 
     // Accessor for HUD & UI elements
     HUD & GetHUD() { return m_HUD; }
@@ -118,6 +123,9 @@ private:
 
     int m_previousSelection = -1;   // for level indicator
     int m_currentSection = 0;
+
+    // Spatial partitioning grid
+    SpatialGrid m_spatialGrid;
 
     // Background constants
     static constexpr int BACKGROUND_SECTIONS = 4;

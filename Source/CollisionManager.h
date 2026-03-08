@@ -20,6 +20,7 @@ Technology is prohibited.
 #include "PlayerBullet.h"
 #include "PlayerMelee.h"
 #include "EnvironmentManager.h"
+#include "SpatialGrid.h"
 #include <vector>
 
 namespace CollisionManager
@@ -60,6 +61,13 @@ namespace CollisionManager
     // Player melee collisions with enemies
     void HandlePlayerMeleeEnemyCollisions(Player& player, std::vector<Enemy>& enemies);
 
+    //---------- Spatial grid versions (use for optimization) ------------
+    void HandlePlatformsSpatial(Player& player, float playerPrevY, const SpatialGrid& grid);
+    bool HandleObstaclesSpatial(Player& player, const SpatialGrid& grid);
+    bool HandleCheckpointsSpatial(Player& player, const SpatialGrid& grid);
+    void HandlePlayerEnemyCollisionsSpatial(Player& player, const SpatialGrid& grid);
+    void HandleEnemyBulletPlayerCollisionsSpatial(Player& player, const SpatialGrid& grid);
+
     //----------wrapper for all collisions------------
     struct CollisionResults {
         bool obstacleHit;   // true if player hit an obstacle
@@ -72,6 +80,13 @@ namespace CollisionManager
         EnvironmentManager& env,
         std::vector<Enemy>& enemies,
         std::vector<EnemyBullet>& enemyBullets
+    );
+
+    CollisionResults HandleAllCollisionsSpatial(
+        Player& player,
+        float playerPrevY,
+        EnvironmentManager& env,
+        std::vector<Enemy>& enemies
     );
 
 }

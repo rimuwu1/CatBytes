@@ -137,6 +137,7 @@ void DebugManager::Initialize()
     m_GodMode = false;
     m_OverlayOn = false;
     m_HitboxOn = false;   // hitboxes off by default; toggle with F6 or 'hitbox' command
+    m_GridOn = false;     // grid off by default; toggle with 'showgrid' command
     m_ConsoleOpen = false;
     m_InputBuffer.clear();
     m_AutoHint.clear();
@@ -409,6 +410,18 @@ void DebugManager::RegisterBuiltinCommands()
             Log(std::string("Hitbox overlays: ") + (m_HitboxOn ? "ON" : "OFF"));
         });
 
+    // ---- showgrid -----------------------------------------------------------
+    RegisterCommand("showgrid", "showgrid [on|off]",
+        "Toggle spatial grid cell visualization.",
+        [this](const std::vector<std::string>& args)
+        {
+            if (args.size() >= 2)
+                m_GridOn = (ToLower(args[1]) == "on");
+            else
+                m_GridOn = !m_GridOn;
+            Log(std::string("Grid visualization: ") + (m_GridOn ? "ON" : "OFF"));
+        });
+
     // =========================================================================
     // Physics commands -- all route through PhysicsManager
     // =========================================================================
@@ -498,6 +511,48 @@ void DebugManager::RegisterBuiltinCommands()
                 Log(buf);
             }
             catch (...) { Log("Invalid value."); }
+        });
+
+    // ---- grid ----------------------------------------------------------------
+    RegisterCommand("grid", "grid",
+        "Show spatial grid info (bounds, cell size, cell count).",
+        [this](const std::vector<std::string>&)
+        {
+            const SpatialGrid& grid = EnvironmentManager::Get().GetSpatialGrid();
+            char buf[128];
+            Log("-- SpatialGrid --");
+            snprintf(buf, sizeof(buf), "  cells: %d", grid.GetCellCount());
+            Log(buf);
+            snprintf(buf, sizeof(buf), "  cellHeight: %.1f", (double)grid.GetCellHeight());
+            Log(buf);
+            snprintf(buf, sizeof(buf), "  bounds: Y [%.1f, %.1f]", (double)grid.GetMinY(), (double)grid.GetMaxY());
+            Log(buf);
+        });
+
+    // ---- gridcells -----------------------------------------------------------
+    RegisterCommand("gridcells", "gridcells",
+        "Print object counts in each spatial grid cell (may be verbose).",
+        [this](const std::vector<std::string>&)
+        {
+            const SpatialGrid& grid = EnvironmentManager::Get().GetSpatialGrid();
+            grid.DebugPrintCellCounts(*this);
+        });
+
+    // ---- gridnear ------------------------------------------------------------
+    RegisterCommand("gridnear", "gridnear [y]",
+        "Show nearby objects for Y position (uses player Y if omitted).",
+        [this](const std::vector<std::string>& args)
+        {
+            const Player& p = ObjectManager::Get().GetPlayer();
+            const SpatialGrid& grid = EnvironmentManager::Get().GetSpatialGrid();
+            float y = p.pos.y;
+            float h = p.height;
+            if (args.size() >= 2)
+            {
+                try { y = std::stof(args[1]); }
+                catch (...) { Log("Invalid Y value."); return; }
+            }
+            grid.DebugPrintNearby(y, h, *this);
         });
 }
 
@@ -828,7 +883,7 @@ void DebugManager::DrawConsole(float camX, float camY)
     }
 
     const float inputWorldY = CON_INPUT_Y * (winH * 0.5f) + camY + 5.0f; //small offset cos it wasnt rendering right
-    MeshManager::Get().DrawSquare(camX, inputWorldY, winW - 20.f, 36.f, 80, 80, 80, 1.f); //input box(idk why it's rendering below the panel tho)
+    MeshManager::Get().DrawSquare(camX, inputWorldY, winW - 20.f, 36.f, 80, 80, 80, 1.f); //input box
 
     {
         std::string display = "> " + m_InputBuffer + (m_CursorBlink ? "|" : " ");
@@ -878,7 +933,7 @@ static void DrawArrow(float cx, float cy, float halfW, bool facingRight,
 
     // Shaft
     MeshManager::Get().DrawSquare(shaftCX, cy, SHAFT, THICK, r, g, b, alpha);
-    // Arrowhead arms (angled back from tip toward the shaft)
+    // Arrowhead arms (i didnt add rotation to this function but it's fine, just for debug)
     MeshManager::Get().DrawSquare(tipX - dir * HEAD * 0.5f, cy + SPREAD * 0.5f, HEAD, THICK, r, g, b, alpha);
     MeshManager::Get().DrawSquare(tipX - dir * HEAD * 0.5f, cy - SPREAD * 0.5f, HEAD, THICK, r, g, b, alpha);
 }
@@ -897,6 +952,12 @@ static void DrawEntityLabel(float worldX, float worldY, float entityH,
 
 void DebugManager::DrawWorldOverlays(float camX, float camY) const
 {
+    if (!m_HitboxOn && !m_GridOn) return;
+
+    if (m_GridOn) {
+        EnvironmentManager::Get().GetSpatialGrid().DebugDrawGrid();
+    }
+
     if (!m_HitboxOn) return;
 
     const float winW = (float)AEGfxGetWindowWidth();
