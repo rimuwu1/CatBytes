@@ -82,6 +82,7 @@ struct Player
 	// Sprite sheet for animations
 	std::unique_ptr<SpriteSheet> spriteSheet;
 	std::unique_ptr<SpriteSheet> slashSprite;
+	std::unique_ptr<SpriteSheet> bulletSprite;
 
 	// State tracking for animation logic
 	bool wasAttacking = false;
@@ -103,9 +104,14 @@ struct Player
 
 	// player
 	u32 lastFrame = 0;
+
+	// spike pogo
+	bool pogoJustPerformed = false;
+	float pogoVelocity = 0.0f;
 };
 
 struct Enemy; // forward declaration
+struct PlatformObstacle;
 
 void Player_Init(Player& player, const rapidjson::Value& config);
 void Player_Update(Player& player, float dt);
@@ -113,3 +119,5 @@ void Player_Draw(const Player& player);
 void Player_Free(Player& player);
 void Player_ApplyDamage(Player& player, float damage);
 void Player_CheckBulletCollisions(Player& player, Enemy& enemy);
+bool Player_CheckPogoCollision(Player& player, const std::vector<PlatformObstacle>& obstacles);
+

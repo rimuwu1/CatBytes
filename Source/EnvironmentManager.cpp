@@ -3,8 +3,10 @@
 \file       EnvironmentManager.cpp
 \author     Joash ng, joash.ng, 2502780
             Peh Yu Xuan, Lovette, p.yuxuanlovette, 2502079
+            Sim Hui Min, s.huimin, 2503506
 \par        joash.ng@digipen.edu
             p.yuxuanlovette@digipen.edu
+            s.huimin@digipen.edu
 \date       Feb 26 2026
 \brief		This file handles all the environment stuff like platforms obstacles and walls.
 
@@ -104,6 +106,7 @@ void EnvironmentManager::LoadFromConfig(const rapidjson::Document& doc)
             obs.w = o["width"].GetFloat();
             obs.h = o["height"].GetFloat();
             obs.r = o.HasMember("rotation") ? o["rotation"].GetFloat() : 0.0f;
+            obs.isSpike = o.HasMember("is_spike") ? o["is_spike"].GetBool() : true;
             m_level1Obstacles.push_back(obs);
         }
     }
@@ -133,6 +136,7 @@ void EnvironmentManager::LoadFromConfig(const rapidjson::Document& doc)
             obs.w = o["width"].GetFloat();
             obs.h = o["height"].GetFloat();
             obs.r = o.HasMember("rotation") ? o["rotation"].GetFloat() : 0.0f;
+            obs.isSpike = o.HasMember("is_spike") ? o["is_spike"].GetBool() : true; 
             m_level2Obstacles.push_back(obs);
         }
     }
@@ -176,6 +180,7 @@ void EnvironmentManager::LoadFromConfig(const rapidjson::Document& doc)
             obs.w = o["width"].GetFloat();
             obs.h = o["height"].GetFloat();
             obs.r = o.HasMember("rotation") ? o["rotation"].GetFloat() : 0.0f;
+            obs.isSpike = o.HasMember("is_spike") ? o["is_spike"].GetBool() : true; 
             m_level3Obstacles.push_back(obs);
         }
     }
@@ -354,6 +359,18 @@ int EnvironmentManager::GetSectionFromY(float y) const
             return i;
     }
     return BACKGROUND_SECTIONS - 1;
+}
+
+const std::vector<PlatformObstacle>& EnvironmentManager::GetCurrentObstacles() const
+{
+    int currentLevel = m_currentSection + 1;
+
+    switch (currentLevel) {
+    case 1:  return m_level1Obstacles;
+    case 2:  return m_level2Obstacles;
+    case 3:  return m_level3Obstacles;
+    default: return m_level1Obstacles;
+    }
 }
 
 EnvironmentManager::Colour EnvironmentManager::BlendColours(const Colour& a, const Colour& b, float t)

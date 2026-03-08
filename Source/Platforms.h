@@ -35,6 +35,7 @@ struct PlatformButton {
 
 struct PlatformObstacle {
 	float x, y, w, h, r;
+	bool isSpike;
 	//bool active = true; //can toggle off if bullet collision for example
 };
 
