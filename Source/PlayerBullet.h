@@ -16,6 +16,7 @@ Technology is prohibited.
 #pragma once
 #include "AEEngine.h"
 
+class SpriteSheet;
 struct Player;
 
 struct PlayerBullet {
@@ -25,6 +26,7 @@ struct PlayerBullet {
     float damage;
     AEVec2 pos;
     AEVec2 vel;
+    SpriteSheet* bulletSprite;
 };
 
 void PlayerBullet_Init(PlayerBullet& bullet, const Player& player); 

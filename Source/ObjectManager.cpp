@@ -19,6 +19,7 @@ Technology is prohibited.
 #include "MeshManager.h"
 #include "PlayerBullet.h"
 #include "EnemyBullet.h"
+#include "EnvironmentManager.h"
 
 // ------------------------------------------------------------------------
 // Helper: construct and push a single enemy from a JSON value.
@@ -46,7 +47,7 @@ void ObjectManager::AddEnemyFromJSON(const rapidjson::Value& enemyData)
 }
 
 // ------------------------------------------------------------------------
-// LoadFromConfig  — takes the full document, owns all level traversal.
+// LoadFromConfig takes the full document, owns all level traversal.
 // Re-initialises player and rebuilds the enemy list from scratch.
 // Safe to call on restart without re-loading textures.
 // ------------------------------------------------------------------------
@@ -80,13 +81,13 @@ void ObjectManager::LoadFromConfig(const rapidjson::Document& doc)
 }
 
 // ------------------------------------------------------------------------
-// Initialize  — one-time setup that must only run at startup, not on reset.
+// Initialize one-time setup that must only run at startup, not on reset.
 // Currently a no-op for ObjectManager (player/enemies are data-driven),
 // but kept for symmetry with EnvironmentManager and future expansion.
 // ------------------------------------------------------------------------
 void ObjectManager::Initialize()
 {
-    // Nothing needed yet — all state comes from LoadFromConfig.
+    // Nothing needed yet all state comes from LoadFromConfig.
     // Add audio init, particle system setup, etc. here if required.
 }
 
@@ -169,4 +170,57 @@ void ObjectManager::Clear()
 {
     enemies.clear();
     enemyBullets.clear();
+}
+
+void ObjectManager::RebuildSpatialGrid()
+{
+    auto& env = EnvironmentManager::Get();
+    SpatialGrid& grid = env.GetSpatialGrid();
+
+    grid.SetWorldBounds(-500.0f, 11200.0f);
+    grid.SetCellHeight(100.0f);
+    grid.Clear();
+
+    std::vector<Enemy*> enemyPtrs;
+    for (auto& e : enemies) {
+        if (e.isAlive) enemyPtrs.push_back(&e);
+    }
+
+    std::vector<EnemyBullet*> bulletPtrs;
+    for (auto& b : enemyBullets) {
+        if (b.active) bulletPtrs.push_back(&b);
+    }
+
+    grid.Rebuild(
+        env.GetLevel1Platforms(),
+        env.GetLevel1Obstacles(),
+        env.GetCheckpoints(),
+        enemyPtrs,
+        bulletPtrs
+    );
+
+    grid.RebuildAdd(
+        env.GetLevel2Platforms(),
+        env.GetLevel2Obstacles()
+    );
+
+    grid.RebuildAdd(
+        env.GetLevel3Platforms(),
+        env.GetLevel3Obstacles()
+    );
+
+    grid.RebuildAdd(
+        env.GetBossPlatforms(),
+        {}
+    );
+
+    grid.RebuildAdd(
+        env.GetWallPlatforms(),
+        {}
+    );
+
+    grid.RebuildAdd(
+        env.GetLevel3WallPlatforms(),
+        {}
+    );
 }

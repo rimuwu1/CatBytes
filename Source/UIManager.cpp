@@ -17,7 +17,7 @@ Technology is prohibited.
 #include "Fonts.h"
 #include "MeshManager.h"
 #include "GameStateManager.h"
-#include "FileManager.h"
+#include "GameSaveManager.h"
 #include "AudioManager.h"
 #include "Audio.h"
 
@@ -250,7 +250,7 @@ void UIManager::UpdatePause(float camX, float camY, bool& consumed)
         case 2: // Restart -- confirm first
             m_PauseActive = false;
             ShowConfirmation("Restart Game?", "All progress will be lost!",
-                []() { g_newGame = true; GameSave::ResetSave(); },
+                []() { g_newGame = true; GameSaveManager::ResetSave(); },
                 []() {});
             break;
         case 3: // Main Menu -- confirm first

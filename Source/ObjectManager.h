@@ -52,6 +52,9 @@ public:
     //check boss status
     bool IsBossDefeated() const;
 
+    // Rebuild spatial grid with current object positions (call before collision checks)
+    void RebuildSpatialGrid();
+
     // Cleanup helpers
     void RemoveInactiveBullets();
     void Clear();   // clears enemies and bullets

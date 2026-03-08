@@ -4,9 +4,11 @@
 \author     Joash ng, joash.ng, 2502780
             Kerwin Wong Jia Jie, kerwinjiajie.wong, 2502740
             Peh Yu Xuan, Lovette, p.yuxuanlovette, 2502079
+            Sim Hui Min, s.huimin, 2503506
 \par        joash.ng@digipen.edu
             kerwinjiajie.wong@digipen.edu
             p.yuxuanlovette@digipen.edu
+            s.huimin@digipen.edu
 \date       Feb 26 2026
 \brief		This file declares rhe Environmanager Namespace which handles all the environment stuff like platforms obstacles and walls through a singleton instance.
 
@@ -21,6 +23,7 @@ Technology is prohibited.
 #include "HUD.h"
 #include "Platforms.h"
 #include "SpriteSheet.h"
+#include "SpatialGrid.h"
 #include "rapidjson/document.h"
 #include "AEEngine.h"
 
@@ -39,6 +42,8 @@ public:
     void Initialize();
     void Update(float dt, const Player& player, float cameraY);
     void Draw(float camX, float camY, PlayerWeapon weapon, float screenHalfH = 450.0f);
+
+    const std::vector<PlatformObstacle>& GetCurrentObstacles() const;
 
     // Accessors for collision and gameplay systems
     const std::vector<Platform>& GetLevel1Platforms() const { return m_level1Platforms; }
@@ -66,6 +71,10 @@ public:
 
     // Current background section (0 based)
     int GetCurrentSection() const { return m_currentSection; }
+
+    // Spatial partitioning
+    SpatialGrid& GetSpatialGrid() { return m_spatialGrid; }
+    const SpatialGrid& GetSpatialGrid() const { return m_spatialGrid; }
 
     // Accessor for HUD & UI elements
     HUD & GetHUD() { return m_HUD; }
@@ -118,6 +127,9 @@ private:
 
     int m_previousSelection = -1;   // for level indicator
     int m_currentSection = 0;
+
+    // Spatial partitioning grid
+    SpatialGrid m_spatialGrid;
 
     // Background constants
     static constexpr int BACKGROUND_SECTIONS = 4;

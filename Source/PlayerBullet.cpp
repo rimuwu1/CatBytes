@@ -48,16 +48,32 @@ void PlayerBullet_Draw(const PlayerBullet& bullet)
 {
     if (!bullet.active) return;
 
-        bulletTexture = TextureManager::Get().LoadTexture("Assets/Images/PlayerBullet.jpg");
-
-    MeshManager::Get().DrawTexturedSquare(
-        bulletTexture,
-        bullet.pos.x,
-        bullet.pos.y,
-        bullet.width,
-        bullet.height,
-        1.0f
-    );
+    // use sprite sheet if available, otherwise fallback to texture
+    if (bullet.bulletSprite) {
+        MeshManager::Get().DrawSpriteSheet(
+            *bullet.bulletSprite,
+            bullet.pos.x,
+            bullet.pos.y,
+            bullet.width,
+            bullet.height,
+            1.0f
+        );
+    }
+    else {
+        // fallback to static texture
+        static AEGfxTexture* bulletTexture = nullptr;
+        if (!bulletTexture) {
+            bulletTexture = TextureManager::Get().LoadTexture("Assets/Images/PlayerBullet.jpg");
+        }
+        MeshManager::Get().DrawTexturedSquare(
+            bulletTexture,
+            bullet.pos.x,
+            bullet.pos.y,
+            bullet.width,
+            bullet.height,
+            1.0f
+        );
+    }
 }
 
 void PlayerBullet_Free(PlayerBullet&)

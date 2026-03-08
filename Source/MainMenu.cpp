@@ -18,7 +18,7 @@
 #include "Fonts.h"
 #include "AudioManager.h"
 #include "Audio.h"
-#include "FileManager.h"
+#include "GameSaveManager.h"
 #include "UIManager.h"
 #include "Camera.h"
 
@@ -228,14 +228,14 @@ void MainMenu_Update()
                     "All saved progress will be cleared!",
                     []() {
                         g_newGame = true;
-                        GameSave::ResetSave();
+                        GameSaveManager::ResetSave();
                         GameStateManager::Get().next = GS_MAINGAME;
                     },
                     []() { /* cancel – do nothing */ }
                 );
             }
             else {
-                GameSave::ResetSave();
+                GameSaveManager::ResetSave();
                 GameStateManager::Get().next = GS_MAINGAME;
             }
             break;
