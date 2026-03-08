@@ -33,7 +33,7 @@ Technology is prohibited.
 #include "EnvironmentManager.h"
 #include "Camera.h"
 #include "WinLose.h"
-#include "FileManager.h"
+#include "GameSaveManager.h"
 #include "LevelIndicator.h"
 #include "Player.h"
 #include "enemy.h"
@@ -60,7 +60,7 @@ namespace {
     static void ParseConfigFromDisk()
     {
         // Wait for any in-flight async save to finish before reading
-        while (GameSave::IsSaveInProgress())
+        while (GameSaveManager::IsSaveInProgress())
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
         // Clear stale data so the previous parse never bleeds into a fresh load
@@ -159,13 +159,14 @@ void MainGame_Update()
 
     ObjectManager::Get().Update(dt);
 
+    ObjectManager::Get().RebuildSpatialGrid();
+
     // ================== COLLISION HANDLING ==================
-    auto results = CollisionManager::HandleAllCollisions(
+    auto results = CollisionManager::HandleAllCollisionsSpatial(
         player,
         playerPrevY,
         EnvironmentManager::Get(),
-        ObjectManager::Get().GetAllEnemies(),
-        ObjectManager::Get().GetAllEnemyBullets()
+        ObjectManager::Get().GetAllEnemies()
     );
 
     if (results.obstacleHit)
@@ -188,9 +189,9 @@ void MainGame_Update()
         default: currentPlatforms = &EnvironmentManager::Get().GetLevel1Platforms(); break;
         }
 
-        GameSave::Metadata meta{ "", currentLevel, currentSection, static_cast<int>(ObjectManager::Get().GetPlayerHP()) };
-        GameSave::SaveGameAsync(meta, currentLevel, player, enemies, *currentPlatforms);
-        GameSave::Notify_Show(GameSave::NotifyType::SAVED);
+        GameSaveManager::Metadata meta{ "", currentLevel, currentSection, static_cast<int>(ObjectManager::Get().GetPlayerHP()) };
+        GameSaveManager::SaveGameAsync(meta, currentLevel, player, enemies, *currentPlatforms);
+        GameSaveManager::Notify_Show(GameSaveManager::NotifyType::SAVED);
     }
 
     if (ObjectManager::Get().IsBossDefeated()) {
@@ -224,7 +225,7 @@ void MainGame_Update()
         return;
     }
 
-    GameSave::Notify_Update(dt);
+    GameSaveManager::Notify_Update(dt);
 
     if (AEInputCheckTriggered(AEVK_6)) {
         player.pos.x = 0.0f; player.pos.y = 4600.0f; // start of level 3 teleport
@@ -245,7 +246,7 @@ void MainGame_Draw()
     Player& player = ObjectManager::Get().GetPlayer();
     EnvironmentManager::Get().Draw(globalCam.x, globalCam.y, player.weapon, 900.0f * 0.5f);
     ObjectManager::Get().Draw();
-    GameSave::Notify_Draw();
+    GameSaveManager::Notify_Draw();
     //pop up draw over everything
     DebugManager::Get().DrawWorldOverlays(globalCam.x, globalCam.y);
     DebugManager::Get().Draw(globalCam.x, globalCam.y);

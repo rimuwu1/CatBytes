@@ -97,8 +97,9 @@ private:
     float m_FpsCached = 0.f;
 
     // ---- Overlay / hitbox --------------------------------------------------
-    bool  m_OverlayOn = false;   ///< F1 — stats panel
-    bool  m_HitboxOn = false;   ///< F6 — world-space hitbox/arrow overlays
+    bool  m_OverlayOn = false;   ///< F1 â€” stats panel
+    bool  m_HitboxOn = false;   ///< F6 â€” world-space hitbox/arrow overlays
+    bool  m_GridOn = false;     ///< showgrid command - spatial grid visualization
     bool  m_GodMode = false;
     bool  m_Initialized = false;
 

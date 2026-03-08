@@ -22,7 +22,7 @@
     <ClCompile Include="..\Source\enemy.cpp" />
     <ClCompile Include="..\Source\EnemyBullet.cpp" />
     <ClCompile Include="..\Source\EnvironmentManager.cpp" />
-    <ClCompile Include="..\Source\FileManager.cpp" />
+    <ClCompile Include="..\Source\GameSaveManager.cpp" />
     <ClCompile Include="..\Source\Fonts.cpp" />
     <ClCompile Include="..\Source\GameStateManager.cpp" />
     <ClCompile Include="..\Source\HUD.cpp" />
@@ -40,6 +40,7 @@
     <ClCompile Include="..\Source\PlayerBullet.cpp" />
     <ClCompile Include="..\Source\PlayerMelee.cpp" />
     <ClCompile Include="..\Source\SplashScreen.cpp" />
+    <ClCompile Include="..\Source\SpatialGrid.cpp" />
     <ClCompile Include="..\Source\SpriteSheet.cpp" />
     <ClCompile Include="..\Source\System.cpp" />
     <ClCompile Include="..\Source\TextureManager.cpp" />
@@ -58,7 +59,7 @@
     <ClInclude Include="..\Source\enemy.h" />
     <ClInclude Include="..\Source\EnemyBullet.h" />
     <ClInclude Include="..\Source\EnvironmentManager.h" />
-    <ClInclude Include="..\Source\FileManager.h" />
+    <ClInclude Include="..\Source\GameSaveManager.h" />
     <ClInclude Include="..\Source\Fonts.h" />
     <ClInclude Include="..\Source\GameStateList.h" />
     <ClInclude Include="..\Source\GameStateManager.h" />
@@ -75,6 +76,7 @@
     <ClInclude Include="..\Source\Player.h" />
     <ClInclude Include="..\Source\PlayerBullet.h" />
     <ClInclude Include="..\Source\PlayerMelee.h" />
+    <ClInclude Include="..\Source\SpatialGrid.h" />
     <ClInclude Include="..\Source\SplashScreen.h" />
     <ClInclude Include="..\Source\SpriteSheet.h" />
     <ClInclude Include="..\Source\System.h" />
