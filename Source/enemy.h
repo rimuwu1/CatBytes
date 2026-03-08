@@ -18,6 +18,8 @@ Technology is prohibited.
 #pragma once
 #include "AEEngine.h"
 #include "rapidjson/document.h"
+#include "SpriteSheet.h"
+#include <memory>
 
 struct Player;
 
@@ -32,11 +34,8 @@ struct Enemy
     EnemyType type = EnemyType::Easy;   // which kind of enemy
     bool facesLeft = false;
 
-    AEGfxVertexList* mesh = nullptr; //btw whoever is doing this file pls remove this whole block when change to spritesheet
-    AEGfxTexture* texture = nullptr;
-    AEGfxTexture* normalTexture = nullptr;
-    AEGfxTexture* attackTexture = nullptr;
-    AEGfxTexture* lowHpTexture = nullptr;
+    std::unique_ptr<SpriteSheet> spriteSheet;
+    std::string currentState = "patrol";
 
     AEVec2 pos = { 0.0f, 0.0f };
     AEVec2 vel = { 0.0f, 0.0f };
@@ -50,6 +49,9 @@ struct Enemy
     float hitPoints = 0.0f;
     float hitStunTimer = 0.0f;
     bool isPlayerColliding = false;
+
+    float patrolMinX = 0.0f;
+    float patrolMaxX = 0.0f;
 
     // Shooting (for enemies that shoot)
     float shootCooldown = 0.0f;
@@ -74,7 +76,6 @@ void BossEnemy_Update(Enemy& enemy, float dt);
 
 // Draw, onHit, setGraphics, free
 void Enemy_Draw(const Enemy& enemy);
-void Enemy_SetGraphics(Enemy& enemy, AEGfxTexture* normalTex, AEGfxTexture* attackTex = nullptr, AEGfxTexture* lowHpTex = nullptr);
 void Enemy_OnHit(Enemy& enemy, float damage);
 //void Enemy_Free(Enemy& enemy);
 void HardEnemy_OnCollision(Enemy& enemy, Player& player);

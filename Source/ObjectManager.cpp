@@ -2,7 +2,9 @@
 /*!
 \file       ObjectManager.cpp
 \author     Joash ng, joash.ng, 2502780
+            Tse Xuan Qi Tristin, tse.x, 2503757
 \par        joash.ng@digipen.edu
+            tse.x@digipen.edu
 \date       Feb 26 2026
 \brief		This file handles all the dynamic objects under the object class including player, enemy, boss.
 
@@ -24,27 +26,23 @@ Technology is prohibited.
 // ------------------------------------------------------------------------
 void ObjectManager::AddEnemyFromJSON(const rapidjson::Value& enemyData)
 {
+
     std::string type = enemyData["type"].GetString();
     Enemy newEnemy{};
-
+    
+    //d
     if (type == "easy") {
         Enemy_Init(newEnemy, enemyData);
-        newEnemy.texture = TextureManager::Get().LoadTexture("Assets/Images/EasyEnemy.png");
-        newEnemy.lowHpTexture = TextureManager::Get().LoadTexture("Assets/Images/LowHpOverlay.jpg");
     }
     else if (type == "hard") {
         HardEnemy_Init(newEnemy, enemyData);
-        newEnemy.texture = TextureManager::Get().LoadTexture("Assets/Images/HardEnemy.png");
-        newEnemy.attackTexture = TextureManager::Get().LoadTexture("Assets/Images/HardEnemyAttack.jpg");
-        newEnemy.lowHpTexture = TextureManager::Get().LoadTexture("Assets/Images/LowHpOverlay.jpg");
     }
     else if (type == "boss") {
         BossEnemy_Init(newEnemy, enemyData);
-        newEnemy.texture = TextureManager::Get().LoadTexture("Assets/Images/Boss.jpg");
     }
 
-    newEnemy.normalTexture = newEnemy.texture;   // hard enemy reverts to this on idle
-    enemies.push_back(newEnemy);
+    //add to enemy list
+    enemies.push_back(std::move(newEnemy));
 }
 
 // ------------------------------------------------------------------------
@@ -61,14 +59,23 @@ void ObjectManager::LoadFromConfig(const rapidjson::Document& doc)
     Player_Init(player, doc["player"]);
 
     // Gather enemies from every level key present in the document
+    // Load enemies from all levels
     const char* levelKeys[] = { "level_1", "level_2", "level_3", "level_4" };
-    for (const char* key : levelKeys) {
-        if (!doc.HasMember(key))             continue;
+
+    for (const char* key : levelKeys)
+    {
+        if (!doc.HasMember(key))
+            continue;
+
         const auto& level = doc[key];
-        if (!level.HasMember("enemies"))     continue;
-        if (!level["enemies"].IsArray())     continue;
+
+        if (!level.HasMember("enemies") || !level["enemies"].IsArray())
+            continue;
+
         for (const auto& e : level["enemies"].GetArray())
+        {
             AddEnemyFromJSON(e);
+        }
     }
 }
 
@@ -89,7 +96,7 @@ void ObjectManager::Update(float dt)
     Player_Update(player, dt);
 
     for (auto& e : enemies) {
-        if (!e.isAlive) continue;
+        //if (!e.isAlive) continue;
         switch (e.type) {
         case EnemyType::Easy: Enemy_Update(e, dt);     break;
         case EnemyType::Hard: HardEnemy_Update(e, dt); break;
@@ -111,7 +118,8 @@ void ObjectManager::Update(float dt)
 void ObjectManager::Draw()
 {
     for (const auto& e : enemies) {
-        if (e.isAlive) Enemy_Draw(e);
+        //if (e.isAlive) 
+         Enemy_Draw(e);
     }
     for (const auto& b : enemyBullets) {
         if (b.active) EnemyBullet_Draw(b);

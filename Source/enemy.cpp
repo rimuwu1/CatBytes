@@ -22,11 +22,40 @@ Technology is prohibited.
 #include "MeshManager.h"
 #include "PhysicsManager.h"
 #include "Player.h"
+#include "AudioManager.h"
+#include "Audio.h"
+#include "Camera.h"
 #include <fstream>
 #include <iostream>
 #include "rapidjson/document.h"
 #include "rapidjson/filereadstream.h"
 #include "rapidjson/istreamwrapper.h"
+
+
+static AEAudio s_EasyEnemyAttackSound{};
+static AEAudio s_HardEnemyAttackSound{};
+static AEAudio s_BossAttackSound{};
+
+static bool Enemy_IsInCamera(const Enemy& enemy)
+{
+    const float halfScreenW = 1600.0f * 0.5f; // adjust if your game width is different
+    const float halfScreenH = 900.0f * 0.5f;  // from your camera code
+
+    const float camLeft = globalCam.x - halfScreenW;
+    const float camRight = globalCam.x + halfScreenW;
+    const float camBottom = globalCam.y - halfScreenH;
+    const float camTop = globalCam.y + halfScreenH;
+
+    const float enemyLeft = enemy.pos.x - enemy.width * 0.5f;
+    const float enemyRight = enemy.pos.x + enemy.width * 0.5f;
+    const float enemyBottom = enemy.pos.y - enemy.height * 0.5f;
+    const float enemyTop = enemy.pos.y + enemy.height * 0.5f;
+
+    const bool overlapX = (enemyRight >= camLeft) && (enemyLeft <= camRight);
+    const bool overlapY = (enemyTop >= camBottom) && (enemyBottom <= camTop);
+
+    return overlapX && overlapY;
+}
 
 // -----------------------------------------------------------------------------
 // initialize easy enemy
@@ -34,6 +63,8 @@ Technology is prohibited.
 // -----------------------------------------------------------------------------
 void Enemy_Init(Enemy& enemy, const rapidjson::Value& config) {
     enemy.facesLeft = true;
+
+    s_EasyEnemyAttackSound = AudioManager::Get().LoadAudio(Audio::EASY_ENEMY_ATTACK);
 
     // Position (required, but provide fallback)
     if (config.HasMember("x") && config["x"].IsFloat())
@@ -113,9 +144,50 @@ void Enemy_Init(Enemy& enemy, const rapidjson::Value& config) {
     }
     enemy.isPlayerColliding = false;
     enemy.type = EnemyType::Easy;
+
+    // Patrol bounds
+    if (config.HasMember("patrol_min_x") && config["patrol_min_x"].IsFloat())
+        enemy.patrolMinX = config["patrol_min_x"].GetFloat();
+    else
+        enemy.patrolMinX = enemy.pos.x - 100.0f;
+
+    if (config.HasMember("patrol_max_x") && config["patrol_max_x"].IsFloat())
+        enemy.patrolMaxX = config["patrol_max_x"].GetFloat();
+    else
+        enemy.patrolMaxX = enemy.pos.x + 100.0f;
+
+    //SpriteSheet Loading
+    if (config.HasMember("animations"))
+    {
+        const auto& anims = config["animations"];
+
+        enemy.spriteSheet = std::make_unique<SpriteSheet>(
+            anims["file"].GetString(),
+            anims["rows"].GetInt(),
+            anims["cols"].GetInt()
+        );
+
+        const auto& clips = anims["clips"];
+        for (rapidjson::SizeType i = 0; i < clips.Size(); i++)
+        {
+            const auto& c = clips[i];
+            enemy.spriteSheet->AddClip(
+                c["name"].GetString(),
+                c["start"].GetInt(),
+                c["end"].GetInt(),
+                c["duration"].GetFloat(),
+                c["loop"].GetBool()
+            );
+        }
+
+        enemy.spriteSheet->Play("patrol");
+    }
 }
 
 void HardEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
+
+    s_HardEnemyAttackSound = AudioManager::Get().LoadAudio(Audio::HARD_ENEMY_ATTACK);
+
     // Position
     if (config.HasMember("x") && config["x"].IsFloat())
         enemy.pos.x = config["x"].GetFloat();
@@ -180,6 +252,44 @@ void HardEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
     }
     enemy.isPlayerColliding = false;
     enemy.type = EnemyType::Hard;
+
+    // Patrol bounds
+    if (config.HasMember("patrol_min_x") && config["patrol_min_x"].IsFloat())
+        enemy.patrolMinX = config["patrol_min_x"].GetFloat();
+    else
+        enemy.patrolMinX = enemy.pos.x - 100.0f;
+
+    if (config.HasMember("patrol_max_x") && config["patrol_max_x"].IsFloat())
+        enemy.patrolMaxX = config["patrol_max_x"].GetFloat();
+    else
+        enemy.patrolMaxX = enemy.pos.x + 100.0f;
+
+    //SpriteSheet Loading
+    if (config.HasMember("animations"))
+    {
+        const auto& anims = config["animations"];
+
+        enemy.spriteSheet = std::make_unique<SpriteSheet>(
+            anims["file"].GetString(),
+            anims["rows"].GetInt(),
+            anims["cols"].GetInt()
+        );
+
+        const auto& clips = anims["clips"];
+        for (rapidjson::SizeType i = 0; i < clips.Size(); i++)
+        {
+            const auto& c = clips[i];
+            enemy.spriteSheet->AddClip(
+                c["name"].GetString(),
+                c["start"].GetInt(),
+                c["end"].GetInt(),
+                c["duration"].GetFloat(),
+                c["loop"].GetBool()
+            );
+        }
+
+        enemy.spriteSheet->Play("patrol");
+    }
 }
 
 void BossEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
@@ -253,49 +363,164 @@ void BossEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
 // Update enemy: automatic left/right patrol
 // -----------------------------------------------------------------------------
 void Enemy_Update(Enemy& enemy, float dt) {
-    if (!enemy.isAlive) return;
-    if (enemy.hitStunTimer > 0.0f) {
-        enemy.hitStunTimer -= dt;
-        if (enemy.hitStunTimer <= 0.0f) enemy.hitStunTimer = 0.0f;
+
+    if (!enemy.spriteSheet) return;
+
+    const std::string currentClip = enemy.spriteSheet->GetCurrentClip();
+
+    // keep dead animation running until it finishes, then stop drawing
+    if (!enemy.isAlive)
+    {
+        if (currentClip == "dead")
+        {
+            enemy.hitStunTimer -= dt;
+            enemy.spriteSheet->Update(dt);
+
+            if (enemy.hitStunTimer <= 0.0f)
+            {
+                enemy.hitStunTimer = 0.0f;
+                enemy.spriteSheet->Stop();
+            }
+        }
         return;
     }
+
+    // Attack/hit state
+    if (enemy.hitStunTimer > 0.0f)
+    {
+        enemy.hitStunTimer -= dt;
+        enemy.spriteSheet->Update(dt);
+
+        if (enemy.hitStunTimer <= 0.0f)
+        {
+            enemy.hitStunTimer = 0.0f;
+
+            const std::string clipNow = enemy.spriteSheet->GetCurrentClip();
+            if (clipNow != "dead")
+                enemy.spriteSheet->Play("patrol");
+        }
+        return;
+    }
+
 
     // Shooting (if applicable)
     if (enemy.shootCooldown > 0.0f) {
         enemy.shootTimer -= dt;
         if (enemy.shootTimer <= 0.0f) {
-            ObjectManager::Get().SpawnEnemyBullet(enemy, enemy.bulletSpeed, enemy.bulletDamage, enemy.bulletRange);
+            enemy.spriteSheet->Play("attack", true);
+            enemy.hitStunTimer = enemy.spriteSheet->GetClipTotalDuration("attack");
+
+            ObjectManager::Get().SpawnEnemyBullet(
+                enemy,
+                enemy.bulletSpeed,
+                enemy.bulletDamage,
+                enemy.bulletRange
+            );
+
+            //only play audio if enemy is in the camera view
+            if (Enemy_IsInCamera(enemy))
+            {
+                AudioManager::Get().PlayAudio(s_EasyEnemyAttackSound, false);
+            }
+
             enemy.shootTimer = enemy.shootCooldown;
+            return;
         }
     }
 
     enemy.vel.x = enemy.direction * enemy.moveSpeed;
     PhysicsManager::Get().Integrate(enemy.pos, enemy.vel, dt);
 
+    
     // Patrol movement (TODO, now still hardcoded)
     enemy.pos.x += enemy.direction * enemy.moveSpeed * dt;
+
+    /*
     // Patrol bounds (could be from config, but keep hardcoded for now)
     float patrolMinX = -400.0f, patrolMaxX = 400.0f;
     if (enemy.pos.x >= patrolMaxX) enemy.direction = -1;
     else if (enemy.pos.x <= patrolMinX) enemy.direction = 1;
+    */
+    if (enemy.pos.x >= enemy.patrolMaxX) {
+        enemy.pos.x = enemy.patrolMaxX;
+        enemy.direction = -1;
+    }
+    else if (enemy.pos.x <= enemy.patrolMinX) {
+        enemy.pos.x = enemy.patrolMinX;
+        enemy.direction = 1;
+    }
+
+    // Update animation
+        if (enemy.spriteSheet->GetCurrentClip() != "patrol")
+            enemy.spriteSheet->Play("patrol");
+
+        enemy.spriteSheet->Update(dt);
 }
 
 void HardEnemy_Update(Enemy& enemy, float dt) {
-    if (!enemy.isAlive) return;
-    if (enemy.hitStunTimer > 0.0f) {
-        enemy.hitStunTimer -= dt;
-        if (enemy.hitStunTimer <= 0.0f) {
-            enemy.hitStunTimer = 0.0f;
-            enemy.texture = enemy.normalTexture;
+    if (!enemy.spriteSheet)
+        return;
+
+    const std::string currentClip = enemy.spriteSheet->GetCurrentClip();
+
+    // Dead, keep dead animation running until it finishes
+    if (!enemy.isAlive)
+    {
+        if (currentClip == "dead")
+        {
+            enemy.hitStunTimer -= dt;
+            enemy.spriteSheet->Update(dt);
+
+            if (enemy.hitStunTimer <= 0.0f)
+            {
+                enemy.hitStunTimer = 0.0f;
+                enemy.spriteSheet->Stop();// stop animation
+            }
         }
         return;
     }
+
+    // attack/hit state
+    if (enemy.hitStunTimer > 0.0f)
+    {
+        enemy.hitStunTimer -= dt;
+        enemy.spriteSheet->Update(dt);
+
+        if (enemy.hitStunTimer <= 0.0f)
+        {
+            enemy.hitStunTimer = 0.0f;
+
+            // Only go back to patrol from attack/hit
+            const std::string clipNow = enemy.spriteSheet->GetCurrentClip();
+            if (clipNow != "dead")
+                enemy.spriteSheet->Play("patrol");
+        }
+        return;
+    }
+
     enemy.vel.x = enemy.direction * enemy.moveSpeed;
     PhysicsManager::Get().Integrate(enemy.pos, enemy.vel, dt);
     enemy.pos.x += enemy.direction * enemy.moveSpeed * dt;
+
+    /*
     float patrolMinX = -400.0f, patrolMaxX = 400.0f;
     if (enemy.pos.x >= patrolMaxX) enemy.direction = -1;
     else if (enemy.pos.x <= patrolMinX) enemy.direction = 1;
+    */
+
+    if (enemy.pos.x >= enemy.patrolMaxX) {
+        enemy.pos.x = enemy.patrolMaxX;
+        enemy.direction = -1;
+    }
+    else if (enemy.pos.x <= enemy.patrolMinX) {
+        enemy.pos.x = enemy.patrolMinX;
+        enemy.direction = 1;
+    }
+
+    if (enemy.spriteSheet->GetCurrentClip() != "patrol")
+        enemy.spriteSheet->Play("patrol");
+
+    enemy.spriteSheet->Update(dt);
 }
 
 // -----------------------------------------------------------------------------
@@ -304,7 +529,6 @@ void HardEnemy_Update(Enemy& enemy, float dt) {
 // Freezes briefly on hit stun
 // -----------------------------------------------------------------------------
 void BossEnemy_Update(Enemy& enemy, float dt) {
-    if (!enemy.isAlive) return;
     if (enemy.hitStunTimer > 0.0f) {
         enemy.hitStunTimer -= dt;
         if (enemy.hitStunTimer <= 0.0f) enemy.hitStunTimer = 0.0f;
@@ -323,43 +547,38 @@ void BossEnemy_Update(Enemy& enemy, float dt) {
 // -----------------------------------------------------------------------------
 void Enemy_Draw(const Enemy& enemy)
 {
-    if (!enemy.isAlive) return;
+    //if (!enemy.isAlive && (!enemy.spriteSheet || enemy.spriteSheet->GetCurrentClip() != "dead"))
+      //  return;
 
-    // Horizontal flip based on direction and which way the image faces
+    if (!enemy.spriteSheet)
+        return;
+
+    // dead enemy should disappear after dead animation duration ends
+    if (!enemy.isAlive)
+    {
+        if (enemy.spriteSheet->GetCurrentClip() != "dead")
+            return;
+
+        if (enemy.hitStunTimer <= 0.0f)
+            return;
+    }
+
     float scaleX;
+
     if (enemy.facesLeft)
         scaleX = (enemy.direction == 1) ? -enemy.width : enemy.width;
     else
         scaleX = (enemy.direction == -1) ? -enemy.width : enemy.width;
 
-    // Draw enemy body (if texture exists)
-    if (enemy.texture) {
-        MeshManager::Get().DrawTexturedSquare(
-            enemy.texture,
-            enemy.pos.x,
-            enemy.pos.y,
-            scaleX,
-            enemy.height
-        );
-    }
+    MeshManager::Get().DrawSpriteSheet(
+        *enemy.spriteSheet,
+        enemy.pos.x,
+        enemy.pos.y,
+        scaleX,
+        enemy.height,
+        1.0f
+    );
 
-    // Low?HP overlay
-    float alpha = 0.0f;
-    if (enemy.hitPoints == 1)
-        alpha = 0.5f;
-    else if (enemy.hitStunTimer > 0.0f)
-        alpha = (enemy.hitStunTimer / 0.5f) * 1.0f;
-
-    if (alpha > 0.0f && enemy.lowHpTexture) {
-        MeshManager::Get().DrawTexturedSquare(
-            enemy.lowHpTexture,
-            enemy.pos.x,
-            enemy.pos.y,
-            enemy.width,
-            enemy.height,
-            alpha
-        );
-    }
 }
 
 // -----------------------------------------------------------------------------
@@ -368,28 +587,49 @@ void Enemy_Draw(const Enemy& enemy)
 // -----------------------------------------------------------------------------
 void Enemy_OnHit(Enemy& enemy, float damage)
 {
-    if (!enemy.isAlive || enemy.hitStunTimer > 0.0f)
-        return; // already hit, or dead
+    if (!enemy.isAlive)
+        return;
 
-    // decrease hit points
-    enemy.hitPoints -=damage;
+    // Do not block damage just because attack is playing
+    // only block if already in hit/dead animation
+    if (enemy.spriteSheet)
+    {
+        const std::string clip = enemy.spriteSheet->GetCurrentClip();
+        if (clip == "hit" || clip == "dead")
+            return;
+    }
 
-    // freeze enemy for 0.5 seconds
-    enemy.hitStunTimer = 0.5f;
+    enemy.hitPoints -= damage;
 
-    // if HP <= 0, enemy dies
-    if (enemy.hitPoints <= 0)
-        enemy.isAlive = 0;
-}
+    // dead
+    if (enemy.hitPoints <= 0.0f)
+    {
+        enemy.hitPoints = 0.0f;
 
-void Enemy_SetGraphics(Enemy& enemy, AEGfxTexture* normalTex, AEGfxTexture* attackTex, AEGfxTexture* lowHpTex)
-{
-    
-    enemy.texture = normalTex;
-    enemy.normalTexture = normalTex;
+        if (enemy.spriteSheet)
+        {
+            enemy.spriteSheet->Play("dead", true);
+            enemy.hitStunTimer = enemy.spriteSheet->GetClipTotalDuration("dead");
+        }
+        else
+        {
+            enemy.hitStunTimer = 0.45f;
+        }
 
-    enemy.attackTexture = attackTex;
-    enemy.lowHpTexture = lowHpTex;
+        enemy.isAlive = false;
+        return;
+    }
+
+    // hit
+    if (enemy.spriteSheet)
+    {
+        enemy.spriteSheet->Play("hit", true);
+        enemy.hitStunTimer = enemy.spriteSheet->GetClipTotalDuration("hit");
+    }
+    else
+    {
+        enemy.hitStunTimer = 0.45f;
+    }
 }
 
 
@@ -398,16 +638,22 @@ void HardEnemy_OnCollision(Enemy& enemy, Player& player)
     if (!enemy.isAlive)
         return;
 
-    // prevent repeated hits while already attacking
-    if (enemy.texture == enemy.attackTexture)
+    if (!enemy.spriteSheet)
+        return;
+
+    // don't restart attack if already in attack/hit/dead
+    const std::string clip = enemy.spriteSheet->GetCurrentClip();
+    if (clip == "attack" || clip == "hit" || clip == "dead")
         return;
 
     // apply damage
     Player_ApplyDamage(player, enemy.damage);
 
-    // switch to attack state
-    enemy.hitStunTimer = 0.3f;
-    enemy.texture = enemy.attackTexture;
+    // switch to attack animation
+    enemy.spriteSheet->Play("attack", true);
+    enemy.hitStunTimer = enemy.spriteSheet->GetClipTotalDuration("attack");
+
+    AudioManager::Get().PlayAudio(s_HardEnemyAttackSound, false);
 }
 
 

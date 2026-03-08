@@ -2,7 +2,7 @@
     "metadata": {
         "game_version": "1.0",
         "save_date": "00-00-0000 00:00:00",
-        "current_level": 1,
+        "current_level": 3,
         "total_levels": 4,
         "levels_completed": 0,
         "player_lives": 3
@@ -145,29 +145,7 @@
     ],
     "level_1": {
         "completed": false,
-        "enemies": [
-            {
-                "type": "easy",
-                "x": 200.0,
-                "y": -290.0,
-                "width": 80.0,
-                "height": 80.0,
-                "hp": 10.0,
-                "speed": 90.0,
-                "bullet_speed": 400.0,
-                "bullet_damage": 1.0
-            },
-            {
-                "type": "hard",
-                "x": 400.0,
-                "y": -290.0,
-                "width": 80.0,
-                "height": 80.0,
-                "hp": 20.0,
-                "speed": 150.0,
-                "damage": 1.0
-            }
-        ],
+         
         "platforms": [
             { "x":    0.0,  "y": -200.0,  "width": 500.0, "height": 40.0, "active":  true },
             { "x": -450.0,  "y":  -50.0,  "width": 250.0, "height": 40.0, "active":  true },
@@ -216,17 +194,98 @@
     "completed": false,
     "enemies": [
         {
-            "type": "easy",
-            "x": 250.0,
-            "y": 120.0,
-            "width": 80.0,
-            "height": 80.0,
-            "hp": 60.0,
-            "speed": 1.8,
-            "bullet_speed": 400.0,
-            "bullet_damage": 2.0
+          "type": "hard",
+          "x": -475.0,
+          "y": 1960.0,
+          "width": 80.0,
+          "height": 80.0,
+          "hp": 20.0,
+          "speed": 150.0,
+          "damage": 1.0,
+          "patrol_min_x": -585.0,
+          "patrol_max_x": -365.0,
+          "animations": {
+            "file": "Assets/Images/HardEnemySheet.png",
+            "rows": 4,
+            "cols": 4,
+            "clips": [
+              {"name": "patrol", "start": 0, "end": 3, "duration": 0.1, "loop": true},
+              {"name": "attack", "start": 4, "end": 7, "duration": 0.1, "loop": true},
+              {"name": "hit", "start": 8, "end": 10, "duration": 0.1, "loop": false},
+              {"name": "dead", "start": 11, "end": 13, "duration": 0.1, "loop": false}
+            ]
+          }
+        },
+        {
+          "type": "hard",
+          "x": 475.0,
+          "y": 1960.0,
+          "width": 80.0,
+          "height": 80.0,
+          "hp": 20.0,
+          "speed": 150.0,
+          "damage": 1.0,
+          "patrol_min_x": 365.0,
+          "patrol_max_x": 585.0,
+          "animations": {
+            "file": "Assets/Images/HardEnemySheet.png",
+            "rows": 4,
+            "cols": 4,
+            "clips": [
+              {"name": "patrol", "start": 0, "end": 3, "duration": 0.1, "loop": true},
+              {"name": "attack", "start": 4, "end": 7, "duration": 0.1, "loop": true},
+              {"name": "hit", "start": 8, "end": 10, "duration": 0.1, "loop": false},
+              {"name": "dead", "start": 11, "end": 13, "duration": 0.1, "loop": false}
+            ]
+          }
+        },
+        {
+          "type": "hard",
+          "x": 0.0,
+          "y": 2110.0,
+          "width": 80.0,
+          "height": 80.0,
+          "hp": 20.0,
+          "speed": 150.0,
+          "damage": 1.0,
+          "patrol_min_x": -210.0,
+          "patrol_max_x": 210.0,
+          "animations": {
+            "file": "Assets/Images/HardEnemySheet.png",
+            "rows": 4,
+            "cols": 4,
+            "clips": [
+              {"name": "patrol", "start": 0, "end": 3, "duration": 0.1, "loop": true},
+              {"name": "attack", "start": 4, "end": 7, "duration": 0.1, "loop": true},
+              {"name": "hit", "start": 8, "end": 10, "duration": 0.1, "loop": false},
+              {"name": "dead", "start": 11, "end": 13, "duration": 0.1, "loop": false}
+            ]
+          }
+        },
+        {
+          "type": "hard",
+          "x": 0.0,
+          "y": 4560.0,
+          "width": 80.0,
+          "height": 80.0,
+          "hp": 20.0,
+          "speed": 150.0,
+          "damage": 1.0,
+          "patrol_min_x": -285.0,
+          "patrol_max_x": 285.0,
+          "animations": {
+            "file": "Assets/Images/HardEnemySheet.png",
+            "rows": 4,
+            "cols": 4,
+            "clips": [
+              {"name": "patrol", "start": 0, "end": 3, "duration": 0.1, "loop": true},
+              {"name": "attack", "start": 4, "end": 7, "duration": 0.1, "loop": true},
+              {"name": "hit", "start": 8, "end": 10, "duration": 0.1, "loop": false},
+              {"name": "dead", "start": 11, "end": 13, "duration": 0.1, "loop": false}
+            ]
+          }
         }
-    ],
+      ],
         "platforms": [
             {  "x": -475.0, "y": 1900.0, "width": 300.0, "height": 40.0, "active": true },
 	          {  "x":  475.0, "y": 1900.0, "width": 300.0, "height": 40.0, "active": true },
@@ -275,7 +334,150 @@
     },
     "level_3": {
         "completed": false,
-        "enemies": [],
+              "enemies": [
+        {
+          "type": "easy",
+          "x": 150.0,
+          "y": 4710.0,
+          "width": 80.0,
+          "height": 80.0,
+          "hp": 10.0,
+          "speed": 90.0,
+          "bullet_speed": 400.0,
+          "bullet_damage": 1.0,
+          "patrol_min_x": -185.0,
+          "patrol_max_x": 485.0,
+          "animations": {
+            "file": "Assets/Images/EasyEnemySheet.png",
+            "rows": 4,
+            "cols": 4,
+            "clips": [
+              {"name": "patrol", "start": 0, "end": 3, "duration": 0.1, "loop": true},
+              {"name": "attack", "start": 4, "end": 7, "duration": 0.1, "loop": true},
+              {"name": "hit", "start": 8, "end": 11, "duration": 0.1, "loop": false},
+              {"name": "dead", "start": 12, "end": 15, "duration": 0.1, "loop": false}
+            ]
+          }
+        },
+        {
+          "type": "easy",
+          "x": 475.0,
+          "y": 5610.0,
+          "width": 80.0,
+          "height": 80.0,
+          "hp": 10.0,
+          "speed": 90.0,
+          "bullet_speed": 400.0,
+          "bullet_damage": 1.0,
+          "patrol_min_x": 265.0,
+          "patrol_max_x": 685.0,
+          "animations": {
+            "file": "Assets/Images/EasyEnemySheet.png",
+            "rows": 4,
+            "cols": 4,
+            "clips": [
+              {"name": "patrol", "start": 0, "end": 3, "duration": 0.1, "loop": true},
+              {"name": "attack", "start": 4, "end": 7, "duration": 0.1, "loop": true},
+              {"name": "hit", "start": 8, "end": 11, "duration": 0.1, "loop": false},
+              {"name": "dead", "start": 12, "end": 15, "duration": 0.1, "loop": false}
+            ]
+          }
+        },
+        {
+          "type": "easy",
+          "x": 0.0,
+          "y": 6210.0,
+          "width": 80.0,
+          "height": 80.0,
+          "hp": 10.0,
+          "speed": 90.0,
+          "bullet_speed": 400.0,
+          "bullet_damage": 1.0,
+          "patrol_min_x": -360.0,
+          "patrol_max_x": 360.0,
+          "animations": {
+            "file": "Assets/Images/EasyEnemySheet.png",
+            "rows": 4,
+            "cols": 4,
+            "clips": [
+              {"name": "patrol", "start": 0, "end": 3, "duration": 0.1, "loop": true},
+              {"name": "attack", "start": 4, "end": 7, "duration": 0.1, "loop": true},
+              {"name": "hit", "start": 8, "end": 11, "duration": 0.1, "loop": false},
+              {"name": "dead", "start": 12, "end": 15, "duration": 0.1, "loop": false}
+            ]
+          }
+        },
+        {
+          "type": "easy",
+          "x": -200.0,
+          "y": 7260.0,
+          "width": 80.0,
+          "height": 80.0,
+          "hp": 10.0,
+          "speed": 90.0,
+          "bullet_speed": 400.0,
+          "bullet_damage": 1.0,
+          "patrol_min_x": -670.0,
+          "patrol_max_x": 270.0,
+          "animations": {
+            "file": "Assets/Images/EasyEnemySheet.png",
+            "rows": 4,
+            "cols": 4,
+            "clips": [
+              {"name": "patrol", "start": 0, "end": 3, "duration": 0.1, "loop": true},
+              {"name": "attack", "start": 4, "end": 7, "duration": 0.1, "loop": true},
+              {"name": "hit", "start": 8, "end": 11, "duration": 0.1, "loop": false},
+              {"name": "dead", "start": 12, "end": 15, "duration": 0.1, "loop": false}
+            ]
+          }
+        },
+        {
+          "type": "hard",
+          "x": 400.0,
+          "y": 7560.0,
+          "width": 80.0,
+          "height": 80.0,
+          "hp": 20.0,
+          "speed": 150.0,
+          "damage": 1.0,
+          "patrol_min_x": 315.0,
+          "patrol_max_x": 485.0,
+          "animations": {
+            "file": "Assets/Images/HardEnemySheet.png",
+            "rows": 4,
+            "cols": 4,
+            "clips": [
+              {"name": "patrol", "start": 0, "end": 3, "duration": 0.1, "loop": true},
+              {"name": "attack", "start": 4, "end": 7, "duration": 0.1, "loop": true},
+              {"name": "hit", "start": 8, "end": 10, "duration": 0.1, "loop": false},
+              {"name": "dead", "start": 11, "end": 13, "duration": 0.1, "loop": false}
+            ]
+          }
+        },
+        {
+          "type": "hard",
+          "x": 400.0,
+          "y": 8760.0,
+          "width": 80.0,
+          "height": 80.0,
+          "hp": 20.0,
+          "speed": 150.0,
+          "damage": 1.0,
+          "patrol_min_x": 315.0,
+          "patrol_max_x": 485.0,
+          "animations": {
+            "file": "Assets/Images/HardEnemySheet.png",
+            "rows": 4,
+            "cols": 4,
+            "clips": [
+              {"name": "patrol", "start": 0, "end": 3, "duration": 0.1, "loop": true},
+              {"name": "attack", "start": 4, "end": 7, "duration": 0.1, "loop": true},
+              {"name": "hit", "start": 8, "end": 10, "duration": 0.1, "loop": false},
+              {"name": "dead", "start": 11, "end": 13, "duration": 0.1, "loop": false}
+            ]
+          }
+        }
+      ],
         "platforms": [
             { "x":  150.0, "y": 4650.0, "width": 750.0, "height": 40.0, "active":  true },
             { "x": -550.0, "y": 4800.0, "width": 200.0, "height": 40.0, "active":  true },

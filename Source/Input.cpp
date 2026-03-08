@@ -28,22 +28,12 @@ Technology is prohibited.
 #include "ObjectManager.h"
 #include "PhysicsManager.h"
 
-static AEAudio s_JumpSound{};
-static bool s_JumpSoundLoaded = false;
-
 // ----------------------------------------------------------------------------
 // Handles all user input processing for the current frame
 // This function should be called once per frame to process keyboard, mouse,
 // or gamepad input and update game state accordingly
 // ----------------------------------------------------------------------------
 void Input_Handle() {
-
-	//check so it doesnt load every frame
-	if (!s_JumpSoundLoaded)
-	{
-		s_JumpSound = AudioManager::Get().LoadAudio(Audio::JUMP, false);
-		s_JumpSoundLoaded = true;
-	}
 	// check if forcing the application to quit
 	if (0 == AESysDoesWindowExist()) {
 		GameStateManager::Get().next = GS_QUIT;
@@ -83,7 +73,6 @@ void Input_Handle() {
 			if (physics.TryJump(player.vel.y, grounded))
 			{
 				player.grounded = grounded ? 1 : 0;
-				AudioManager::Get().PlayAudio(s_JumpSound, false);
 			}
 		}
 

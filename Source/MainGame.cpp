@@ -119,6 +119,11 @@ void MainGame_Initialize()
 {
     // Clear any leftover popup state from a previous visit to this screen
     UIManager::Get().Reset();
+
+    // clear old game objects/environment before reloading from JSON
+    ObjectManager::Get().Clear();
+    EnvironmentManager::Get().Clear();
+
     ParseConfigFromDisk();
     ApplyConfigToManagers();
     DebugManager::Get().Initialize();

@@ -38,7 +38,9 @@ Technology is prohibited.
 
 static AEAudio s_GunAttackSound{};
 static AEAudio s_MeleeAttackSound{};
+static AEAudio s_JumpSound{};
 static bool s_PlayerAudioLoaded = false;
+
 static const float MELEE_COOLDOWN = 0.3f;
 
 
@@ -149,12 +151,17 @@ void Player_Init(Player& player, const rapidjson::Value& config)
 	}
 	// play slash
 	player.slashSprite->Play("slash", true);
+	
+	//load player audios
 	if (!s_PlayerAudioLoaded)
 	{
 		s_GunAttackSound = AudioManager::Get().LoadAudio(Audio::PLAYER_GUN_ATTACK, false);
 		s_MeleeAttackSound = AudioManager::Get().LoadAudio(Audio::PLAYER_MELEE_ATTACK, false);
+		s_JumpSound = AudioManager::Get().LoadAudio(Audio::JUMP, false);
 		s_PlayerAudioLoaded = true;
 	}
+
+
 
 	// hurt state
 	player.isHurt = false;
@@ -170,6 +177,12 @@ void Player_Init(Player& player, const rapidjson::Value& config)
 void Player_Update(Player& player, float dt)
 {
 	PhysicsManager& physics = PhysicsManager::Get();
+
+	if (AEInputCheckTriggered(AEVK_SPACE))
+	{
+		// play jump sound
+		AudioManager::Get().PlayAudio(s_JumpSound, false);
+	}
 
 	// Apply gravity (skipped while grounded so velocity does not accumulate)
 	physics.ApplyGravity(player.vel.y, static_cast<bool>(player.grounded), dt);
@@ -579,19 +592,7 @@ void Player_Update(Player& player, float dt)
 
 void Player_Draw(const Player& player)
 {
-	//TODO, will try to make it work another time
-	/*
-	  //draw hit text above the player
-	if (player.hitTextTimer > 0.0f && g_FontSmall != -1)
-	{
-		float textX = player.pos.x;//same X as player
-		float textY = player.pos.y + player.height * 0.5f + 20.0f; //above player
-
-		AEGfxPrint(g_FontSmall, "Hit!", textX, textY,
-			1.0f, 1.0f, 1.0f, 0.0f, 0.0f); //red
-	}
-	*/
-
+	
 	// drawing player bullets
 	for (const auto& b : player.bullets)
 		PlayerBullet_Draw(b);
