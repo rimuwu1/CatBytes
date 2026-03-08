@@ -108,8 +108,38 @@
         "slotSize": 80,
         "iconSize": 45,
         "slotTexture": "Assets/Images/weaponSlot.png",
-        "meleeIcon": "Assets/Images/meleeIcon.png",
-        "gunIcon": "Assets/Images/gunIcon.png"
+        "meleeSelected": {
+          "file": "Assets/Images/C2NSheet.png",
+          "rows": 1,
+          "cols": 3,
+          "clips": [
+            { "name": "anim", "start": 0, "end": 2, "speed": 1.0, "loop": false }
+          ]
+        },
+        "meleeDeselected": {
+          "file": "Assets/Images/N2CSheet.png",
+          "rows": 1,
+          "cols": 3,
+          "clips": [
+            { "name": "anim", "start": 0, "end": 2, "speed": 1.0, "loop": false }
+          ]
+        },
+        "gunSelected": {
+          "file": "Assets/Images/G2NSheet.png",
+          "rows": 1,
+          "cols": 3,
+          "clips": [
+            { "name": "anim", "start": 0, "end": 2, "speed": 1.0, "loop": false }
+          ]
+        },
+        "gunDeselected": {
+          "file": "Assets/Images/N2GSheet.png",
+          "rows": 1,
+          "cols": 3,
+          "clips": [
+            { "name": "anim", "start": 0, "end": 2, "speed": 1.0, "loop": false }
+          ]
+        }
       },
       "progressBar": {
         "active": true,

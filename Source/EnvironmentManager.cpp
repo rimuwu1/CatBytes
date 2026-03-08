@@ -216,7 +216,7 @@ void EnvironmentManager::Initialize()
 // ------------------------------------------------------------------------
 void EnvironmentManager::Update(float dt, const Player& player, float cameraY)
 {
-    m_HUD.Update(dt, player);
+    m_HUD.Update(dt, player, player.weapon);
 
     UpdateBackground(cameraY);
 

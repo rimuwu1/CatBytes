@@ -112,6 +112,30 @@ float HUD::SegmentProgress(float y, float a, float b)
 }
 
 // ------------------------------------------------------------------------
+// ---- HUD config ---- //
+void HUD::InitFromConfig(const rapidjson::Value& doc)
+{
+	hudActive = true;
+
+	// Hearts UI
+	hearts.active = true;
+
+	// Progress Bar UI
+	progressBar = ProgressBar();
+	progressBar.active = false;
+
+	if (!doc.HasMember("ui"))
+	{
+		return;
+	}
+	const rapidjson::Value& uiJson = doc["ui"];
+
+	InitHeartsFromConfig(uiJson);
+	InitWeaponSwitchFromConfig(uiJson);
+	InitProgressBarFromConfig(uiJson);
+	InitPauseButtonFromConfig(uiJson);
+}
+
 // ---- Hearts config ---- //
 void HUD::InitHeartsFromConfig(const rapidjson::Value& uiJson)
 {
@@ -215,15 +239,134 @@ void HUD::InitWeaponSwitchFromConfig(const rapidjson::Value& uiJson)
 		weaponSwitch.slotTexture =
 			TextureManager::Get().LoadTexture(weapon["slotTexture"].GetString());
 	}
-	if (weapon.HasMember("meleeIcon"))
+
+	// ---- Animations ---- //
+	// Melee selected
+	if (weapon.HasMember("meleeSelected"))
 	{
-		weaponSwitch.meleeIcon =
-			TextureManager::Get().LoadTexture(weapon["meleeIcon"].GetString());
+		const rapidjson::Value& anims = weapon["meleeSelected"];
+
+		if (anims.HasMember("file") && anims.HasMember("rows") && anims.HasMember("cols"))
+		{
+			weaponSwitch.meleeSelectedSheet.reset(new SpriteSheet(
+				anims["file"].GetString(),
+				(u32)anims["rows"].GetInt(),
+				(u32)anims["cols"].GetInt()
+			));
+
+			const rapidjson::Value& clips = anims["clips"];
+			for (rapidjson::SizeType i = 0; i < clips.Size(); i++)
+			{
+				const rapidjson::Value& c = clips[i];
+
+				weaponSwitch.meleeSelectedSheet->AddClip(
+					c["name"].GetString(),
+					(u32)c["start"].GetInt(),
+					(u32)c["end"].GetInt(),
+					c["speed"].GetFloat(),
+					c["loop"].GetBool()
+				);
+			}
+
+			weaponSwitch.meleeSelectedSheet->Play("anim", false);
+			weaponSwitch.meleeSelectedSheet->Stop();
+		}
 	}
-	if (weapon.HasMember("gunIcon"))
+
+	// Melee deselected
+	if (weapon.HasMember("meleeDeselected"))
 	{
-		weaponSwitch.gunIcon =
-			TextureManager::Get().LoadTexture(weapon["gunIcon"].GetString());
+		const rapidjson::Value& anims = weapon["meleeDeselected"];
+
+		if (anims.HasMember("file") && anims.HasMember("rows") && anims.HasMember("cols"))
+		{
+			weaponSwitch.meleeDeselectedSheet.reset(new SpriteSheet(
+				anims["file"].GetString(),
+				(u32)anims["rows"].GetInt(),
+				(u32)anims["cols"].GetInt()
+			));
+
+			const rapidjson::Value& clips = anims["clips"];
+			for (rapidjson::SizeType i = 0; i < clips.Size(); i++)
+			{
+				const rapidjson::Value& c = clips[i];
+
+				weaponSwitch.meleeDeselectedSheet->AddClip(
+					c["name"].GetString(),
+					(u32)c["start"].GetInt(),
+					(u32)c["end"].GetInt(),
+					c["speed"].GetFloat(),
+					c["loop"].GetBool()
+				);
+			}
+
+			weaponSwitch.meleeDeselectedSheet->Play("anim", false);
+			weaponSwitch.meleeDeselectedSheet->Stop();
+		}
+	}
+
+	// Gun selected
+	if (weapon.HasMember("gunSelected"))
+	{
+		const rapidjson::Value& anims = weapon["gunSelected"];
+
+		if (anims.HasMember("file") && anims.HasMember("rows") && anims.HasMember("cols"))
+		{
+			weaponSwitch.gunSelectedSheet.reset(new SpriteSheet(
+				anims["file"].GetString(),
+				(u32)anims["rows"].GetInt(),
+				(u32)anims["cols"].GetInt()
+			));
+
+			const rapidjson::Value& clips = anims["clips"];
+			for (rapidjson::SizeType i = 0; i < clips.Size(); i++)
+			{
+				const rapidjson::Value& c = clips[i];
+
+				weaponSwitch.gunSelectedSheet->AddClip(
+					c["name"].GetString(),
+					(u32)c["start"].GetInt(),
+					(u32)c["end"].GetInt(),
+					c["speed"].GetFloat(),
+					c["loop"].GetBool()
+				);
+			}
+
+			weaponSwitch.gunSelectedSheet->Play("anim", false);
+			weaponSwitch.gunSelectedSheet->Stop();
+		}
+	}
+
+	// Gun deselected
+	if (weapon.HasMember("gunDeselected"))
+	{
+		const rapidjson::Value& anims = weapon["gunDeselected"];
+
+		if (anims.HasMember("file") && anims.HasMember("rows") && anims.HasMember("cols"))
+		{
+			weaponSwitch.gunDeselectedSheet.reset(new SpriteSheet(
+				anims["file"].GetString(),
+				(u32)anims["rows"].GetInt(),
+				(u32)anims["cols"].GetInt()
+			));
+
+			const rapidjson::Value& clips = anims["clips"];
+			for (rapidjson::SizeType i = 0; i < clips.Size(); i++)
+			{
+				const rapidjson::Value& c = clips[i];
+
+				weaponSwitch.gunDeselectedSheet->AddClip(
+					c["name"].GetString(),
+					(u32)c["start"].GetInt(),
+					(u32)c["end"].GetInt(),
+					c["speed"].GetFloat(),
+					c["loop"].GetBool()
+				);
+			}
+
+			weaponSwitch.gunDeselectedSheet->Play("anim", false);
+			weaponSwitch.gunDeselectedSheet->Stop();
+		}
 	}
 
 	weaponSwitch.ready = true;
@@ -238,7 +381,6 @@ void HUD::InitProgressBarFromConfig(const rapidjson::Value& uiJson)
 	}
 
 	const rapidjson::Value& pbar = uiJson["progressBar"];
-
 
 	if (pbar.HasMember("active"))
 	{
@@ -356,45 +498,24 @@ void HUD::InitPauseButtonFromConfig(const rapidjson::Value& uiJson)
 
 }
 
-// ---- HUD config ---- //
-void HUD::InitFromConfig(const rapidjson::Value& doc)
-{
-	hudActive = true;
-
-	// Hearts UI
-	hearts.active = true;
-
-	// Progress Bar UI
-	progressBar = ProgressBar();
-	progressBar.active = false;
-
-	if (!doc.HasMember("ui"))
-	{
-		return;
-	}
-	const rapidjson::Value& uiJson = doc["ui"];
-
-	InitHeartsFromConfig(uiJson);
-	InitWeaponSwitchFromConfig(uiJson);
-	InitProgressBarFromConfig(uiJson);
-	InitPauseButtonFromConfig(uiJson);
-}
-
-void HUD::Update(float /*dt*/, const Player& player)
+// ------------------------------------------------------------------------
+// ---- Update HUD ---- //
+void HUD::Update(float dt, const Player& player, PlayerWeapon weapon)
 {
 	if (!hudActive)
 	{
 		return;
 	}
 
-	pbarPlayerY = player.pos.y;
-
+	// Hearts
 	if (hearts.active && hearts.heartsSheet)
 	{
 		const int state = ClampHeartsStateFromPlayer(player);
 		ApplyHeartsState(state);
 	}
 
+	// Progress bar
+	pbarPlayerY = player.pos.y;
 }
 
 // ------------------------------------------------------------------------
@@ -442,7 +563,7 @@ void HUD::DrawWeaponSwitch(float camX, float camY, PlayerWeapon weapon) const
 		if (weapon == PlayerWeapon::MELEE)
 		{
 			MeshManager::Get().DrawCircle(
-				meleeX, hy, 
+				meleeX, hy,
 				slotSize,
 				230, 206, 154
 			);
@@ -460,31 +581,62 @@ void HUD::DrawWeaponSwitch(float camX, float camY, PlayerWeapon weapon) const
 		if (weaponSwitch.slotTexture)
 		{
 			MeshManager::Get().DrawTexturedSquare(
-				weaponSwitch.slotTexture, 
+				weaponSwitch.slotTexture,
 				meleeX, hy, slotSize, slotSize
 			);
 
 			MeshManager::Get().DrawTexturedSquare(
-				weaponSwitch.slotTexture, 
+				weaponSwitch.slotTexture,
 				gunX, hy, slotSize, slotSize
 			);
 		}
 
-		// Draw weapon icons
-		if (weaponSwitch.meleeIcon)
+		// ---- Melee slot ---- //
+		if (weapon == PlayerWeapon::MELEE)
 		{
-			MeshManager::Get().DrawTexturedSquare(
-				weaponSwitch.meleeIcon,
-				meleeX, hy, iconSize, iconSize
-			);
+			// Melee selected
+			if (weaponSwitch.meleeSelectedSheet)
+			{
+				MeshManager::Get().DrawSpriteSheet(
+					*weaponSwitch.meleeSelectedSheet,
+					meleeX, hy, iconSize, iconSize, 1.0f
+				);
+			}
+		}
+		else
+		{
+			// Melee deselected
+			if (weaponSwitch.meleeDeselectedSheet)
+			{
+				MeshManager::Get().DrawSpriteSheet(
+					*weaponSwitch.meleeDeselectedSheet,
+					meleeX, hy, iconSize, iconSize, 1.0f
+				);
+			}
 		}
 
-		if (weaponSwitch.gunIcon)
+		// ---- Gun slot ---- //
+		if (weapon == PlayerWeapon::GUN)
 		{
-			MeshManager::Get().DrawTexturedSquare(
-				weaponSwitch.gunIcon,
-				gunX, hy, iconSize, iconSize
-			);
+			// Gun selected
+			if (weaponSwitch.gunSelectedSheet)
+			{
+				MeshManager::Get().DrawSpriteSheet(
+					*weaponSwitch.gunSelectedSheet,
+					gunX, hy, iconSize, iconSize, 1.0f
+				);
+			}
+		}
+		else
+		{
+			// Gun deselected
+			if (weaponSwitch.gunDeselectedSheet)
+			{
+				MeshManager::Get().DrawSpriteSheet(
+					*weaponSwitch.gunDeselectedSheet,
+					gunX, hy, iconSize, iconSize, 1.0f
+				);
+			}
 		}
 
 	}
@@ -511,9 +663,9 @@ void HUD::DrawProgressBar(MeshManager& meshManager, float camX, float camY) cons
 
 		// Split progress bar into segments
 		const float y0 = progressBar.minY;			 // bottom of progress bar
-		const float y1 = progressBar.segmentEndY[0]; // first segment (bottom) - level 1
-		const float y2 = progressBar.segmentEndY[1]; // second segment (middle) - level 2
-		const float y3 = progressBar.segmentEndY[2]; // third segment (top) - level 3
+		const float y1 = progressBar.segmentEndY[0]; // first segment (bottom): level 1
+		const float y2 = progressBar.segmentEndY[1]; // second segment (middle): level 2
+		const float y3 = progressBar.segmentEndY[2]; // third segment (top): level 3
 
 		if (pbarPlayerY <= y1)
 		{
@@ -594,6 +746,5 @@ bool HUD::IsPauseButtonClicked(float camX, float camY) const
 	const float bottom = cy - halfH;
 	const float top = cy + halfH;
 
-	// AABB collision
 	return (mouseX >= left && mouseX <= right && mouseY >= bottom && mouseY <= top);
 }
