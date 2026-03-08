@@ -34,7 +34,7 @@ public:
 	bool IsPauseButtonClicked(float camX, float camY) const;
 
 	void InitFromConfig(const rapidjson::Value& doc);
-	void Update(float /*dt*/, const Player& player);
+	void Update(float dt, const Player& player, PlayerWeapon weapon);
 	void Draw(MeshManager& meshManager, float camX, float camY, PlayerWeapon weapon) const;
 
 	bool IsActive() const { return hudActive; }
@@ -71,8 +71,13 @@ private:
 		float iconSize = 60.0f;
 
 		AEGfxTexture* slotTexture = nullptr;
-		AEGfxTexture* meleeIcon = nullptr;
-		AEGfxTexture* gunIcon = nullptr;
+
+		std::unique_ptr<SpriteSheet> meleeSelectedSheet;
+		std::unique_ptr<SpriteSheet> meleeDeselectedSheet;
+		std::unique_ptr<SpriteSheet> gunSelectedSheet;
+		std::unique_ptr<SpriteSheet> gunDeselectedSheet;
+
+		PlayerWeapon lastWeapon = PlayerWeapon::NONE;
 
 		bool ready = false;
 	};
