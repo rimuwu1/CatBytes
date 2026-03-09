@@ -248,7 +248,7 @@ void HUD::InitWeaponSwitchFromConfig(const rapidjson::Value& uiJson)
 
 		if (anims.HasMember("file") && anims.HasMember("rows") && anims.HasMember("cols"))
 		{
-			weaponSwitch.meleeSelectedSheet.reset(new SpriteSheet(
+			weaponSwitch.meleeSheet.reset(new SpriteSheet(
 				anims["file"].GetString(),
 				(u32)anims["rows"].GetInt(),
 				(u32)anims["cols"].GetInt()
@@ -259,7 +259,7 @@ void HUD::InitWeaponSwitchFromConfig(const rapidjson::Value& uiJson)
 			{
 				const rapidjson::Value& c = clips[i];
 
-				weaponSwitch.meleeSelectedSheet->AddClip(
+				weaponSwitch.meleeSheet->AddClip(
 					c["name"].GetString(),
 					(u32)c["start"].GetInt(),
 					(u32)c["end"].GetInt(),
@@ -268,40 +268,8 @@ void HUD::InitWeaponSwitchFromConfig(const rapidjson::Value& uiJson)
 				);
 			}
 
-			weaponSwitch.meleeSelectedSheet->Play("anim", false);
-			weaponSwitch.meleeSelectedSheet->Stop();
-		}
-	}
-
-	// Melee deselected
-	if (weapon.HasMember("meleeDeselected"))
-	{
-		const rapidjson::Value& anims = weapon["meleeDeselected"];
-
-		if (anims.HasMember("file") && anims.HasMember("rows") && anims.HasMember("cols"))
-		{
-			weaponSwitch.meleeDeselectedSheet.reset(new SpriteSheet(
-				anims["file"].GetString(),
-				(u32)anims["rows"].GetInt(),
-				(u32)anims["cols"].GetInt()
-			));
-
-			const rapidjson::Value& clips = anims["clips"];
-			for (rapidjson::SizeType i = 0; i < clips.Size(); i++)
-			{
-				const rapidjson::Value& c = clips[i];
-
-				weaponSwitch.meleeDeselectedSheet->AddClip(
-					c["name"].GetString(),
-					(u32)c["start"].GetInt(),
-					(u32)c["end"].GetInt(),
-					c["speed"].GetFloat(),
-					c["loop"].GetBool()
-				);
-			}
-
-			weaponSwitch.meleeDeselectedSheet->Play("anim", false);
-			weaponSwitch.meleeDeselectedSheet->Stop();
+			weaponSwitch.meleeSheet->Play("selected", true);
+			weaponSwitch.meleeSheet->Stop();
 		}
 	}
 
@@ -312,7 +280,7 @@ void HUD::InitWeaponSwitchFromConfig(const rapidjson::Value& uiJson)
 
 		if (anims.HasMember("file") && anims.HasMember("rows") && anims.HasMember("cols"))
 		{
-			weaponSwitch.gunSelectedSheet.reset(new SpriteSheet(
+			weaponSwitch.gunSheet.reset(new SpriteSheet(
 				anims["file"].GetString(),
 				(u32)anims["rows"].GetInt(),
 				(u32)anims["cols"].GetInt()
@@ -323,7 +291,7 @@ void HUD::InitWeaponSwitchFromConfig(const rapidjson::Value& uiJson)
 			{
 				const rapidjson::Value& c = clips[i];
 
-				weaponSwitch.gunSelectedSheet->AddClip(
+				weaponSwitch.gunSheet->AddClip(
 					c["name"].GetString(),
 					(u32)c["start"].GetInt(),
 					(u32)c["end"].GetInt(),
@@ -332,40 +300,8 @@ void HUD::InitWeaponSwitchFromConfig(const rapidjson::Value& uiJson)
 				);
 			}
 
-			weaponSwitch.gunSelectedSheet->Play("anim", false);
-			weaponSwitch.gunSelectedSheet->Stop();
-		}
-	}
-
-	// Gun deselected
-	if (weapon.HasMember("gunDeselected"))
-	{
-		const rapidjson::Value& anims = weapon["gunDeselected"];
-
-		if (anims.HasMember("file") && anims.HasMember("rows") && anims.HasMember("cols"))
-		{
-			weaponSwitch.gunDeselectedSheet.reset(new SpriteSheet(
-				anims["file"].GetString(),
-				(u32)anims["rows"].GetInt(),
-				(u32)anims["cols"].GetInt()
-			));
-
-			const rapidjson::Value& clips = anims["clips"];
-			for (rapidjson::SizeType i = 0; i < clips.Size(); i++)
-			{
-				const rapidjson::Value& c = clips[i];
-
-				weaponSwitch.gunDeselectedSheet->AddClip(
-					c["name"].GetString(),
-					(u32)c["start"].GetInt(),
-					(u32)c["end"].GetInt(),
-					c["speed"].GetFloat(),
-					c["loop"].GetBool()
-				);
-			}
-
-			weaponSwitch.gunDeselectedSheet->Play("anim", false);
-			weaponSwitch.gunDeselectedSheet->Stop();
+			weaponSwitch.gunSheet->Play("selected", true);
+			weaponSwitch.gunSheet->Stop();
 		}
 	}
 
@@ -500,7 +436,7 @@ void HUD::InitPauseButtonFromConfig(const rapidjson::Value& uiJson)
 
 // ------------------------------------------------------------------------
 // ---- Update HUD ---- //
-void HUD::Update(float /*dt*/, const Player& player, PlayerWeapon weapon)
+void HUD::Update(float dt, const Player& player, PlayerWeapon weapon)
 {
 	if (!hudActive)
 	{
@@ -514,6 +450,42 @@ void HUD::Update(float /*dt*/, const Player& player, PlayerWeapon weapon)
 		ApplyHeartsState(state);
 	}
 
+	// Weapon switching
+	if (weapon != weaponSwitch.lastWeapon)
+	{
+		if (weapon == PlayerWeapon::MELEE)
+		{
+			if (weaponSwitch.meleeSheet)
+			{
+				weaponSwitch.meleeSheet->Play("selected", true);
+			}
+			if (weaponSwitch.gunSheet)
+			{
+				weaponSwitch.gunSheet->Play("selected", true);
+				weaponSwitch.gunSheet->Stop();
+			}
+		}
+		else if (weapon == PlayerWeapon::GUN)
+		{
+			if (weaponSwitch.gunSheet)
+			{
+				weaponSwitch.gunSheet->Play("selected", true);
+			}
+			if (weaponSwitch.meleeSheet)
+			{
+				weaponSwitch.meleeSheet->Play("selected", true);
+				weaponSwitch.meleeSheet->Stop();
+			}
+		}
+
+		weaponSwitch.lastWeapon = weapon;
+	}
+
+	if (weaponSwitch.meleeSheet)
+		weaponSwitch.meleeSheet->Update(dt);
+	if (weaponSwitch.gunSheet)
+		weaponSwitch.gunSheet->Update(dt);
+	
 	// Progress bar
 	pbarPlayerY = player.pos.y;
 }
@@ -591,52 +563,21 @@ void HUD::DrawWeaponSwitch(float camX, float camY, PlayerWeapon weapon) const
 			);
 		}
 
-		// ---- Melee slot ---- //
-		if (weapon == PlayerWeapon::MELEE)
+		// Melee selected
+		if (weaponSwitch.meleeSheet)
 		{
-			// Melee selected
-			if (weaponSwitch.meleeSelectedSheet)
-			{
-				MeshManager::Get().DrawSpriteSheet(
-					*weaponSwitch.meleeSelectedSheet,
-					meleeX, hy, iconSize, iconSize, 1.0f
-				);
-			}
+			MeshManager::Get().DrawSpriteSheet(
+				*weaponSwitch.meleeSheet,
+				meleeX, hy, iconSize, iconSize, 1.0f
+			);
 		}
-		else
+		// Gun selected
+		if (weaponSwitch.gunSheet)
 		{
-			// Melee deselected
-			if (weaponSwitch.meleeDeselectedSheet)
-			{
-				MeshManager::Get().DrawSpriteSheet(
-					*weaponSwitch.meleeDeselectedSheet,
-					meleeX, hy, iconSize, iconSize, 1.0f
-				);
-			}
-		}
-
-		// ---- Gun slot ---- //
-		if (weapon == PlayerWeapon::GUN)
-		{
-			// Gun selected
-			if (weaponSwitch.gunSelectedSheet)
-			{
-				MeshManager::Get().DrawSpriteSheet(
-					*weaponSwitch.gunSelectedSheet,
-					gunX, hy, iconSize, iconSize, 1.0f
-				);
-			}
-		}
-		else
-		{
-			// Gun deselected
-			if (weaponSwitch.gunDeselectedSheet)
-			{
-				MeshManager::Get().DrawSpriteSheet(
-					*weaponSwitch.gunDeselectedSheet,
-					gunX, hy, iconSize, iconSize, 1.0f
-				);
-			}
+			MeshManager::Get().DrawSpriteSheet(
+				*weaponSwitch.gunSheet,
+				gunX, hy, iconSize, iconSize, 1.0f
+			);
 		}
 
 	}

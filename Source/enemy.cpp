@@ -3,8 +3,10 @@
 \file enemy.cpp
 \author Tse Xuan Qi Tristin, tse.x, 2503757
         Joash ng, joash.ng, 2502780
+        Kerwin Wong Jia Jie, kerwinjiajie.wong, 2502740
 \par    tse.x@digipen.edu
         joash.ng@digipen.edu
+        kerwinjiajie.wong@digipen.edu
 \date Junuary, 24, 2026
 \brief Implements a simple patrolling(?) enemy.
 The enemy moves automatically left and right between patrol bounds 
@@ -103,8 +105,10 @@ void Enemy_Init(Enemy& enemy, const rapidjson::Value& config) {
     }
 
     // Hit points
-    if (config.HasMember("hp") && config["hp"].IsFloat())
+    if (config.HasMember("hp") && config["hp"].IsFloat()) {
         enemy.hitPoints = config["hp"].GetFloat();
+        enemy.maxHitPoints = enemy.hitPoints;
+    }
     else {
         enemy.hitPoints = 3.0f;
         printf("Warning: Enemy missing 'hp', defaulting to 3\n");
@@ -225,8 +229,10 @@ void HardEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
     }
 
     // Hit points
-    if (config.HasMember("hp") && config["hp"].IsFloat())
+    if (config.HasMember("hp") && config["hp"].IsFloat()) {
         enemy.hitPoints = config["hp"].GetFloat();
+        enemy.maxHitPoints = enemy.hitPoints;
+    }
     else {
         enemy.hitPoints = 5.0f;
         printf("Warning: HardEnemy missing 'hp', defaulting to 5\n");
@@ -578,6 +584,44 @@ void Enemy_Draw(const Enemy& enemy)
         enemy.height,
         1.0f
     );
+
+    // enemy hp bar
+    if (enemy.isAlive && enemy.maxHitPoints > 0.0f) {
+        float hpRatio = enemy.hitPoints / enemy.maxHitPoints;
+
+        float hpBarWidth = enemy.width * 0.8f;
+        float hpBarHeight = 6.0f;
+
+        float x = enemy.pos.x;
+        float y = enemy.pos.y + enemy.height * 0.5f + 10.0f;
+
+        // outline
+        MeshManager::Get().DrawSquare(
+            x,
+            y,
+            hpBarWidth + 6.0f,
+            hpBarHeight + 6.0f,
+            0, 0, 0, 1.0f
+        );
+
+        // background
+        MeshManager::Get().DrawSquare(
+            x, 
+            y, 
+            hpBarWidth, 
+            hpBarHeight, 
+            40, 40, 40, 1.0f
+        );
+
+        // remaining health
+        MeshManager::Get().DrawSquare(
+            x - (hpBarWidth / 2) + (hpBarWidth * hpRatio) * 0.5f,
+            y, 
+            hpBarWidth * hpRatio, 
+            hpBarHeight, 
+            220, 40, 40, 1.0f
+        );
+    }
 
 }
 

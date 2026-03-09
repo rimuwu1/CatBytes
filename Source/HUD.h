@@ -34,7 +34,7 @@ public:
 	bool IsPauseButtonClicked(float camX, float camY) const;
 
 	void InitFromConfig(const rapidjson::Value& doc);
-	void Update(float /*dt*/, const Player& player, PlayerWeapon weapon);
+	void Update(float dt, const Player& player, PlayerWeapon weapon);
 	void Draw(MeshManager& meshManager, float camX, float camY, PlayerWeapon weapon) const;
 
 	bool IsActive() const { return hudActive; }
@@ -72,10 +72,12 @@ private:
 
 		AEGfxTexture* slotTexture = nullptr;
 
-		std::unique_ptr<SpriteSheet> meleeSelectedSheet;
-		std::unique_ptr<SpriteSheet> meleeDeselectedSheet;
-		std::unique_ptr<SpriteSheet> gunSelectedSheet;
-		std::unique_ptr<SpriteSheet> gunDeselectedSheet;
+		//std::unique_ptr<SpriteSheet> meleeSelectedSheet;
+		//std::unique_ptr<SpriteSheet> meleeDeselectedSheet;
+		//std::unique_ptr<SpriteSheet> gunSelectedSheet;
+		//std::unique_ptr<SpriteSheet> gunDeselectedSheet;
+		std::unique_ptr<SpriteSheet> meleeSheet;
+		std::unique_ptr<SpriteSheet> gunSheet;
 
 		PlayerWeapon lastWeapon = PlayerWeapon::NONE;
 

@@ -3,8 +3,10 @@
 \file enemy.h
 \author Tse Xuan Qi Tristin, tse.x, 2503757
         Joash ng, joash.ng, 2502780
+        Kerwin Wong Jia Jie, kerwinjiajie.wong, 2502740
 \par    tse.x@digipen.edu
         joash.ng@digipen.edu
+        kerwinjiajie.wong@digipen.edu
 \date Junuary, 24, 2026
 \brief the Enemy struct stores position, size, movement speed, direction, and alive status. 
 Functions initialize the enemy, update its position, draw it on screen, and free static resources
@@ -47,6 +49,7 @@ struct Enemy
     int isAlive = 0;
 
     float hitPoints = 0.0f;
+    float maxHitPoints = 0.0f;
     float hitStunTimer = 0.0f;
     bool isPlayerColliding = false;
 
