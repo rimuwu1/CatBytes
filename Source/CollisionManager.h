@@ -2,7 +2,9 @@
 /*!
 \file       CollisionManager.h
 \author     Joash ng, joash.ng, 2502780
+            Sim Hui Min, s.huimin, 2503506
 \par        joash.ng@digipen.edu
+            s.huimin@digipen.edu
 \date       Feb 26 2026
 \brief		This file declares all the collision checks under the collsion namespace.
 
@@ -56,7 +58,7 @@ namespace CollisionManager
     void HandleEnemyBulletPlayerCollisions(std::vector<EnemyBullet>& bullets, Player& player);
 
     // Player bullet collisions with enemies
-    void HandlePlayerBulletEnemyCollisions(Player& player, std::vector<Enemy>& enemies);
+    //void HandlePlayerBulletEnemyCollisions(Player& player, std::vector<Enemy>& enemies);
 
     // Player melee collisions with enemies
     void HandlePlayerMeleeEnemyCollisions(Player& player, std::vector<Enemy>& enemies);
@@ -67,11 +69,13 @@ namespace CollisionManager
     bool HandleCheckpointsSpatial(Player& player, const SpatialGrid& grid);
     void HandlePlayerEnemyCollisionsSpatial(Player& player, const SpatialGrid& grid);
     void HandleEnemyBulletPlayerCollisionsSpatial(Player& player, const SpatialGrid& grid);
+    bool HandlePogoCollisionSpatial(Player& player, const SpatialGrid& grid);
 
     //----------wrapper for all collisions------------
     struct CollisionResults {
         bool obstacleHit;   // true if player hit an obstacle
         bool checkpointHit; // true if player touched a checkpoint
+        bool pogoHit; // true if pogo performed
     };
 
     CollisionResults HandleAllCollisions(

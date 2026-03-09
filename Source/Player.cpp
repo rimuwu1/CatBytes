@@ -725,6 +725,7 @@ void Player_CheckBulletCollisions(Player& player, Enemy& enemy)
 	}
 }
 
+
 // ----------------------------------------------------------------------------
 // Releases all dynamically allocated resources used by the player
 // this includes the player's mesh and texture, which are shared static resources
@@ -743,42 +744,4 @@ void Player_Free(Player& player)
 	player.bullets.clear();
 	player.bullets.shrink_to_fit();
 
-}
-
-
-bool Player_CheckPogoCollision(Player& player, const std::vector<PlatformObstacle>& obstacles)
-{
-	// only pogo if
-	// 1. player is attacking with downslash
-	// 2. player is in the air
-	// 3. slash direction is DOWN
-	if (!player.isAttacking || player.grounded || player.slashDirection != SlashDirection::DOWN) {
-		return false;
-	}
-
-	// get player's downslash hitbox (slightly below player)
-	float slashX = player.pos.x;
-	float slashY = player.pos.y - player.height * 0.5f - 20.0f; // below player
-	float slashW = player.width * 0.8f;
-	float slashH = 40.0f;
-
-	// check collision with each spike
-	for (const auto& spike : obstacles) {
-		if (!spike.isSpike) continue; // skip non-spike obstacles
-
-		// AABB collision
-		float distX = fabs(slashX - spike.x);
-		float distY = fabs(slashY - spike.y);
-		float needX = slashW * 0.5f + spike.w * 0.5f;
-		float needY = slashH * 0.5f + spike.h * 0.5f;
-
-		bool overlapX = distX < needX;
-		bool overlapY = distY < needY;
-
-		if (overlapX && overlapY) {
-			return true; // hit a spike
-		}
-	}
-
-	return false;
 }

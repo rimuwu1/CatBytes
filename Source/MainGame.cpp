@@ -175,10 +175,23 @@ void MainGame_Update()
         ObjectManager::Get().GetAllEnemies()
     );
 
+    //obstacle reaction
     if (results.obstacleHit)
     {
-        textScreenMessage = "You Lose";
-        GameStateManager::Get().next = GS_WINLOSE;
+        Player_ApplyDamage(player, 1.0f);
+    }
+
+    // Pogo reaction
+    if (results.pogoHit) {
+        if (!player.pogoJustPerformed) {
+            player.vel.y = player.pogoVelocity;
+            player.pogoJustPerformed = true;
+            player.grounded = false;
+            player.downSlashJumped = false;
+        }
+    }
+    else {
+        player.pogoJustPerformed = false;
     }
 
     // ----- Checkpoint & save -----
@@ -243,20 +256,6 @@ void MainGame_Update()
     }
 
     std::cout << "MainGame:Update" << std::endl;
-
-    // spike obstacles
-    const auto& currentObstacles = EnvironmentManager::Get().GetCurrentObstacles();
-    if (Player_CheckPogoCollision(player, currentObstacles)) {
-        if (!player.pogoJustPerformed) {
-            player.vel.y = player.pogoVelocity;
-            player.pogoJustPerformed = true;
-            player.grounded = false;
-            player.downSlashJumped = false;
-        }
-    }
-    else {
-        player.pogoJustPerformed = false;
-    }
 }
 
 void MainGame_Draw()

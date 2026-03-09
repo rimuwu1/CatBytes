@@ -2,7 +2,9 @@
 /*!
 \file       CollisionManager.cpp
 \author     Joash ng, joash.ng, 2502780
+            Sim Hui Min, s.huimin, 2503506
 \par        joash.ng@digipen.edu
+            s.huimin@digipen.edu
 \date       Feb 26 2026
 \brief		This file handles all the collision checks under the collsion namespace.
 
@@ -177,7 +179,7 @@ namespace CollisionManager
             }
         }
     }
-
+    
     // ------------------------------------------------------------------------
     // Player bullets vs Enemies
     void HandlePlayerBulletEnemyCollisions(Player& player, std::vector<Enemy>& enemies)
@@ -190,7 +192,7 @@ namespace CollisionManager
             }
         }
     }
-
+    
     // ------------------------------------------------------------------------
     // Player melee vs Enemies
     void HandlePlayerMeleeEnemyCollisions(Player& player, std::vector<Enemy>& enemies)
@@ -382,13 +384,46 @@ namespace CollisionManager
         }
     }
 
+    bool CollisionManager::HandlePogoCollisionSpatial(Player& player, const SpatialGrid& grid)
+    {
+        // Only pogo if down-slashing in mid-air
+        if (!player.isAttacking || player.grounded || player.slashDirection != SlashDirection::DOWN)
+            return false;
+
+        // get player's downslash hitbox (slightly below player)
+        float slashX = player.pos.x;
+        float slashY = player.pos.y - player.height * 0.5f - 20.0f;
+        float slashW = player.width * 0.8f;
+        float slashH = 40.0f;
+
+        // Query nearby obstacles using the hitbox's centre and height
+        std::vector<const PlatformObstacle*> nearby;
+        grid.GetNearbyObstacles(slashY, slashH, nearby);
+
+        // check collision with each spike
+        for (const PlatformObstacle* obs : nearby)
+        {
+            if (!obs->isSpike) continue;   // skip non-spike obstacles
+
+            // AABB collision
+            float distX = fabs(slashX - obs->x);
+            float distY = fabs(slashY - obs->y);
+            float needX = slashW * 0.5f + obs->w * 0.5f;
+            float needY = slashH * 0.5f + obs->h * 0.5f;
+
+            if (distX < needX && distY < needY)
+                return true; //hit spike
+        }
+        return false;
+    }
+
     CollisionResults HandleAllCollisionsSpatial(
         Player& player,
         float playerPrevY,
         EnvironmentManager& env,
         std::vector<Enemy>& enemies)
     {
-        CollisionResults results = { false, false };
+        CollisionResults results = { false, false, false };
 
         player.grounded = 0;
 
@@ -405,14 +440,15 @@ namespace CollisionManager
 
         results.obstacleHit = HandleObstaclesSpatial(player, grid);
         results.checkpointHit = HandleCheckpointsSpatial(player, grid);
+        results.pogoHit = HandlePogoCollisionSpatial(player, grid);
 
-        HandleWalls(player, env.GetWallPlatforms());
-        HandleButtons(player, env.GetLevel2Buttons(), env.GetLevel2Platforms());
+        HandleWalls(player, env.GetWallPlatforms()); //small number, can just use non-spatial version
+        HandleButtons(player, env.GetLevel2Buttons(), env.GetLevel2Platforms()); //small no. too
 
         HandlePlayerEnemyCollisionsSpatial(player, grid);
         HandleEnemyBulletPlayerCollisionsSpatial(player, grid);
-        HandlePlayerBulletEnemyCollisions(player, enemies);
-        HandlePlayerMeleeEnemyCollisions(player, enemies);
+        HandlePlayerBulletEnemyCollisions(player, enemies); // small no. of bullets
+        HandlePlayerMeleeEnemyCollisions(player, enemies); //small no. of bullets
 
         return results;
     }

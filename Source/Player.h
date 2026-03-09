@@ -119,5 +119,3 @@ void Player_Draw(const Player& player);
 void Player_Free(Player& player);
 void Player_ApplyDamage(Player& player, float damage);
 void Player_CheckBulletCollisions(Player& player, Enemy& enemy);
-bool Player_CheckPogoCollision(Player& player, const std::vector<PlatformObstacle>& obstacles);
-
