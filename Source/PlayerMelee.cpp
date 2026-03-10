@@ -75,7 +75,7 @@ void PlayerMelee_Init(Player& player)
 
 // ----------------------------------------------------------------------------
 // Collision check against a single enemy.
-// Uses the slash sprite's drawn AABB — if the sprite is visible and overlaps
+// Uses the slash sprite's drawn AABB ï¿½ if the sprite is visible and overlaps
 // the enemy, damage is applied once per swing.
 // ----------------------------------------------------------------------------
 void PlayerMelee_Update(Player& player, Enemy& enemy)
@@ -94,7 +94,16 @@ void PlayerMelee_Update(Player& player, Enemy& enemy)
     if (AABBOverlap(slashX, slashY, slashHW, slashHH,
         enemy.pos.x, enemy.pos.y, enemyHW, enemyHH))
     {
-        Enemy_OnHit(enemy, player.meleeDamage);
+        // Knockback direction: opposite to player facing direction
+        float knockbackDir = player.facingRight ? -1.0f : 1.0f;
+        
+        // Don't knockback enemy on downslash (pogo)
+        if (player.slashDirection == SlashDirection::DOWN)
+        {
+            knockbackDir = 0.0f;
+        }
+        
+        Enemy_OnHit(enemy, player.meleeDamage, knockbackDir);
     }
 }
 
@@ -119,9 +128,19 @@ void PlayerMelee_CheckCollisions(Player& player, std::vector<Enemy*>& enemies)
         if (AABBOverlap(slashX, slashY, slashHW, slashHH,
             enemy->pos.x, enemy->pos.y, enemyHW, enemyHH))
         {
-            Enemy_OnHit(*enemy, player.meleeDamage);
+            // Knockback direction: same as player facing direction
+            float knockbackDir = player.facingRight ? 1.0f : -
+                1.0f;
+            
+            // Don't knockback enemy on downslash (pogo)
+            if (player.slashDirection == SlashDirection::DOWN)
+            {
+                knockbackDir = 0.0f;
+            }
+            
+            Enemy_OnHit(*enemy, player.meleeDamage, knockbackDir);
 
-            // Down?slash jump: only once per swing
+            // Downslash jump: only once per swing
             if (player.slashDirection == SlashDirection::DOWN && !player.downSlashJumped)
             {
                 const float JUMP_FORCE = 650.0f;   // same as in Input.cpp

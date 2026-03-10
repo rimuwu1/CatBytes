@@ -102,6 +102,12 @@ struct Player
 	bool wasHurt = false;
 	float hurtTimer = 0.0f;
 
+	// knockback state
+	AEVec2 knockbackVel{ 0.0f, 0.0f };
+	float knockbackTimer = 0.0f;
+	float knockbackVelocity = 0.0f;
+	float knockbackAirUp = 0.0f;
+
 	// player
 	u32 lastFrame = 0;
 
@@ -119,3 +125,4 @@ void Player_Draw(const Player& player);
 void Player_Free(Player& player);
 void Player_ApplyDamage(Player& player, float damage);
 void Player_CheckBulletCollisions(Player& player, Enemy& enemy);
+void Player_ApplyKnockback(Player& player, float sourceX, float sourceY);

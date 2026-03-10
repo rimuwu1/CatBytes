@@ -70,6 +70,12 @@ void Player_Init(Player& player, const rapidjson::Value& config)
 	player.hp = config["hp"].GetFloat();
 	player.meleeDamage = config["melee_damage"].GetFloat();
 
+	// knockback
+	player.knockbackVelocity = config.HasMember("knockback_velocity") ? config["knockback_velocity"].GetFloat() : 400.0f;
+	player.knockbackAirUp = config.HasMember("knockback_air_up") ? config["knockback_air_up"].GetFloat() : 300.0f;
+	player.knockbackTimer = 0.0f;
+	player.knockbackVel = { 0.0f, 0.0f };
+
 	// Weapon state
 	player.weapon = PlayerWeapon::NONE;
 	player.weaponEquipped = true;
@@ -186,11 +192,10 @@ void Player_Init(Player& player, const rapidjson::Value& config)
 	}
 
 	// initialize bullets with sprite 
-	for (auto& b : player.bullets)
-	{
+	for (auto& b : player.bullets) {
 		PlayerBullet_Init(b, player);
-		b.damage = player.bulletDamage;
-		b.bulletSprite = player.bulletSprite.get(); 
+		b.bulletSprite = std::make_unique<SpriteSheet>(*player.bulletSprite);
+		b.bulletSprite->Play("fly", true);
 	}
 
 	// hurt state
@@ -273,6 +278,7 @@ void Player_Update(Player& player, float dt)
 				if (!b.active)
 				{
 					b.active = true;
+					b.bulletSprite->Play("fly", true);
 					b.pos = player.pos;
 					b.vel.x = (player.facingRight ? 1.0f : -1.0f) * player.bulletSpeed;
 					b.vel.y = 0.0f;
@@ -291,12 +297,6 @@ void Player_Update(Player& player, float dt)
 	{
 		PlayerBullet_Update(b, dt);
 	}
-
-	// update bullet sprite animation
-	if (player.bulletSprite) {
-		player.bulletSprite->Update(dt);
-	}
-
 	// Melee attack input (only if weapon is MELEE)
 	if (player.weapon == PlayerWeapon::MELEE && player.weaponEquipped)
 	{
@@ -688,6 +688,35 @@ void Player_ApplyDamage(Player& player, float damage)
 	}
 }
 
+void Player_ApplyKnockback(Player& player, float sourceX, float sourceY)
+{
+	float dirX = player.pos.x - sourceX;
+	float dirY = player.pos.y - sourceY;
+
+	float length = sqrtf(dirX * dirX + dirY * dirY);
+	if (length > 0.0f)
+	{
+		dirX /= length;
+		dirY /= length;
+	}
+
+	player.knockbackVel.x = dirX * player.knockbackVelocity;
+	player.knockbackVel.y = dirY * player.knockbackVelocity;
+
+	if (player.grounded)
+	{
+		player.knockbackVel.y = 0.0f;
+	}
+	else
+	{
+		player.knockbackVel.y = player.knockbackAirUp;
+	}
+
+	player.knockbackTimer = player.hurtTimer;
+	player.vel.x = player.knockbackVel.x;
+	player.vel.y = player.knockbackVel.y;
+}
+
 void Player_CheckBulletCollisions(Player& player, Enemy& enemy)
 {
 	printf("CheckBulletCollisions called, enemy alive=%d, hp=%.1f\n", enemy.isAlive, enemy.hitPoints);
@@ -718,6 +747,10 @@ void Player_CheckBulletCollisions(Player& player, Enemy& enemy)
 			printf("  HIT! damage=%.1f\n", b.damage);
 			enemy.hitPoints -= b.damage;
 			b.active = false;
+
+			// Knockback direction: same as bullet velocity
+			float knockbackDir = (b.vel.x > 0.0f) ? 1.0f : -1.0f;
+			Enemy_OnHit(enemy, b.damage, knockbackDir);
 
 			if (enemy.hitPoints <= 0.0f)
 				enemy.isAlive = 0;

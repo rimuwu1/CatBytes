@@ -2,7 +2,9 @@
 /*!
 \file       PlayerBullet.h
 \author     Sim Hui Min, Huimin, s.huimin, 2503506
+            Joash ng, joash.ng, 2502780
 \par        s.huimin@digipen.edu
+            joash.ng@digipen.edu
 \date       February 01 2026
 \brief      Declare functions for player bullets
 
@@ -14,7 +16,8 @@ Technology is prohibited.
 /* End Header *****/
 
 #pragma once
-#include "AEEngine.h"
+#include <memory>
+#include "pch.h"
 
 class SpriteSheet;
 struct Player;
@@ -26,7 +29,7 @@ struct PlayerBullet {
     float damage;
     AEVec2 pos;
     AEVec2 vel;
-    SpriteSheet* bulletSprite;
+    std::unique_ptr<SpriteSheet> bulletSprite;
 };
 
 void PlayerBullet_Init(PlayerBullet& bullet, const Player& player); 

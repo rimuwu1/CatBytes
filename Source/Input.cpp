@@ -34,6 +34,7 @@ Technology is prohibited.
 // or gamepad input and update game state accordingly
 // ----------------------------------------------------------------------------
 void Input_Handle() {
+	float dt = (float)AEFrameRateControllerGetFrameTime();
 	// check if forcing the application to quit
 	if (0 == AESysDoesWindowExist()) {
 		GameStateManager::Get().next = GS_QUIT;
@@ -61,12 +62,30 @@ void Input_Handle() {
 		PhysicsManager& physics = PhysicsManager::Get();
 		const float MOVE_SPEED = PhysicsManager::Get().GetMoveSpeed();
 
-		// Horizontal velocity is fully input-driven each frame (no drag/friction needed)
-		const bool moveLeft = AEInputCheckCurr('A') != 0;
-		const bool moveRight = AEInputCheckCurr('D') != 0;
-		player.vel.x = physics.ComputeHorizontalVelocity(moveLeft, moveRight, MOVE_SPEED);
+		// Knockback: override normal movement
+		if (player.knockbackTimer > 0.0f)
+		{
+			player.knockbackTimer -= dt;
+			if (player.knockbackTimer <= 0.0f)
+			{
+				player.knockbackTimer = 0.0f;
+				player.knockbackVel = { 0.0f, 0.0f };
+			}
+			else
+			{
+				player.vel.x = player.knockbackVel.x;
+				player.vel.y = player.knockbackVel.y;
+			}
+		}
+		else
+		{
+			// Horizontal velocity is fully input-driven each frame (no drag/friction needed)
+			const bool moveLeft = AEInputCheckCurr('A') != 0;
+			const bool moveRight = AEInputCheckCurr('D') != 0;
+			player.vel.x = physics.ComputeHorizontalVelocity(moveLeft, moveRight, MOVE_SPEED);
+		}
 
-		// Jumping (Space) — PhysicsManager validates grounded state internally
+		// Jumping (Space) ï¿½ PhysicsManager validates grounded state internally
 		if (AEInputCheckTriggered(AEVK_SPACE))
 		{
 			bool grounded = static_cast<bool>(player.grounded);

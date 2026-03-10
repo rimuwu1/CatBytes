@@ -1,12 +1,12 @@
 {
-  "metadata": {
-    "game_version": "1.0",
-    "save_date": "00-00-0000 00:00:00",
-    "current_level": 3,
-    "total_levels": 4,
-    "levels_completed": 0,
-    "player_lives": 3
-  },
+    "metadata": {
+        "game_version": "1.0",
+        "save_date": "00-00-0000 00:00:00",
+        "current_level": 3,
+        "total_levels": 4,
+        "levels_completed": 0,
+        "player_lives": 3
+    },
     "player": {
             "x": 0.0,
             "y": -300.0,
@@ -14,10 +14,12 @@
             "height": 80.0,
             "hp": 3.0,
             "melee_damage": 5,
+            "knockback_velocity": 400.0,
+            "knockback_air_up": 300.0,
             "pogo_velocity": 500.0,
             "bullet": {
                 "speed": 1200.0,
-                "damage": 10.0,
+                "damage": 1.0,
                 "cooldown": 0.25,
                 "width": 30.0,
                 "height": 30.0,
@@ -28,7 +30,7 @@
                 "rows": 1,
                 "cols": 4,
                 "clips": [
-                    { "name": "fly", "start": 0, "end": 3, "duration": 0.01, "loop": false }
+                    { "name": "fly", "start": 0, "end": 3, "duration": 0.05, "loop": false }
                 ]
             },
             "animations": {
@@ -168,7 +170,7 @@
     ],
     "level_1": {
         "completed": false,
-        
+         
         "platforms": [
             { "x":    0.0,  "y": -200.0,  "width": 500.0, "height": 40.0, "active":  true },
             { "x": -450.0,  "y":  -50.0,  "width": 250.0, "height": 40.0, "active":  true },
@@ -215,7 +217,7 @@
     },
     "level_2": {
     "completed": false,
-     "enemies": [
+    "enemies": [
         {
           "type": "hard",
           "x": -475.0,
@@ -227,6 +229,7 @@
           "damage": 1.0,
           "patrol_min_x": -585.0,
           "patrol_max_x": -365.0,
+          "knockback_velocity": 300.0,
           "animations": {
             "file": "Assets/Images/HardEnemySheet.png",
             "rows": 4,
@@ -250,6 +253,7 @@
           "damage": 1.0,
           "patrol_min_x": 365.0,
           "patrol_max_x": 585.0,
+          "knockback_velocity": 300.0,
           "animations": {
             "file": "Assets/Images/HardEnemySheet.png",
             "rows": 4,
@@ -273,6 +277,7 @@
           "damage": 1.0,
           "patrol_min_x": -210.0,
           "patrol_max_x": 210.0,
+          "knockback_velocity": 300.0,
           "animations": {
             "file": "Assets/Images/HardEnemySheet.png",
             "rows": 4,
@@ -296,6 +301,7 @@
           "damage": 1.0,
           "patrol_min_x": -285.0,
           "patrol_max_x": 285.0,
+          "knockback_velocity": 300.0,
           "animations": {
             "file": "Assets/Images/HardEnemySheet.png",
             "rows": 4,

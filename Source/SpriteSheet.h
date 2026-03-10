@@ -67,6 +67,11 @@ public:
         u32 maxSprites = 0,
         f32 frameDuration = 0.1f);
 
+    // ---------------------------------------------------------------------------------------
+    // Copy Contstructor: clones the spritesheet for separate instances of the same animation
+    // ---------------------------------------------------------------------------------------
+    SpriteSheet(const SpriteSheet& other); 
+
     // -------------------------------------------------------------------------
     // Update the animation timer and advance to the next frame if enough time
     // has elapsed. Call once per frame while the animation is playing.

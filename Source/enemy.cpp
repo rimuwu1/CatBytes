@@ -186,6 +186,14 @@ void Enemy_Init(Enemy& enemy, const rapidjson::Value& config) {
 
         enemy.spriteSheet->Play("patrol");
     }
+
+    // Knockback
+    if (config.HasMember("knockback_velocity") && config["knockback_velocity"].IsFloat())
+        enemy.knockbackVelocity = config["knockback_velocity"].GetFloat();
+    else
+        enemy.knockbackVelocity = 300.0f;
+    enemy.knockbackVel = { 0.0f, 0.0f };
+    enemy.knockbackTimer = 0.0f;
 }
 
 void HardEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
@@ -269,6 +277,14 @@ void HardEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
         enemy.patrolMaxX = config["patrol_max_x"].GetFloat();
     else
         enemy.patrolMaxX = enemy.pos.x + 100.0f;
+
+    // Knockback
+    if (config.HasMember("knockback_velocity") && config["knockback_velocity"].IsFloat())
+        enemy.knockbackVelocity = config["knockback_velocity"].GetFloat();
+    else
+        enemy.knockbackVelocity = 300.0f;
+    enemy.knockbackVel = { 0.0f, 0.0f };
+    enemy.knockbackTimer = 0.0f;
 
     //SpriteSheet Loading
     if (config.HasMember("animations"))
@@ -363,6 +379,14 @@ void BossEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
     }
     enemy.isPlayerColliding = false;
     enemy.type = EnemyType::Boss;
+
+    // Knockback
+    if (config.HasMember("knockback_velocity") && config["knockback_velocity"].IsFloat())
+        enemy.knockbackVelocity = config["knockback_velocity"].GetFloat();
+    else
+        enemy.knockbackVelocity = 300.0f;
+    enemy.knockbackVel = { 0.0f, 0.0f };
+    enemy.knockbackTimer = 0.0f;
 }
 
 // -----------------------------------------------------------------------------
@@ -394,7 +418,23 @@ void Enemy_Update(Enemy& enemy, float dt) {
     // Attack/hit state
     if (enemy.hitStunTimer > 0.0f)
     {
-        enemy.hitStunTimer -= dt;
+        // Apply knockback movement first
+        if (enemy.knockbackTimer > 0.0f)
+        {
+            enemy.knockbackTimer -= dt;
+            enemy.pos.x += enemy.knockbackVel.x * dt;
+            if (enemy.knockbackTimer <= 0.0f)
+            {
+                enemy.knockbackTimer = 0.0f;
+                enemy.knockbackVel = { 0.0f, 0.0f };
+            }
+        }
+        else
+        {
+            // Only decrement hitstun after knockback is done
+            enemy.hitStunTimer -= dt;
+        }
+
         enemy.spriteSheet->Update(dt);
 
         if (enemy.hitStunTimer <= 0.0f)
@@ -489,7 +529,23 @@ void HardEnemy_Update(Enemy& enemy, float dt) {
     // attack/hit state
     if (enemy.hitStunTimer > 0.0f)
     {
-        enemy.hitStunTimer -= dt;
+        // Apply knockback movement first
+        if (enemy.knockbackTimer > 0.0f)
+        {
+            enemy.knockbackTimer -= dt;
+            enemy.pos.x += enemy.knockbackVel.x * dt;
+            if (enemy.knockbackTimer <= 0.0f)
+            {
+                enemy.knockbackTimer = 0.0f;
+                enemy.knockbackVel = { 0.0f, 0.0f };
+            }
+        }
+        else
+        {
+            // Only decrement hitstun after knockback is done
+            enemy.hitStunTimer -= dt;
+        }
+
         enemy.spriteSheet->Update(dt);
 
         if (enemy.hitStunTimer <= 0.0f)
@@ -536,7 +592,23 @@ void HardEnemy_Update(Enemy& enemy, float dt) {
 // -----------------------------------------------------------------------------
 void BossEnemy_Update(Enemy& enemy, float dt) {
     if (enemy.hitStunTimer > 0.0f) {
-        enemy.hitStunTimer -= dt;
+        // Apply knockback movement first
+        if (enemy.knockbackTimer > 0.0f)
+        {
+            enemy.knockbackTimer -= dt;
+            enemy.pos.x += enemy.knockbackVel.x * dt;
+            if (enemy.knockbackTimer <= 0.0f)
+            {
+                enemy.knockbackTimer = 0.0f;
+                enemy.knockbackVel = { 0.0f, 0.0f };
+            }
+        }
+        else
+        {
+            // Only decrement hitstun after knockback is done
+            enemy.hitStunTimer -= dt;
+        }
+
         if (enemy.hitStunTimer <= 0.0f) enemy.hitStunTimer = 0.0f;
         return;
     }
@@ -629,18 +701,26 @@ void Enemy_Draw(const Enemy& enemy)
 // called when player collides with enemy
 // reduces hitPoints and sets hit stun
 // -----------------------------------------------------------------------------
-void Enemy_OnHit(Enemy& enemy, float damage)
+void Enemy_OnHit(Enemy& enemy, float damage, float knockbackDir)
 {
     if (!enemy.isAlive)
         return;
 
-    // Do not block damage just because attack is playing
-    // only block if already in hit/dead animation
+    // Only block damage if already in dead animation (allow knockback to re-trigger)
     if (enemy.spriteSheet)
     {
         const std::string clip = enemy.spriteSheet->GetCurrentClip();
-        if (clip == "hit" || clip == "dead")
+        if (clip == "dead")
             return;
+        
+        // If already in hit animation, extend hitstun and apply knockback
+        if (clip == "hit")
+        {
+            // Extend hitstun timer
+            enemy.hitStunTimer = enemy.spriteSheet->GetClipTotalDuration("hit");
+            Enemy_ApplyKnockback(enemy, knockbackDir);
+            return;
+        }
     }
 
     enemy.hitPoints -= damage;
@@ -661,19 +741,23 @@ void Enemy_OnHit(Enemy& enemy, float damage)
         }
 
         enemy.isAlive = false;
-        return;
-    }
-
-    // hit
-    if (enemy.spriteSheet)
-    {
-        enemy.spriteSheet->Play("hit", true);
-        enemy.hitStunTimer = enemy.spriteSheet->GetClipTotalDuration("hit");
     }
     else
     {
-        enemy.hitStunTimer = 0.45f;
+        // hit
+        if (enemy.spriteSheet)
+        {
+            enemy.spriteSheet->Play("hit", true);
+            enemy.hitStunTimer = enemy.spriteSheet->GetClipTotalDuration("hit");
+        }
+        else
+        {
+            enemy.hitStunTimer = 0.45f;
+        }
     }
+
+    // Apply knockback
+    Enemy_ApplyKnockback(enemy, knockbackDir);
 }
 
 
@@ -693,6 +777,9 @@ void HardEnemy_OnCollision(Enemy& enemy, Player& player)
     // apply damage
     Player_ApplyDamage(player, enemy.damage);
 
+    // apply knockback to player (away from enemy)
+    Player_ApplyKnockback(player, enemy.pos.x, enemy.pos.y);
+
     // switch to attack animation
     enemy.spriteSheet->Play("attack", true);
     enemy.hitStunTimer = enemy.spriteSheet->GetClipTotalDuration("attack");
@@ -707,3 +794,14 @@ void HardEnemy_OnCollision(Enemy& enemy, Player& player)
 //void Enemy_Free(Enemy& enemy)
 //{
 //}
+
+void Enemy_ApplyKnockback(Enemy& enemy, float knockbackDir)
+{
+    // knockbackDir: -1 = knock left, 1 = knock right, 0 = no knockback
+    if (knockbackDir == 0.0f)
+        return;
+
+    enemy.knockbackVel.x = knockbackDir * enemy.knockbackVelocity;
+    enemy.knockbackVel.y = 0.0f;
+    enemy.knockbackTimer = enemy.hitStunTimer;
+}
