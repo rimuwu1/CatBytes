@@ -41,7 +41,7 @@ public:
     void LoadFromConfig(const rapidjson::Document&);
     void Initialize();
     void Update(float dt, const Player& player, float cameraY);
-    void Draw(float camX, float camY, PlayerWeapon weapon, float screenHalfH = 450.0f);
+    void Draw(float camX, float camY, PlayerWeapon weapon, const Player& player, float screenHalfH = 450.0f);
 
     const std::vector<PlatformObstacle>& GetCurrentObstacles() const;
 
@@ -137,8 +137,8 @@ private:
 
     struct Colour { float r, g, b, a; };
     Colour m_backgroundColours[BACKGROUND_SECTIONS] = {
-        {189 / 255.0f, 231 / 255.0f, 255 / 255.0f, 1.0f},   // level 1 blue
-        { 87 / 255.0f, 119 / 255.0f, 165 / 255.0f, 1.0f},   // level 2 dark blue
+        { 221 / 255.0f, 160 / 255.0f, 221 / 255.0f, 1.0f},   // level 1 plum
+        { 186 / 255.0f, 85 / 255.0f, 211 / 255.0f, 1.0f},   // level 2 violet
         {104 / 255.0f,  26 / 255.0f, 163 / 255.0f, 1.0f},   // level 3 purple
         { 43 / 255.0f,   4 / 255.0f,  56 / 255.0f, 1.0f}    // level 4 dark purple
     };

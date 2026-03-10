@@ -90,8 +90,14 @@ void EnvironmentManager::LoadFromConfig(const rapidjson::Document& doc)
             btn.y = b["y"].GetFloat();
             btn.w = b["width"].GetFloat();
             btn.h = b["height"].GetFloat();
-            btn.platformIndex = b["platformIndex"].GetInt();
             btn.wasPressed = false;
+
+            if (b.HasMember("platformIndices") && b["platformIndices"].IsArray()) {
+                for (const auto& index : b["platformIndices"].GetArray()) {
+                    btn.platformIndices.push_back(index.GetInt());
+                }
+            }
+
             m_level1Buttons.push_back(btn);
         }
     }
@@ -120,8 +126,14 @@ void EnvironmentManager::LoadFromConfig(const rapidjson::Document& doc)
             btn.y = b["y"].GetFloat();
             btn.w = b["width"].GetFloat();
             btn.h = b["height"].GetFloat();
-            btn.platformIndex = b["platformIndex"].GetInt();
             btn.wasPressed = false;
+
+            if (b.HasMember("platformIndices") && b["platformIndices"].IsArray()) {
+                for (const auto& index : b["platformIndices"].GetArray()) {
+                    btn.platformIndices.push_back(index.GetInt());
+                }
+            }
+
             m_level2Buttons.push_back(btn);
         }
     }
@@ -164,8 +176,14 @@ void EnvironmentManager::LoadFromConfig(const rapidjson::Document& doc)
             btn.y = b["y"].GetFloat();
             btn.w = b["width"].GetFloat();
             btn.h = b["height"].GetFloat();
-            btn.platformIndex = b["platformIndex"].GetInt();
             btn.wasPressed = false;
+
+            if (b.HasMember("platformIndices") && b["platformIndices"].IsArray()) {
+                for (const auto& index : b["platformIndices"].GetArray()) {
+                    btn.platformIndices.push_back(index.GetInt());
+                }
+            }
+
             m_level3Buttons.push_back(btn);
         }
     }
@@ -237,7 +255,7 @@ void EnvironmentManager::Update(float dt, const Player& player, float cameraY)
 }
 
 // ------------------------------------------------------------------------
-void EnvironmentManager::Draw(float camX, float camY, PlayerWeapon weapon, float screenHalfH)
+void EnvironmentManager::Draw(float camX, float camY, PlayerWeapon weapon, const Player& player, float screenHalfH)
 {
     DrawBackground();
 
@@ -276,7 +294,7 @@ void EnvironmentManager::Draw(float camX, float camY, PlayerWeapon weapon, float
         const std::vector<Platform>& platforms) {
             for (const auto& b : buttons)
                 if (inView(b.y, b.h * 0.5f))
-                    PlatformButton_Draw({ b }, platforms);
+                    PlatformButton_Draw({ b }, platforms, player);
         };
 
     DrawPlatformsCulled(m_level1Platforms);

@@ -23,6 +23,9 @@ Technology is prohibited.
 #include "Player.h"
 #include "TextureManager.h"
 #include "SpriteSheet.h"
+#include "Fonts.h"
+#include "AEEngine.h"
+#include "Camera.h"
 #include <memory>
 
 
@@ -63,17 +66,128 @@ void Platforms_Draw(const std::vector<Platform>& platforms, AEGfxTexture* leftTe
 	}
 }
 
-void PlatformButton_Draw(const std::vector<PlatformButton>& buttons, const std::vector<Platform>& platforms)
+void PlatformButton_Draw(const std::vector<PlatformButton>& buttons, const std::vector<Platform>& platforms, const Player& player)
 {
-	for (int i = 0; i < (int)buttons.size(); i++)
-	{
-		const PlatformButton& btn = buttons[i];
-		// green if linked platform is active, red if not
-		if (platforms[btn.platformIndex].active)
-			MeshManager::Get().DrawSquare(btn.x, btn.y, btn.w, btn.h, 0, 255, 0);
-		else
-			MeshManager::Get().DrawSquare(btn.x, btn.y, btn.w, btn.h, 255, 0, 0);
+	static SpriteSheet platformSwitch("Assets/Images/buttonSheet.png", 2, 5, 0, 0.1f);
+	
+	// clips
+	static bool addClips = false;
+
+	if (!addClips) {
+		platformSwitch.AddClip("off", 4, 4, 0.1f, false);			// off state - row 1 column 5
+		platformSwitch.AddClip("transition", 0, 3, 0.1f, false);	// off -> on - row 1 columns 1-4
+		platformSwitch.AddClip("on", 5, 8, 0.1f, true);				// on state - row 2 columns 1 - 4
+
+		platformSwitch.Play("off");
+
+		addClips = true;
 	}
+
+	float dt = (float)AEFrameRateControllerGetFrameTime();
+	platformSwitch.Update(dt);
+
+	for (const PlatformButton& btn : buttons) {
+		bool isActive = false;
+
+		if (!btn.platformIndices.empty()) {
+			int index = btn.platformIndices[0];
+
+			if (index >= 0 && index < (int)platforms.size()) {
+				isActive = platforms[index].active;
+			}
+		}
+
+		// initialize based on first draw's state
+		if (!btn.spriteInitialized)
+		{
+			if (isActive) 
+			{
+				platformSwitch.Play("on");
+			}
+			else 
+			{
+				platformSwitch.Play("off");
+			}
+
+			btn.prevState = isActive;
+			btn.spriteInitialized = true;
+		}
+		
+		// change clip when state changes
+		if (isActive != btn.prevState) 
+		{
+			if (isActive)
+			{
+				platformSwitch.Play("transition");
+			}
+			else
+			{
+				platformSwitch.Play("off");
+			}
+
+			btn.prevState = isActive;
+			
+		}
+		
+		// move to on state once transition finishes
+		if (platformSwitch.GetCurrentClip() == "transition" && !platformSwitch.IsPlaying()) {
+			platformSwitch.Play("on");
+		}
+
+		MeshManager::Get().DrawSpriteSheet(platformSwitch, btn.x, btn.y, btn.w, btn.h);
+
+		// ----------------------------------------------------------------------------
+		// text for when player is near switch
+		
+		// check if player is near/overlapping switch
+		float btnLeft = btn.x - btn.w * 0.5f;
+		float btnRight = btn.x + btn.w * 0.5f;
+		float btnTop = btn.y + btn.h * 0.5f;
+		float btnBottom = btn.y - btn.h * 0.5f;
+		float playerLeft = player.pos.x - player.width * 0.5f;
+		float playerRight = player.pos.x + player.width * 0.5f;
+		float playerBottom = player.pos.y - player.height * 0.5f;
+		float playerTop = player.pos.y + player.height * 0.5f;
+
+		bool overlapX = (playerRight >= btnLeft) && (playerLeft <= btnRight);
+		bool overlapY = (playerTop >= btnBottom) && (playerBottom <= btnTop);
+		bool inRange = overlapX && overlapY;
+
+		if (inRange)
+		{
+			float windowWidth = (float)AEGfxGetWindowWidth();
+			float windowHeight = (float)AEGfxGetWindowHeight();
+
+			float screenX = (btn.x - globalCam.x) / (windowWidth * 0.5f);
+			float screenY = (btn.y + btn.h + 20.0f - globalCam.y) / (windowHeight * 0.5f);
+
+			// shift text towards left
+			if (screenX > 0.5f)
+			{
+				screenX = 0.5;
+			}
+
+			// shift text towards right
+			if (screenX < -0.9f)
+			{
+				screenX = -0.9f;
+			}
+
+			char text[50];
+
+			if (isActive)
+			{
+				strcpy_s(text, "Press E to turn off platforms");
+			}
+			else 
+			{
+				strcpy_s(text, "Press E to turn on platforms");
+			}
+
+			AEGfxPrint(g_FontSmall, text, screenX, screenY, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f);
+		}
+	}
+
 }
 
 void PlatformsObstacle_Draw(const std::vector<PlatformObstacle>& obstacles)

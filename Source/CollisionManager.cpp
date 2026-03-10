@@ -2,8 +2,10 @@
 /*!
 \file       CollisionManager.cpp
 \author     Joash ng, joash.ng, 2502780
+            Peh Yu Xuan, Lovette, p.yuxuanlovette, 2502079
             Sim Hui Min, s.huimin, 2503506
 \par        joash.ng@digipen.edu
+            p.yuxuanlovette@digipen.edu
             s.huimin@digipen.edu
 \date       Feb 26 2026
 \brief		This file handles all the collision checks under the collsion namespace.
@@ -57,26 +59,54 @@ namespace CollisionManager
         const std::vector<Platform>& platforms3,
         const std::vector<Platform>& platforms4)
     {
-        float playerPrevBottom = playerPrevY - player.height * 0.5f;
-        float playerCurrBottom = player.pos.y - player.height * 0.5f;
 
         auto checkSet = [&](const std::vector<Platform>& platforms) -> bool
             {
                 for (const Platform& pf : platforms)
                 {
                     if (!pf.active) continue;
+
                     float pfLeft = pf.x - pf.w * 0.5f;
                     float pfRight = pf.x + pf.w * 0.5f;
                     float pfTop = pf.y + pf.h * 0.5f;
+                    float pfBottom = pf.y - pf.h * 0.5f;
+
+                    float playerPrevTop = playerPrevY + player.height * 0.5f;
+                    float playerCurrTop = player.pos.y + player.height * 0.5f;
+
+                    float playerPrevBottom = playerPrevY - player.height * 0.5f;
+                    float playerCurrBottom = player.pos.y - player.height * 0.5f;
+
+                    // horizontal overlap
                     float playerLeft = player.pos.x - player.width * 0.5f;
                     float playerRight = player.pos.x + player.width * 0.5f;
-                    bool overlapX = (playerRight >= pfLeft) && (playerLeft <= pfRight);
-                    bool landedThisFrame = (playerPrevBottom >= pfTop) && (playerCurrBottom <= pfTop);
-                    if (overlapX && landedThisFrame)
+                   
+                    bool overlapX = (playerRight > pfLeft) && (playerLeft < pfRight);
+                    if (!overlapX) continue;
+
+                    // check if player is standing on platform
+                    float tolerance = 2.0f;
+                    if (fabs(playerCurrBottom - pfTop) <= tolerance && overlapX)
+                    {
+                        player.grounded = 1;
+                        player.pos.y = pfTop + player.height * 0.5f;
+                        return true;
+                    }
+
+                    // collision against top of platform
+                    if (player.vel.y <= 0.0f && playerPrevBottom >= pfTop && playerCurrBottom < pfTop)
                     {
                         player.pos.y = pfTop + player.height * 0.5f;
                         player.vel.y = 0.0f;
                         player.grounded = 1;
+                        return true;
+                    }
+
+                    // collision against bottom of platform
+                    if (player.vel.y > 0.0f && playerPrevTop <= pfBottom && playerCurrTop > pfBottom)
+                    {
+                        player.pos.y = pfBottom - player.height * 0.5f;
+                        player.vel.y = 0.0f;
                         return true;
                     }
                 }
@@ -112,7 +142,7 @@ namespace CollisionManager
 
     // ------------------------------------------------------------------------
     // Buttons
-    void HandleButtons(Player& player, std::vector<PlatformButton>& buttons, std::vector<Platform>& platforms)
+    void HandleButtons(Player& player, const std::vector<PlatformButton>& buttons, const std::vector<Platform>& platforms)
     {
         for (auto& btn : buttons)
         {
@@ -123,16 +153,25 @@ namespace CollisionManager
             float playerLeft = player.pos.x - player.width * 0.5f;
             float playerRight = player.pos.x + player.width * 0.5f;
             float playerBottom = player.pos.y - player.height * 0.5f;
+            float playerTop = player.pos.y + player.height * 0.5f;
 
+            // check if player is near/overlapping switch
             bool overlapX = (playerRight >= btnLeft) && (playerLeft <= btnRight);
-            bool landedOnButton = (playerBottom <= btnTop) && (playerBottom >= btnBottom);
-            bool isPressed = overlapX && landedOnButton && player.grounded;
+            bool overlapY = (playerTop >= btnBottom) && (playerBottom <= btnTop);
+            bool inRange = overlapX && overlapY;
 
-            if (isPressed && !btn.wasPressed)
+            if (inRange && AEInputCheckTriggered('E'))
             {
-                platforms[btn.platformIndex].active = !platforms[btn.platformIndex].active;
+                for (int index : btn.platformIndices) {
+
+                    if (index >= 0 && index < (int)platforms.size()) {
+
+                        platforms[index].active = !platforms[index].active;
+
+                    }
+
+                }
             }
-            btn.wasPressed = isPressed;
         }
     }
 
@@ -238,8 +277,10 @@ namespace CollisionManager
         // Checkpoints store result
         results.checkpointHit = HandleCheckpoints(player, env.GetCheckpoints());
 
-        // Buttons these modify env's buttons and level2 platforms
+        // Buttons – these modify env's buttons and platforms
+        HandleButtons(player, env.GetLevel1Buttons(), env.GetLevel1Platforms());
         HandleButtons(player, env.GetLevel2Buttons(), env.GetLevel2Platforms());
+        HandleButtons(player, env.GetLevel3Buttons(), env.GetLevel3Platforms());
 
         // Enemy collisions
         HandlePlayerEnemyCollisions(player, enemies);
@@ -255,35 +296,60 @@ namespace CollisionManager
     // ------------------------------------------------------------------------
     void HandlePlatformsSpatial(Player& player, float playerPrevY, const SpatialGrid& grid)
     {
-        if (player.vel.y <= 0.0f)
+        std::vector<const Platform*> nearby;
+        grid.GetNearbyPlatforms(player.pos.y, player.height, nearby);
+
+        for (const Platform* pf : nearby)
         {
-            std::vector<const Platform*> nearby;
-            grid.GetNearbyPlatforms(player.pos.y, player.height, nearby);
+            if (!pf->active) continue;
 
-            for (const Platform* pf : nearby)
+
+            float pfLeft = pf->x - pf->w * 0.5f;
+            float pfRight = pf->x + pf->w * 0.5f;
+            float pfTop = pf->y + pf->h * 0.5f;
+            float pfBottom = pf->y - pf->h * 0.5f;
+
+            float playerPrevTop = playerPrevY + player.height * 0.5f;
+            float playerCurrTop = player.pos.y + player.height * 0.5f;
+
+            float playerPrevBottom = playerPrevY - player.height * 0.5f;
+            float playerCurrBottom = player.pos.y - player.height * 0.5f;
+
+            // horizontal overlap
+            float playerLeft = player.pos.x - player.width * 0.5f;
+            float playerRight = player.pos.x + player.width * 0.5f;
+
+            bool overlapX = (playerRight > pfLeft) && (playerLeft < pfRight);
+            if (!overlapX) continue;
+
+            // check if player is standing on platform
+            float tolerance = 2.0f;
+            if (fabs(playerCurrBottom - pfTop) <= tolerance && overlapX)
             {
-                if (!pf->active) continue;
-                float pfLeft = pf->x - pf->w * 0.5f;
-                float pfRight = pf->x + pf->w * 0.5f;
-                float pfTop = pf->y + pf->h * 0.5f;
-                float playerLeft = player.pos.x - player.width * 0.5f;
-                float playerRight = player.pos.x + player.width * 0.5f;
-                float playerPrevBottom = playerPrevY - player.height * 0.5f;
-                float playerCurrBottom = player.pos.y - player.height * 0.5f;
+                player.grounded = 1;
+                player.pos.y = pfTop + player.height * 0.5f;
+                return;
+            }
 
-                bool overlapX = (playerRight >= pfLeft) && (playerLeft <= pfRight);
-                bool landedThisFrame = (playerPrevBottom >= pfTop) && (playerCurrBottom <= pfTop);
+            // collision against top of platform
+            if (player.vel.y <= 0.0f && playerPrevBottom >= pfTop && playerCurrBottom < pfTop)
+            {
+                player.pos.y = pfTop + player.height * 0.5f;
+                player.vel.y = 0.0f;
+                player.grounded = 1;
+                return;
+            }
 
-                if (overlapX && landedThisFrame)
-                {
-                    player.pos.y = pfTop + player.height * 0.5f;
-                    player.vel.y = 0.0f;
-                    player.grounded = 1;
-                    return;
-                }
+            // collision against bottom of platform
+            if (player.vel.y > 0.0f && playerPrevTop <= pfBottom && playerCurrTop > pfBottom)
+            {
+                player.pos.y = pfBottom - player.height * 0.5f;
+                player.vel.y = 0.0f;
+                return;
             }
         }
     }
+
 
     bool HandleObstaclesSpatial(Player& player, const SpatialGrid& grid)
     {
@@ -445,7 +511,12 @@ namespace CollisionManager
         results.pogoHit = HandlePogoCollisionSpatial(player, grid);
 
         HandleWalls(player, env.GetWallPlatforms()); //small number, can just use non-spatial version
+        HandleWalls(player, env.GetLevel3WallPlatforms());
+
+        // Buttons – these modify env's buttons and platforms
+        HandleButtons(player, env.GetLevel1Buttons(), env.GetLevel1Platforms());
         HandleButtons(player, env.GetLevel2Buttons(), env.GetLevel2Platforms()); //small no. too
+        HandleButtons(player, env.GetLevel3Buttons(), env.GetLevel3Platforms());
 
         HandlePlayerEnemyCollisionsSpatial(player, grid);
         HandleEnemyBulletPlayerCollisionsSpatial(player, grid);

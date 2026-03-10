@@ -238,9 +238,28 @@ void MainGame_Update()
         }
     }
 
-    if (AEInputCheckTriggered(AEVK_0)) globalCam.debugCam = !globalCam.debugCam;
-    if (globalCam.debugCam) Camera_Debug(globalCam, dt);
-    else Camera_FollowPlayer(globalCam, player.pos.x, player.pos.y, dt);
+    if (AEInputCheckTriggered(AEVK_0))
+    {
+        globalCam.debugCam = !globalCam.debugCam;
+
+        // deactivate debug cam
+        if (!globalCam.debugCam)
+        {
+            globalCam.x = 0.0f;
+            globalCam.y = player.pos.y;
+        }
+
+    }
+    
+    if (globalCam.debugCam)
+    {
+        Camera_Debug(globalCam, dt);
+    }
+    else 
+    {
+        Camera_FollowPlayer(globalCam, player.pos.x, player.pos.y, dt);
+    }
+   
     Camera_Apply(globalCam);
 
     float backgroundY = globalCam.debugCam ? globalCam.y : player.pos.y;
@@ -273,7 +292,7 @@ void MainGame_Draw()
     AESysFrameStart();
 
     Player& player = ObjectManager::Get().GetPlayer();
-    EnvironmentManager::Get().Draw(globalCam.x, globalCam.y, player.weapon, 900.0f * 0.5f);
+    EnvironmentManager::Get().Draw(globalCam.x, globalCam.y, player.weapon, player, 900.0f * 0.5f);
     ObjectManager::Get().Draw();
     GameSaveManager::Notify_Draw();
     //pop up draw over everything

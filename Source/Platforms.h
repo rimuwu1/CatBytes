@@ -23,14 +23,17 @@ Technology is prohibited.
 
 struct Platform {
 	float x, y, w, h;
-	bool active = true;
+	mutable bool active;				// allow modification even if it's const
 };
 
 
 struct PlatformButton {
 	float x, y, w, h;
-	int platformIndex;  // which index in the platform array this toggles
-	bool wasPressed = false;
+	int platformIndex;					// remove after adding asset
+	std::vector<int> platformIndices;	// use vector to allow multiple platforms toggle
+	mutable bool wasPressed;			// allow modification even if it's const
+	mutable bool prevState;				// track switch's previous state (active/inactive)
+	mutable bool spriteInitialized;		// track sprite initialization
 };
 
 struct PlatformObstacle {
@@ -43,7 +46,7 @@ struct Checkpoint {
 	float x, y, w, h, r;
 };
 
-void PlatformButton_Draw(const std::vector<PlatformButton>& buttons, const std::vector<Platform>& platforms);
+void PlatformButton_Draw(const std::vector<PlatformButton>& buttons, const std::vector<Platform>& platforms, const Player& player);
 
 void Platforms_Draw(const std::vector<Platform>& platforms, AEGfxTexture* leftTex, AEGfxTexture* midTex, AEGfxTexture* rightTex);
 

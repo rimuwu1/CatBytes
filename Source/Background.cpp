@@ -65,11 +65,11 @@ static constexpr Colour rgb(unsigned int r, unsigned int g, unsigned int b) {
 // array to store background colours
 static Colour backgroundColours[backgroundSections] = {
 
-	// level 1: blue #BDE7FF
-	rgb(189, 231, 255),
+	// level 1: plum #DDA0DD
+	rgb(221, 160, 221),
 
-	// level 2: dark blue #5777A5
-	rgb(87, 119, 165),
+	// level 2: medium orchid #BA55D3	
+	rgb(186, 85, 211),
 
 	// level 3: purple #681AA3
 	rgb(104, 26, 163),

@@ -80,18 +80,6 @@ void Camera_Debug(Camera& cam, float dt) {
 
 	}
 
-	if (AEInputCheckCurr(AEVK_LEFT)) {
-
-		cam.x -= camSpeed * dt;
-
-	}
-
-	if (AEInputCheckCurr(AEVK_RIGHT)) {
-
-		cam.x += camSpeed * dt;
-
-	}
-
 	Camera_Apply(cam);
 
 }

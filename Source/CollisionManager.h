@@ -32,6 +32,7 @@ namespace CollisionManager
 
     // Platform collisions (landing and standing)
     void HandlePlatforms(Player& player, float playerPrevY, const std::vector<Platform>& platforms);
+
     // Check landing on any of multiple platform sets (used for combined check)
     bool HandleLandingOnAnyPlatform(Player& player, float playerPrevY,
                                     const std::vector<Platform>& platforms1,
@@ -49,7 +50,7 @@ namespace CollisionManager
     bool HandleCheckpoints(Player& player, const std::vector<Checkpoint>& checkpoints);
 
     // Button collisions (toggle platforms)
-    void HandleButtons(Player& player, std::vector<PlatformButton>& buttons, std::vector<Platform>& platforms);
+    void HandleButtons(Player& player, const std::vector<PlatformButton>& buttons, const std::vector<Platform>& platforms);
 
     // Enemy (hard/boss) collisions with player
     void HandlePlayerEnemyCollisions(Player& player, std::vector<Enemy>& enemies);
