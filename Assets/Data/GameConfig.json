@@ -16,7 +16,7 @@
             "melee_damage": 5,
             "knockback_velocity": 400.0,
             "knockback_air_up": 300.0,
-            "pogo_velocity": 500.0,
+            "pogo_velocity": 600.0,
             "bullet": {
                 "speed": 1200.0,
                 "damage": 1.0,
