@@ -60,7 +60,7 @@ void Platforms_OffsetY(std::vector<Platform>& platforms, float offsetY);
 
 void WallCollisionCheck(Player& player, const std::vector<Platform>& wallPlatforms);
 
-void CheckpointDraw(const std::vector<Checkpoint>& checkpoint);
+void CheckpointDraw(const std::vector<Checkpoint>& checkpoint, const Player& player);
 
-bool CheckpointCollisionCheck(const Player& player, const std::vector<Checkpoint>& checkpoint);
+void CheckpointCollisionCheck(const Player& player, const std::vector<Checkpoint>& checkpoint, bool& checkpointHit, bool& checkpointInRange);
 

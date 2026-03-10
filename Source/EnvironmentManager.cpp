@@ -286,7 +286,7 @@ void EnvironmentManager::Draw(float camX, float camY, PlayerWeapon weapon, const
     auto DrawCheckpointsCulled = [&](const std::vector<Checkpoint>& cps) {
         for (const auto& c : cps)
             if (inView(c.y, c.h * 0.5f))
-                CheckpointDraw({ c });
+                CheckpointDraw({ c }, player);
         };
 
     // Buttons carry their own y/h so we can cull them independently.
@@ -367,6 +367,16 @@ bool EnvironmentManager::HandleCheckpoint(bool checkpointHit)
 void EnvironmentManager::RequestSave()
 {
     m_saveRequested = true;
+}
+
+void EnvironmentManager::SetCheckpointInRange(bool inRange)
+{
+    m_checkpointInRange = inRange;
+}
+
+bool EnvironmentManager::GetCheckpointInRange() const
+{
+    return m_checkpointInRange;
 }
 
 // ------------------------------------------------------------------------

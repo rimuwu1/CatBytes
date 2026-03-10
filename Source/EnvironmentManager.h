@@ -83,6 +83,8 @@ public:
     // Checkpoint handling
     bool HandleCheckpoint(bool checkpointHit);
     void RequestSave();  // sets internal save request flag
+    void SetCheckpointInRange(bool inRange);
+    bool GetCheckpointInRange() const;
 
     //clean up functions
     void Clear();   // clears all environment vectors
@@ -124,6 +126,7 @@ private:
 
     bool m_checkpointSaved = false;       // replaces static local in MainGame
     bool m_saveRequested = false;         // internal save request flag
+    bool m_checkpointInRange = false;     // true if player is near a checkpoint
 
     int m_previousSelection = -1;   // for level indicator
     int m_currentSection = 0;

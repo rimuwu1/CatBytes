@@ -16,7 +16,7 @@
             "melee_damage": 5,
             "knockback_velocity": 400.0,
             "knockback_air_up": 300.0,
-            "pogo_velocity": 600.0,
+            "pogo_velocity": 500.0,
             "bullet": {
                 "speed": 1200.0,
                 "damage": 1.0,
@@ -166,7 +166,9 @@
       }
     },
     "checkpoints": [
-        { "x": -450.0, "y": -10.0, "width": 40.0, "height": 40.0 }
+        { "x": -350.0, "y": 1790.0, "width": 40.0, "height": 40.0 },
+        { "x": -400.0, "y": 2990.0, "width": 40.0, "height": 40.0 },
+        { "x": 300.0, "y": 3840.0, "width": 40.0, "height": 40.0 }
     ],
     "level_1": {
         "completed": false,

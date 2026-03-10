@@ -47,7 +47,7 @@ namespace CollisionManager
     bool HandleObstacles(Player& player, const std::vector<PlatformObstacle>& obstacles);
 
     // Checkpoint collisions
-    bool HandleCheckpoints(Player& player, const std::vector<Checkpoint>& checkpoints);
+    void HandleCheckpoints(Player& player, const std::vector<Checkpoint>& checkpoints, bool& checkpointHit, bool& checkpointInRange);
 
     // Button collisions (toggle platforms)
     void HandleButtons(Player& player, const std::vector<PlatformButton>& buttons, const std::vector<Platform>& platforms);
@@ -67,16 +67,17 @@ namespace CollisionManager
     //---------- Spatial grid versions (use for optimization) ------------
     void HandlePlatformsSpatial(Player& player, float playerPrevY, const SpatialGrid& grid);
     bool HandleObstaclesSpatial(Player& player, const SpatialGrid& grid);
-    bool HandleCheckpointsSpatial(Player& player, const SpatialGrid& grid);
+    void HandleCheckpointsSpatial(Player& player, const SpatialGrid& grid, bool& checkpointHit, bool& checkpointInRange);
     void HandlePlayerEnemyCollisionsSpatial(Player& player, const SpatialGrid& grid);
     void HandleEnemyBulletPlayerCollisionsSpatial(Player& player, const SpatialGrid& grid);
     bool HandlePogoCollisionSpatial(Player& player, const SpatialGrid& grid);
 
     //----------wrapper for all collisions------------
     struct CollisionResults {
-        bool obstacleHit;   // true if player hit an obstacle
-        bool checkpointHit; // true if player touched a checkpoint
-        bool pogoHit; // true if pogo performed
+        bool obstacleHit;       // true if player hit an obstacle
+        bool checkpointHit;      // true if player touched (overlapped) a checkpoint
+        bool checkpointInRange;  // true if player is near a checkpoint (2x range)
+        bool pogoHit;            // true if pogo performed
     };
 
     CollisionResults HandleAllCollisions(

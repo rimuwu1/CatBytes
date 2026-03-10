@@ -22,6 +22,8 @@ Technology is prohibited.
 #include "Player.h"             // for Player_ApplyDamage
 #include "PlayerBullet.h"       // for Player_CheckBulletCollisions
 #include "PlayerMelee.h"        // for PlayerMelee_CheckCollisions
+#include "Fonts.h"
+#include "Camera.h"
 #include <cmath>
 
 namespace CollisionManager
@@ -135,9 +137,9 @@ namespace CollisionManager
 
     // ------------------------------------------------------------------------
     // Checkpoints
-    bool HandleCheckpoints(Player& player, const std::vector<Checkpoint>& checkpoints)
+    void HandleCheckpoints(Player& player, const std::vector<Checkpoint>& checkpoints, bool& checkpointHit, bool& checkpointInRange)
     {
-        return CheckpointCollisionCheck(player, checkpoints);   // from Platforms.h
+        CheckpointCollisionCheck(player, checkpoints, checkpointHit, checkpointInRange);
     }
 
     // ------------------------------------------------------------------------
@@ -275,9 +277,9 @@ namespace CollisionManager
         HandleWalls(player, env.GetWallPlatforms());
 
         // Checkpoints store result
-        results.checkpointHit = HandleCheckpoints(player, env.GetCheckpoints());
+        HandleCheckpoints(player, env.GetCheckpoints(), results.checkpointHit, results.checkpointInRange);
 
-        // Buttons – these modify env's buttons and platforms
+        // Buttons - these modify env's buttons and platforms
         HandleButtons(player, env.GetLevel1Buttons(), env.GetLevel1Platforms());
         HandleButtons(player, env.GetLevel2Buttons(), env.GetLevel2Platforms());
         HandleButtons(player, env.GetLevel3Buttons(), env.GetLevel3Platforms());
@@ -378,8 +380,12 @@ namespace CollisionManager
         return false;
     }
 
-    bool HandleCheckpointsSpatial(Player& player, const SpatialGrid& grid)
+    void HandleCheckpointsSpatial(Player& player, const SpatialGrid& grid, bool& checkpointHit, bool& checkpointInRange)
     {
+        checkpointHit = false;
+        checkpointInRange = false;
+        const Checkpoint* nearestInRange = nullptr;
+
         std::vector<const Checkpoint*> nearby;
         grid.GetNearbyCheckpoints(player.pos.y, player.height, nearby);
 
@@ -399,10 +405,23 @@ namespace CollisionManager
 
             if (overlapX && overlapY)
             {
-                return true;
+                checkpointHit = true;
+            }
+
+            float rangeLeft = cp->x - cp->w;
+            float rangeRight = cp->x + cp->w;
+            float rangeTop = cp->y + cp->h;
+            float rangeBottom = cp->y - cp->h;
+
+            bool inRangeX = (playerRight >= rangeLeft) && (playerLeft <= rangeRight);
+            bool inRangeY = (playerTop >= rangeBottom) && (playerBottom <= rangeTop);
+
+            if (inRangeX && inRangeY && !nearestInRange)
+            {
+                checkpointInRange = true;
+                nearestInRange = cp;
             }
         }
-        return false;
     }
 
     void HandlePlayerEnemyCollisionsSpatial(Player& player, const SpatialGrid& grid)
@@ -507,13 +526,13 @@ namespace CollisionManager
             env.GetBossPlatforms());
 
         results.obstacleHit = HandleObstaclesSpatial(player, grid);
-        results.checkpointHit = HandleCheckpointsSpatial(player, grid);
+        HandleCheckpointsSpatial(player, grid, results.checkpointHit, results.checkpointInRange);
         results.pogoHit = HandlePogoCollisionSpatial(player, grid);
 
         HandleWalls(player, env.GetWallPlatforms()); //small number, can just use non-spatial version
         HandleWalls(player, env.GetLevel3WallPlatforms());
 
-        // Buttons – these modify env's buttons and platforms
+        // Buttons - these modify env's buttons and platforms
         HandleButtons(player, env.GetLevel1Buttons(), env.GetLevel1Platforms());
         HandleButtons(player, env.GetLevel2Buttons(), env.GetLevel2Platforms()); //small no. too
         HandleButtons(player, env.GetLevel3Buttons(), env.GetLevel3Platforms());

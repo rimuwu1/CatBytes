@@ -68,15 +68,15 @@ void Platforms_Draw(const std::vector<Platform>& platforms, AEGfxTexture* leftTe
 
 void PlatformButton_Draw(const std::vector<PlatformButton>& buttons, const std::vector<Platform>& platforms, const Player& player)
 {
-	static SpriteSheet platformSwitch("Assets/Images/buttonSheet.png", 2, 5, 0, 0.1f);
-	
+	static SpriteSheet platformSwitch("Assets/Images/buttonSheet2.png", 3, 4, 9, 0.1f);
+
 	// clips
 	static bool addClips = false;
 
 	if (!addClips) {
-		platformSwitch.AddClip("off", 4, 4, 0.1f, false);			// off state - row 1 column 5
-		platformSwitch.AddClip("transition", 0, 3, 0.1f, false);	// off -> on - row 1 columns 1-4
-		platformSwitch.AddClip("on", 5, 8, 0.1f, true);				// on state - row 2 columns 1 - 4
+		platformSwitch.AddClip("off", 8, 8, 0.1f, false);			// off state - row 1 column 5
+		platformSwitch.AddClip("transition", 0, 3, 1.0f, false);	// off -> on - row 1 columns 1-4
+		platformSwitch.AddClip("on", 4, 7, 0.1f, true);				// on state - row 2 columns 1 - 4
 
 		platformSwitch.Play("off");
 
@@ -307,14 +307,52 @@ void WallCollisionCheck(Player& player, const std::vector<Platform>& wallPlatfor
 	}
 }
 
-void CheckpointDraw(const std::vector<Checkpoint>& checkpoint){
+void CheckpointDraw(const std::vector<Checkpoint>& checkpoint, const Player& player){
+	static SpriteSheet checkpointAnim("Assets/Images/checkpointSheet.png", 1, 10, 0, .1f);
+	float dt = (float)AEFrameRateControllerGetFrameTime();
+	checkpointAnim.Update(dt);
+
 	for (auto& point : checkpoint) {
-		MeshManager::Get().DrawSquare(point.x, point.y, point.w, point.h);
+		MeshManager::Get().DrawSpriteSheet(checkpointAnim, point.x, point.y, point.w, point.h);
+
+		float playerLeft = player.pos.x - player.width * 0.5f;
+		float playerRight = player.pos.x + player.width * 0.5f;
+		float playerTop = player.pos.y + player.height * 0.5f;
+		float playerBottom = player.pos.y - player.height * 0.5f;
+
+		float rangeLeft = point.x - point.w * 1.0f;
+		float rangeRight = point.x + point.w * 1.0f;
+		float rangeTop = point.y + point.h * 1.0f;
+		float rangeBottom = point.y - point.h * 1.0f;
+
+		bool inRangeX = (playerRight >= rangeLeft) && (playerLeft <= rangeRight);
+		bool inRangeY = (playerTop >= rangeBottom) && (playerBottom <= rangeTop);
+
+		if (inRangeX && inRangeY) {
+			float windowWidth = (float)AEGfxGetWindowWidth();
+			float windowHeight = (float)AEGfxGetWindowHeight();
+
+			float screenX = (point.x - globalCam.x) / (windowWidth * 0.5f);
+			float screenY = (point.y + point.h + 20.0f - globalCam.y) / (windowHeight * 0.5f);
+
+			if (screenX > 0.5f) {
+				screenX = 0.5f;
+			}
+			if (screenX < -0.9f) {
+				screenX = -0.9f;
+			}
+
+			AEGfxPrint(g_FontSmall, "Press E to save game", screenX, screenY, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f);
+		}
 	}
 }
 
-bool CheckpointCollisionCheck(const Player& player, const std::vector<Checkpoint>& checkpoint)
+void CheckpointCollisionCheck(const Player& player, const std::vector<Checkpoint>& checkpoint, bool& checkpointHit, bool& checkpointInRange)
 {
+	checkpointHit = false;
+	checkpointInRange = false;
+	const Checkpoint* nearestInRange = nullptr;
+
 	for (int i = 0; i < checkpoint.size(); i++) {
 		float playerLeft = player.pos.x - player.width * 0.5f;
 		float playerRight = player.pos.x + player.width * 0.5f;
@@ -329,10 +367,21 @@ bool CheckpointCollisionCheck(const Player& player, const std::vector<Checkpoint
 		bool overlapX = (playerRight >= obsLeft) && (playerLeft <= obsRight);
 		bool overlapY = (playerTop >= obsBottom) && (playerBottom <= obsTop);
 
-		// If we found a collision, return true immediately
 		if (overlapX && overlapY) {
-			return true;
+			checkpointHit = true;
+		}
+
+		float rangeLeft = checkpoint[i].x - checkpoint[i].w * 1.0f;
+		float rangeRight = checkpoint[i].x + checkpoint[i].w * 1.0f;
+		float rangeTop = checkpoint[i].y + checkpoint[i].h * 1.0f;
+		float rangeBottom = checkpoint[i].y - checkpoint[i].h * 1.0f;
+
+		bool inRangeX = (playerRight >= rangeLeft) && (playerLeft <= rangeRight);
+		bool inRangeY = (playerTop >= rangeBottom) && (playerBottom <= rangeTop);
+
+		if (inRangeX && inRangeY && !nearestInRange) {
+			checkpointInRange = true;
+			nearestInRange = &checkpoint[i];
 		}
 	}
-	return false;
 }

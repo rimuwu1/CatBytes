@@ -205,7 +205,9 @@ void MainGame_Update()
     }
 
     // ----- Checkpoint & save -----
-    if (EnvironmentManager::Get().HandleCheckpoint(results.checkpointHit))
+    EnvironmentManager::Get().SetCheckpointInRange(results.checkpointInRange);
+
+    if (results.checkpointInRange && AEInputCheckTriggered('E'))
     {
         int currentSection = EnvironmentManager::Get().GetCurrentSection();
         int currentLevel = currentSection + 1;
