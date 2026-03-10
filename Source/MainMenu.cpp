@@ -21,6 +21,8 @@
 #include "GameSaveManager.h"
 #include "UIManager.h"
 #include "Camera.h"
+#include "TextureManager.h"
+#include "MeshManager.h"
 
 #include <fstream>
 #include <sstream>
@@ -33,6 +35,9 @@ AEAudio g_MainMenuMusic{};
 static AEAudio g_HoverSound{};
 static AEAudio g_ClickSound{};
 static int g_PreviousHoveredButton = 0;
+
+// bacakground texture
+static AEGfxTexture* g_MainMenuBG = nullptr;
 
 // Save‑related state
 static bool g_ShowContinue = false;
@@ -101,6 +106,9 @@ static bool IsMouseOverButton(float mouseX, float mouseY, float buttonY)
 void MainMenu_Load()
 {
     std::cout << "Main Menu:Load" << std::endl;
+
+    // load background texture once at load time
+    g_MainMenuBG = TextureManager::Get().LoadTexture("Assets/Images/MainMenuBackground.png");  
 }
 
 void MainMenu_Initialize()
@@ -277,12 +285,20 @@ void MainMenu_Draw()
     AESysFrameStart();
     AEGfxSetBackgroundColor(0.5f, 0.5f, 0.5f);
 
+    // draw background first before text
+    if (g_MainMenuBG)
+    {
+        float w = static_cast<float>(AEGfxGetWindowWidth());
+        float h = static_cast<float>(AEGfxGetWindowHeight());
+        MeshManager::Get().DrawTexturedSquare(g_MainMenuBG, 0.0f, 0.0f, w, h, 1.0f);
+    }
+
     if (g_FontLarge != -1 && g_FontMedium != -1)
     {
         AEGfxSetBlendMode(AE_GFX_BM_BLEND);
 
         // Title
-        AEGfxPrint(g_FontLarge, "POGBA", BUTTON_X, TITLE_Y, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f);
+        AEGfxPrint(g_FontLarge, "CatClimb", BUTTON_X, TITLE_Y, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f);
 
         if (g_ShowContinue)
         {
@@ -384,5 +400,8 @@ void MainMenu_Free()
 
 void MainMenu_Unload()
 {
+    TextureManager::Get().UnloadTexture("Assets/Images/MainMenuBackground.png");
+    g_MainMenuBG = nullptr;
+
     std::cout << "Main Menu:Unload" << std::endl;
 }
