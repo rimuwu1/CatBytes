@@ -42,6 +42,18 @@ SpriteSheet::SpriteSheet(const std::string& filepath,
 }
 
 // -----------------------------------------------------------------------------
+SpriteSheet::SpriteSheet(const SpriteSheet& other)
+    : rows(other.rows), cols(other.cols), maxSprites(other.maxSprites),
+    frameDuration(other.frameDuration), animTimer(0.f), currentFrame(0),
+    currentClip(""), playing(false), isPaused(false),
+    spriteUVWidth(other.spriteUVWidth), spriteUVHeight(other.spriteUVHeight),
+    uvOffsetX(0.f), uvOffsetY(0.f), pTexture(other.pTexture)
+{
+    clips = other.clips;   // copy all clip definitions
+    // Animation is intentionally reset; caller must Play() the desired clip.
+}
+
+// -----------------------------------------------------------------------------
 float SpriteSheet::GetClipDuration(const std::string& name) const {
     auto it = clips.find(name);
     if (it != clips.end()) {

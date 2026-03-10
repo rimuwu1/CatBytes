@@ -62,6 +62,11 @@ struct Enemy
 
     // HardEnemy only
     float damage = 0.0f;
+
+    // knockback state
+    AEVec2 knockbackVel{ 0.0f, 0.0f };
+    float knockbackTimer = 0.0f;
+    float knockbackVelocity = 300.0f;
 };
 
 // Initialisation functions take a config object
@@ -76,6 +81,7 @@ void BossEnemy_Update(Enemy& enemy, float dt);
 
 // Draw, onHit, setGraphics, free
 void Enemy_Draw(const Enemy& enemy);
-void Enemy_OnHit(Enemy& enemy, float damage);
+void Enemy_OnHit(Enemy& enemy, float damage, float knockbackDir = 0.0f);
 //void Enemy_Free(Enemy& enemy);
 void HardEnemy_OnCollision(Enemy& enemy, Player& player);
+void Enemy_ApplyKnockback(Enemy& enemy, float knockbackDir);

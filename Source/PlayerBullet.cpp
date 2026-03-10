@@ -2,7 +2,9 @@
 /*!
 \file       PlayerBullet.cpp
 \author     Sim Hui Min, Huimin, s.huimin, 2503506
+            Joash ng, joash.ng, 2502780
 \par        s.huimin@digipen.edu
+            joash.ng@digipen.edu
 \date       February 01 2026
 \brief      Implement the functions for the player's bullets
 
@@ -14,12 +16,13 @@ Technology is prohibited.
 /* End Header *****/
 
 #include "PlayerBullet.h"
+#include "SpriteSheet.h"
 #include "MeshManager.h"
 #include "TextureManager.h"
 #include "Player.h"
 
-// shared resources
-static AEGfxTexture* bulletTexture;
+const float MAX_WINDOW_WIDTH = 850.0f;
+const float MIN_WINDOW_WIDTH = -850.0f;
 
 void PlayerBullet_Init(PlayerBullet& bullet, const Player& player)
 {
@@ -40,8 +43,10 @@ void PlayerBullet_Update(PlayerBullet& bullet, float dt)
     bullet.pos.y += bullet.vel.y * dt;
 
     // deactivate if off-screen
-    if (bullet.pos.x > 850.0f || bullet.pos.x < -850.0f)
+    if (bullet.pos.x > MAX_WINDOW_WIDTH || bullet.pos.x < MIN_WINDOW_WIDTH)
         bullet.active = false;
+    if (bullet.bulletSprite)
+        bullet.bulletSprite->Update(dt);
 }
 
 void PlayerBullet_Draw(const PlayerBullet& bullet)
@@ -61,10 +66,7 @@ void PlayerBullet_Draw(const PlayerBullet& bullet)
     }
     else {
         // fallback to static texture
-        static AEGfxTexture* bulletTexture = nullptr;
-        if (!bulletTexture) {
-            bulletTexture = TextureManager::Get().LoadTexture("Assets/Images/PlayerBullet.jpg");
-        }
+        static AEGfxTexture* bulletTexture = TextureManager::Get().LoadTexture("Assets/Images/PlayerBullet.jpg");
         MeshManager::Get().DrawTexturedSquare(
             bulletTexture,
             bullet.pos.x,

@@ -247,7 +247,7 @@ void SpatialGrid::DebugDrawGrid() const {
 
     for (int i = 0; i < numCells; ++i) {
         float cellTop = minWorldY + (i + 1) * cellHeight;
-        float cellBottom = minWorldY + i * cellHeight;
+        //float cellBottom = minWorldY + i * cellHeight;
 
         size_t totalObjects = platformCells[i].size() + obstacleCells[i].size() + 
                               checkpointCells[i].size() + enemyCells[i].size() + 

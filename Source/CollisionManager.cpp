@@ -175,6 +175,7 @@ namespace CollisionManager
             if (overlapX && overlapY)
             {
                 Player_ApplyDamage(player, bullet.damage);   // from Player.h
+                Player_ApplyKnockback(player, bullet.pos.x, bullet.pos.y);
                 bullet.active = false;
             }
         }
@@ -379,6 +380,7 @@ namespace CollisionManager
             if (overlapX && overlapY)
             {
                 Player_ApplyDamage(player, bullet->damage);
+                Player_ApplyKnockback(player, bullet->pos.x, bullet->pos.y);
                 bullet->active = false;
             }
         }

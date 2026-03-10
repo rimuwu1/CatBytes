@@ -81,7 +81,7 @@ void PlatformsObstacle_Draw(const std::vector<PlatformObstacle>& obstacles)
 	for (const PlatformObstacle& obs : obstacles)
 	{
 		//if (!obs.active) continue;  // skip inactive
-		MeshManager::Get().DrawTriangle(obs.x, obs.y, obs.w, obs.h, obs.r); // grey
+		MeshManager::Get().DrawTexturedSquare(TextureManager::Get().LoadTexture("Assets/Images/spikeObstacle.png"), obs.x, obs.y, obs.w, obs.h);
 	}
 }
 
