@@ -315,6 +315,8 @@ void HardEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
 }
 
 void BossEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
+
+    enemy.facesLeft = true;
     // Position
     if (config.HasMember("x") && config["x"].IsFloat())
         enemy.pos.x = config["x"].GetFloat();
@@ -352,16 +354,21 @@ void BossEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
     }
 
     // Hit points
-    if (config.HasMember("hp") && config["hp"].IsFloat())
+    if (config.HasMember("hp") && config["hp"].IsFloat()) {
         enemy.hitPoints = config["hp"].GetFloat();
+        enemy.maxHitPoints = enemy.hitPoints;
+    }
     else {
         enemy.hitPoints = 30.0f;
+        enemy.maxHitPoints = enemy.hitPoints;
         printf("Warning: Boss missing 'hp', defaulting to 30\n");
     }
 
     // Collision damage
     if (config.HasMember("damage") && config["damage"].IsFloat())
         enemy.damage = config["damage"].GetFloat();
+    else if (config.HasMember("damage") && config["damage"].IsInt())
+        enemy.damage = static_cast<float>(config["damage"].GetInt());
     else {
         enemy.damage = 8.0f;
         printf("Warning: Boss missing 'damage', defaulting to 8\n");
@@ -380,6 +387,17 @@ void BossEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
     enemy.isPlayerColliding = false;
     enemy.type = EnemyType::Boss;
 
+    // Patrol bounds
+    if (config.HasMember("patrol_min_x") && config["patrol_min_x"].IsFloat())
+        enemy.patrolMinX = config["patrol_min_x"].GetFloat();
+    else
+        enemy.patrolMinX = enemy.pos.x - 200.0f;
+
+    if (config.HasMember("patrol_max_x") && config["patrol_max_x"].IsFloat())
+        enemy.patrolMaxX = config["patrol_max_x"].GetFloat();
+    else
+        enemy.patrolMaxX = enemy.pos.x + 200.0f;
+
     // Knockback
     if (config.HasMember("knockback_velocity") && config["knockback_velocity"].IsFloat())
         enemy.knockbackVelocity = config["knockback_velocity"].GetFloat();
@@ -387,6 +405,33 @@ void BossEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
         enemy.knockbackVelocity = 300.0f;
     enemy.knockbackVel = { 0.0f, 0.0f };
     enemy.knockbackTimer = 0.0f;
+
+    // SpriteSheet Loading
+    if (config.HasMember("animations"))
+    {
+        const auto& anims = config["animations"];
+
+        enemy.spriteSheet = std::make_unique<SpriteSheet>(
+            anims["file"].GetString(),
+            anims["rows"].GetInt(),
+            anims["cols"].GetInt()
+        );
+
+        const auto& clips = anims["clips"];
+        for (rapidjson::SizeType i = 0; i < clips.Size(); i++)
+        {
+            const auto& c = clips[i];
+            enemy.spriteSheet->AddClip(
+                c["name"].GetString(),
+                c["start"].GetInt(),
+                c["end"].GetInt(),
+                c["duration"].GetFloat(),
+                c["loop"].GetBool()
+            );
+        }
+
+        enemy.spriteSheet->Play("patrol");
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -591,6 +636,11 @@ void HardEnemy_Update(Enemy& enemy, float dt) {
 // Freezes briefly on hit stun
 // -----------------------------------------------------------------------------
 void BossEnemy_Update(Enemy& enemy, float dt) {
+
+    if (!enemy.spriteSheet) return;
+
+    const std::string currentClip = enemy.spriteSheet->GetCurrentClip();
+
     if (enemy.hitStunTimer > 0.0f) {
         // Apply knockback movement first
         if (enemy.knockbackTimer > 0.0f)

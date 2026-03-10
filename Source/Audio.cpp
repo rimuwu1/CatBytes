@@ -16,20 +16,20 @@ Technology is prohibited.
 
 namespace Audio
 {
-    const std::string MAIN_MENU_MUSIC = "Assets/Audio/MainMenuMusic.mp3";
-    const std::string GAME_MUSIC = "Assets/Audio/GameMusic.mp3";
+    const std::string MAIN_MENU_MUSIC = "Assets/Audio/MUSIC-STINGER_GEN-HDF-17880.wav";
+    const std::string GAME_MUSIC = "Assets/Audio/DATA DANCE - NewAge MSCNEW2_13.wav";
 
-    const std::string HOVER_BUTTON = "Assets/Audio/HoverButton.mp3";
-    const std::string CLICK_BUTTON = "Assets/Audio/ClickButton.mp3";
+    const std::string HOVER_BUTTON = "Assets/Audio/SCI-FI-DOOR_GEN-HDF-20601.wav";
+    const std::string CLICK_BUTTON = "Assets/Audio/SCI-FI-DOOR_GEN-HDF-20603.wav";
 
-    const std::string JUMP = "Assets/Audio/Jump.mp3";
-    const std::string PLAYER_GUN_ATTACK = "Assets/Audio/PlayerGunAttack.mp3";
-    const std::string PLAYER_MELEE_ATTACK = "Assets/Audio/PlayerMeleeAttack.mp3";
+    const std::string JUMP = "Assets/Audio/SCI-FI-POWER-UP_GEN-HDF-20769.wav";
+    const std::string PLAYER_GUN_ATTACK = "Assets/Audio/SciFiLazer CTE02_38.1.wav";
+    const std::string PLAYER_MELEE_ATTACK = "Assets/Audio/SCI-FI-DOOR_GEN-HDF-20610.wav";
 
-    const std::string EASY_ENEMY_ATTACK = "Assets/Audio/EasyEnemyAttack.mp3";
-    const std::string HARD_ENEMY_ATTACK = "Assets/Audio/HardEnemyAttack.mp3";
-    const std::string BOSS_ATTACK = "Assets/Audio/BossAttack.mp3";
+    const std::string EASY_ENEMY_ATTACK = "Assets/Audio/ESCI-FI-ELECTRICITY_GEN-HDF-20641.wav";
+    const std::string HARD_ENEMY_ATTACK = "Assets/Audio/SCI-FI-DOOR_GEN-HDF-20602.wav";
+    const std::string BOSS_ATTACK = "Assets/Audio/HORROR_GEN-HDF-14515.wav";
 
-    const std::string WIN_EFFECT = "Assets/Audio/WinEffect.mp3";
-    const std::string LOSE_EFFECT = "Assets/Audio/LoseEffect.mp3";
+    const std::string WIN_EFFECT = "Assets/Audio/SCI-FI-DOOR_GEN-HDF-20604.wav";
+    const std::string LOSE_EFFECT = "Assets/Audio/SciFiLazer CTE02_38.2.wav";
 }
