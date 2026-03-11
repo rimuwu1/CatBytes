@@ -210,7 +210,7 @@ void Player_Init(Player& player, const rapidjson::Value& config)
 
 	// spike pogo
 	player.pogoJustPerformed = false;
-	player.pogoVelocity = config.HasMember("pogo_velocity") ? config["pogo_velocity"].GetFloat() : 400.0f;
+	player.pogoVelocity = config.HasMember("pogo_velocity") ? config["pogo_velocity"].GetFloat() : 600.0f;
 }
 
 void Player_Update(Player& player, float dt)
