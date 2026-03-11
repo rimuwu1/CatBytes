@@ -23,12 +23,12 @@ class SpriteSheet;
 struct Player;
 
 struct PlayerBullet {
-    bool active;
-    float width;
-    float height;
-    float damage;
-    AEVec2 pos;
-    AEVec2 vel;
+    bool active = false;
+    float width = 0.0f;
+    float height = 0.0f;
+    float damage = 0.0f;
+    AEVec2 pos{ 0.0f, 0.0f };
+    AEVec2 vel{ 0.0f, 0.0f };
     std::unique_ptr<SpriteSheet> bulletSprite;
 };
 

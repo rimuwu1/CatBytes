@@ -36,6 +36,7 @@ Technology is prohibited.
 #include "DebugManager.h"
 #include "PhysicsManager.h"
 #include "Platforms.h"
+#include "Winlose.h"
 
 static AEAudio s_GunAttackSound{};
 static AEAudio s_MeleeAttackSound{};
@@ -43,7 +44,6 @@ static AEAudio s_JumpSound{};
 static bool s_PlayerAudioLoaded = false;
 
 static const float MELEE_COOLDOWN = 0.3f;
-
 
 void Player_Init(Player& player, const rapidjson::Value& config)
 {
@@ -95,11 +95,11 @@ void Player_Init(Player& player, const rapidjson::Value& config)
 	player.bulletWidth = bulletJson["width"].GetFloat();
 	player.bulletHeight = bulletJson["height"].GetFloat();
 
-	for (auto& b : player.bullets)
-	{
-		PlayerBullet_Init(b, player);
-		b.damage = player.bulletDamage; // assign damage from JSON
-	}
+	//for (auto& b : player.bullets)
+	//{
+	//	PlayerBullet_Init(b, player);
+	//	b.damage = player.bulletDamage; // assign damage from JSON
+	//}
 
 	// --- Dynamic SpriteSheet Loading ---
 	if (playerJson.HasMember("animations")) {
@@ -683,7 +683,8 @@ void Player_ApplyDamage(Player& player, float damage)
 		{
 			player.hp = 0.0f;
 			//trigger death: return to main menu
-			GameStateManager::Get().next = GS_MAINMENU;
+			textScreenMessage = "You Lose";
+			GameStateManager::Get().next = GS_WINLOSE;
 		}
 	}
 }
