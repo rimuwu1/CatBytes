@@ -27,6 +27,7 @@ Technology is prohibited.
 #include "AudioManager.h"
 #include "Audio.h"
 #include "Camera.h"
+#include "SpriteSheet.h"
 #include <fstream>
 #include <iostream>
 #include "rapidjson/document.h"
@@ -135,6 +136,12 @@ void Enemy_Init(Enemy& enemy, const rapidjson::Value& config) {
     else
         enemy.bulletRange = 1600.0f;
 
+    if (config.HasMember("bullet_width") && config["bullet_width"].IsFloat())
+        enemy.bulletWidth = config["bullet_width"].GetFloat();
+
+    if (config.HasMember("bullet_height") && config["bullet_height"].IsFloat())
+        enemy.bulletHeight = config["bullet_height"].GetFloat();
+
     enemy.shootTimer = enemy.shootCooldown;
     enemy.vel = { 0.0f, 0.0f };
     enemy.direction = 1;
@@ -185,6 +192,28 @@ void Enemy_Init(Enemy& enemy, const rapidjson::Value& config) {
         }
 
         enemy.spriteSheet->Play("patrol");
+    }
+
+    // Enemy bullet sprite
+    if (config.HasMember("bullet_animations")) {
+        const auto& anims = config["bullet_animations"];
+        enemy.bulletSprite = std::make_unique<SpriteSheet>(
+            anims["file"].GetString(),
+            anims["rows"].GetInt(),
+            anims["cols"].GetInt()
+        );
+        const auto& clips = anims["clips"];
+        for (rapidjson::SizeType i = 0; i < clips.Size(); i++) {
+            const auto& c = clips[i];
+            enemy.bulletSprite->AddClip(
+                c["name"].GetString(),
+                c["start"].GetInt(),
+                c["end"].GetInt(),
+                c["duration"].GetFloat(),
+                c["loop"].GetBool()
+            );
+        }
+        enemy.bulletSprite->Play("fly");
     }
 
     // Knockback

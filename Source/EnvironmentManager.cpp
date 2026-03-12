@@ -318,6 +318,9 @@ void EnvironmentManager::Draw(float camX, float camY, PlayerWeapon weapon, const
 
     m_HUD.Draw(MeshManager::Get(), camX, camY, weapon);
     LevelIndicator_Draw();
+
+    // Flush any remaining batches
+    MeshManager::Get().EndBatch();
 }
 
 // ------------------------------------------------------------------------

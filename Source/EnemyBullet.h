@@ -16,6 +16,8 @@ Technology is prohibited.
 #pragma once
 #include "pch.h"
 #include "AEEngine.h" //for AEVec2
+#include <memory>
+#include "SpriteSheet.h"
 
 const float BULLET_WIDTH = 30.0f;
 const float BULLET_HEIGHT = 10.0f;
@@ -31,6 +33,7 @@ struct EnemyBullet
     bool active;
     float width = BULLET_WIDTH;
     float height = BULLET_HEIGHT;
+    std::unique_ptr<SpriteSheet> bulletSprite;
 };
 
 void EnemyBullet_Draw(const EnemyBullet& bullet);

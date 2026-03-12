@@ -2,7 +2,9 @@
 /*!
 \file EnemyBullet.cpp
 \author Tse Xuan Qi Tristin, tse.x, 2503757
-\par tse.x@digipen.edu
+        Joash ng, joash.ng, 2502780
+\par    tse.x@digipen.edu
+        joash.ng@digipen.edu
 \date Junuary, 24, 2026
 \brief
 
@@ -17,37 +19,34 @@ Technology is prohibited.
 #include "MeshManager.h"
 #include "TextureManager.h"
 
-//static mesh & texture shared by all bullets
-static AEGfxTexture* bulletTexture = nullptr;
-
 void EnemyBullet_Draw(const EnemyBullet& bullet)
 {
     if (!bullet.active) return;
 
-    //create mesh if not already(dont create them)
-    /*
-    if (!bulletMesh)
-        bulletMesh = util::CreateSquareMesh();
-        */
-
-    //load texture if not already
-    if (!bulletTexture)
-        bulletTexture = TextureManager::Get().LoadTexture("Assets/Images/EasyEnemyBullet.jpg");
-
-    MeshManager::Get().DrawTexturedSquare(
-        bulletTexture,
-        bullet.pos.x,
-        bullet.pos.y,
-        bullet.width,
-        bullet.height
-    );
+    // use sprite sheet if available, otherwise fallback to texture
+    if (bullet.bulletSprite) {
+        MeshManager::Get().DrawSpriteSheet(
+            *bullet.bulletSprite,
+            bullet.pos.x,
+            bullet.pos.y,
+            bullet.width,
+            bullet.height,
+            1.0f    
+        );
+    }
+    else {
+        MeshManager::Get().DrawTexturedSquare(
+            TextureManager::Get().LoadTexture("Assets/Images/EasyEnemyBullet.jpg"),
+            bullet.pos.x,
+            bullet.pos.y,
+            bullet.width,
+            bullet.height,
+            1.0f
+        );
+    }
 }
 
 void EnemyBullet_Free()
 {
-    if (bulletTexture)
-    {
-        bulletTexture = nullptr;
-    }
     
 }

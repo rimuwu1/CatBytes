@@ -20,6 +20,7 @@ Technology is prohibited.
 #include "PlayerBullet.h"
 #include "EnemyBullet.h"
 #include "EnvironmentManager.h"
+#include "Player.h"
 
 // ------------------------------------------------------------------------
 // Helper: construct and push a single enemy from a JSON value.
@@ -110,22 +111,134 @@ void ObjectManager::Update(float dt)
         b.pos.x += b.direction * b.speed * dt;
         if (fabs(b.pos.x - b.startPos.x) >= b.maxRange)
             b.active = false;
+        if (b.bulletSprite)
+            b.bulletSprite->Update(dt);
     }
 
     RemoveInactiveBullets();
 }
 
 // ------------------------------------------------------------------------
-void ObjectManager::Draw()
+static bool IsInView(float x, float y, float halfW, float halfH, float camX, float camY) {
+    return (x + halfW) >= (camX - halfW) &&
+           (x - halfW) <= (camX + halfW) &&
+           (y + halfH) >= (camY - halfH) &&
+           (y - halfH) <= (camY + halfH);
+}
+
+// ------------------------------------------------------------------------
+void ObjectManager::Draw(float camX, float camY, float screenHalfW, float screenHalfH)
 {
+    MeshManager& mm = MeshManager::Get();
+
+    const float CULL_MARGIN = 100.0f;
+    float cullL = camX - screenHalfW - CULL_MARGIN;
+    float cullR = camX + screenHalfW + CULL_MARGIN;
+    float cullT = camY + screenHalfH + CULL_MARGIN;
+    float cullB = camY - screenHalfH - CULL_MARGIN;
+
+    auto InView = [&](float x, float y, float halfW, float halfH) {
+        return (x + halfW) >= cullL && (x - halfW) <= cullR &&
+               (y + halfH) >= cullB && (y - halfH) <= cullT;
+    };
+
+    // Collect all enemy sprites into batches (skip boss - draw separately)
     for (const auto& e : enemies) {
-        //if (e.isAlive) 
-         Enemy_Draw(e);
+        if (!e.isAlive && e.maxHitPoints > 0.0f) continue;
+        if (!InView(e.pos.x, e.pos.y, e.width * 0.5f, e.height * 0.5f)) continue;
+
+        if (e.spriteSheet) {
+            // Enemy HP bar
+            if (e.isAlive && e.maxHitPoints > 0.0f) {
+                float hpRatio = e.hitPoints / e.maxHitPoints;
+                float hpBarWidth = e.width * 0.8f;
+                float hpBarHeight = 6.0f;
+                float hpX = e.pos.x;
+                float hpY = e.pos.y + e.height * 0.5f + 10.0f;
+
+                mm.DrawSquare(hpX, hpY, hpBarWidth + 6.0f, hpBarHeight + 6.0f, 0, 0, 0, 1.0f);
+                mm.DrawSquare(hpX, hpY, hpBarWidth, hpBarHeight, 40, 40, 40, 1.0f);
+                mm.DrawSquare(hpX - (hpBarWidth / 2) + (hpBarWidth * hpRatio) * 0.5f, hpY, hpBarWidth * hpRatio, hpBarHeight, 220, 40, 40, 1.0f);
+            }
+            // Boss: draw directly (unique sprite, no batching benefit)
+            if (e.type == EnemyType::Boss) {
+                float scaleX;
+                if (e.facesLeft)
+                    scaleX = (e.direction == 1) ? -e.width : e.width;
+                else
+                    scaleX = (e.direction == -1) ? -e.width : e.width;
+
+                MeshManager::Get().DrawSpriteSheet(*e.spriteSheet, e.pos.x, e.pos.y, scaleX, e.height);
+            }
+            else {
+                // Regular enemies: batch them
+                float scaleX;
+                if (e.facesLeft)
+                    scaleX = (e.direction == 1) ? -e.width : e.width;
+                else
+                    scaleX = (e.direction == -1) ? -e.width : e.width;
+
+                mm.BeginBatch(e.spriteSheet->GetTexture(), e.spriteSheet->GetSpriteUVWidth(), e.spriteSheet->GetSpriteUVHeight());
+                SpriteBatchItem item{};
+                item.x = e.pos.x;
+                item.y = e.pos.y;
+                item.width = scaleX;
+                item.height = e.height;
+                item.uvOffsetX = e.spriteSheet->GetUVOffsetX();
+                item.uvOffsetY = e.spriteSheet->GetUVOffsetY();
+                item.opacity = 1.0f;
+                item.rotation = 0.0f;
+                mm.QueueSprite(item);
+
+            }
+        }
     }
+
+    // Collect enemy bullets into batch
     for (const auto& b : enemyBullets) {
-        if (b.active) EnemyBullet_Draw(b);
+        if (!b.active) continue;
+        if (InView(b.pos.x, b.pos.y, b.width * 0.5f, b.height * 0.5f)) {
+            if (b.bulletSprite) {
+                mm.BeginBatch(b.bulletSprite->GetTexture(), b.bulletSprite->GetSpriteUVWidth(), b.bulletSprite->GetSpriteUVHeight());
+                SpriteBatchItem item{};
+                item.x = b.pos.x;
+                item.y = b.pos.y;
+                item.width = b.width;
+                item.height = b.height;
+                item.uvOffsetX = b.bulletSprite->GetUVOffsetX();
+                item.uvOffsetY = b.bulletSprite->GetUVOffsetY();
+                item.opacity = 1.0f;
+                item.rotation = 0.0f;
+                mm.QueueSprite(item);
+            }
+        }
     }
+
+    // Player: use existing Player_Draw function (includes slash effect)
     Player_Draw(player);
+
+    // Collect player bullets into batch
+    for (const auto& b : player.bullets) {
+        if (!b.active) continue;
+        if (InView(b.pos.x, b.pos.y, b.width * 0.5f, b.height * 0.5f)) {
+            if (b.bulletSprite) {
+                mm.BeginBatch(b.bulletSprite->GetTexture(), b.bulletSprite->GetSpriteUVWidth(), b.bulletSprite->GetSpriteUVHeight());
+                SpriteBatchItem item{};
+                item.x = b.pos.x;
+                item.y = b.pos.y;
+                item.width = b.width;
+                item.height = b.height;
+                item.uvOffsetX = b.bulletSprite->GetUVOffsetX();
+                item.uvOffsetY = b.bulletSprite->GetUVOffsetY();
+                item.opacity = 1.0f;
+                item.rotation = 0.0f;
+                mm.QueueSprite(item);
+            }
+        }
+    }
+
+    // Flush all batches at once
+    mm.EndBatch();
 }
 
 // ------------------------------------------------------------------------
@@ -138,8 +251,14 @@ void ObjectManager::SpawnEnemyBullet(const Enemy& source, float speed, float dam
     bullet.speed = speed;
     bullet.damage = damage;
     bullet.maxRange = maxRange;
+    bullet.width = source.bulletWidth;
+    bullet.height = source.bulletHeight;
     bullet.active = true;
-    enemyBullets.push_back(bullet);
+    if (source.bulletSprite) {
+        bullet.bulletSprite = std::make_unique<SpriteSheet>(*source.bulletSprite);
+        bullet.bulletSprite->Play("fly", true);
+    }
+    enemyBullets.push_back(std::move(bullet));
 }
 
 // ------------------------------------------------------------------------

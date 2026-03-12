@@ -40,16 +40,33 @@ void Platforms_Draw(const std::vector<Platform>& platforms, AEGfxTexture* leftTe
 	float dt = (float)AEFrameRateControllerGetFrameTime();
 	hoverAnim.Update(dt);
 
+	MeshManager& mm = MeshManager::Get();
+
 	for (const Platform& pf : platforms) {
 		if (!pf.active) continue;
 
 		// Left cap position
 		float leftX = pf.x - pf.w / 2 + capWidth / 2;
-		MeshManager::Get().DrawTexturedSquare(leftTex, leftX, pf.y, capWidth, pf.h);
+		mm.BeginBatch(leftTex, 1.0f, 1.0f);
+		SpriteBatchItem item{};
+		item.x = leftX;
+		item.y = pf.y;
+		item.width = capWidth;
+		item.height = pf.h;
+		item.uvOffsetX = 0.0f;
+		item.uvOffsetY = 0.0f;
+		item.opacity = 1.0f;
+		item.rotation = 0.0f;
+		mm.QueueSprite(item);
 
 		// Right cap position
 		float rightX = pf.x + pf.w / 2 - capWidth / 2;
-		MeshManager::Get().DrawTexturedSquare(rightTex, rightX, pf.y, capWidth, pf.h);
+		mm.BeginBatch(rightTex, 1.0f, 1.0f);
+		item.x = rightX;
+		item.y = pf.y;
+		item.width = capWidth;
+		item.height = pf.h;
+		mm.QueueSprite(item);
 
 		// Middle section: a single section that stretches between the caps
 		float midStartX = leftX + capWidth / 2;            // left edge of middle
@@ -58,12 +75,26 @@ void Platforms_Draw(const std::vector<Platform>& platforms, AEGfxTexture* leftTe
 
 		if (midWidth > 0.0f) {
 			float midCenterX = (midStartX + midEndX) * 0.5f;
-			MeshManager::Get().DrawTexturedSquare(midTex,
-				midCenterX, pf.y,
-				midWidth, pf.h);
-			MeshManager::Get().DrawSpriteSheet(hoverAnim, midCenterX, pf.y - 40.0f, midWidth, pf.h);
+			mm.BeginBatch(midTex, 1.0f, 1.0f);
+			item.x = midCenterX;
+			item.y = pf.y;
+			item.width = midWidth;
+			item.height = pf.h;
+			mm.QueueSprite(item);
+
+			// Hover animation sprite
+			mm.BeginBatch(hoverAnim.GetTexture(), hoverAnim.GetSpriteUVWidth(), hoverAnim.GetSpriteUVHeight());
+			item.x = midCenterX;
+			item.y = pf.y - 40.0f;
+			item.width = midWidth;
+			item.height = pf.h;
+			item.uvOffsetX = hoverAnim.GetUVOffsetX();
+			item.uvOffsetY = hoverAnim.GetUVOffsetY();
+			mm.QueueSprite(item);
 		}
 	}
+
+	mm.EndBatch();
 }
 
 void PlatformButton_Draw(const std::vector<PlatformButton>& buttons, const std::vector<Platform>& platforms, const Player& player)
@@ -134,6 +165,7 @@ void PlatformButton_Draw(const std::vector<PlatformButton>& buttons, const std::
 			platformSwitch.Play("on");
 		}
 
+		// Draw directly (no batching - each button has different animation state)
 		MeshManager::Get().DrawSpriteSheet(platformSwitch, btn.x, btn.y, btn.w, btn.h);
 
 		// ----------------------------------------------------------------------------
@@ -187,16 +219,29 @@ void PlatformButton_Draw(const std::vector<PlatformButton>& buttons, const std::
 			AEGfxPrint(g_FontSmall, text, screenX, screenY, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f);
 		}
 	}
-
 }
 
 void PlatformsObstacle_Draw(const std::vector<PlatformObstacle>& obstacles)
 {
+	static AEGfxTexture* spikeTex = TextureManager::Get().LoadTexture("Assets/Images/spikeObstacle.png");
+	MeshManager& mm = MeshManager::Get();
+
+	mm.BeginBatch(spikeTex, 1.0f, 1.0f);
 	for (const PlatformObstacle& obs : obstacles)
 	{
 		//if (!obs.active) continue;  // skip inactive
-		MeshManager::Get().DrawTexturedSquare(TextureManager::Get().LoadTexture("Assets/Images/spikeObstacle.png"), obs.x, obs.y, obs.w, obs.h);
+		SpriteBatchItem item{};
+		item.x = obs.x;
+		item.y = obs.y;
+		item.width = obs.w;
+		item.height = obs.h;
+		item.uvOffsetX = 0.0f;
+		item.uvOffsetY = 0.0f;
+		item.opacity = 1.0f;
+		item.rotation = 0.0f;
+		mm.QueueSprite(item);
 	}
+	mm.EndBatch();
 }
 
 bool CheckObstacleCollision(const Player& player, const std::vector<PlatformObstacle>& obstacle)
@@ -312,9 +357,22 @@ void CheckpointDraw(const std::vector<Checkpoint>& checkpoint, const Player& pla
 	float dt = (float)AEFrameRateControllerGetFrameTime();
 	checkpointAnim.Update(dt);
 
-	for (auto& point : checkpoint) {
-		MeshManager::Get().DrawSpriteSheet(checkpointAnim, point.x, point.y, point.w, point.h);
+	MeshManager& mm = MeshManager::Get();
 
+	mm.BeginBatch(checkpointAnim.GetTexture(), checkpointAnim.GetSpriteUVWidth(), checkpointAnim.GetSpriteUVHeight());
+	for (auto& point : checkpoint) {
+		SpriteBatchItem item{};
+		item.x = point.x;
+		item.y = point.y;
+		item.width = point.w;
+		item.height = point.h;
+		item.uvOffsetX = checkpointAnim.GetUVOffsetX();
+		item.uvOffsetY = checkpointAnim.GetUVOffsetY();
+		item.opacity = 1.0f;
+		item.rotation = 0.0f;
+		mm.QueueSprite(item);
+
+		// Check for "Press E" text (must remain outside batch)
 		float playerLeft = player.pos.x - player.width * 0.5f;
 		float playerRight = player.pos.x + player.width * 0.5f;
 		float playerTop = player.pos.y + player.height * 0.5f;
@@ -345,6 +403,7 @@ void CheckpointDraw(const std::vector<Checkpoint>& checkpoint, const Player& pla
 			AEGfxPrint(g_FontSmall, "Press E to save game", screenX, screenY, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f);
 		}
 	}
+	mm.EndBatch();
 }
 
 void CheckpointCollisionCheck(const Player& player, const std::vector<Checkpoint>& checkpoint, bool& checkpointHit, bool& checkpointInRange)

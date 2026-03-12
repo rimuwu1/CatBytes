@@ -62,6 +62,9 @@ struct Enemy
     float bulletSpeed = 0.0f;
     float bulletDamage = 0.0f;
     float bulletRange = 0.0f;
+    float bulletWidth = 30.0f;
+    float bulletHeight = 30.0f;
+    std::unique_ptr<SpriteSheet> bulletSprite;
 
     // HardEnemy only
     float damage = 0.0f;

@@ -273,7 +273,7 @@ void MainGame_Draw()
 
     Player& player = ObjectManager::Get().GetPlayer();
     EnvironmentManager::Get().Draw(globalCam.x, globalCam.y, player.weapon, player, 900.0f * 0.5f);
-    ObjectManager::Get().Draw();
+    ObjectManager::Get().Draw(globalCam.x, globalCam.y, 800.0f, 450.0f);
     GameSaveManager::Notify_Draw();
     //pop up draw over everything
     DebugManager::Get().DrawWorldOverlays(globalCam.x, globalCam.y);

@@ -207,8 +207,8 @@ namespace CollisionManager
         for (auto& bullet : bullets)
         {
             if (!bullet.active) continue;
-            float bulletHalfW = 20.0f;  // should come from bullet size
-            float bulletHalfH = 20.0f;
+            float bulletHalfW = bullet.width * 0.5f;
+            float bulletHalfH = bullet.height * 0.5f;
             float playerHalfW = player.width * 0.5f;
             float playerHalfH = player.height * 0.5f;
             bool overlapX = fabs(bullet.pos.x - player.pos.x) < (bulletHalfW + playerHalfW);

@@ -645,18 +645,39 @@ void Player_Draw(const Player& player)
 
 		float slashWidth = player.width;
 		float slashHeight = player.height;
+		float scaleX, scaleY;
 
-		// For horizontal, flip facing left
-		float scaleX = -slashWidth;
-		if (player.slashDirection == SlashDirection::HORIZONTAL && !player.facingRight)
+		switch (player.slashDirection) {
+		case SlashDirection::HORIZONTAL:
+			// Horizontal slash: flip horizontally based on facing
+			scaleX = player.facingRight ? -slashWidth : slashWidth;
+			scaleY = slashHeight; // no vertical flip
+			break;
+
+		case SlashDirection::UP:
+			// Up slash: flip vertically if facing right
+			scaleX = -slashWidth; // flip horizontally for both directions to maintain correct orientation
+			scaleY = player.facingRight ? -slashHeight : slashHeight;
+			break;
+
+		case SlashDirection::DOWN:
+			// Down slash: flip vertically if facing left
+			scaleX = -slashWidth; // flip horizontally for both directions to maintain correct orientation
+			scaleY = player.facingRight ? slashHeight : -slashHeight;
+			break;
+
+		default:
 			scaleX = slashWidth;
+			scaleY = slashHeight;
+			break;
+		}
 
 		MeshManager::Get().DrawSpriteSheet(
 			*player.slashSprite,
 			slashX,
 			slashY,
 			scaleX,
-			slashHeight,
+			scaleY,
 			1.0f,           // opacity
 			rotation
 		);

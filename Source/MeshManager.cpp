@@ -14,10 +14,85 @@ Technology is prohibited.
 /* End Header **************************************************************************/
 #include "MeshManager.h"
 #include <cmath>
+#include <sstream>
 
 MeshManager::~MeshManager() {
     if (!meshMap.empty())
         UnloadAll();
+}
+
+static size_t HashBatchKey(void* texture, float uvW, float uvH) {
+    std::hash<std::uintptr_t> hasher;
+    size_t h1 = hasher(reinterpret_cast<std::uintptr_t>(texture));
+    std::hash<float> hasherF;
+    size_t h2 = hasherF(uvW);
+    size_t h3 = hasherF(uvH);
+    return h1 ^ (h2 << 1) ^ (h3 << 2);
+}
+
+void MeshManager::BeginBatch(AEGfxTexture* texture, float uvW, float uvH) {
+    size_t newKey = HashBatchKey(texture, uvW, uvH);
+
+    // Auto-flush previous batch if different texture+UV
+    if (m_batchActive && m_currentBatchKey != newKey) {
+        EndBatch();
+    }
+
+    m_currentBatchKey = newKey;
+    auto& batch = m_batches[m_currentBatchKey];
+    batch.texture = texture;
+    batch.uvW = uvW;
+    batch.uvH = uvH;
+    // Don't clear items - accumulate!
+    m_batchActive = true;
+}
+
+void MeshManager::QueueSprite(const SpriteBatchItem& sprite) {
+    if (!m_batchActive) return;
+    auto it = m_batches.find(m_currentBatchKey);
+    if (it != m_batches.end()) {
+        it->second.items.push_back(sprite);
+    }
+}
+
+void MeshManager::EndBatch() {
+    if (!m_batchActive) return;
+    m_batchActive = false;
+
+    auto it = m_batches.find(m_currentBatchKey);
+    if (it == m_batches.end() || it->second.items.empty()) return;
+
+    Batch& batch = it->second;
+    AEGfxVertexList* mesh = GetOrCreateSpriteMesh(batch.uvW, batch.uvH);
+    if (!mesh) return;
+
+    AEGfxSetRenderMode(AE_GFX_RM_TEXTURE);
+    AEGfxSetColorToMultiply(1, 1, 1, 1);
+    AEGfxSetColorToAdd(0, 0, 0, 0);
+    AEGfxSetBlendMode(AE_GFX_BM_BLEND);
+    AEGfxTextureSet(batch.texture, 0, 0);
+
+    //const float degToRad = 3.1415926535f / 180.0f;
+
+    for (const auto& sprite : batch.items) {
+        AEGfxSetTransparency(sprite.opacity);
+
+        //float rotRad = sprite.rotation * degToRad;
+        AEMtx33 scale, rotate, translate, transform;
+        AEMtx33Scale(&scale, sprite.width, sprite.height);
+        AEMtx33RotDeg(&rotate, sprite.rotation);
+        AEMtx33Trans(&translate, sprite.x, sprite.y);
+
+        AEMtx33 tmp;
+        AEMtx33Concat(&tmp, &rotate, &scale);
+        AEMtx33Concat(&transform, &translate, &tmp);
+
+        AEGfxTextureSet(batch.texture, sprite.uvOffsetX, sprite.uvOffsetY);
+        AEGfxSetTransform(transform.m);
+        AEGfxMeshDraw(mesh, AE_GFX_MDM_TRIANGLES);
+    }
+
+    batch.items.clear();
 }
 
 AEGfxVertexList* MeshManager::GetMesh(const std::string& name) {
@@ -32,6 +107,27 @@ AEGfxVertexList* MeshManager::GetMesh(const std::string& name) {
 
     if (newMesh) meshMap[name] = newMesh;
     return newMesh;
+}
+
+AEGfxVertexList* MeshManager::GetOrCreateSpriteMesh(float uvW, float uvH) {
+    std::ostringstream key;
+    key << "sprite_" << uvW << "_" << uvH;
+    std::string keyStr = key.str();
+
+    auto it = meshMap.find(keyStr);
+    if (it != meshMap.end()) return it->second;
+
+    AEGfxMeshStart();
+    AEGfxTriAdd(-0.5f, -0.5f, 0xFFFFFFFF, 0.0f, uvH,
+        0.5f, -0.5f, 0xFFFFFFFF, uvW, uvH,
+        -0.5f, 0.5f, 0xFFFFFFFF, 0.0f, 0.0f);
+    AEGfxTriAdd(0.5f, -0.5f, 0xFFFFFFFF, uvW, uvH,
+        0.5f, 0.5f, 0xFFFFFFFF, uvW, 0.0f,
+        -0.5f, 0.5f, 0xFFFFFFFF, 0.0f, 0.0f);
+    AEGfxVertexList* mesh = AEGfxMeshEnd();
+
+    meshMap[keyStr] = mesh;
+    return mesh;
 }
 
 // --- Mesh creation ---
@@ -171,15 +267,7 @@ void MeshManager::DrawSpriteSheet(SpriteSheet& sprite,
     float uvW = sprite.GetSpriteUVWidth();
     float uvH = sprite.GetSpriteUVHeight();
 
-    // Build a fresh mesh sized to one sprite cell's UV dimensions
-    AEGfxMeshStart();
-    AEGfxTriAdd(-0.5f, -0.5f, 0xFFFFFFFF, 0.0f, uvH,
-        0.5f, -0.5f, 0xFFFFFFFF, uvW, uvH,
-        -0.5f, 0.5f, 0xFFFFFFFF, 0.0f, 0.0f);
-    AEGfxTriAdd(0.5f, -0.5f, 0xFFFFFFFF, uvW, uvH,
-        0.5f, 0.5f, 0xFFFFFFFF, uvW, 0.0f,
-        -0.5f, 0.5f, 0xFFFFFFFF, 0.0f, 0.0f);
-    AEGfxVertexList* mesh = AEGfxMeshEnd();
+    AEGfxVertexList* mesh = GetOrCreateSpriteMesh(uvW, uvH);
 
     AEGfxSetRenderMode(AE_GFX_RM_TEXTURE);
     AEGfxSetColorToMultiply(1, 1, 1, 1);
@@ -204,8 +292,6 @@ void MeshManager::DrawSpriteSheet(SpriteSheet& sprite,
 
     AEGfxSetTransform(transform.m);
     AEGfxMeshDraw(mesh, AE_GFX_MDM_TRIANGLES);
-
-    AEGfxMeshFree(mesh);
 }
 
 void MeshManager::DrawLine(float x1, float y1, float x2, float y2,

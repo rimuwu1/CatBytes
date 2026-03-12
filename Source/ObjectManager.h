@@ -16,7 +16,8 @@ Technology is prohibited.
 #include "Player.h"
 #include "enemy.h"
 #include "EnemyBullet.h"
-#include "PlayerBullet.h" 
+#include "PlayerBullet.h"
+#include "MeshManager.h"
 #include <vector>
 #include <rapidjson/document.h>
 
@@ -33,7 +34,7 @@ public:
     void Initialize();
 
     void Update(float dt);
-    void Draw();
+    void Draw(float camX, float camY, float screenHalfW = 800.0f, float screenHalfH = 450.0f);
 
     // Accessors for collision and other systems
     Player& GetPlayer() { return player; }

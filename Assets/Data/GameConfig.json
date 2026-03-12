@@ -431,45 +431,31 @@
     "hp": 20.0,
     "speed": 150.0,
     "damage": 1.0,
+    "bullet_width": 30.0,
+    "bullet_height": 30.0,
     "patrol_min_x": 550.0,
     "patrol_max_x": 650.0,
     "knockback_velocity": 300.0,
     "animations": {
-      "file": "Assets/Images/EasyEnemySheet.png",
-      "rows": 4,
-      "cols": 4,
-      "clips": [
-        {
-          "name": "patrol",
-          "start": 0,
-          "end": 3,
-          "duration": 0.1,
-          "loop": true
-        },
-        {
-          "name": "attack",
-          "start": 4,
-          "end": 7,
-          "duration": 0.1,
-          "loop": true
-        },
-        {
-          "name": "hit",
-          "start": 8,
-          "end": 11,
-          "duration": 0.1,
-          "loop": false
-        },
-        {
-          "name": "dead",
-          "start": 12,
-          "end": 15,
-          "duration": 0.1,
-          "loop": false
-        }
-      ]
+        "file": "Assets/Images/EasyEnemySheet.png",
+        "rows": 4,
+        "cols": 4,
+        "clips": [
+            { "name": "patrol", "start": 0, "end": 3, "duration": 0.1, "loop": true },
+            { "name": "attack", "start": 4, "end": 7, "duration": 0.1, "loop": true },
+            { "name": "hit", "start": 8, "end": 11, "duration": 0.1, "loop": false },
+            { "name": "dead", "start": 12, "end": 15, "duration": 0.1, "loop": false }
+        ]
+    },
+    "bullet_animations": {
+        "file": "Assets/Images/PlayerBulletSheet.png",
+        "rows": 1,
+        "cols": 4,
+        "clips": [
+            { "name": "fly", "start": 0, "end": 3, "duration": 1.0, "loop": false }
+        ]
     }
-  },
+},
   {
     "type": "easy",
     "x": -200.0,
@@ -479,6 +465,8 @@
     "hp": 20.0,
     "speed": 150.0,
     "damage": 1.0,
+    "bullet_width": 30.0,
+    "bullet_height": 30.0,
     "patrol_min_x": -300.0,
     "patrol_max_x": -100.0,
     "knockback_velocity": 300.0,
@@ -516,6 +504,14 @@
           "loop": false
         }
       ]
+    },
+    "bullet_animations": {
+        "file": "Assets/Images/PlayerBulletSheet.png",
+        "rows": 1,
+        "cols": 4,
+        "clips": [
+            { "name": "fly", "start": 0, "end": 3, "duration": 1.0, "loop": false }
+        ]
     }
   }
       ],

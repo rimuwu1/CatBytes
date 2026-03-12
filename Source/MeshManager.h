@@ -17,6 +17,16 @@ Technology is prohibited.
 #include "SpriteSheet.h"
 #include <map>
 #include <string>
+#include <vector>
+#include <unordered_map>
+
+struct SpriteBatchItem {
+    float x, y;
+    float width, height;
+    float uvOffsetX, uvOffsetY;
+    float opacity;
+    float rotation;
+};
 
 class MeshManager {
 public:
@@ -29,6 +39,13 @@ public:
     MeshManager& operator=(const MeshManager&) = delete;
 
     AEGfxVertexList* GetMesh(const std::string& name);
+
+    AEGfxVertexList* GetOrCreateSpriteMesh(float uvW, float uvH);
+
+    // ----- Sprite batching -----
+    void BeginBatch(AEGfxTexture* texture, float uvW, float uvH);
+    void QueueSprite(const SpriteBatchItem& sprite);
+    void EndBatch();
 
     // ----- Colour drawing helpers with defaults -----
 
@@ -70,6 +87,16 @@ private:
     ~MeshManager();
 
     std::map<std::string, AEGfxVertexList*> meshMap;
+
+    // ----- Sprite batching -----
+    struct Batch {
+        AEGfxTexture* texture;
+        float uvW, uvH;
+        std::vector<SpriteBatchItem> items;
+    };
+    std::unordered_map<size_t, Batch> m_batches;
+    size_t m_currentBatchKey = 0;
+    bool m_batchActive = false;
 
     AEGfxVertexList* CreateSquareMesh();
     AEGfxVertexList* CreateCircleMesh();
