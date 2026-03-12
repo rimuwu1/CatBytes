@@ -700,81 +700,81 @@ void BossEnemy_Update(Enemy& enemy, float dt) {
 }
 
 // -----------------------------------------------------------------------------
-// Draw enemy on screen
+// Draw enemy on screen (deprecated, in obj manager now)
 // -----------------------------------------------------------------------------
-void Enemy_Draw(const Enemy& enemy)
-{
-    //if (!enemy.isAlive && (!enemy.spriteSheet || enemy.spriteSheet->GetCurrentClip() != "dead"))
-      //  return;
-
-    if (!enemy.spriteSheet)
-        return;
-
-    // dead enemy should disappear after dead animation duration ends
-    if (!enemy.isAlive)
-    {
-        if (enemy.spriteSheet->GetCurrentClip() != "dead")
-            return;
-
-        if (enemy.hitStunTimer <= 0.0f)
-            return;
-    }
-
-    float scaleX;
-
-    if (enemy.facesLeft)
-        scaleX = (enemy.direction == 1) ? -enemy.width : enemy.width;
-    else
-        scaleX = (enemy.direction == -1) ? -enemy.width : enemy.width;
-
-    MeshManager::Get().DrawSpriteSheet(
-        *enemy.spriteSheet,
-        enemy.pos.x,
-        enemy.pos.y,
-        scaleX,
-        enemy.height,
-        1.0f
-    );
-
-    // enemy hp bar
-    if (enemy.isAlive && enemy.maxHitPoints > 0.0f) {
-        float hpRatio = enemy.hitPoints / enemy.maxHitPoints;
-
-        float hpBarWidth = enemy.width * 0.8f;
-        float hpBarHeight = 6.0f;
-
-        float x = enemy.pos.x;
-        float y = enemy.pos.y + enemy.height * 0.5f + 10.0f;
-
-        // outline
-        MeshManager::Get().DrawSquare(
-            x,
-            y,
-            hpBarWidth + 6.0f,
-            hpBarHeight + 6.0f,
-            0, 0, 0, 1.0f
-        );
-
-        // background
-        MeshManager::Get().DrawSquare(
-            x, 
-            y, 
-            hpBarWidth, 
-            hpBarHeight, 
-            40, 40, 40, 1.0f
-        );
-
-        // remaining health
-        MeshManager::Get().DrawSquare(
-            x - (hpBarWidth / 2) + (hpBarWidth * hpRatio) * 0.5f,
-            y, 
-            hpBarWidth * hpRatio, 
-            hpBarHeight, 
-            220, 40, 40, 1.0f
-        );
-    }
-
-}
+//void Enemy_Draw(const Enemy& enemy)
+//{
+//    //if (!enemy.isAlive && (!enemy.spriteSheet || enemy.spriteSheet->GetCurrentClip() != "dead"))
+//      //  return;
+//
+//    if (!enemy.spriteSheet)
+//        return;
+//
+//    // dead enemy should disappear after dead animation duration ends
+//    if (!enemy.isAlive)
+//    {
+//        if (enemy.spriteSheet->GetCurrentClip() != "dead")
+//            return;
+//
+//        if (enemy.hitStunTimer <= 0.0f)
+//            return;
+//    }
+//
+//    float scaleX;
+//
+//    if (enemy.facesLeft)
+//        scaleX = (enemy.direction == 1) ? -enemy.width : enemy.width;
+//    else
+//        scaleX = (enemy.direction == -1) ? -enemy.width : enemy.width;
+//
+//    MeshManager::Get().DrawSpriteSheet(
+//        *enemy.spriteSheet,
+//        enemy.pos.x,
+//        enemy.pos.y,
+//        scaleX,
+//        enemy.height,
+//        1.0f
+//    );
+//
+//    // enemy hp bar
+//    if (enemy.isAlive && enemy.maxHitPoints > 0.0f) {
+//        float hpRatio = enemy.hitPoints / enemy.maxHitPoints;
+//
+//        float hpBarWidth = enemy.width * 0.8f;
+//        float hpBarHeight = 6.0f;
+//
+//        float x = enemy.pos.x;
+//        float y = enemy.pos.y + enemy.height * 0.5f + 10.0f;
+//
+//        // outline
+//        MeshManager::Get().DrawSquare(
+//            x,
+//            y,
+//            hpBarWidth + 6.0f,
+//            hpBarHeight + 6.0f,
+//            0, 0, 0, 1.0f
+//        );
+//
+//        // background
+//        MeshManager::Get().DrawSquare(
+//            x, 
+//            y, 
+//            hpBarWidth, 
+//            hpBarHeight, 
+//            40, 40, 40, 1.0f
+//        );
+//
+//        // remaining health
+//        MeshManager::Get().DrawSquare(
+//            x - (hpBarWidth / 2) + (hpBarWidth * hpRatio) * 0.5f,
+//            y, 
+//            hpBarWidth * hpRatio, 
+//            hpBarHeight, 
+//            220, 40, 40, 1.0f
+//        );
+//    }
+//
+//}
 
 // -----------------------------------------------------------------------------
 // called when player collides with enemy

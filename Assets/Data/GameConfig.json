@@ -165,6 +165,18 @@
         "texture": "Assets/Images/pauseButton.png"
       }
     },
+    "button": {
+    "file": "Assets/Images/buttonSheet2.png",
+    "rows": 3,
+    "cols": 4,
+    "total_frames": 9,
+    "frame_duration": 0.1,
+    "clips": [
+        { "name": "off", "start": 8, "end": 8, "duration": 0.1, "loop": false },
+        { "name": "transition", "start": 0, "end": 3, "duration": 0.5, "loop": false },
+        { "name": "on", "start": 4, "end": 7, "duration": 0.1, "loop": true }
+    ]
+},
     "checkpoints": [
         { "x": -350.0, "y": 1790.0, "width": 40.0, "height": 40.0 },
         { "x": -400.0, "y": 2990.0, "width": 40.0, "height": 40.0 },

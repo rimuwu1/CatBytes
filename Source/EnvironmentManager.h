@@ -90,6 +90,15 @@ public:
     //clean up functions
     void Clear();   // clears all environment vectors
 
+    //button clip struct
+    struct ButtonClipConfig {
+        std::string name;
+        int start = 0;
+        int end = 0;
+        float duration = 0.0f;
+        bool loop = false;
+    };
+
 private:
     EnvironmentManager() = default;   // private constructor
     ~EnvironmentManager() = default;
@@ -104,6 +113,9 @@ private:
     void DrawLevelIndicator() const;
 
     // Platform textures
+    std::unique_ptr<SpriteSheet> m_hoverAnim;
+    std::unique_ptr<SpriteSheet> m_checkpointAnim;
+    AEGfxTexture* m_spikeTex = nullptr;
     AEGfxTexture* m_leftTex = nullptr;
     AEGfxTexture* m_midTex = nullptr;
     AEGfxTexture* m_rightTex = nullptr;
@@ -128,6 +140,14 @@ private:
     bool m_checkpointSaved = false;       // replaces static local in MainGame
     bool m_saveRequested = false;         // internal save request flag
     bool m_checkpointInRange = false;     // true if player is near a checkpoint
+
+    //button stuff
+    std::string m_buttonFilePath = "Assets/Images/buttonSheet2.png";
+    int m_buttonRows = 3;
+    int m_buttonCols = 4;
+    int m_buttonTotalFrames = 9;
+    float m_buttonFrameDuration = 0.1f;
+    std::vector<ButtonClipConfig> m_buttonClips;
 
     int m_previousSelection = -1;   // for level indicator
     int m_currentSection = 0;

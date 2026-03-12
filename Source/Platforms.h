@@ -31,9 +31,10 @@ struct PlatformButton {
 	float x, y, w, h;
 	int platformIndex;					// remove after adding asset
 	std::vector<int> platformIndices;	// use vector to allow multiple platforms toggle
-	mutable bool wasPressed;			// allow modification even if it's const
-	mutable bool prevState;				// track switch's previous state (active/inactive)
-	mutable bool spriteInitialized;		// track sprite initialization
+	mutable bool wasPressed = false;			// allow modification even if it's const
+	mutable bool prevState = false;				// track switch's previous state (active/inactive)
+	mutable bool spriteInitialized = false;		// track sprite initialization
+	std::unique_ptr<SpriteSheet> buttonSprite;	// sprite for the button
 };
 
 struct PlatformObstacle {
@@ -46,13 +47,15 @@ struct Checkpoint {
 	float x, y, w, h, r;
 };
 
-void PlatformButton_Draw(const std::vector<PlatformButton>& buttons, const std::vector<Platform>& platforms, const Player& player);
+void PlatformButton_Draw(std::vector<PlatformButton>& buttons,
+	const std::vector<Platform>& platforms,
+	const Player& player);
 
-void Platforms_Draw(const std::vector<Platform>& platforms, AEGfxTexture* leftTex, AEGfxTexture* midTex, AEGfxTexture* rightTex);
+//void Platforms_Draw(const std::vector<Platform>& platforms, AEGfxTexture* leftTex, AEGfxTexture* midTex, AEGfxTexture* rightTex);
 
 bool Platform_CollisionCheck(Player& player, float& previosY, const std::vector<Platform>& platforms);
 
-void PlatformsObstacle_Draw(const std::vector<PlatformObstacle>& obstacles);
+//void PlatformsObstacle_Draw(const std::vector<PlatformObstacle>& obstacles);
 
 bool CheckObstacleCollision(const Player& player, const std::vector<PlatformObstacle>& obstacle);
 
@@ -60,7 +63,7 @@ void Platforms_OffsetY(std::vector<Platform>& platforms, float offsetY);
 
 void WallCollisionCheck(Player& player, const std::vector<Platform>& wallPlatforms);
 
-void CheckpointDraw(const std::vector<Checkpoint>& checkpoint, const Player& player);
+//void CheckpointDraw(const std::vector<Checkpoint>& checkpoint, const Player& player);
 
 void CheckpointCollisionCheck(const Player& player, const std::vector<Checkpoint>& checkpoint, bool& checkpointHit, bool& checkpointInRange);
 

@@ -27,151 +27,118 @@ Technology is prohibited.
 #include "AEEngine.h"
 #include "Camera.h"
 #include <memory>
+#include <algorithm>
 
 
+//MOVED TO ENV MANAGER
 
-
-void Platforms_Draw(const std::vector<Platform>& platforms, AEGfxTexture* leftTex, AEGfxTexture* midTex, AEGfxTexture* rightTex) {
-
-	static SpriteSheet hoverAnim("Assets/Images/HoverSheet.png", 1, 4, 0, 2.0f);
-	
-	const float capWidth = 32.0f;   // width of left/right cap in world units
-	
-	float dt = (float)AEFrameRateControllerGetFrameTime();
-	hoverAnim.Update(dt);
-
-	MeshManager& mm = MeshManager::Get();
-
-	for (const Platform& pf : platforms) {
-		if (!pf.active) continue;
-
-		// Left cap position
-		float leftX = pf.x - pf.w / 2 + capWidth / 2;
-		mm.BeginBatch(leftTex, 1.0f, 1.0f);
-		SpriteBatchItem item{};
-		item.x = leftX;
-		item.y = pf.y;
-		item.width = capWidth;
-		item.height = pf.h;
-		item.uvOffsetX = 0.0f;
-		item.uvOffsetY = 0.0f;
-		item.opacity = 1.0f;
-		item.rotation = 0.0f;
-		mm.QueueSprite(item);
-
-		// Right cap position
-		float rightX = pf.x + pf.w / 2 - capWidth / 2;
-		mm.BeginBatch(rightTex, 1.0f, 1.0f);
-		item.x = rightX;
-		item.y = pf.y;
-		item.width = capWidth;
-		item.height = pf.h;
-		mm.QueueSprite(item);
-
-		// Middle section: a single section that stretches between the caps
-		float midStartX = leftX + capWidth / 2;            // left edge of middle
-		float midEndX = rightX - capWidth / 2;           // right edge of middle
-		float midWidth = midEndX - midStartX;
-
-		if (midWidth > 0.0f) {
-			float midCenterX = (midStartX + midEndX) * 0.5f;
-			mm.BeginBatch(midTex, 1.0f, 1.0f);
-			item.x = midCenterX;
-			item.y = pf.y;
-			item.width = midWidth;
-			item.height = pf.h;
-			mm.QueueSprite(item);
-
-			// Hover animation sprite
-			mm.BeginBatch(hoverAnim.GetTexture(), hoverAnim.GetSpriteUVWidth(), hoverAnim.GetSpriteUVHeight());
-			item.x = midCenterX;
-			item.y = pf.y - 40.0f;
-			item.width = midWidth;
-			item.height = pf.h;
-			item.uvOffsetX = hoverAnim.GetUVOffsetX();
-			item.uvOffsetY = hoverAnim.GetUVOffsetY();
-			mm.QueueSprite(item);
-		}
-	}
-
-	mm.EndBatch();
-}
-
-void PlatformButton_Draw(const std::vector<PlatformButton>& buttons, const std::vector<Platform>& platforms, const Player& player)
+//void Platforms_Draw(const std::vector<Platform>& platforms,
+//	AEGfxTexture* leftTex, AEGfxTexture* midTex, AEGfxTexture* rightTex)
+//{
+//	static SpriteSheet hoverAnim("Assets/Images/HoverSheet.png", 1, 4, 0, 2.0f);
+//	const float capWidth = 32.0f;
+//
+//	float dt = (float)AEFrameRateControllerGetFrameTime();
+//	hoverAnim.Update(dt);
+//
+//	MeshManager& mm = MeshManager::Get();
+//
+//	// ---- Collect all sprites, grouped by texture ----
+//	struct Entry { AEGfxTexture* tex; float uvW, uvH, x, y, w, h, uvOffX, uvOffY; };
+//	std::vector<Entry> sprites;
+//	sprites.reserve(platforms.size() * 4);
+//
+//	for (const Platform& pf : platforms) {
+//		if (!pf.active) continue;
+//
+//		float leftX = pf.x - pf.w * 0.5f + capWidth * 0.5f;
+//		float rightX = pf.x + pf.w * 0.5f - capWidth * 0.5f;
+//
+//		sprites.push_back({ leftTex,  1.f, 1.f, leftX,  pf.y, capWidth, pf.h, 0.f, 0.f });
+//		sprites.push_back({ rightTex, 1.f, 1.f, rightX, pf.y, capWidth, pf.h, 0.f, 0.f });
+//
+//		float midStartX = leftX + capWidth * 0.5f;
+//		float midEndX = rightX - capWidth * 0.5f;
+//		float midWidth = midEndX - midStartX;
+//
+//		if (midWidth > 0.0f) {
+//			float midCX = (midStartX + midEndX) * 0.5f;
+//			sprites.push_back({ midTex, 1.f, 1.f, midCX, pf.y, midWidth, pf.h, 0.f, 0.f });
+//			sprites.push_back({
+//				hoverAnim.GetTexture(),
+//				hoverAnim.GetSpriteUVWidth(), hoverAnim.GetSpriteUVHeight(),
+//				midCX, pf.y - 40.0f, midWidth, pf.h,
+//				hoverAnim.GetUVOffsetX(), hoverAnim.GetUVOffsetY()
+//				});
+//		}
+//	}
+//
+//	// ---- Sort by texture so same-texture sprites batch together ----
+//	std::sort(sprites.begin(), sprites.end(),
+//		[](const Entry& a, const Entry& b) { return a.tex < b.tex; });
+//
+//	// ---- One BeginBatch/EndBatch per texture group ----
+//	size_t i = 0;
+//	while (i < sprites.size()) {
+//		const Entry& first = sprites[i];
+//		mm.BeginBatch(first.tex, first.uvW, first.uvH);
+//		do {
+//			SpriteBatchItem item{};
+//			item.x = sprites[i].x;
+//			item.y = sprites[i].y;
+//			item.width = sprites[i].w;
+//			item.height = sprites[i].h;
+//			item.uvOffsetX = sprites[i].uvOffX;
+//			item.uvOffsetY = sprites[i].uvOffY;
+//			item.opacity = 1.0f;
+//			item.rotation = 0.0f;
+//			mm.QueueSprite(item);
+//			++i;
+//		} while (i < sprites.size() && sprites[i].tex == first.tex);
+//		mm.EndBatch();
+//	}
+//}
+//
+void PlatformButton_Draw(std::vector<PlatformButton>& buttons,
+	const std::vector<Platform>& platforms,
+	const Player& player)
 {
-	static SpriteSheet platformSwitch("Assets/Images/buttonSheet2.png", 3, 4, 9, 0.1f);
-
-	// clips
-	static bool addClips = false;
-
-	if (!addClips) {
-		platformSwitch.AddClip("off", 8, 8, 0.1f, false);			// off state - row 1 column 5
-		platformSwitch.AddClip("transition", 0, 3, 1.0f, false);	// off -> on - row 1 columns 1-4
-		platformSwitch.AddClip("on", 4, 7, 0.1f, true);				// on state - row 2 columns 1 - 4
-
-		platformSwitch.Play("off");
-
-		addClips = true;
-	}
-
 	float dt = (float)AEFrameRateControllerGetFrameTime();
-	platformSwitch.Update(dt);
 
-	for (const PlatformButton& btn : buttons) {
+	for (auto& btn : buttons) {   // now non?const, so we can modify
+		if (!btn.buttonSprite) continue;
+
 		bool isActive = false;
-
 		if (!btn.platformIndices.empty()) {
-			int index = btn.platformIndices[0];
-
-			if (index >= 0 && index < (int)platforms.size()) {
-				isActive = platforms[index].active;
-			}
+			int idx = btn.platformIndices[0];
+			if (idx >= 0 && idx < (int)platforms.size())
+				isActive = platforms[idx].active;
 		}
 
-		// initialize based on first draw's state
-		if (!btn.spriteInitialized)
-		{
-			if (isActive) 
-			{
-				platformSwitch.Play("on");
-			}
-			else 
-			{
-				platformSwitch.Play("off");
-			}
-
+		// First?draw initialisation
+		if (!btn.spriteInitialized) {
+			btn.buttonSprite->Play(isActive ? "on" : "off");
 			btn.prevState = isActive;
 			btn.spriteInitialized = true;
 		}
-		
-		// change clip when state changes
-		if (isActive != btn.prevState) 
-		{
+
+		// State change
+		if (isActive != btn.prevState) {
 			if (isActive)
-			{
-				platformSwitch.Play("transition");
-			}
+				btn.buttonSprite->Play("transition");
 			else
-			{
-				platformSwitch.Play("off");
-			}
-
+				btn.buttonSprite->Play("off");
 			btn.prevState = isActive;
-			
-		}
-		
-		// move to on state once transition finishes
-		if (platformSwitch.GetCurrentClip() == "transition" && !platformSwitch.IsPlaying()) {
-			platformSwitch.Play("on");
 		}
 
-		// Draw directly (no batching - each button has different animation state)
-		MeshManager::Get().DrawSpriteSheet(platformSwitch, btn.x, btn.y, btn.w, btn.h);
+		btn.buttonSprite->Update(dt);
 
-		// ----------------------------------------------------------------------------
-		// text for when player is near switch
-		
-		// check if player is near/overlapping switch
+		if (btn.buttonSprite->GetCurrentClip() == "transition" && !btn.buttonSprite->IsPlaying())
+			btn.buttonSprite->Play("on");
+
+		MeshManager::Get().DrawSpriteSheet(*btn.buttonSprite, btn.x, btn.y, btn.w, btn.h);
+
+		// ----- "Press E" prompt (unchanged) -----
 		float btnLeft = btn.x - btn.w * 0.5f;
 		float btnRight = btn.x + btn.w * 0.5f;
 		float btnTop = btn.y + btn.h * 0.5f;
@@ -183,66 +150,41 @@ void PlatformButton_Draw(const std::vector<PlatformButton>& buttons, const std::
 
 		bool overlapX = (playerRight >= btnLeft) && (playerLeft <= btnRight);
 		bool overlapY = (playerTop >= btnBottom) && (playerBottom <= btnTop);
-		bool inRange = overlapX && overlapY;
-
-		if (inRange)
-		{
+		if (overlapX && overlapY) {
 			float windowWidth = (float)AEGfxGetWindowWidth();
 			float windowHeight = (float)AEGfxGetWindowHeight();
-
 			float screenX = (btn.x - globalCam.x) / (windowWidth * 0.5f);
 			float screenY = (btn.y + btn.h + 20.0f - globalCam.y) / (windowHeight * 0.5f);
-
-			// shift text towards left
-			if (screenX > 0.5f)
-			{
-				screenX = 0.5;
-			}
-
-			// shift text towards right
-			if (screenX < -0.9f)
-			{
-				screenX = -0.9f;
-			}
-
-			char text[50];
-
-			if (isActive)
-			{
-				strcpy_s(text, "Press E to turn off platforms");
-			}
-			else 
-			{
-				strcpy_s(text, "Press E to turn on platforms");
-			}
-
-			AEGfxPrint(g_FontSmall, text, screenX, screenY, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f);
+			if (screenX > 0.5f)  screenX = 0.5f;
+			if (screenX < -0.9f) screenX = -0.9f;
+			const char* msg = isActive ? "Press E to turn off platforms" : "Press E to turn on platforms";
+			AEGfxPrint(g_FontSmall, msg, screenX, screenY, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f);
 		}
 	}
 }
-
-void PlatformsObstacle_Draw(const std::vector<PlatformObstacle>& obstacles)
-{
-	static AEGfxTexture* spikeTex = TextureManager::Get().LoadTexture("Assets/Images/spikeObstacle.png");
-	MeshManager& mm = MeshManager::Get();
-
-	mm.BeginBatch(spikeTex, 1.0f, 1.0f);
-	for (const PlatformObstacle& obs : obstacles)
-	{
-		//if (!obs.active) continue;  // skip inactive
-		SpriteBatchItem item{};
-		item.x = obs.x;
-		item.y = obs.y;
-		item.width = obs.w;
-		item.height = obs.h;
-		item.uvOffsetX = 0.0f;
-		item.uvOffsetY = 0.0f;
-		item.opacity = 1.0f;
-		item.rotation = 0.0f;
-		mm.QueueSprite(item);
-	}
-	mm.EndBatch();
-}
+//
+//void PlatformsObstacle_Draw(const std::vector<PlatformObstacle>& obstacles)
+//{
+//	static AEGfxTexture* spikeTex = TextureManager::Get().LoadTexture("Assets/Images/spikeObstacle.png");
+//	MeshManager& mm = MeshManager::Get();
+//
+//	mm.BeginBatch(spikeTex, 1.0f, 1.0f);
+//	for (const PlatformObstacle& obs : obstacles)
+//	{
+//		//if (!obs.active) continue;  // skip inactive
+//		SpriteBatchItem item{};
+//		item.x = obs.x;
+//		item.y = obs.y;
+//		item.width = obs.w;
+//		item.height = obs.h;
+//		item.uvOffsetX = 0.0f;
+//		item.uvOffsetY = 0.0f;
+//		item.opacity = 1.0f;
+//		item.rotation = 0.0f;
+//		mm.QueueSprite(item);
+//	}
+//	mm.EndBatch();
+//}
 
 bool CheckObstacleCollision(const Player& player, const std::vector<PlatformObstacle>& obstacle)
 {
@@ -352,59 +294,59 @@ void WallCollisionCheck(Player& player, const std::vector<Platform>& wallPlatfor
 	}
 }
 
-void CheckpointDraw(const std::vector<Checkpoint>& checkpoint, const Player& player){
-	static SpriteSheet checkpointAnim("Assets/Images/checkpointSheet.png", 1, 10, 0, .1f);
-	float dt = (float)AEFrameRateControllerGetFrameTime();
-	checkpointAnim.Update(dt);
-
-	MeshManager& mm = MeshManager::Get();
-
-	mm.BeginBatch(checkpointAnim.GetTexture(), checkpointAnim.GetSpriteUVWidth(), checkpointAnim.GetSpriteUVHeight());
-	for (auto& point : checkpoint) {
-		SpriteBatchItem item{};
-		item.x = point.x;
-		item.y = point.y;
-		item.width = point.w;
-		item.height = point.h;
-		item.uvOffsetX = checkpointAnim.GetUVOffsetX();
-		item.uvOffsetY = checkpointAnim.GetUVOffsetY();
-		item.opacity = 1.0f;
-		item.rotation = 0.0f;
-		mm.QueueSprite(item);
-
-		// Check for "Press E" text (must remain outside batch)
-		float playerLeft = player.pos.x - player.width * 0.5f;
-		float playerRight = player.pos.x + player.width * 0.5f;
-		float playerTop = player.pos.y + player.height * 0.5f;
-		float playerBottom = player.pos.y - player.height * 0.5f;
-
-		float rangeLeft = point.x - point.w * 1.0f;
-		float rangeRight = point.x + point.w * 1.0f;
-		float rangeTop = point.y + point.h * 1.0f;
-		float rangeBottom = point.y - point.h * 1.0f;
-
-		bool inRangeX = (playerRight >= rangeLeft) && (playerLeft <= rangeRight);
-		bool inRangeY = (playerTop >= rangeBottom) && (playerBottom <= rangeTop);
-
-		if (inRangeX && inRangeY) {
-			float windowWidth = (float)AEGfxGetWindowWidth();
-			float windowHeight = (float)AEGfxGetWindowHeight();
-
-			float screenX = (point.x - globalCam.x) / (windowWidth * 0.5f);
-			float screenY = (point.y + point.h + 20.0f - globalCam.y) / (windowHeight * 0.5f);
-
-			if (screenX > 0.5f) {
-				screenX = 0.5f;
-			}
-			if (screenX < -0.9f) {
-				screenX = -0.9f;
-			}
-
-			AEGfxPrint(g_FontSmall, "Press E to save game", screenX, screenY, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f);
-		}
-	}
-	mm.EndBatch();
-}
+//void CheckpointDraw(const std::vector<Checkpoint>& checkpoint, const Player& player){
+//	static SpriteSheet checkpointAnim("Assets/Images/checkpointSheet.png", 1, 10, 0, .1f);
+//	float dt = (float)AEFrameRateControllerGetFrameTime();
+//	checkpointAnim.Update(dt);
+//
+//	MeshManager& mm = MeshManager::Get();
+//
+//	mm.BeginBatch(checkpointAnim.GetTexture(), checkpointAnim.GetSpriteUVWidth(), checkpointAnim.GetSpriteUVHeight());
+//	for (auto& point : checkpoint) {
+//		SpriteBatchItem item{};
+//		item.x = point.x;
+//		item.y = point.y;
+//		item.width = point.w;
+//		item.height = point.h;
+//		item.uvOffsetX = checkpointAnim.GetUVOffsetX();
+//		item.uvOffsetY = checkpointAnim.GetUVOffsetY();
+//		item.opacity = 1.0f;
+//		item.rotation = 0.0f;
+//		mm.QueueSprite(item);
+//
+//		// Check for "Press E" text (must remain outside batch)
+//		float playerLeft = player.pos.x - player.width * 0.5f;
+//		float playerRight = player.pos.x + player.width * 0.5f;
+//		float playerTop = player.pos.y + player.height * 0.5f;
+//		float playerBottom = player.pos.y - player.height * 0.5f;
+//
+//		float rangeLeft = point.x - point.w * 1.0f;
+//		float rangeRight = point.x + point.w * 1.0f;
+//		float rangeTop = point.y + point.h * 1.0f;
+//		float rangeBottom = point.y - point.h * 1.0f;
+//
+//		bool inRangeX = (playerRight >= rangeLeft) && (playerLeft <= rangeRight);
+//		bool inRangeY = (playerTop >= rangeBottom) && (playerBottom <= rangeTop);
+//
+//		if (inRangeX && inRangeY) {
+//			float windowWidth = (float)AEGfxGetWindowWidth();
+//			float windowHeight = (float)AEGfxGetWindowHeight();
+//
+//			float screenX = (point.x - globalCam.x) / (windowWidth * 0.5f);
+//			float screenY = (point.y + point.h + 20.0f - globalCam.y) / (windowHeight * 0.5f);
+//
+//			if (screenX > 0.5f) {
+//				screenX = 0.5f;
+//			}
+//			if (screenX < -0.9f) {
+//				screenX = -0.9f;
+//			}
+//
+//			AEGfxPrint(g_FontSmall, "Press E to save game", screenX, screenY, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f);
+//		}
+//	}
+//	mm.EndBatch();
+//}
 
 void CheckpointCollisionCheck(const Player& player, const std::vector<Checkpoint>& checkpoint, bool& checkpointHit, bool& checkpointInRange)
 {

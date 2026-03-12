@@ -25,7 +25,7 @@ Technology is prohibited.
 void System_Initialize(HINSTANCE hInstance, int nCmdShow, bool createConsole)
 {
 	AESysInit(hInstance, nCmdShow, 1600, 900, createConsole, 60, true, NULL);
-	AESysSetWindowTitle("CatBytes Game");
+	AESysSetWindowTitle("Cat Climb!");
 	
 	AESysReset();
 	AESysSetWindowIcon("Assets/Images/icon.ico", 32, 32);

@@ -590,9 +590,9 @@ void Player_Update(Player& player, float dt)
 void Player_Draw(const Player& player)
 {
 	
-	// drawing player bullets
-	for (const auto& b : player.bullets)
-		PlayerBullet_Draw(b);
+	// drawing player bullets (moved to obj manager)
+	/*for (const auto& b : player.bullets)
+		PlayerBullet_Draw(b);*/
 
 	// Draw player using sprite sheet
 	if (player.spriteSheet) {
