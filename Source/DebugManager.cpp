@@ -11,6 +11,9 @@
   |  F1          Toggle stats overlay  (always)                 |
   |  F2          Open/close console    (always)                 |
   |  F6          Toggle hitbox overlays (always)                |
+  |  0           Toggle debug camera  (always)                 |
+  |  L           Manual save          (always)                 |
+  |  M           Reset save           (always)                 |
   |                                                             |
   |  While overlay is ON and console is closed:                 |
   |  F3          Kill all alive enemies                         |
@@ -29,21 +32,24 @@
   |  BUILT-IN COMMANDS                                          |
   |  help                  List all commands                    |
   |  clear                 Clear console log                    |
-  |  godmode [on|off]      Toggle god mode                      |
+  |  godmode [on|off]     Toggle god mode                       |
   |  kill                  Kill all alive enemies               |
   |  win                   Force Win screen                     |
   |  lose                  Force Lose screen                    |
-  |  tp <1|2|3|4|boss>     Teleport to section start            |
-  |  hp <value>            Set player HP (float)                |
-  |  section               Print current section/level          |
-  |  pos                   Print player position                |
-  |  enemies               List alive enemy count by type       |
-  |  hitbox [on|off]       Toggle hitbox overlays               |
-  |  physics               Print all current physics values     |
-  |  speed   <value|reset> Set PhysicsManager move speed        |
-  |  gravity <value|reset> Set PhysicsManager gravity           |
-  |  jump    <value|reset> Set PhysicsManager jump force        |
-  |  termvel <value|reset> Set PhysicsManager terminal velocity |
+  |  camera [on|off]      Toggle debug camera mode             |
+  |  save                  Trigger manual game save             |
+  |  reset                 Reset save file                      |
+  |  tp <1|2|3|4|boss>    Teleport to section start            |
+  |  hp <value>           Set player HP (float)                 |
+  |  section              Print current section/level           |
+  |  pos                  Print player position                 |
+  |  enemies              List alive enemy count by type        |
+  |  hitbox [on|off]      Toggle hitbox overlays                |
+  |  physics              Print all current physics values      |
+  |  speed   <value|reset> Set PhysicsManager move speed       |
+  |  gravity <value|reset> Set PhysicsManager gravity          |
+  |  jump    <value|reset> Set PhysicsManager jump force       |
+  |  termvel <value|reset> Set PhysicsManager terminal velocity|
   +-------------------------------------------------------------+
 
 Copyright (C) 2026 DigiPen Institute of Technology.
@@ -59,6 +65,7 @@ Technology is prohibited.
 
 #include "ObjectManager.h"
 #include "EnvironmentManager.h"
+#include "GameSaveManager.h"
 #include "GameStateManager.h"
 #include "MeshManager.h"
 #include "PhysicsManager.h"
@@ -99,8 +106,8 @@ static constexpr int   CON_MAX_VISIBLE = 4;
 static constexpr struct { const char* key; float x; float y; } k_TpSpots[] =
 {
     { "1",    0.f,   -120.f },  // first platform of level 1 (center)
-    { "2",   -475.f, 2200.f },  // first platform of level 2
-    { "3",    150.f, 4565.f },  // first platform of level 3
+    { "2",   0.f, 2110.f },  // first platform of level 2
+    { "3",    0.f, 4600.f },  // first platform of level 3
     { "4",      0.f, 7500.f },  // start of level 4 (boss room i think)
     { "boss",   0.f, 100200.f },  // boss arena (uhh i dont think this platform is supposed to be here but)
 };
@@ -159,6 +166,7 @@ void DebugManager::Initialize()
 void DebugManager::Reset()
 {
     m_GodMode = false;
+    m_DebugCamera = false;
     m_ConsoleOpen = false;
     m_InputBuffer.clear();
     m_AutoHint.clear();
@@ -213,6 +221,31 @@ bool DebugManager::Update(float dt)
     // F6 -- always toggles hitbox overlays, independent of the stats overlay
     if (AEInputCheckTriggered(AEVK_F6))
         m_HitboxOn = !m_HitboxOn;
+
+    // 0 - toggle debug camera (always active)
+    if (AEInputCheckTriggered(AEVK_0))
+    {
+        m_DebugCamera = !m_DebugCamera;
+        globalCam.debugCam = m_DebugCamera;
+        if (!m_DebugCamera)
+        {
+            globalCam.x = 0.0f;
+            globalCam.y = ObjectManager::Get().GetPlayer().pos.y;
+        }
+    }
+
+    // L - manual save (always active)
+    if (AEInputCheckTriggered('L'))
+    {
+        EnvironmentManager::Get().RequestSave();
+    }
+
+    // M - reset save (always active)
+    if (AEInputCheckTriggered('M'))
+    {
+        GameSaveManager::ResetSave();
+        GameSaveManager::Notify_Show(GameSaveManager::NotifyType::RESET);
+    }
 
     // Console is modal -- consume all game input while open
     if (m_ConsoleOpen)
@@ -318,6 +351,40 @@ void DebugManager::RegisterBuiltinCommands()
             textScreenMessage = "You Lose";
             GameStateManager::Get().next = GS_WINLOSE;
             Log("Forcing LOSE...");
+        });
+
+    // ---- camera --------------------------------------------------------------
+    RegisterCommand("camera", "camera [on|off]", "Toggle debug camera mode.",
+        [this](const std::vector<std::string>& args)
+        {
+            if (args.size() >= 2)
+                m_DebugCamera = (ToLower(args[1]) == "on");
+            else
+                m_DebugCamera = !m_DebugCamera;
+            globalCam.debugCam = m_DebugCamera;
+            if (!m_DebugCamera)
+            {
+                globalCam.x = 0.0f;
+                globalCam.y = ObjectManager::Get().GetPlayer().pos.y;
+            }
+            Log(std::string("Debug camera: ") + (m_DebugCamera ? "ON" : "OFF"));
+        });
+
+    // ---- save ----------------------------------------------------------------
+    RegisterCommand("save", "save", "Trigger manual game save.",
+        [this](const std::vector<std::string>&)
+        {
+            EnvironmentManager::Get().RequestSave();
+            Log("Manual save triggered.");
+        });
+
+    // ---- reset ---------------------------------------------------------------
+    RegisterCommand("reset", "reset", "Reset save file.",
+        [this](const std::vector<std::string>&)
+        {
+            GameSaveManager::ResetSave();
+            GameSaveManager::Notify_Show(GameSaveManager::NotifyType::RESET);
+            Log("Save file reset.");
         });
 
     // ---- tp -----------------------------------------------------------------

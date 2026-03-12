@@ -63,6 +63,7 @@ public:
     bool IsConsoleOpen()    const { return m_ConsoleOpen; }
     bool IsGodModeActive()  const { return m_GodMode; }
     bool IsHitboxVisible()  const { return m_HitboxOn; }
+    bool IsDebugCameraEnabled() const { return m_DebugCamera; }
 
     // ---- Console log -------------------------------------------------------
     void Log(const std::string& msg);
@@ -101,6 +102,7 @@ private:
     bool  m_HitboxOn = false;   ///< F6 — world-space hitbox/arrow overlays
     bool  m_GridOn = false;     ///< showgrid command - spatial grid visualization
     bool  m_GodMode = false;
+    bool  m_DebugCamera = false; ///< Debug camera override (0 key)
     bool  m_Initialized = false;
 
     // ---- Console -----------------------------------------------------------
@@ -138,6 +140,7 @@ public:
     bool IsConsoleOpen()    const { return false; }
     bool IsGodModeActive()  const { return false; }
     bool IsHitboxVisible()  const { return false; }
+    bool IsDebugCameraEnabled() const { return false; }
     void Log(const std::string&) {}
     void RegisterCommand(const std::string&, const std::string&,
         const std::string&,

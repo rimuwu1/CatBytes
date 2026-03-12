@@ -207,7 +207,7 @@ void MainGame_Update()
     // ----- Checkpoint & save -----
     EnvironmentManager::Get().SetCheckpointInRange(results.checkpointInRange);
 
-    if (results.checkpointInRange && AEInputCheckTriggered('E'))
+    if (results.checkpointInRange && AEInputCheckTriggered('E') || EnvironmentManager::Get().isSaveRequested())
     {
         int currentSection = EnvironmentManager::Get().GetCurrentSection();
         int currentLevel = currentSection + 1;
@@ -230,7 +230,7 @@ void MainGame_Update()
         GameStateManager::Get().next = GS_WINLOSE;
     }
 
-    if (!globalCam.debugCam) {
+    /*if (!globalCam.debugCam) {
         const float halfScreenHeight = 900.0f * 0.5f;
         float camBottomY = globalCam.y - halfScreenHeight;
         float playerTopY = player.pos.y + player.height * 0.5f;
@@ -238,22 +238,9 @@ void MainGame_Update()
             textScreenMessage = "You Lose";
             GameStateManager::Get().next = GS_WINLOSE;
         }
-    }
+    }*/
 
-    if (AEInputCheckTriggered(AEVK_0))
-    {
-        globalCam.debugCam = !globalCam.debugCam;
-
-        // deactivate debug cam
-        if (!globalCam.debugCam)
-        {
-            globalCam.x = 0.0f;
-            globalCam.y = player.pos.y;
-        }
-
-    }
-    
-    if (globalCam.debugCam)
+    if (DebugManager::Get().IsDebugCameraEnabled())
     {
         Camera_Debug(globalCam, dt);
     }
@@ -264,7 +251,7 @@ void MainGame_Update()
    
     Camera_Apply(globalCam);
 
-    float backgroundY = globalCam.debugCam ? globalCam.y : player.pos.y;
+    float backgroundY = DebugManager::Get().IsDebugCameraEnabled() ? globalCam.y : player.pos.y;
     EnvironmentManager::Get().Update(dt, player, backgroundY);
 
     // Pause button -> changes gamestate to pause
@@ -276,15 +263,6 @@ void MainGame_Update()
     }
 
     GameSaveManager::Notify_Update(dt);
-
-    if (AEInputCheckTriggered(AEVK_6)) {
-        player.pos.x = 0.0f; player.pos.y = 4600.0f; // start of level 3 teleport
-        player.vel.x = 0.0f; player.vel.y = 0.0f;
-    }
-    if (AEInputCheckTriggered(AEVK_7)) {
-        player.pos.x = 0.0f; player.pos.y = 4600.0f; 
-        player.vel.x = 0.0f; player.vel.y = 0.0f;
-    }
 
     std::cout << "MainGame:Update" << std::endl;
 }

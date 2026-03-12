@@ -65,7 +65,7 @@ public:
      
     const std::vector<Checkpoint>& GetCheckpoints() const { return m_checkpoints; }
 
-    // Non?const accessors for vectors that may be modified (add 3 and 4 here when needed)
+    // Non-const accessors for vectors that may be modified (add 3 and 4 here when needed)
     std::vector<Platform>& GetLevel2Platforms() { return m_level2Platforms; }
     std::vector<PlatformButton>& GetLevel2Buttons() { return m_level2Buttons; }
 
@@ -81,7 +81,8 @@ public:
     const HUD& GetHUD() const { return m_HUD; }
 
     // Checkpoint handling
-    bool HandleCheckpoint(bool checkpointHit);
+    bool HandleCheckpoint(bool checkpointHit); //not used anymore
+    bool isSaveRequested(); //saves once then clears state
     void RequestSave();  // sets internal save request flag
     void SetCheckpointInRange(bool inRange);
     bool GetCheckpointInRange() const;

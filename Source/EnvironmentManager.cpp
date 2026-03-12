@@ -369,6 +369,16 @@ void EnvironmentManager::RequestSave()
     m_saveRequested = true;
 }
 
+bool EnvironmentManager::isSaveRequested()
+{
+    bool shouldSave = false;
+    if (m_saveRequested) {
+        shouldSave = true;
+        m_saveRequested = false; // reset after checking
+    }
+    return shouldSave;
+}
+
 void EnvironmentManager::SetCheckpointInRange(bool inRange)
 {
     m_checkpointInRange = inRange;

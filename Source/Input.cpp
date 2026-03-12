@@ -115,15 +115,6 @@ void Input_Handle() {
 			player.weaponEquipped = true;
 			player.isAttacking = false; // melee attack off
 		}
-
-
-		if (AEInputCheckTriggered('L')) {
-			EnvironmentManager::Get().RequestSave();
-		}
-		if (AEInputCheckTriggered('M')) {
-			GameSaveManager::ResetSave(); //Debug feature for level 1!! remove when not needed
-			GameSaveManager::Notify_Show(GameSaveManager::NotifyType::RESET);
-		}
 	}
 
 	std::cout << "Input:Handle" << std::endl;
