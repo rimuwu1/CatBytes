@@ -24,7 +24,6 @@ Technology is prohibited.
 #include "MeshManager.h"
 #include "PhysicsManager.h"
 #include "Player.h"
-#include "Buff.h"
 #include "AudioManager.h"
 #include "Audio.h"
 #include "Camera.h"
@@ -821,7 +820,6 @@ void Enemy_OnHit(Enemy& enemy, float damage, float knockbackDir)
         }
 
         enemy.isAlive = false;
-        Enemy_OnDeath(enemy);
     }
     else
     {
@@ -841,12 +839,6 @@ void Enemy_OnHit(Enemy& enemy, float damage, float knockbackDir)
     Enemy_ApplyKnockback(enemy, knockbackDir);
 }
 
-void Enemy_OnDeath(Enemy& enemy)
-{
-    BuffType droppedBuff = static_cast<BuffType>(rand() % 3 + 1); // random buff on drop
-    /*float buffDuration = 10.0f;*/ // TBC
-    ObjectManager::Get().SpawnBuff(droppedBuff, enemy.pos.x, enemy.pos.y);
-}
 
 void HardEnemy_OnCollision(Enemy& enemy, Player& player)
 {
@@ -873,6 +865,7 @@ void HardEnemy_OnCollision(Enemy& enemy, Player& player)
 
     AudioManager::Get().PlayAudio(s_HardEnemyAttackSound, false);
 }
+
 
 // -----------------------------------------------------------------------------
 // Free static resources (mesh and texture) remove after spritesheet

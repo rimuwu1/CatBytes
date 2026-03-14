@@ -134,7 +134,6 @@ void HUD::InitFromConfig(const rapidjson::Value& doc)
 	InitWeaponSwitchFromConfig(uiJson);
 	InitProgressBarFromConfig(uiJson);
 	InitPauseButtonFromConfig(uiJson);
-	InitInventoryFromConfig(uiJson);
 }
 
 // ---- Hearts config ---- //
@@ -435,65 +434,6 @@ void HUD::InitPauseButtonFromConfig(const rapidjson::Value& uiJson)
 
 }
 
-// ---- Inventory config ---- //
-void HUD::InitInventoryFromConfig(const rapidjson::Value& uiJson)
-{
-	if (!uiJson.HasMember("inventory")) return;
-	const rapidjson::Value& inv = uiJson["inventory"];
-
-	if (inv.HasMember("active"))
-	{
-		inventory.active = inv["active"].GetBool();
-	}
-	if (inv.HasMember("x"))
-	{
-		inventory.offsetX = inv["x"].GetFloat();
-	}
-	if (inv.HasMember("y"))
-	{
-		inventory.offsetY = inv["y"].GetFloat();
-	}
-	if (inv.HasMember("w"))
-	{
-		inventory.width = inv["w"].GetFloat();
-	}
-	if (inv.HasMember("h"))
-	{
-		inventory.height = inv["h"].GetFloat();
-	}
-	if (inv.HasMember("slotSize"))
-	{
-		inventory.slotSize = inv["slotSize"].GetFloat();
-	}
-	if (inv.HasMember("iconSize"))
-	{
-		inventory.iconSize = inv["iconSize"].GetFloat();
-	}
-
-	if (inv.HasMember("inventoryTexture"))
-	{
-		inventory.inventoryTexture = TextureManager::Get().LoadTexture(inv["inventoryTexture"].GetString());
-	}
-	if (inv.HasMember("slotTexture"))
-	{
-		inventory.slotTexture = TextureManager::Get().LoadTexture(inv["slotTexture"].GetString());
-	}
-	if (inv.HasMember("shieldIcon"))
-	{
-		inventory.shieldTexture = TextureManager::Get().LoadTexture(inv["shieldIcon"].GetString());
-	}
-	if (inv.HasMember("fullHpIcon"))
-	{
-		inventory.fullHpTexture = TextureManager::Get().LoadTexture(inv["fullHpIcon"].GetString());
-	}
-	if (inv.HasMember("godModeIcon"))
-	{
-		inventory.godModeTexture = TextureManager::Get().LoadTexture(inv["godModeIcon"].GetString());
-	}
-
-	inventory.ready = true;
-}
-
 // ------------------------------------------------------------------------
 // ---- Update HUD ---- //
 void HUD::Update(float dt, const Player& player, PlayerWeapon weapon)
@@ -563,7 +503,6 @@ void HUD::Draw(MeshManager& meshManager, float camX, float camY, PlayerWeapon we
 	DrawWeaponSwitch(camX, camY, weapon);
 	DrawProgressBar(meshManager, camX, camY);
 	DrawPauseButton(camX, camY);
-	DrawInventory(camX, camY);
 }
 
 // ---- Draw Hearts ---- //
@@ -725,58 +664,6 @@ void HUD::DrawPauseButton(float camX, float camY) const
 	}
 }
 
-void HUD::DrawInventory(float camX, float camY) const
-{
-	if (!inventory.active || !inventory.ready) return;
-
-	const float x = camX + inventory.offsetX;
-	const float y = camY + inventory.offsetY;
-	const float slotSize = inventory.slotSize;
-	const float iconSize = inventory.iconSize;
-
-	// Draw inventory overlay
-	if (inventory.inventoryTexture)
-	{
-		MeshManager::Get().DrawTexturedSquare(
-			inventory.inventoryTexture, x, y, inventory.width, inventory.height, 0.9f
-		);
-	}
-
-	// Draw inventory slots
-	for (int i = 0; i < (int)inventory.slots.size(); i++)
-	{
-		const float slotX = x + (i - 1) * (slotSize + 4.0f); // -1 to center 3 slots around x
-
-		if (inventory.slotTexture)
-		{
-			MeshManager::Get().DrawTexturedSquare(
-				inventory.slotTexture, slotX, y, slotSize, slotSize, 0.9f
-			);
-		}
-
-		// Draw buffs in slots
-		AEGfxTexture* buffIcon = nullptr;
-		switch (inventory.slots[i]) {
-		case BuffType::SHIELD:
-			buffIcon = inventory.shieldTexture;
-			break;
-		case BuffType::FULL_HP:
-			buffIcon = inventory.fullHpTexture;
-			break;
-		case BuffType::GOD_MODE:
-			buffIcon = inventory.godModeTexture;
-			break;
-		default: break;
-		}
-
-		if (buffIcon)
-		{
-			MeshManager::Get().DrawTexturedSquare(
-				buffIcon, slotX, y, iconSize, iconSize);
-		}
-	}
-}
-
 bool HUD::IsPauseButtonClicked(float camX, float camY) const
 {
 	if (!hudActive || !pauseButton.active || !pauseButton.ready || !pauseButton.texture)
@@ -801,27 +688,4 @@ bool HUD::IsPauseButtonClicked(float camX, float camY) const
 	const float top = cy + halfH;
 
 	return (mouseX >= left && mouseX <= right && mouseY >= bottom && mouseY <= top);
-}
-
-void HUD::AddBuffToInventory(BuffType buffType)
-{
-	for (int i = 0; i < (int)inventory.slots.size(); i++)
-	{
-		if (inventory.slots[i] == BuffType::NONE)
-		{
-			inventory.slots[i] = buffType;
-			break;
-		}
-	}
-}
-
-void HUD::UseBuffFromInventory(Player& player, int slot)
-{
-	if (slot < 0 || slot >= (int)inventory.slots.size()) return;
-	if (inventory.slots[slot] == BuffType::NONE) return;
-
-	Buff b(inventory.slots[slot], 0.0f, 0.0f, 0.0f, 0.0f); // temp buff
-	b.Activate(player);
-
-	inventory.slots[slot] = BuffType::NONE; // clear slot once used
 }

@@ -14,7 +14,6 @@
     <ClCompile Include="..\Source\Audio.cpp" />
     <ClCompile Include="..\Source\AudioManager.cpp" />
     <ClCompile Include="..\Source\Background.cpp" />
-    <ClCompile Include="..\Source\Buff.cpp" />
     <ClCompile Include="..\Source\Camera.cpp" />
     <ClCompile Include="..\Source\CollisionManager.cpp" />
     <ClCompile Include="..\Source\Controls.cpp" />
@@ -52,7 +51,6 @@
     <ClInclude Include="..\Source\Audio.h" />
     <ClInclude Include="..\Source\AudioManager.h" />
     <ClInclude Include="..\Source\Background.h" />
-    <ClInclude Include="..\Source\Buff.h" />
     <ClInclude Include="..\Source\Camera.h" />
     <ClInclude Include="..\Source\CollisionManager.h" />
     <ClInclude Include="..\Source\Controls.h" />

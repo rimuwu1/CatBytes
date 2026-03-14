@@ -69,128 +69,102 @@
         ]
     }
         },
-  "ui": {
-    "hearts": {
-      "active": true,
-      "x": 680.0,
-      "y": 410.0,
-      "w": 128.0,
-      "h": 128.0,
-      "animations": {
-        "file": "Assets/Images/HealthSheet.png",
-        "rows": 1,
-        "cols": 4,
-        "clips": [
-          {
-            "name": "hp3",
-            "start": 0,
-            "end": 0,
-            "speed": 1.0,
-            "loop": false
-          },
-          {
-            "name": "hp2",
-            "start": 1,
-            "end": 1,
-            "speed": 1.0,
-            "loop": false
-          },
-          {
-            "name": "hp1",
-            "start": 2,
-            "end": 2,
-            "speed": 1.0,
-            "loop": false
-          },
-          {
-            "name": "hp0",
-            "start": 3,
-            "end": 3,
-            "speed": 1.0,
-            "loop": false
-          }
-        ]
-      }
-    },
-    "weaponSwitch": {
-      "active": true,
-      "x": 650,
-      "y": -380,
-      "slotSize": 80,
-      "iconSize": 45,
-      "slotTexture": "Assets/Images/weaponSlot.png",
-      "meleeSelected": {
-        "file": "Assets/Images/N2CSheet.png",
-        "rows": 1,
-        "cols": 3,
-        "clips": [
-          {
-            "name": "selected",
-            "start": 0,
-            "end": 2,
-            "speed": 0.1,
-            "loop": false
-          }
-        ]
+    "ui": {
+      "hearts": {
+        "active": true,
+        "x": 680.0,
+        "y": 410.0,
+        "w": 128.0,
+        "h": 128.0,
+        "animations": {
+          "file": "Assets/Images/HealthSheet.png",
+          "rows": 1,
+          "cols": 4,
+          "clips": [
+            {
+              "name": "hp3",
+              "start": 0,
+              "end": 0,
+              "speed": 1.0,
+              "loop": false
+            },
+            {
+              "name": "hp2",
+              "start": 1,
+              "end": 1,
+              "speed": 1.0,
+              "loop": false
+            },
+            {
+              "name": "hp1",
+              "start": 2,
+              "end": 2,
+              "speed": 1.0,
+              "loop": false
+            },
+            {
+              "name": "hp0",
+              "start": 3,
+              "end": 3,
+              "speed": 1.0,
+              "loop": false
+            }
+          ]
+        }
       },
-      "gunSelected": {
-        "file": "Assets/Images/N2GSheet.png",
-        "rows": 1,
-        "cols": 3,
-        "clips": [
-          {
-            "name": "selected",
-            "start": 0,
-            "end": 2,
-            "speed": 0.1,
-            "loop": false
-          }
-        ]
+      "weaponSwitch": {
+        "active": true,
+        "x": 650,
+        "y": -380,
+        "slotSize": 80,
+        "iconSize": 45,
+        "slotTexture": "Assets/Images/weaponSlot.png",
+        "meleeSelected": {
+          "file": "Assets/Images/N2CSheet.png",
+          "rows": 1,
+          "cols": 3,
+          "clips": [
+            { "name": "selected", "start": 0, "end": 2, "speed": 0.1, "loop": false }
+          ]
+        },
+        "gunSelected": {
+          "file": "Assets/Images/N2GSheet.png",
+          "rows": 1,
+          "cols": 3,
+          "clips": [
+            { "name": "selected", "start": 0, "end": 2, "speed": 0.1, "loop": false }
+          ]
+        }
+      },
+      "progressBar": {
+        "active": true,
+        "x": -720,
+        "y": 0,
+        "w": 32,
+        "h": 450,
+        "minY": 0,
+        "maxY": 7500,
+        "gap": 0,
+        "paddingX": 2,
+        "paddingY": 2,
+        "overlapY": 1,
+        "trackerRadius": 5,
+        "segments": [
+          { "endY": 1900 },
+          { "endY": 4550 },
+          { "endY": 7500 }
+        ],
+        "texture": "Assets/Images/progressBar.png"
+      },
+      "pauseButton": {
+        "active": true,
+        "x": -720,
+        "y": 400,
+        "w": 48,
+        "h": 48,
+        "texture": "Assets/Images/pauseButton.png"
       }
     },
-    "progressBar": {
-      "active": true,
-      "x": -720,
-      "y": 0,
-      "w": 32,
-      "h": 450,
-      "minY": 0,
-      "maxY": 7500,
-      "gap": 0,
-      "paddingX": 2,
-      "paddingY": 2,
-      "overlapY": 1,
-      "trackerRadius": 5,
-      "segments": [
-        { "endY": 1900 },
-        { "endY": 4550 },
-        { "endY": 7500 }
-      ],
-      "texture": "Assets/Images/progressBar.png"
-    },
-    "pauseButton": {
-      "active": true,
-      "x": -720,
-      "y": 400,
-      "w": 48,
-      "h": 48,
-      "texture": "Assets/Images/pauseButton.png"
-    },
-    "inventory": {
-      "active": true,
-      "x": -620.0,
-      "y": -380.0,
-      "w": 200.0,
-      "h": 78.0,
-      "slotSize": 60.0,
-      "iconSize": 40.0,
-      "inventoryTexture": "Assets/Images/inventoryOverlay.png",
-      "slotTexture": "Assets/Images/inventorySlot.png",
-      "shieldIcon": "Assets/Images/shield_buff.png",
-      "fullHpIcon": "Assets/Images/full_hp_buff.png",
-      "godModeIcon": "Assets/Images/god_mode_buff.png"
-    }
-  },
     "button": {
     "file": "Assets/Images/buttonSheet2.png",
     "rows": 3,

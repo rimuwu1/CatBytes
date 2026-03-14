@@ -17,7 +17,6 @@ Technology is prohibited.
 #include "enemy.h"
 #include "EnemyBullet.h"
 #include "PlayerBullet.h"
-#include "Buff.h"
 #include "MeshManager.h"
 #include <vector>
 #include <rapidjson/document.h>
@@ -32,7 +31,6 @@ public:
     // Clears current objects and creates new ones from the given level JSON data
     void LoadFromConfig(const rapidjson::Document&);
     void AddEnemyFromJSON(const rapidjson::Value& enemyData);
-    void AddBuffFromJSON(const rapidjson::Value& buffData);
     void Initialize();
 
     void Update(float dt);
@@ -52,9 +50,6 @@ public:
     // Bullet spawning for enemies
     void SpawnEnemyBullet(const Enemy& source, float speed, float damage, float maxRange);
 
-    // Buff spawning
-    void SpawnBuff(BuffType type, float x, float y);
-
     //check boss status
     bool IsBossDefeated() const;
 
@@ -63,7 +58,6 @@ public:
 
     // Cleanup helpers
     void RemoveInactiveBullets();
-    void RemoveInactiveBuffs();
     void Clear();   // clears enemies and bullets
 
 private:
@@ -71,5 +65,4 @@ private:
     Player player;
     std::vector<Enemy> enemies;
     std::vector<EnemyBullet> enemyBullets;
-    std::vector<Buff> buffs;
 };

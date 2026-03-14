@@ -3,10 +3,8 @@
 \file Input.cpp
 \author Joash ng, joash.ng, 2502780
 		Tse Xuan Qi Tristin, tse.x, 2503757
-		Kerwin Wong Jia Jie, kerwinjiajie.wong, 2502740
 \par joash.ng@digipen.edu
 	 tse.x@digipen.edu
-	 kerwinjiajie.wong@digipen.edu
 \date 21/01/2026
 \brief This file implements the functions for Input Handling, which processes global user inputs.
 
@@ -116,18 +114,6 @@ void Input_Handle() {
 			player.weapon = PlayerWeapon::GUN;
 			player.weaponEquipped = true;
 			player.isAttacking = false; // melee attack off
-		}
-
-		// Inventory slots
-		// 4 = slot 1, 5 = slot 2, 6 = slot 3
-		if (AEInputCheckTriggered('4') || AEInputCheckTriggered('5') || AEInputCheckTriggered('6'))
-		{
-			int slot;
-			if (AEInputCheckTriggered('4')) slot = 0;
-			else if (AEInputCheckTriggered('5')) slot = 1;
-			else slot = 2;
-
-			EnvironmentManager::Get().GetHUD().UseBuffFromInventory(player, slot);
 		}
 	}
 
