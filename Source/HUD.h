@@ -17,6 +17,7 @@ Technology is prohibited.
 
 #include "AEEngine.h"
 #include "Player.h"
+#include "Buff.h"
 #include <memory>
 #include <rapidjson/document.h>
 
@@ -32,6 +33,8 @@ class HUD
 {
 public:
 	bool IsPauseButtonClicked(float camX, float camY) const;
+	void AddBuffToInventory(BuffType buffType);
+	void UseBuffFromInventory(Player& player, int slot);
 
 	void InitFromConfig(const rapidjson::Value& doc);
 	void Update(float dt, const Player& player, PlayerWeapon weapon);
@@ -72,10 +75,6 @@ private:
 
 		AEGfxTexture* slotTexture = nullptr;
 
-		//std::unique_ptr<SpriteSheet> meleeSelectedSheet;
-		//std::unique_ptr<SpriteSheet> meleeDeselectedSheet;
-		//std::unique_ptr<SpriteSheet> gunSelectedSheet;
-		//std::unique_ptr<SpriteSheet> gunDeselectedSheet;
 		std::unique_ptr<SpriteSheet> meleeSheet;
 		std::unique_ptr<SpriteSheet> gunSheet;
 
@@ -109,7 +108,6 @@ private:
 		float trackerRadius = 5.0f;
 		int trackerR = 255, trackerG = 255, trackerB = 255;
 
-		//std::unique_ptr<SpriteSheet> pbarSheet;
 		AEGfxTexture* texture = nullptr;
 		bool pbarReady = false;
 	};
@@ -133,6 +131,33 @@ private:
 
 	PauseButton pauseButton;
 
+	// ---- Inventory UI ---- //
+	struct Inventory
+	{
+		bool active = true;
+		float offsetX = -650.0f;
+		float offsetY = -300.0f;
+		float width = 256.0f;
+		float height = 128.0f;
+		float slotSize = 80.0f;   // individual slot size
+		float iconSize = 60.0f;   // buff icon size inside slot
+
+		AEGfxTexture* inventoryTexture = nullptr;
+		AEGfxTexture* slotTexture = nullptr;
+		AEGfxTexture* shieldTexture = nullptr;
+		AEGfxTexture* fullHpTexture = nullptr;
+		AEGfxTexture* godModeTexture = nullptr;
+
+		// Tracks buff type for each slot
+		std::array<BuffType, 3> slots { 
+			BuffType::NONE, BuffType::NONE, BuffType::NONE 
+		};
+
+		bool ready = false;
+	};
+
+	Inventory inventory;
+
 private:
 	static int ClampHeartsStateFromPlayer(const Player& player);
 	void ApplyHeartsState(int state);
@@ -144,9 +169,11 @@ private:
 	void InitWeaponSwitchFromConfig(const rapidjson::Value& uiJson);
 	void InitProgressBarFromConfig(const rapidjson::Value& uiJson);
 	void InitPauseButtonFromConfig(const rapidjson::Value& uiJson);
+	void InitInventoryFromConfig(const rapidjson::Value& uiJson);
 
 	void DrawHearts(float camX, float camY) const;
 	void DrawWeaponSwitch(float camX, float camY, PlayerWeapon weapon) const;
 	void DrawProgressBar(MeshManager& meshManager, float camX, float camY) const;
 	void DrawPauseButton(float camX, float camY) const;
+	void DrawInventory(float camX, float camY) const;
 };

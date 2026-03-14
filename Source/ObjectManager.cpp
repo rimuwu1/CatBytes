@@ -3,8 +3,10 @@
 \file       ObjectManager.cpp
 \author     Joash ng, joash.ng, 2502780
             Tse Xuan Qi Tristin, tse.x, 2503757
+            Kerwin Wong Jia Jie, kerwinjiajie.wong, 2502740
 \par        joash.ng@digipen.edu
             tse.x@digipen.edu
+            kerwinjiajie.wong@digipen.edu
 \date       Feb 26 2026
 \brief		This file handles all the dynamic objects under the object class including player, enemy, boss.
 
@@ -46,6 +48,30 @@ void ObjectManager::AddEnemyFromJSON(const rapidjson::Value& enemyData)
 
     //add to enemy list
     enemies.push_back(std::move(newEnemy));
+}
+
+void ObjectManager::AddBuffFromJSON(const rapidjson::Value& buffData)
+{
+    BuffType type = BuffType::NONE;
+    std::string buffType = buffData["type"].GetString();
+
+    if (buffType == "shield") {
+        type = BuffType::SHIELD;
+    }
+    else if (buffType == "full_hp") {
+        type = BuffType::FULL_HP;
+    }
+    else if (buffType == "god_mode") {
+        type = BuffType::GOD_MODE;
+    }
+
+    SpawnBuff(type, buffData["x"].GetFloat(), buffData["y"].GetFloat());
+}
+
+// Spawns a new buff in the world
+void ObjectManager::SpawnBuff(BuffType type, float x, float y)
+{
+    buffs.push_back(Buff(type, x, y, 50.0f, 50.0f)); // dropped buff spawn size
 }
 
 // ------------------------------------------------------------------------
@@ -116,7 +142,24 @@ void ObjectManager::Update(float dt)
             b.bulletSprite->Update(dt);
     }
 
+    for (auto& buff : buffs) {
+
+        if (!buff.active) continue;
+
+        const float dx = fabs(player.pos.x - buff.pos.x);
+        const float dy = fabs(player.pos.y - buff.pos.y);
+        const float halfWidth = (player.width + buff.width) * 0.5f;
+        const float halfHeight = (player.height + buff.height) * 0.5f;
+
+        if (dx < halfWidth && dy < halfHeight) {
+            BuffType collectedType = buff.type;
+            Player_PickupBuff(player, buff);
+            EnvironmentManager::Get().GetHUD().AddBuffToInventory(collectedType);
+        }
+    }
+
     RemoveInactiveBullets();
+    RemoveInactiveBuffs();
 }
 
 //// ------------------------------------------------------------------------
@@ -229,6 +272,13 @@ void ObjectManager::Draw(float camX, float camY, float screenHalfW, float screen
         qs.rotation = 0.0f;
         qs.layer = 2;
         sprites.push_back(qs);
+    }
+
+    // ----- Buffs -----
+    for (const auto& buff : buffs) {
+        if (!buff.active) continue;
+        if (InView(buff.pos.x, buff.pos.y, buff.width * 0.5f, buff.height * 0.5f))
+            buff.Draw(camX, camY);
     }
 
     // --------------------------------------------------------------------
@@ -348,6 +398,14 @@ void ObjectManager::RemoveInactiveBullets()
         std::remove_if(enemyBullets.begin(), enemyBullets.end(),
             [](const EnemyBullet& b) { return !b.active; }),
         enemyBullets.end());
+}
+
+void ObjectManager::RemoveInactiveBuffs()
+{
+    buffs.erase(
+        std::remove_if(buffs.begin(), buffs.end(),
+            [](const Buff& b) { return !b.active; }),
+        buffs.end());
 }
 
 // ------------------------------------------------------------------------

@@ -88,6 +88,7 @@ void BossEnemy_Update(Enemy& enemy, float dt);
 // Draw, onHit, setGraphics, free
 void Enemy_Draw(const Enemy& enemy);
 void Enemy_OnHit(Enemy& enemy, float damage, float knockbackDir = 0.0f);
+void Enemy_OnDeath(Enemy& enemy);
 //void Enemy_Free(Enemy& enemy);
 void HardEnemy_OnCollision(Enemy& enemy, Player& player);
 void Enemy_ApplyKnockback(Enemy& enemy, float knockbackDir);
