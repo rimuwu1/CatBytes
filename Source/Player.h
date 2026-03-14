@@ -22,6 +22,7 @@ Technology is prohibited.
 #pragma once
 #include "AEEngine.h"
 #include "PlayerBullet.h"
+#include "Buff.h"
 #include "SpriteSheet.h"
 #include "rapidjson/document.h"
 #include <vector>
@@ -78,6 +79,12 @@ struct Player
 	float bulletHeight = 0.0f;
 
 	std::vector<PlayerBullet> bullets; // player gun
+
+	// buffs
+	float maxHP = hp;
+	bool shieldActive = false;
+
+	std::vector<Buff> buffs;
 
 	// Sprite sheet for animations
 	std::unique_ptr<SpriteSheet> spriteSheet;

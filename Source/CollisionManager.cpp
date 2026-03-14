@@ -4,9 +4,11 @@
 \author     Joash ng, joash.ng, 2502780
             Peh Yu Xuan, Lovette, p.yuxuanlovette, 2502079
             Sim Hui Min, s.huimin, 2503506
+            Kerwin Wong Jia Jie, kerwinjiajie.wong, 2502740
 \par        joash.ng@digipen.edu
             p.yuxuanlovette@digipen.edu
             s.huimin@digipen.edu
+            kerwinjiajie.wong@digipen.edu
 \date       Feb 26 2026
 \brief		This file handles all the collision checks under the collsion namespace.
 
@@ -242,6 +244,24 @@ namespace CollisionManager
         std::vector<Enemy*> enemyPtrs;
         for (auto& e : enemies) enemyPtrs.push_back(&e);
         PlayerMelee_CheckCollisions(player, enemyPtrs);   // from PlayerMelee.h
+    }
+
+    // Player vs buffs
+    void HandlePlayerBuffCollisions(Player& player, std::vector<Buff>& buffs)
+    {
+        for (auto& buff : buffs) {
+            if (!buff.active) continue;
+
+            float halfW = buff.width * 0.5f;
+            float halfH = buff.height * 0.5f;
+
+            bool overlapX = fabs(player.pos.x - buff.pos.x) < (halfW + player.width * 0.5f);
+            bool overlapY = fabs(player.pos.y - buff.pos.y) < (halfH + player.height * 0.5f);
+
+            if (overlapX && overlapY) {
+                Player_PickupBuff(player, buff);
+            }
+        }
     }
 
     CollisionResults HandleAllCollisions(
