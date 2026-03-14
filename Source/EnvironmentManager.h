@@ -55,13 +55,13 @@ public:
     const std::vector<PlatformObstacle>& GetLevel2Obstacles() const { return m_level2Obstacles; }
 
     const std::vector<Platform>& GetLevel3Platforms() const { return m_level3Platforms; }
-	const std::vector<PlatformButton>& GetLevel3Buttons() const { return m_level3Buttons; }
-	const std::vector<PlatformObstacle>& GetLevel3Obstacles() const { return m_level3Obstacles; }
+    const std::vector<PlatformButton>& GetLevel3Buttons() const { return m_level3Buttons; }
+    const std::vector<PlatformObstacle>& GetLevel3Obstacles() const { return m_level3Obstacles; }
 
     const std::vector<Platform>& GetBossPlatforms()  const { return m_bossPlatforms; }
     
     const std::vector<Platform>& GetWallPlatforms()  const { return m_wallPlatforms; }
-	const std::vector<Platform>& GetLevel3WallPlatforms() const { return m_level3WallPlatforms; }
+    const std::vector<Platform>& GetLevel3WallPlatforms() const { return m_level3WallPlatforms; }
      
     const std::vector<Checkpoint>& GetCheckpoints() const { return m_checkpoints; }
 
@@ -90,6 +90,9 @@ public:
     //clean up functions
     void Clear();   // clears all environment vectors
 
+    // Static batch cache invalidation
+    void MarkStaticDirty();
+
     //button clip struct
     struct ButtonClipConfig {
         std::string name;
@@ -112,6 +115,10 @@ private:
     void UpdateLevelIndicator(float dt);
     void DrawLevelIndicator() const;
 
+    // Static batch cache helpers
+    void RebuildStaticCache();
+    void FlushStaticCache(float camY, float cullHalf);
+
     // Platform textures
     std::unique_ptr<SpriteSheet> m_hoverAnim;
     std::unique_ptr<SpriteSheet> m_checkpointAnim;
@@ -131,11 +138,11 @@ private:
     std::vector<Platform>         m_level3WallPlatforms;
     std::vector<PlatformObstacle> m_level1Obstacles;
     std::vector<PlatformObstacle> m_level2Obstacles;
-	std::vector<PlatformObstacle> m_level3Obstacles;
+    std::vector<PlatformObstacle> m_level3Obstacles;
     std::vector<Checkpoint>       m_checkpoints;
     std::vector<PlatformButton>   m_level1Buttons;
     std::vector<PlatformButton>   m_level2Buttons;
-	std::vector<PlatformButton>   m_level3Buttons;
+    std::vector<PlatformButton>   m_level3Buttons;
 
     bool m_checkpointSaved = false;       // replaces static local in MainGame
     bool m_saveRequested = false;         // internal save request flag
@@ -151,6 +158,21 @@ private:
 
     int m_previousSelection = -1;   // for level indicator
     int m_currentSection = 0;
+
+    // Queued sprite for batched drawing (reused across frames)
+    struct QueuedSprite {
+        AEGfxTexture* texture;
+        float uvW, uvH;
+        float x, y, w, h;
+        float uvOffX, uvOffY;
+        float opacity;
+        float rotation;
+    };
+    std::vector<QueuedSprite> m_spriteBatch;
+
+    // Static geometry cache
+    std::vector<QueuedSprite> m_staticCache;
+    bool m_staticBatchDirty = true;
 
     // Spatial partitioning grid
     SpatialGrid m_spatialGrid;

@@ -26,6 +26,7 @@ Technology is prohibited.
 #include "enemy.h"
 #include "EnemyBullet.h"
 #include "ObjectManager.h"
+#include "Fonts.h"
 #include "rapidjson/document.h"
 #include <algorithm>
 
@@ -76,7 +77,7 @@ void EnvironmentManager::LoadFromConfig(const rapidjson::Document& doc)
         }
     }
     else {
-        // Fallback defaults (optional – prevents crash if config missing)
+        // Fallback defaults (optional - prevents crash if config missing)
         m_buttonFilePath = "Assets/Images/buttonSheet2.png";
         m_buttonRows = 3;
         m_buttonCols = 4;
@@ -126,7 +127,7 @@ void EnvironmentManager::LoadFromConfig(const rapidjson::Document& doc)
             btn.h = b["height"].GetFloat();
             btn.wasPressed = false;
 
-            // --- Create per?button sprite from stored config ---
+            // --- Create per-button sprite from stored config ---
             btn.buttonSprite = std::make_unique<SpriteSheet>(
                 m_buttonFilePath.c_str(),
                 m_buttonRows,
@@ -311,6 +312,8 @@ void EnvironmentManager::LoadFromConfig(const rapidjson::Document& doc)
     // Reset runtime state so a reload/restart starts clean
     m_checkpointSaved = false;
     m_saveRequested = false;
+    // Mark static cache dirty so the new configuration is rebuilt on next Draw()
+    MarkStaticDirty();
 }
 
 // ------------------------------------------------------------------------
@@ -355,83 +358,25 @@ void EnvironmentManager::Update(float dt, const Player& player, float cameraY)
 }
 
 // ------------------------------------------------------------------------
-void EnvironmentManager::Draw(float camX, float camY, PlayerWeapon weapon, const Player& player, float screenHalfH)
+// Static batch cache helpers
+// ------------------------------------------------------------------------
+void EnvironmentManager::RebuildStaticCache()
 {
-    MeshManager& mm = MeshManager::Get();
-
-    DrawBackground();
-
-    const float CULL_MARGIN = 200.0f;
-    const float cullHalf = screenHalfH + CULL_MARGIN;
-
-    auto inView = [&](float objY, float halfH) -> bool {
-        return (objY + halfH) >= (camY - cullHalf) &&
-            (objY - halfH) <= (camY + cullHalf);
-        };
-
-    const float capWidth = 32.0f; // width of platform caps
-
-    // --------------------------------------------------------------------
-    // Helper structure for queued sprites
-    struct QueuedSprite {
-        AEGfxTexture* texture;
-        float uvW, uvH;
-        float x, y, w, h;
-        float uvOffX, uvOffY;
-        float opacity;
-        float rotation;
-    };
-    std::vector<QueuedSprite> sprites;
+    m_staticCache.clear();
 
     auto addSprite = [&](AEGfxTexture* tex, float uvW, float uvH,
         float x, float y, float w, float h,
         float uvOffX, float uvOffY,
         float opacity = 1.0f, float rotation = 0.0f) {
-            sprites.push_back({ tex, uvW, uvH, x, y, w, h, uvOffX, uvOffY, opacity, rotation });
+            m_staticCache.push_back({ tex, uvW, uvH, x, y, w, h, uvOffX, uvOffY, opacity, rotation });
         };
 
-    // Helper to sort and draw a batch
-    auto flushBatch = [&]() {
-        if (sprites.empty()) return;
-        std::sort(sprites.begin(), sprites.end(),
-            [](const QueuedSprite& a, const QueuedSprite& b) {
-                if (a.texture != b.texture) return a.texture < b.texture;
-                if (a.uvW != b.uvW) return a.uvW < b.uvW;
-                return a.uvH < b.uvH;
-            });
+    const float capWidth = 32.0f;
 
-        size_t i = 0;
-        while (i < sprites.size()) {
-            const QueuedSprite& first = sprites[i];
-            mm.BeginBatch(first.texture, first.uvW, first.uvH);
-            do {
-                SpriteBatchItem item;
-                item.x = sprites[i].x;
-                item.y = sprites[i].y;
-                item.width = sprites[i].w;
-                item.height = sprites[i].h;
-                item.uvOffsetX = sprites[i].uvOffX;
-                item.uvOffsetY = sprites[i].uvOffY;
-                item.opacity = sprites[i].opacity;
-                item.rotation = sprites[i].rotation;
-                mm.QueueSprite(item);
-                ++i;
-            } while (i < sprites.size() &&
-                sprites[i].texture == first.texture &&
-                sprites[i].uvW == first.uvW &&
-                sprites[i].uvH == first.uvH);
-            mm.EndBatch();
-        }
-        sprites.clear();
-        };
-
-    // --------------------------------------------------------------------
-    // 1. Platforms (caps, middle, hover)
-    // --------------------------------------------------------------------
+    // Collect platforms (no culling here)
     auto collectPlatforms = [&](const std::vector<Platform>& platforms) {
         for (const auto& p : platforms) {
             if (!p.active) continue;
-            if (!inView(p.y, p.h * 0.5f)) continue;
 
             float leftX = p.x - p.w * 0.5f + capWidth * 0.5f;
             float rightX = p.x + p.w * 0.5f - capWidth * 0.5f;
@@ -448,18 +393,11 @@ void EnvironmentManager::Draw(float camX, float camY, PlayerWeapon weapon, const
                 float midCenterX = (midStartX + midEndX) * 0.5f;
                 // Middle section
                 addSprite(m_midTex, 1.0f, 1.0f, midCenterX, p.y, midWidth, p.h, 0.0f, 0.0f);
-                // Hover animation (if available)
-                if (m_hoverAnim) {
-                    addSprite(m_hoverAnim->GetTexture(),
-                        m_hoverAnim->GetSpriteUVWidth(),
-                        m_hoverAnim->GetSpriteUVHeight(),
-                        midCenterX, p.y - 40.0f, midWidth, p.h,
-                        m_hoverAnim->GetUVOffsetX(),
-                        m_hoverAnim->GetUVOffsetY());
-                }
+                // Note: hover animation is dynamic (animated UV offsets) and is
+                // drawn per-frame in Draw(). Do NOT cache hover sprites here.
             }
         }
-        };
+    };
 
     collectPlatforms(m_level1Platforms);
     collectPlatforms(m_level2Platforms);
@@ -468,59 +406,144 @@ void EnvironmentManager::Draw(float camX, float camY, PlayerWeapon weapon, const
     collectPlatforms(m_wallPlatforms);
     collectPlatforms(m_level3WallPlatforms);
 
-    // --------------------------------------------------------------------
-    // 2. Obstacles (spikes)
-    // --------------------------------------------------------------------
+    // Collect obstacles (no culling here)
     auto collectObstacles = [&](const std::vector<PlatformObstacle>& obstacles) {
         for (const auto& o : obstacles) {
-            if (!inView(o.y, o.h * 0.5f)) continue;
             addSprite(m_spikeTex, 1.0f, 1.0f, o.x, o.y, o.w, o.h, 0.0f, 0.0f);
         }
-        };
+    };
 
     collectObstacles(m_level1Obstacles);
     collectObstacles(m_level2Obstacles);
     collectObstacles(m_level3Obstacles);
 
-    //// --------------------------------------------------------------------
-    //// 3. Buttons (static frames, no animation in batch)
-    //// --------------------------------------------------------------------
-    //auto collectButtons = [&](const std::vector<PlatformButton>& buttons,
-    //    const std::vector<Platform>& platforms) {
-    //        if (!m_buttonAnim) return;
-    //        float uvW = m_buttonAnim->GetSpriteUVWidth();
-    //        float uvH = m_buttonAnim->GetSpriteUVHeight();
+    // NOTE: Checkpoints and hover animations are dynamic and must be
+    // submitted per-frame in Draw(); do not cache checkpoint sprites here.
 
-    //        for (const auto& btn : buttons) {
-    //            if (!inView(btn.y, btn.h * 0.5f)) continue;
+    // Sort by texture pointer
+    std::sort(m_staticCache.begin(), m_staticCache.end(),
+        [](const QueuedSprite& a, const QueuedSprite& b) {
+            return a.texture < b.texture;
+        });
 
-    //            bool isActive = false;
-    //            if (!btn.platformIndices.empty()) {
-    //                int idx = btn.platformIndices[0];
-    //                if (idx >= 0 && idx < (int)platforms.size())
-    //                    isActive = platforms[idx].active;
-    //            }
+    m_staticBatchDirty = false;
+}
 
-    //            // Off = row2 (index 8), On = row1 (index 4) assuming 4 columns
-    //            float uvOffY = isActive ? (1.0f / 3.0f) : (2.0f / 3.0f); // row1 or row2
-    //            addSprite(m_buttonAnim->GetTexture(), uvW, uvH,
-    //                btn.x, btn.y, btn.w, btn.h,
-    //                0.0f, uvOffY);
-    //        }
-    //    };
+void EnvironmentManager::FlushStaticCache(float camY, float cullHalf)
+{
+    if (m_staticCache.empty()) return;
 
-    //collectButtons(m_level1Buttons, m_level1Platforms);
-    //collectButtons(m_level2Buttons, m_level2Platforms);
-    //collectButtons(m_level3Buttons, m_level3Platforms);
+    MeshManager& mm = MeshManager::Get();
+
+    size_t i = 0;
+    while (i < m_staticCache.size()) {
+        const QueuedSprite& first = m_staticCache[i];
+        mm.BeginBatch(first.texture, first.uvW, first.uvH);
+        do {
+            const QueuedSprite& s = m_staticCache[i];
+            SpriteBatchItem item;
+            item.x = s.x;
+            item.y = s.y;
+            item.width = s.w;
+            item.height = s.h;
+            item.uvOffsetX = s.uvOffX;
+            item.uvOffsetY = s.uvOffY;
+            item.opacity = s.opacity;
+            item.rotation = s.rotation;
+            bool visible = (s.y + s.h * 0.5f) >= (camY - cullHalf) &&
+                           (s.y - s.h * 0.5f) <= (camY + cullHalf);
+            if (visible)
+                mm.QueueSprite(item);
+            ++i; // always advance the index to preserve grouping logic
+        } while (i < m_staticCache.size() &&
+            m_staticCache[i].texture == first.texture &&
+            m_staticCache[i].uvW == first.uvW &&
+            m_staticCache[i].uvH == first.uvH);
+        mm.EndBatch();
+    }
+}
+
+void EnvironmentManager::MarkStaticDirty()
+{
+    m_staticBatchDirty = true;
+}
+
+// ------------------------------------------------------------------------
+void EnvironmentManager::Draw(float camX, float camY, PlayerWeapon weapon, const Player& player, float screenHalfH)
+{
+    MeshManager& mm = MeshManager::Get();
+
+    DrawBackground();
+
+    const float CULL_MARGIN = 200.0f;
+    const float cullHalf = screenHalfH + CULL_MARGIN;
 
     // --------------------------------------------------------------------
-    // 4. Checkpoints
+    // 1. Static geometry (platforms, obstacles, checkpoints)
     // --------------------------------------------------------------------
-    auto collectCheckpoints = [&](const std::vector<Checkpoint>& cps) {
-        for (const auto& cp : cps) {
-            if (!inView(cp.y, cp.h * 0.5f)) continue;
-            if (m_checkpointAnim) {
-                addSprite(m_checkpointAnim->GetTexture(),
+    if (m_staticBatchDirty)
+        RebuildStaticCache();
+    FlushStaticCache(camY, cullHalf);
+
+    // --------------------------------------------------------------------
+    // 1.b Dynamic animated sprites (hover animation & checkpoints)
+    // These use per-frame UV offsets so they must be submitted each frame.
+    // --------------------------------------------------------------------
+    if (m_hoverAnim || m_checkpointAnim) {
+        // Build a temporary batch for animated sprites
+        m_spriteBatch.clear();
+
+        auto addSpriteDyn = [&](AEGfxTexture* tex, float uvW, float uvH,
+            float x, float y, float w, float h,
+            float uvOffX, float uvOffY,
+            float opacity = 1.0f, float rotation = 0.0f) {
+                m_spriteBatch.push_back({ tex, uvW, uvH, x, y, w, h, uvOffX, uvOffY, opacity, rotation });
+            };
+
+        auto inView = [&](float objY, float halfH) -> bool {
+            return (objY + halfH) >= (camY - cullHalf) &&
+                (objY - halfH) <= (camY + cullHalf);
+        };
+
+        const float capWidthLocal = 32.0f;
+
+        // Hover animations - iterate platforms and add hover sprites per-frame
+        if (m_hoverAnim) {
+            auto addHoverForLevel = [&](const std::vector<Platform>& platforms) {
+                for (const auto& p : platforms) {
+                    if (!p.active) continue;
+                    if (!inView(p.y, p.h * 0.5f)) continue;
+
+                    float leftX = p.x - p.w * 0.5f + capWidthLocal * 0.5f;
+                    float rightX = p.x + p.w * 0.5f - capWidthLocal * 0.5f;
+                    float midStartX = leftX + capWidthLocal * 0.5f;
+                    float midEndX = rightX - capWidthLocal * 0.5f;
+                    float midWidth = midEndX - midStartX;
+                    if (midWidth > 0.0f) {
+                        float midCenterX = (midStartX + midEndX) * 0.5f;
+                        addSpriteDyn(m_hoverAnim->GetTexture(),
+                            m_hoverAnim->GetSpriteUVWidth(),
+                            m_hoverAnim->GetSpriteUVHeight(),
+                            midCenterX, p.y - 40.0f, midWidth, p.h,
+                            m_hoverAnim->GetUVOffsetX(),
+                            m_hoverAnim->GetUVOffsetY());
+                    }
+                }
+            };
+
+            addHoverForLevel(m_level1Platforms);
+            addHoverForLevel(m_level2Platforms);
+            addHoverForLevel(m_level3Platforms);
+            addHoverForLevel(m_bossPlatforms);
+            addHoverForLevel(m_wallPlatforms);
+            addHoverForLevel(m_level3WallPlatforms);
+        }
+
+        // Checkpoint animations - always dynamic
+        if (m_checkpointAnim) {
+            for (const auto& cp : m_checkpoints) {
+                if (!inView(cp.y, cp.h * 0.5f)) continue;
+                addSpriteDyn(m_checkpointAnim->GetTexture(),
                     m_checkpointAnim->GetSpriteUVWidth(),
                     m_checkpointAnim->GetSpriteUVHeight(),
                     cp.x, cp.y, cp.w, cp.h,
@@ -528,14 +551,201 @@ void EnvironmentManager::Draw(float camX, float camY, PlayerWeapon weapon, const
                     m_checkpointAnim->GetUVOffsetY());
             }
         }
+
+        // Flush the dynamic sprite batch (sort & submit)
+        if (!m_spriteBatch.empty()) {
+            std::sort(m_spriteBatch.begin(), m_spriteBatch.end(),
+                [](const QueuedSprite& a, const QueuedSprite& b) {
+                    if (a.texture != b.texture) return a.texture < b.texture;
+                    if (a.uvW != b.uvW) return a.uvW < b.uvW;
+                    return a.uvH < b.uvH;
+                });
+
+            size_t idx = 0;
+            MeshManager& mmLocal = MeshManager::Get();
+            while (idx < m_spriteBatch.size()) {
+                const QueuedSprite& first = m_spriteBatch[idx];
+                mmLocal.BeginBatch(first.texture, first.uvW, first.uvH);
+                do {
+                    SpriteBatchItem item;
+                    item.x = m_spriteBatch[idx].x;
+                    item.y = m_spriteBatch[idx].y;
+                    item.width = m_spriteBatch[idx].w;
+                    item.height = m_spriteBatch[idx].h;
+                    item.uvOffsetX = m_spriteBatch[idx].uvOffX;
+                    item.uvOffsetY = m_spriteBatch[idx].uvOffY;
+                    item.opacity = m_spriteBatch[idx].opacity;
+                    item.rotation = m_spriteBatch[idx].rotation;
+                    mmLocal.QueueSprite(item);
+                    ++idx;
+                } while (idx < m_spriteBatch.size() &&
+                    m_spriteBatch[idx].texture == first.texture &&
+                    m_spriteBatch[idx].uvW == first.uvW &&
+                    m_spriteBatch[idx].uvH == first.uvH);
+                mmLocal.EndBatch();
+            }
+            m_spriteBatch.clear();
+        }
+    }
+
+    // "Press E to save game" prompt (drawn after batch, requires immediate text rendering)
+    for (const auto& cp : m_checkpoints) {
+        float playerLeft  = player.pos.x - player.width  * 0.5f;
+        float playerRight = player.pos.x + player.width  * 0.5f;
+        float playerTop   = player.pos.y + player.height * 0.5f;
+        float playerBottom= player.pos.y - player.height * 0.5f;
+
+        float rangeLeft   = cp.x - cp.w * 1.0f;
+        float rangeRight  = cp.x + cp.w * 1.0f;
+        float rangeTop    = cp.y + cp.h * 1.0f;
+        float rangeBottom = cp.y - cp.h * 1.0f;
+
+        bool inRangeX = (playerRight >= rangeLeft)  && (playerLeft  <= rangeRight);
+        bool inRangeY = (playerTop   >= rangeBottom) && (playerBottom <= rangeTop);
+
+        if (inRangeX && inRangeY) {
+            float windowWidth  = (float)AEGfxGetWindowWidth();
+            float windowHeight = (float)AEGfxGetWindowHeight();
+
+            float screenX = (cp.x - camX) / (windowWidth * 0.5f);
+            float screenY = (cp.y + cp.h + 20.0f - camY) / (windowHeight * 0.5f);
+
+            if (screenX >  0.5f) screenX =  0.5f;
+            if (screenX < -0.9f) screenX = -0.9f;
+
+            AEGfxPrint(g_FontSmall, "Press E to save game", screenX, screenY, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f);
+            break; // only show for nearest checkpoint
+        }
+    }
+
+    // --------------------------------------------------------------------
+    // 2. Buttons (batched) - update per-button animations, then batch draw
+    // --------------------------------------------------------------------
+    float dt = (float)AEFrameRateControllerGetFrameTime();
+
+    // Reuse class-level sprite batch vector (avoids reallocation each frame)
+    m_spriteBatch.clear();
+
+    auto addSprite = [&](AEGfxTexture* tex, float uvW, float uvH,
+        float x, float y, float w, float h,
+        float uvOffX, float uvOffY,
+        float opacity = 1.0f, float rotation = 0.0f) {
+            m_spriteBatch.push_back({ tex, uvW, uvH, x, y, w, h, uvOffX, uvOffY, opacity, rotation });
         };
 
-    collectCheckpoints(m_checkpoints);
+    // Helper to sort and draw a batch
+    auto flushBatch = [&]() {
+        if (m_spriteBatch.empty()) return;
+        std::sort(m_spriteBatch.begin(), m_spriteBatch.end(),
+            [](const QueuedSprite& a, const QueuedSprite& b) {
+                if (a.texture != b.texture) return a.texture < b.texture;
+                if (a.uvW != b.uvW) return a.uvW < b.uvW;
+                return a.uvH < b.uvH;
+            });
+
+        size_t i = 0;
+        while (i < m_spriteBatch.size()) {
+            const QueuedSprite& first = m_spriteBatch[i];
+            mm.BeginBatch(first.texture, first.uvW, first.uvH);
+            do {
+                SpriteBatchItem item;
+                item.x = m_spriteBatch[i].x;
+                item.y = m_spriteBatch[i].y;
+                item.width = m_spriteBatch[i].w;
+                item.height = m_spriteBatch[i].h;
+                item.uvOffsetX = m_spriteBatch[i].uvOffX;
+                item.uvOffsetY = m_spriteBatch[i].uvOffY;
+                item.opacity = m_spriteBatch[i].opacity;
+                item.rotation = m_spriteBatch[i].rotation;
+                mm.QueueSprite(item);
+                ++i;
+            } while (i < m_spriteBatch.size() &&
+                m_spriteBatch[i].texture == first.texture &&
+                m_spriteBatch[i].uvW == first.uvW &&
+                m_spriteBatch[i].uvH == first.uvH);
+            mm.EndBatch();
+        }
+        m_spriteBatch.clear();
+        };
+
+    auto collectButtons = [&](std::vector<PlatformButton>& buttons, const std::vector<Platform>& platforms) {
+        for (auto& btn : buttons) {
+            if (!btn.buttonSprite) continue;
+
+            bool isActive = false;
+            if (!btn.platformIndices.empty()) {
+                int idx = btn.platformIndices[0];
+                if (idx >= 0 && idx < (int)platforms.size())
+                    isActive = platforms[idx].active;
+            }
+
+            // First-draw initialisation
+            if (!btn.spriteInitialized) {
+                btn.buttonSprite->Play(isActive ? "on" : "off");
+                btn.prevState = isActive;
+                btn.spriteInitialized = true;
+            }
+
+            // State change
+            if (isActive != btn.prevState) {
+                if (isActive)
+                    btn.buttonSprite->Play("transition");
+                else
+                    btn.buttonSprite->Play("off");
+                btn.prevState = isActive;
+            }
+
+            // Advance animation
+            btn.buttonSprite->Update(dt);
+            if (btn.buttonSprite->GetCurrentClip() == "transition" && !btn.buttonSprite->IsPlaying())
+                btn.buttonSprite->Play("on");
+
+            // Add to batch using current UV offsets
+            addSprite(btn.buttonSprite->GetTexture(),
+                btn.buttonSprite->GetSpriteUVWidth(),
+                btn.buttonSprite->GetSpriteUVHeight(),
+                btn.x, btn.y, btn.w, btn.h,
+                btn.buttonSprite->GetUVOffsetX(),
+                btn.buttonSprite->GetUVOffsetY());
+        }
+    };
+
+    collectButtons(m_level1Buttons, m_level1Platforms);
+    collectButtons(m_level2Buttons, m_level2Platforms);
+    collectButtons(m_level3Buttons, m_level3Platforms);
+
+    // Draw batched buttons
     flushBatch();
 
-    PlatformButton_Draw(m_level1Buttons, m_level1Platforms, player);
-    PlatformButton_Draw(m_level2Buttons, m_level2Platforms, player);
-    PlatformButton_Draw(m_level3Buttons, m_level3Platforms, player);
+    // Draw immediate "Press E" prompts for buttons when player overlaps
+    auto drawButtonPrompts = [&](const std::vector<PlatformButton>& buttons) {
+        for (const auto& btn : buttons) {
+            float btnLeft = btn.x - btn.w * 0.5f;
+            float btnRight = btn.x + btn.w * 0.5f;
+            float btnTop = btn.y + btn.h * 0.5f;
+            float btnBottom = btn.y - btn.h * 0.5f;
+            float playerLeft = player.pos.x - player.width * 0.5f;
+            float playerRight = player.pos.x + player.width * 0.5f;
+            float playerBottom = player.pos.y - player.height * 0.5f;
+            float playerTop = player.pos.y + player.height * 0.5f;
+
+            bool overlapX = (playerRight >= btnLeft) && (playerLeft <= btnRight);
+            bool overlapY = (playerTop >= btnBottom) && (playerBottom <= btnTop);
+            if (overlapX && overlapY) {
+                float windowWidth = (float)AEGfxGetWindowWidth();
+                float windowHeight = (float)AEGfxGetWindowHeight();
+                float screenX = (btn.x - camX) / (windowWidth * 0.5f);
+                float screenY = (btn.y + btn.h + 20.0f - camY) / (windowHeight * 0.5f);
+                if (screenX > 0.5f)  screenX = 0.5f;
+                if (screenX < -0.9f) screenX = -0.9f;
+                AEGfxPrint(g_FontSmall, "Press E to toggle platforms", screenX, screenY, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f);
+            }
+        }
+    };
+
+    drawButtonPrompts(m_level1Buttons);
+    drawButtonPrompts(m_level2Buttons);
+    drawButtonPrompts(m_level3Buttons);
 
     // --------------------------------------------------------------------
     // 5. Ground (single colored square)
@@ -672,4 +882,7 @@ void EnvironmentManager::Clear()
     m_level1Buttons.clear();
     m_level2Buttons.clear();
     m_level3Buttons.clear();
+    // Also clear static cache and mark dirty to avoid stale geometry after a restart/load
+    m_staticCache.clear();
+    m_staticBatchDirty = true;
 }

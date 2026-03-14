@@ -490,7 +490,7 @@
         "rows": 1,
         "cols": 4,
         "clips": [
-            { "name": "fly", "start": 0, "end": 3, "duration": 1.0, "loop": false }
+            { "name": "fly", "start": 0, "end": 3, "duration": 0.25, "loop": false }
         ]
     }
 },
@@ -548,7 +548,7 @@
         "rows": 1,
         "cols": 4,
         "clips": [
-            { "name": "fly", "start": 0, "end": 3, "duration": 1.0, "loop": false }
+            { "name": "fly", "start": 0, "end": 3, "duration": 0.25, "loop": false }
         ]
     }
   }

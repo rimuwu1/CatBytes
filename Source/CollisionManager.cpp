@@ -20,6 +20,7 @@ Technology is prohibited.
 /* End Header **************************************************************************/
 #include "pch.h"
 #include "CollisionManager.h"
+#include "EnvironmentManager.h"
 #include "Platforms.h"          // for Platform_CollisionCheck, WallCollisionCheck, CheckObstacleCollision, CheckpointCollisionCheck
 #include "Player.h"             // for Player_ApplyDamage
 #include "PlayerBullet.h"       // for Player_CheckBulletCollisions
@@ -171,6 +172,7 @@ namespace CollisionManager
                     if (index >= 0 && index < (int)platforms.size()) {
 
                         platforms[index].active = !platforms[index].active;
+                        EnvironmentManager::Get().MarkStaticDirty();
 
                     }
 
