@@ -26,7 +26,7 @@ namespace Audio
     const std::string PLAYER_GUN_ATTACK = "Assets/Audio/SciFiLazer CTE02_38.1.wav";
     const std::string PLAYER_MELEE_ATTACK = "Assets/Audio/SCI-FI-DOOR_GEN-HDF-20610.wav";
 
-    const std::string EASY_ENEMY_ATTACK = "Assets/Audio/ESCI-FI-ELECTRICITY_GEN-HDF-20641.wav";
+    const std::string EASY_ENEMY_ATTACK = "Assets/Audio/SCI-FI-ELECTRICITY_GEN-HDF-20641.wav";
     const std::string HARD_ENEMY_ATTACK = "Assets/Audio/SCI-FI-DOOR_GEN-HDF-20602.wav";
     const std::string BOSS_ATTACK = "Assets/Audio/HORROR_GEN-HDF-14515.wav";
 

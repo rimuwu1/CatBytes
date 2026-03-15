@@ -254,40 +254,18 @@
           "damage": 1.0,
           "patrol_min_x": -585.0,
           "patrol_max_x": -395.0,
+          "idle_duration": 1.0,
           "knockback_velocity": 300.0,
           "animations": {
             "file": "Assets/Images/HardEnemySheet.png",
-            "rows": 4,
+            "rows": 5,
             "cols": 4,
             "clips": [
-              {
-                "name": "patrol",
-                "start": 0,
-                "end": 3,
-                "duration": 0.1,
-                "loop": true
-              },
-              {
-                "name": "attack",
-                "start": 4,
-                "end": 7,
-                "duration": 0.1,
-                "loop": true
-              },
-              {
-                "name": "hit",
-                "start": 8,
-                "end": 10,
-                "duration": 0.1,
-                "loop": false
-              },
-              {
-                "name": "dead",
-                "start": 11,
-                "end": 13,
-                "duration": 0.1,
-                "loop": false
-              }
+              { "name": "patrol", "start": 0, "end": 3, "duration": 0.1, "loop": true },
+              { "name": "attack", "start": 4, "end": 7, "duration": 0.1, "loop": true },
+              { "name": "hit", "start": 8, "end": 11, "duration": 0.1, "loop": false },
+              { "name": "dead", "start": 12, "end": 15, "duration": 0.1, "loop": false },
+              { "name": "idle", "start": 16, "end": 19, "duration": 0.1, "loop": false }
             ]
           }
         },
@@ -302,40 +280,18 @@
           "damage": 1.0,
           "patrol_min_x": -225.0,
           "patrol_max_x": 0.0,
+          "idle_duration": 1.0,
           "knockback_velocity": 300.0,
           "animations": {
             "file": "Assets/Images/HardEnemySheet.png",
-            "rows": 4,
+            "rows": 5,
             "cols": 4,
             "clips": [
-              {
-                "name": "patrol",
-                "start": 0,
-                "end": 3,
-                "duration": 0.1,
-                "loop": true
-              },
-              {
-                "name": "attack",
-                "start": 4,
-                "end": 7,
-                "duration": 0.1,
-                "loop": true
-              },
-              {
-                "name": "hit",
-                "start": 8,
-                "end": 10,
-                "duration": 0.1,
-                "loop": false
-              },
-              {
-                "name": "dead",
-                "start": 11,
-                "end": 13,
-                "duration": 0.1,
-                "loop": false
-              }
+              { "name": "patrol", "start": 0, "end": 3, "duration": 0.1, "loop": true },
+              { "name": "attack", "start": 4, "end": 7, "duration": 0.1, "loop": true },
+              { "name": "hit", "start": 8, "end": 11, "duration": 0.1, "loop": false },
+              { "name": "dead", "start": 12, "end": 15, "duration": 0.1, "loop": false },
+              { "name": "idle", "start": 16, "end": 19, "duration": 0.1, "loop": false }
             ]
           }
         },
@@ -350,40 +306,18 @@
           "damage": 1.0,
           "patrol_min_x": 0.0,
           "patrol_max_x": 225.0,
+          "idle_duration": 1.0,
           "knockback_velocity": 300.0,
           "animations": {
             "file": "Assets/Images/HardEnemySheet.png",
-            "rows": 4,
+            "rows": 5,
             "cols": 4,
             "clips": [
-              {
-                "name": "patrol",
-                "start": 0,
-                "end": 3,
-                "duration": 0.1,
-                "loop": true
-              },
-              {
-                "name": "attack",
-                "start": 4,
-                "end": 7,
-                "duration": 0.1,
-                "loop": true
-              },
-              {
-                "name": "hit",
-                "start": 8,
-                "end": 10,
-                "duration": 0.1,
-                "loop": false
-              },
-              {
-                "name": "dead",
-                "start": 11,
-                "end": 13,
-                "duration": 0.1,
-                "loop": false
-              }
+              { "name": "patrol", "start": 0, "end": 3, "duration": 0.1, "loop": true },
+              { "name": "attack", "start": 4, "end": 7, "duration": 0.1, "loop": true },
+              { "name": "hit", "start": 8, "end": 11, "duration": 0.1, "loop": false },
+              { "name": "dead", "start": 12, "end": 15, "duration": 0.1, "loop": false },
+              { "name": "idle", "start": 16, "end": 19, "duration": 0.1, "loop": false }
             ]
           }
         }
@@ -446,103 +380,117 @@
     "level_3": {
         "completed": false,
       "enemies": [
-        {
-          "type": "easy",
-          "x": 600.0,
-          "y": 5010.0,
-          "width": 80.0,
-          "height": 80.0,
-          "hp": 20.0,
-          "speed": 150.0,
-          "damage": 1.0,
-          "patrol_min_x": 550.0,
-          "patrol_max_x": 650.0,
-          "knockback_velocity": 300.0,
-          "animations": {
-            "file": "Assets/Images/EasyEnemySheet.png",
-            "rows": 4,
-            "cols": 4,
-            "clips": [
-              {
-                "name": "patrol",
-                "start": 0,
-                "end": 3,
-                "duration": 0.1,
-                "loop": true
-              },
-              {
-                "name": "attack",
-                "start": 4,
-                "end": 7,
-                "duration": 0.1,
-                "loop": true
-              },
-              {
-                "name": "hit",
-                "start": 8,
-                "end": 11,
-                "duration": 0.1,
-                "loop": false
-              },
-              {
-                "name": "dead",
-                "start": 12,
-                "end": 15,
-                "duration": 0.1,
-                "loop": false
-              }
-            ]
+    {
+      "type": "easy",
+      "x": 600.0,
+      "y": 5010.0,
+      "width": 80.0,
+      "height": 80.0,
+      "hp": 20.0,
+      "speed": 150.0,
+      "damage": 1.0,
+      "shoot_cooldown": 1.0,
+      "bullet_speed": 400.0,
+      "bullet_damage": 1.0,
+      "bullet_range": 1600.0,
+      "bullet_width": 30.0,
+      "bullet_height": 30.0,
+      "patrol_min_x": 550.0,
+      "patrol_max_x": 650.0,
+      "idle_duration": 1.0,
+      "knockback_velocity": 300.0,
+       "animations": {
+          "file": "Assets/Images/EasyEnemySheet.png",
+          "rows": 5,
+          "cols": 4,
+          "clips": [
+              { "name": "patrol", "start": 0, "end": 3, "duration": 0.1, "loop": true },
+              { "name": "attack", "start": 4, "end": 7, "duration": 0.1, "loop": true },
+              { "name": "hit", "start": 8, "end": 11, "duration": 0.1, "loop": false },
+              { "name": "dead", "start": 12, "end": 15, "duration": 0.1, "loop": false },
+              { "name": "idle", "start": 16, "end": 19, "duration": 0.1, "loop": false }
+          ]
+      },
+      "bullet_animations": {
+          "file": "Assets/Images/EasyEnemyBulletSheet.png",
+          "rows": 1,
+          "cols": 4,
+          "clips": [
+              { "name": "fly", "start": 0, "end": 3, "duration": 0.25, "loop": false }
+          ]
+      }
+    },
+    {
+      "type": "easy",
+      "x": -200.0,
+      "y": 5460.0,
+      "width": 80.0,
+      "height": 80.0,
+      "hp": 20.0,
+      "speed": 150.0,
+      "damage": 1.0,
+      "shoot_cooldown": 1.0,
+      "bullet_speed": 400.0,
+      "bullet_damage": 1.0,
+      "bullet_range": 1600.0,
+      "bullet_width": 30.0,
+      "bullet_height": 30.0,
+      "patrol_min_x": -300.0,
+      "patrol_max_x": -100.0,
+      "idle_duration": 1.0,
+      "knockback_velocity": 300.0,
+      "animations": {
+        "file": "Assets/Images/EasyEnemySheet.png",
+        "rows": 5,
+        "cols": 4,
+        "clips": [
+          {
+            "name": "patrol",
+            "start": 0,
+            "end": 3,
+            "duration": 0.1,
+            "loop": true
+          },
+          {
+            "name": "attack",
+            "start": 4,
+            "end": 7,
+            "duration": 0.1,
+            "loop": true
+          },
+          {
+            "name": "hit",
+            "start": 8,
+            "end": 11,
+            "duration": 0.1,
+            "loop": false
+          },
+          {
+            "name": "dead",
+            "start": 12,
+            "end": 15,
+            "duration": 0.1,
+            "loop": false
+          },
+          {
+            "name": "idle",
+            "start": 16,
+            "end": 19,
+            "duration": 0.1,
+            "loop": false
           }
-        },
-        {
-          "type": "easy",
-          "x": -200.0,
-          "y": 5460.0,
-          "width": 80.0,
-          "height": 80.0,
-          "hp": 20.0,
-          "speed": 150.0,
-          "damage": 1.0,
-          "patrol_min_x": -300.0,
-          "patrol_max_x": -100.0,
-          "knockback_velocity": 300.0,
-          "animations": {
-            "file": "Assets/Images/EasyEnemySheet.png",
-            "rows": 4,
-            "cols": 4,
-            "clips": [
-              {
-                "name": "patrol",
-                "start": 0,
-                "end": 3,
-                "duration": 0.1,
-                "loop": true
-              },
-              {
-                "name": "attack",
-                "start": 4,
-                "end": 7,
-                "duration": 0.1,
-                "loop": true
-              },
-              {
-                "name": "hit",
-                "start": 8,
-                "end": 11,
-                "duration": 0.1,
-                "loop": false
-              },
-              {
-                "name": "dead",
-                "start": 12,
-                "end": 15,
-                "duration": 0.1,
-                "loop": false
-              }
-            ]
-          }
-        }
-      ],
+        ]
+      },
+      "bullet_animations": {
+          "file": "Assets/Images/EasyEnemyBulletSheet.png",
+          "rows": 1,
+          "cols": 4,
+          "clips": [
+              { "name": "fly", "start": 0, "end": 3, "duration": 0.25, "loop": false }
+          ]
+      }
+    }
+        ],
         "platforms": [
             { "x":  550.0, "y": 4650.0, "width": 150.0, "height": 40.0, "active":  true },
             { "x":  150.0, "y": 4800.0, "width": 750.0, "height": 40.0, "active":  true },
@@ -691,6 +639,13 @@
               "end": 2,
               "duration": 0.1,
               "loop": false
+            }
+            {
+              "name": "idle",
+              "start": 0,
+              "end": 2,
+              "duration": 0.1,
+              "loop": true
             }
           ]
         }

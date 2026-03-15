@@ -61,6 +61,55 @@ static bool Enemy_IsInCamera(const Enemy& enemy)
     return overlapX && overlapY;
 }
 
+static void Enemy_SetState(Enemy& enemy, EnemyState newState)
+{
+    enemy.state = newState;
+
+    switch (newState)
+    {
+    case EnemyState::Idle:
+        enemy.stateTimer = enemy.idleDuration;
+        enemy.vel = { 0.0f, 0.0f };
+
+        if (enemy.spriteSheet && enemy.spriteSheet->GetCurrentClip() != "idle")
+            enemy.spriteSheet->Play("idle");
+        break;
+
+    case EnemyState::Patrol:
+        enemy.stateTimer = 0.0f;
+
+        if (enemy.spriteSheet && enemy.spriteSheet->GetCurrentClip() != "patrol")
+            enemy.spriteSheet->Play("patrol");
+        break;
+
+    case EnemyState::Attack:
+        enemy.vel = { 0.0f, 0.0f };
+
+        if (enemy.spriteSheet && enemy.spriteSheet->GetCurrentClip() != "attack")
+            enemy.spriteSheet->Play("attack", true);
+
+        if (enemy.spriteSheet)
+            enemy.stateTimer = enemy.spriteSheet->GetClipTotalDuration("attack");
+        else
+            enemy.stateTimer = 0.3f;
+
+        if (enemy.type == EnemyType::Easy)
+        {
+            ObjectManager::Get().SpawnEnemyBullet(
+                enemy,
+                enemy.bulletSpeed,
+                enemy.bulletDamage,
+                enemy.bulletRange
+            );
+
+            if (Enemy_IsInCamera(enemy))
+                AudioManager::Get().PlayAudio(s_EasyEnemyAttackSound, false);
+
+            enemy.shootTimer = enemy.shootCooldown;
+        }
+    }
+}
+
 // -----------------------------------------------------------------------------
 // initialize easy enemy
 // sets position, size, direction, alive status, loads speed and textures
@@ -139,9 +188,13 @@ void Enemy_Init(Enemy& enemy, const rapidjson::Value& config) {
 
     if (config.HasMember("bullet_width") && config["bullet_width"].IsFloat())
         enemy.bulletWidth = config["bullet_width"].GetFloat();
+    else
+        enemy.bulletWidth = 30.0f;
 
     if (config.HasMember("bullet_height") && config["bullet_height"].IsFloat())
         enemy.bulletHeight = config["bullet_height"].GetFloat();
+    else
+        enemy.bulletHeight = 30.0f;
 
     enemy.shootTimer = enemy.shootCooldown;
     enemy.vel = { 0.0f, 0.0f };
@@ -224,6 +277,13 @@ void Enemy_Init(Enemy& enemy, const rapidjson::Value& config) {
         enemy.knockbackVelocity = 300.0f;
     enemy.knockbackVel = { 0.0f, 0.0f };
     enemy.knockbackTimer = 0.0f;
+
+    if (config.HasMember("idle_duration") && config["idle_duration"].IsFloat())
+        enemy.idleDuration = config["idle_duration"].GetFloat();
+    else
+        enemy.idleDuration = 1.0f;
+
+    Enemy_SetState(enemy, EnemyState::Patrol);
 }
 
 void HardEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
@@ -342,6 +402,14 @@ void HardEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
 
         enemy.spriteSheet->Play("patrol");
     }
+
+    if (config.HasMember("idle_duration") && config["idle_duration"].IsFloat())
+        enemy.idleDuration = config["idle_duration"].GetFloat();
+    else
+        enemy.idleDuration = 1.0f;
+
+    enemy.state = EnemyState::Patrol;
+    enemy.stateTimer = 0.0f;
 }
 
 void BossEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
@@ -462,6 +530,14 @@ void BossEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
 
         enemy.spriteSheet->Play("patrol");
     }
+
+    if (config.HasMember("idle_duration") && config["idle_duration"].IsFloat())
+        enemy.idleDuration = config["idle_duration"].GetFloat();
+    else
+        enemy.idleDuration = 1.0f;
+
+    enemy.state = EnemyState::Patrol;
+    enemy.stateTimer = 0.0f;
 }
 
 // -----------------------------------------------------------------------------
@@ -515,15 +591,12 @@ void Enemy_Update(Enemy& enemy, float dt) {
         if (enemy.hitStunTimer <= 0.0f)
         {
             enemy.hitStunTimer = 0.0f;
-
-            const std::string clipNow = enemy.spriteSheet->GetCurrentClip();
-            if (clipNow != "dead")
-                enemy.spriteSheet->Play("patrol");
+            Enemy_SetState(enemy, EnemyState::Patrol);
         }
         return;
     }
 
-
+    /*
     // Shooting (if applicable)
     if (enemy.shootCooldown > 0.0f) {
         enemy.shootTimer -= dt;
@@ -548,20 +621,23 @@ void Enemy_Update(Enemy& enemy, float dt) {
             return;
         }
     }
+     */
+    if (enemy.shootCooldown > 0.0f && enemy.state == EnemyState::Patrol)
+    {
+        enemy.shootTimer -= dt;
+        if (enemy.shootTimer <= 0.0f)
+        {
+            Enemy_SetState(enemy, EnemyState::Attack);
+        }
+    }
 
+    /*
     enemy.vel.x = enemy.direction * enemy.moveSpeed;
     PhysicsManager::Get().Integrate(enemy.pos, enemy.vel, dt);
 
-    
-    // Patrol movement (TODO, now still hardcoded)
+    // Patrol movement
     enemy.pos.x += enemy.direction * enemy.moveSpeed * dt;
 
-    /*
-    // Patrol bounds (could be from config, but keep hardcoded for now)
-    float patrolMinX = -400.0f, patrolMaxX = 400.0f;
-    if (enemy.pos.x >= patrolMaxX) enemy.direction = -1;
-    else if (enemy.pos.x <= patrolMinX) enemy.direction = 1;
-    */
     if (enemy.pos.x >= enemy.patrolMaxX) {
         enemy.pos.x = enemy.patrolMaxX;
         enemy.direction = -1;
@@ -576,6 +652,43 @@ void Enemy_Update(Enemy& enemy, float dt) {
             enemy.spriteSheet->Play("patrol");
 
         enemy.spriteSheet->Update(dt);
+        */
+    switch (enemy.state)
+    {
+    case EnemyState::Idle:
+        enemy.stateTimer -= dt;
+        enemy.vel = { 0.0f, 0.0f };
+
+        if (enemy.stateTimer <= 0.0f)
+            Enemy_SetState(enemy, EnemyState::Patrol);
+        break;
+
+    case EnemyState::Patrol:
+        enemy.vel.x = enemy.direction * enemy.moveSpeed;
+        PhysicsManager::Get().Integrate(enemy.pos, enemy.vel, dt);
+
+        if (enemy.pos.x >= enemy.patrolMaxX) {
+            enemy.pos.x = enemy.patrolMaxX;
+            enemy.direction = -1;
+            Enemy_SetState(enemy, EnemyState::Idle);
+        }
+        else if (enemy.pos.x <= enemy.patrolMinX) {
+            enemy.pos.x = enemy.patrolMinX;
+            enemy.direction = 1;
+            Enemy_SetState(enemy, EnemyState::Idle);
+        }
+        break;
+
+    case EnemyState::Attack:
+        enemy.stateTimer -= dt;
+        enemy.vel = { 0.0f, 0.0f };
+
+        if (enemy.stateTimer <= 0.0f)
+            Enemy_SetState(enemy, EnemyState::Patrol);
+        break;
+    }
+
+    enemy.spriteSheet->Update(dt);
 }
 
 void HardEnemy_Update(Enemy& enemy, float dt) {
@@ -626,24 +739,15 @@ void HardEnemy_Update(Enemy& enemy, float dt) {
         if (enemy.hitStunTimer <= 0.0f)
         {
             enemy.hitStunTimer = 0.0f;
-
-            // Only go back to patrol from attack/hit
-            const std::string clipNow = enemy.spriteSheet->GetCurrentClip();
-            if (clipNow != "dead")
-                enemy.spriteSheet->Play("patrol");
+            Enemy_SetState(enemy, EnemyState::Patrol);
         }
         return;
     }
 
+    /*
     enemy.vel.x = enemy.direction * enemy.moveSpeed;
     PhysicsManager::Get().Integrate(enemy.pos, enemy.vel, dt);
     enemy.pos.x += enemy.direction * enemy.moveSpeed * dt;
-
-    /*
-    float patrolMinX = -400.0f, patrolMaxX = 400.0f;
-    if (enemy.pos.x >= patrolMaxX) enemy.direction = -1;
-    else if (enemy.pos.x <= patrolMinX) enemy.direction = 1;
-    */
 
     if (enemy.pos.x >= enemy.patrolMaxX) {
         enemy.pos.x = enemy.patrolMaxX;
@@ -658,6 +762,43 @@ void HardEnemy_Update(Enemy& enemy, float dt) {
         enemy.spriteSheet->Play("patrol");
 
     enemy.spriteSheet->Update(dt);
+    */
+    switch (enemy.state)
+    {
+    case EnemyState::Idle:
+        enemy.stateTimer -= dt;
+        enemy.vel = { 0.0f, 0.0f };
+
+        if (enemy.stateTimer <= 0.0f)
+            Enemy_SetState(enemy, EnemyState::Patrol);
+        break;
+
+    case EnemyState::Patrol:
+        enemy.vel.x = enemy.direction * enemy.moveSpeed;
+        PhysicsManager::Get().Integrate(enemy.pos, enemy.vel, dt);
+
+        if (enemy.pos.x >= enemy.patrolMaxX) {
+            enemy.pos.x = enemy.patrolMaxX;
+            enemy.direction = -1;
+            Enemy_SetState(enemy, EnemyState::Idle);
+        }
+        else if (enemy.pos.x <= enemy.patrolMinX) {
+            enemy.pos.x = enemy.patrolMinX;
+            enemy.direction = 1;
+            Enemy_SetState(enemy, EnemyState::Idle);
+        }
+        break;
+
+    case EnemyState::Attack:
+        enemy.stateTimer -= dt;
+        enemy.vel = { 0.0f, 0.0f };
+
+        if (enemy.stateTimer <= 0.0f)
+            Enemy_SetState(enemy, EnemyState::Patrol);
+        break;
+    }
+
+    enemy.spriteSheet->Update(dt);
 }
 
 // -----------------------------------------------------------------------------
@@ -670,6 +811,22 @@ void BossEnemy_Update(Enemy& enemy, float dt) {
     if (!enemy.spriteSheet) return;
 
     const std::string currentClip = enemy.spriteSheet->GetCurrentClip();
+
+    if (!enemy.isAlive)
+    {
+        if (currentClip == "dead")
+        {
+            enemy.hitStunTimer -= dt;
+            enemy.spriteSheet->Update(dt);
+
+            if (enemy.hitStunTimer <= 0.0f)
+            {
+                enemy.hitStunTimer = 0.0f;
+                enemy.spriteSheet->Stop();
+            }
+        }
+        return;
+    }
 
     if (enemy.hitStunTimer > 0.0f) {
         // Apply knockback movement first
@@ -689,15 +846,69 @@ void BossEnemy_Update(Enemy& enemy, float dt) {
             enemy.hitStunTimer -= dt;
         }
 
-        if (enemy.hitStunTimer <= 0.0f) enemy.hitStunTimer = 0.0f;
+        enemy.spriteSheet->Update(dt);
+
+        if (enemy.hitStunTimer <= 0.0f)
+        {
+            enemy.hitStunTimer = 0.0f;
+            Enemy_SetState(enemy, EnemyState::Patrol);
+        }
         return;
     }
+    /*
     enemy.vel.x = enemy.direction * enemy.moveSpeed;
     PhysicsManager::Get().Integrate(enemy.pos, enemy.vel, dt);
-    enemy.pos.x += enemy.direction * enemy.moveSpeed * dt;
-    float patrolMinX = -400.0f, patrolMaxX = 400.0f;
-    if (enemy.pos.x >= patrolMaxX) enemy.direction = -1;
-    else if (enemy.pos.x <= patrolMinX) enemy.direction = 1;
+    //enemy.pos.x += enemy.direction * enemy.moveSpeed * dt;
+    if (enemy.pos.x >= enemy.patrolMaxX) {
+        enemy.pos.x = enemy.patrolMaxX;
+        enemy.direction = -1;
+    }
+    else if (enemy.pos.x <= enemy.patrolMinX) {
+        enemy.pos.x = enemy.patrolMinX;
+        enemy.direction = 1;
+    }
+    if (enemy.spriteSheet->GetCurrentClip() != "patrol")
+        enemy.spriteSheet->Play("patrol");
+
+    enemy.spriteSheet->Update(dt);
+    */
+
+    switch (enemy.state)
+    {
+    case EnemyState::Idle:
+        enemy.stateTimer -= dt;
+        enemy.vel = { 0.0f, 0.0f };
+
+        if (enemy.stateTimer <= 0.0f)
+            Enemy_SetState(enemy, EnemyState::Patrol);
+        break;
+
+    case EnemyState::Patrol:
+        enemy.vel.x = enemy.direction * enemy.moveSpeed;
+        PhysicsManager::Get().Integrate(enemy.pos, enemy.vel, dt);
+
+        if (enemy.pos.x >= enemy.patrolMaxX) {
+            enemy.pos.x = enemy.patrolMaxX;
+            enemy.direction = -1;
+            Enemy_SetState(enemy, EnemyState::Idle);
+        }
+        else if (enemy.pos.x <= enemy.patrolMinX) {
+            enemy.pos.x = enemy.patrolMinX;
+            enemy.direction = 1;
+            Enemy_SetState(enemy, EnemyState::Idle);
+        }
+        break;
+
+    case EnemyState::Attack:
+        enemy.stateTimer -= dt;
+        enemy.vel = { 0.0f, 0.0f };
+
+        if (enemy.stateTimer <= 0.0f)
+            Enemy_SetState(enemy, EnemyState::Patrol);
+        break;
+    }
+
+    enemy.spriteSheet->Update(dt);
 }
 
 // -----------------------------------------------------------------------------
@@ -821,6 +1032,8 @@ void Enemy_OnHit(Enemy& enemy, float damage, float knockbackDir)
         }
 
         enemy.isAlive = false;
+        enemy.state = EnemyState::Idle;
+        enemy.stateTimer = 0.0f;
         Enemy_OnDeath(enemy);
     }
     else
@@ -830,6 +1043,7 @@ void Enemy_OnHit(Enemy& enemy, float damage, float knockbackDir)
         {
             enemy.spriteSheet->Play("hit", true);
             enemy.hitStunTimer = enemy.spriteSheet->GetClipTotalDuration("hit");
+            enemy.stateTimer = 0.0f;
         }
         else
         {
@@ -858,7 +1072,7 @@ void HardEnemy_OnCollision(Enemy& enemy, Player& player)
 
     // don't restart attack if already in attack/hit/dead
     const std::string clip = enemy.spriteSheet->GetCurrentClip();
-    if (clip == "attack" || clip == "hit" || clip == "dead")
+    if (enemy.state == EnemyState::Attack || clip == "hit" || clip == "dead")
         return;
 
     // apply damage
@@ -868,9 +1082,7 @@ void HardEnemy_OnCollision(Enemy& enemy, Player& player)
     Player_ApplyKnockback(player, enemy.pos.x, enemy.pos.y);
 
     // switch to attack animation
-    enemy.spriteSheet->Play("attack", true);
-    enemy.hitStunTimer = enemy.spriteSheet->GetClipTotalDuration("attack");
-
+    Enemy_SetState(enemy, EnemyState::Attack);
     AudioManager::Get().PlayAudio(s_HardEnemyAttackSound, false);
 }
 

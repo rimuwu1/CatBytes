@@ -31,13 +31,22 @@ enum class EnemyType {
     Boss
 };
 
+enum class EnemyState {
+    Idle,
+    Patrol,
+    Attack
+};
+
 struct Enemy
 {
     EnemyType type = EnemyType::Easy;   // which kind of enemy
     bool facesLeft = false;
 
     std::unique_ptr<SpriteSheet> spriteSheet;
-    std::string currentState = "patrol";
+    //std::string currentState = "patrol";
+    EnemyState state = EnemyState::Patrol;
+    float stateTimer = 0.0f;   //generic timer for idle/attack state
+    float idleDuration = 1.0f; //how long enemy stays idle
 
     AEVec2 pos = { 0.0f, 0.0f };
     AEVec2 vel = { 0.0f, 0.0f };
