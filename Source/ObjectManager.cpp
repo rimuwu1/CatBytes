@@ -439,7 +439,8 @@ void ObjectManager::RebuildSpatialGrid()
         env.GetLevel1Obstacles(),
         env.GetCheckpoints(),
         enemyPtrs,
-        bulletPtrs
+        bulletPtrs,
+        buffs
     );
 
     grid.RebuildAdd(
