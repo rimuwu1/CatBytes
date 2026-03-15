@@ -2,7 +2,9 @@
 /*!
 \file SpatialGrid.cpp
 \author Joash ng, joash.ng, 2502780
+        Kerwin Wong Jia Jie, kerwinjiajie.wong, 2502740
 \par joash.ng@digipen.edu
+     kerwinjiajie.wong@digipen.edu
 \date 08/03/2026
 \brief This file implements the SpatialGrid class for 1D Y-axis spatial partitioning.
 
@@ -53,7 +55,8 @@ void SpatialGrid::Rebuild(
     const std::vector<PlatformObstacle>& obstacles,
     const std::vector<Checkpoint>& checkpoints,
     const std::vector<Enemy*>& enemies,
-    const std::vector<EnemyBullet*>& bullets
+    const std::vector<EnemyBullet*>& bullets,
+    const std::vector<Buff>& buffs
 ) {
     Clear();
 
@@ -116,6 +119,19 @@ void SpatialGrid::Rebuild(
         for (int i = startCell; i <= endCell; ++i) {
             if (i >= 0 && i < numCells) {
                 bulletCells[i].push_back(bullet);
+            }
+        }
+    }
+
+    for (const auto& buff : buffs) {
+        if (!buff.active) continue;
+        float objMinY = buff.pos.y - buff.height * 0.5f;
+        float objMaxY = buff.pos.y + buff.height * 0.5f;
+        int startCell = GetCellIndex(objMinY);
+        int endCell = GetCellIndex(objMaxY);
+        for (int i = startCell; i <= endCell; ++i) {
+            if (i >= 0 && i < numCells) {
+                buffCells[i].push_back(&buff);
             }
         }
     }
@@ -190,6 +206,21 @@ void SpatialGrid::GetNearbyBullets(float y, float height, std::vector<EnemyBulle
     for (int i = startCell; i <= endCell; ++i) {
         if (i >= 0 && i < numCells) {
             for (const auto& obj : bulletCells[i]) {
+                out.push_back(obj);
+            }
+        }
+    }
+}
+
+void SpatialGrid::GetNearbyBuffs(float y, float height, std::vector<const Buff*>& out) const {
+    if (numCells <= 0) return;
+    float objMinY = y - height * 0.5f;
+    float objMaxY = y + height * 0.5f;
+    int startCell = GetCellIndex(objMinY);
+    int endCell = GetCellIndex(objMaxY);
+    for (int i = startCell; i <= endCell; ++i) {
+        if (i >= 0 && i < numCells) {
+            for (const auto& obj : buffCells[i]) {
                 out.push_back(obj);
             }
         }

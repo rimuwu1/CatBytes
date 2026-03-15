@@ -16,6 +16,7 @@ Technology is prohibited.
 #include "Platforms.h"
 #include "enemy.h"
 #include "EnemyBullet.h"
+#include "Buff.h"
 #include "AEEngine.h"
 #include <vector>
 
@@ -44,7 +45,8 @@ public:
         const std::vector<PlatformObstacle>& obstacles,
         const std::vector<Checkpoint>& checkpoints,
         const std::vector<Enemy*>& enemies,
-        const std::vector<EnemyBullet*>& bullets
+        const std::vector<EnemyBullet*>& bullets,
+        const std::vector<Buff>& buffs
     );
 
     void GetNearbyPlatforms(float y, float height, std::vector<const Platform*>& out) const;
@@ -52,6 +54,7 @@ public:
     void GetNearbyCheckpoints(float y, float height, std::vector<const Checkpoint*>& out) const;
     void GetNearbyEnemies(float y, float height, std::vector<Enemy*>& out) const;
     void GetNearbyBullets(float y, float height, std::vector<EnemyBullet*>& out) const;
+    void GetNearbyBuffs(float y, float height, std::vector<const Buff*>& out) const;
 
     int GetCellCount() const { return static_cast<int>(platformCells.size()); }
     float GetCellHeight() const { return cellHeight; }
@@ -78,6 +81,7 @@ private:
     std::vector<std::vector<const Checkpoint*>> checkpointCells;
     std::vector<std::vector<Enemy*>> enemyCells;
     std::vector<std::vector<EnemyBullet*>> bulletCells;
+    std::vector<std::vector<const Buff*>> buffCells;
 };
 
 inline SpatialGrid::SpatialGrid()
@@ -107,6 +111,7 @@ inline void SpatialGrid::Clear() {
     for (auto& cell : checkpointCells) cell.clear();
     for (auto& cell : enemyCells) cell.clear();
     for (auto& cell : bulletCells) cell.clear();
+    for (auto& cell : buffCells) cell.clear();
 }
 
 inline int SpatialGrid::GetCellIndex(float y) const {
@@ -122,4 +127,5 @@ inline void SpatialGrid::EnsureCellCount() {
     checkpointCells.resize(numCells);
     enemyCells.resize(numCells);
     bulletCells.resize(numCells);
+    buffCells.resize(numCells);
 }
