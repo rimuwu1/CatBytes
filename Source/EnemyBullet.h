@@ -2,7 +2,9 @@
 /*!
 \file EnemyBullet.h
 \author Tse Xuan Qi Tristin, tse.x, 2503757
-\par tse.x@digipen.edu
+        Joash ng, joash.ng, 2502780
+\par    tse.x@digipen.edu
+        joash.ng@digipen.edu
 \date Junuary, 24, 2026
 \brief 
 

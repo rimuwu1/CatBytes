@@ -180,7 +180,7 @@ void MainGame_Update()
     for (const auto& e : enemies) {
         if (e.justDied) {
             Camera_AddTrauma(0.3f);
-            ParticleManager_Emit(e.pos.x, e.pos.y, 20, 300.f, 191, 64, 255);
+            ParticleManager_Emit(e.pos.x, e.pos.y, 20, 300.f, 191, 64, 255); //purple cos them enemies are purple
         }
     }
 

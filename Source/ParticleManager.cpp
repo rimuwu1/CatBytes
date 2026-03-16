@@ -1,3 +1,18 @@
+/* Start Header ************************************************************************/
+/*!
+\file ParticleManager.cpp
+\author Joash ng, joash.ng, 2502780
+\par joash.ng@digipen.edu
+\date 16/03/2026
+\brief This file defines the particle manager class that manages particle randomisation and lifetime.
+
+Copyright (C) 2026 DigiPen Institute of Technology.
+Reproduction or disclosure of this file or its contents
+without the prior written consent of DigiPen Institute of
+Technology is prohibited.
+*/
+/* End Header **************************************************************************/
+
 #include "pch.h"
 #include "ParticleManager.h"
 #include "MeshManager.h"
