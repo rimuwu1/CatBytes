@@ -56,6 +56,7 @@ struct Enemy
     float moveSpeed = 0.0f;
     int direction = 1;
     int isAlive = 0;
+    bool justDied = false;
 
     float hitPoints = 0.0f;
     float maxHitPoints = 0.0f;

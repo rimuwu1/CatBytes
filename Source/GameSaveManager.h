@@ -37,6 +37,8 @@ public:
 
     struct PlayerSaveData {
         float x, y, hp;
+        int weapon;
+        std::vector<Buff> buffs;
     };
 
     struct EnemySaveData {
@@ -52,8 +54,10 @@ public:
 
     // ----- Save game (async) ----------------------------------------------
     static bool IsSaveInProgress();
+    // Block until any in-progress async save completes. Uses a condition variable.
+    static void WaitForSaveToFinish();
 
-    // Asynchronous save – does not block the caller.
+    // Asynchronous save - does not block the caller.
     static void SaveGameAsync(
         const Metadata& metadata,
         int                        currentLevel,

@@ -37,6 +37,8 @@ Technology is prohibited.
 #include "PhysicsManager.h"
 #include "Platforms.h"
 #include "Winlose.h"
+#include "Camera.h"
+#include "ParticleManager.h"
 
 static AEAudio s_GunAttackSound{};
 static AEAudio s_MeleeAttackSound{};
@@ -77,7 +79,9 @@ void Player_Init(Player& player, const rapidjson::Value& config)
 	player.knockbackVel = { 0.0f, 0.0f };
 
 	// Weapon state
-	player.weapon = PlayerWeapon::NONE;
+	player.weapon = config.HasMember("weapon")
+		? static_cast<PlayerWeapon>(config["weapon"].GetInt())
+		: PlayerWeapon::NONE;
 	player.weaponEquipped = true;
 
 	//melee attack state
@@ -196,6 +200,16 @@ void Player_Init(Player& player, const rapidjson::Value& config)
 		PlayerBullet_Init(b, player);
 		b.bulletSprite = std::make_unique<SpriteSheet>(*player.bulletSprite);
 		b.bulletSprite->Play("fly", true);
+	}
+
+	// restore buffs from save
+	player.buffs.clear();
+	if (config.HasMember("buffs") && config["buffs"].IsArray()) {
+		for (const auto& b : config["buffs"].GetArray()) {
+			BuffType t = static_cast<BuffType>(b["type"].GetInt());
+			player.buffs.push_back(Buff(t, 0.f, 0.f, 50.f, 50.f));
+			player.buffs.back().active = true;
+		}
 	}
 
 	// hurt state
@@ -696,6 +710,9 @@ void Player_ApplyDamage(Player& player, float damage)
 		player.isHurt = true;
 		player.hurtTimer = player.spriteSheet->GetClipTotalDuration("hurt");
 
+		Camera_AddTrauma(0.6f);
+		ParticleManager_Emit(player.pos.x, player.pos.y, 12, 250.f, 255, 50, 50);
+
 		//show hit text for 0.5 seconds
 		//player.hitTextTimer = 0.5f;
 
@@ -774,8 +791,11 @@ void Player_CheckBulletCollisions(Player& player, Enemy& enemy)
 			float knockbackDir = (b.vel.x > 0.0f) ? 1.0f : -1.0f;
 			Enemy_OnHit(enemy, b.damage, knockbackDir);
 
-			if (enemy.hitPoints <= 0.0f)
-				enemy.isAlive = 0;
+			if (enemy.hitPoints <= 0.0f) {
+				enemy.hitPoints = 0.0f;
+				enemy.justDied = true;
+				enemy.isAlive = false;
+			}
 		}
 	}
 }

@@ -17,8 +17,12 @@ Technology is prohibited.
 /* End Header **************************************************************************/
 #include "Camera.h"
 #include "AEEngine.h"
+#include <cmath>
+#include <algorithm>
 
 Camera globalCam;
+float camTrauma   = 0.0f;
+float camShakeTime = 0.0f;
 
 void Camera_Init(Camera& cam, float startX, float startY)
 {
@@ -82,4 +86,18 @@ void Camera_Debug(Camera& cam, float dt) {
 
 	Camera_Apply(cam);
 
+}
+
+void Camera_AddTrauma(float amount) {
+    camTrauma = (std::min)(camTrauma + amount, 1.0f);
+}
+
+void Camera_UpdateShake(Camera& cam, float dt) {
+    if (camTrauma <= 0.0f) return;
+    camTrauma -= dt * 1.5f;
+    if (camTrauma < 0.0f) camTrauma = 0.0f;
+    float shake = camTrauma * camTrauma;
+    camShakeTime += dt * 30.0f;
+    cam.x += sinf(camShakeTime * 1.1f) * shake * 20.0f;
+    cam.y += cosf(camShakeTime * 0.9f) * shake * 20.0f;
 }

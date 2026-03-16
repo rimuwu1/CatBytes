@@ -34,6 +34,7 @@
     <ClCompile Include="..\Source\MainGame.cpp" />
     <ClCompile Include="..\Source\MeshManager.cpp" />
     <ClCompile Include="..\Source\ObjectManager.cpp" />
+    <ClCompile Include="..\Source\ParticleManager.cpp" />
     <ClCompile Include="..\Source\pch.cpp" />
     <ClCompile Include="..\Source\PhysicsManager.cpp" />
     <ClCompile Include="..\Source\Platforms.cpp" />
@@ -74,6 +75,7 @@
     <ClInclude Include="..\Source\MainMenu.h" />
     <ClInclude Include="..\Source\MeshManager.h" />
     <ClInclude Include="..\Source\ObjectManager.h" />
+    <ClInclude Include="..\Source\ParticleManager.h" />
     <ClInclude Include="..\Source\pch.h" />
     <ClInclude Include="..\Source\PhysicsManager.h" />
     <ClInclude Include="..\Source\Platforms.h" />

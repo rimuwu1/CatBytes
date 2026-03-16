@@ -202,6 +202,7 @@ void Enemy_Init(Enemy& enemy, const rapidjson::Value& config) {
 
     if (enemy.hitPoints <= 0.0f) {
         enemy.hitPoints = 0.0f;
+        enemy.justDied = true;
         enemy.isAlive = false;
     }
     else {
@@ -349,6 +350,7 @@ void HardEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
     enemy.direction = 1;
     if (enemy.hitPoints <= 0.0f) {
         enemy.hitPoints = 0.0f;
+        enemy.justDied = true;
         enemy.isAlive = false;
     }
     else {
@@ -545,6 +547,8 @@ void BossEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
 // -----------------------------------------------------------------------------
 void Enemy_Update(Enemy& enemy, float dt) {
 
+    enemy.justDied = false;
+
     if (!enemy.spriteSheet) return;
 
     const std::string currentClip = enemy.spriteSheet->GetCurrentClip();
@@ -692,6 +696,8 @@ void Enemy_Update(Enemy& enemy, float dt) {
 }
 
 void HardEnemy_Update(Enemy& enemy, float dt) {
+    enemy.justDied = false;
+    
     if (!enemy.spriteSheet)
         return;
 
@@ -807,6 +813,8 @@ void HardEnemy_Update(Enemy& enemy, float dt) {
 // Freezes briefly on hit stun
 // -----------------------------------------------------------------------------
 void BossEnemy_Update(Enemy& enemy, float dt) {
+
+    enemy.justDied = false;
 
     if (!enemy.spriteSheet) return;
 
@@ -1031,6 +1039,7 @@ void Enemy_OnHit(Enemy& enemy, float damage, float knockbackDir)
             enemy.hitStunTimer = 0.45f;
         }
 
+        enemy.justDied = true;
         enemy.isAlive = false;
         enemy.state = EnemyState::Idle;
         enemy.stateTimer = 0.0f;
@@ -1080,7 +1089,7 @@ void HardEnemy_OnCollision(Enemy& enemy, Player& player)
 
     // apply knockback to player (away from enemy)
     Player_ApplyKnockback(player, enemy.pos.x, enemy.pos.y);
-
+    Camera_AddTrauma(0.5f);
     // switch to attack animation
     Enemy_SetState(enemy, EnemyState::Attack);
     AudioManager::Get().PlayAudio(s_HardEnemyAttackSound, false);

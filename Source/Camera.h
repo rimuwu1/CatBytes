@@ -27,10 +27,14 @@ struct Camera
 };
 
 extern Camera globalCam;
+extern float camTrauma;
+extern float camShakeTime;
 
 void Camera_Init(Camera& cam, float startX, float startY);
 void Camera_FollowPlayer(Camera& cam, float playerX, float playerY, float dt);
 void Camera_Apply(const Camera& cam);
+void Camera_AddTrauma(float amount);
+void Camera_UpdateShake(Camera& cam, float dt);
 
 // for debug
 void Camera_Debug(Camera& cam, float dt);

@@ -46,6 +46,7 @@ Technology is prohibited.
 #include "UIManager.h"
 #include "DebugManager.h"
 #include "Player.h"
+#include "ParticleManager.h"
 
 AEAudio g_GameMusic{};
 bool g_GameMusicPlaying = false;
@@ -60,9 +61,9 @@ namespace {
 // ------------------------------------------------------------------------
     static void ParseConfigFromDisk()
     {
-        // Wait for any in-flight async save to finish before reading
-        while (GameSaveManager::IsSaveInProgress())
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        // Wait for any in-flight async save to finish before reading.
+        // Replaced busy-wait with condition-based wait.
+        GameSaveManager::WaitForSaveToFinish();
 
         // Clear stale data so the previous parse never bleeds into a fresh load
         configDoc.SetObject();
@@ -98,11 +99,23 @@ static void ApplyConfigToManagers()
     EnvironmentManager::Get().LoadFromConfig(GetConfigDoc());
     ObjectManager::Get().LoadFromConfig(GetConfigDoc());
 
+    // Sync HUD inventory from restored player buffs
+    Player& player = ObjectManager::Get().GetPlayer();
+    HUD& hud = EnvironmentManager::Get().GetHUD();
+    for (const auto& buff : player.buffs) {
+        if (buff.active)
+            hud.AddBuffToInventory(buff.type);
+    }
+
     const float ground = -350.0f;
     const float groundHeight = 50.0f;
     const float halfScreenHeight = 900.0f * 0.5f;
     float groundTop = ground + groundHeight * 0.5f;
     Camera_Init(globalCam, ObjectManager::Get().GetPlayer().pos.x, groundTop + halfScreenHeight);
+    
+    // Reset camera shake state when (re)starting a run
+    camTrauma = 0.0f;
+    camShakeTime = 0.0f;
 }
 
 // ------------------------------------------------------------------------
@@ -128,6 +141,7 @@ void MainGame_Initialize()
     ParseConfigFromDisk();
     ApplyConfigToManagers();
     DebugManager::Get().Initialize();
+    ParticleManager_Init();
     //Stop main menu music
     AudioManager::Get().StopAudio(g_MainMenuMusic);
     //Start game music (looped)
@@ -163,7 +177,15 @@ void MainGame_Update()
 
     float playerPrevY = player.pos.y;
 
+    for (const auto& e : enemies) {
+        if (e.justDied) {
+            Camera_AddTrauma(0.3f);
+            ParticleManager_Emit(e.pos.x, e.pos.y, 20, 300.f, 191, 64, 255);
+        }
+    }
+
     ObjectManager::Get().Update(dt);
+    ParticleManager_Update(dt);
 
     ObjectManager::Get().RebuildSpatialGrid();
 
@@ -248,7 +270,8 @@ void MainGame_Update()
     {
         Camera_FollowPlayer(globalCam, player.pos.x, player.pos.y, dt);
     }
-   
+
+    Camera_UpdateShake(globalCam, dt);
     Camera_Apply(globalCam);
 
     float backgroundY = DebugManager::Get().IsDebugCameraEnabled() ? globalCam.y : player.pos.y;
@@ -274,6 +297,7 @@ void MainGame_Draw()
     Player& player = ObjectManager::Get().GetPlayer();
     EnvironmentManager::Get().Draw(globalCam.x, globalCam.y, player.weapon, player, 900.0f * 0.5f);
     ObjectManager::Get().Draw(globalCam.x, globalCam.y, 800.0f, 450.0f);
+    ParticleManager_Draw();
     GameSaveManager::Notify_Draw();
     //pop up draw over everything
     DebugManager::Get().DrawWorldOverlays(globalCam.x, globalCam.y);

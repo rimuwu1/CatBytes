@@ -345,7 +345,6 @@ void EnvironmentManager::Update(float dt, const Player& player, float cameraY)
 
     m_hoverAnim->Update(dt);
     m_checkpointAnim->Update(dt);
-    // m_buttonAnim is not animated in this simplified version
 
     UpdateBackground(cameraY);
 

@@ -24,6 +24,7 @@ Technology is prohibited.
 #include <thread>
 #include <atomic>
 #include <mutex>
+#include <condition_variable>
 
 // ----- Static member definitions ------------------------------------------------
 std::atomic<bool> GameSaveManager::s_SaveInProgress{ false };
@@ -31,6 +32,9 @@ GameSaveManager::NotifyType GameSaveManager::s_NotifyType = NotifyType::NONE;
 float GameSaveManager::s_NotifyTimer = 0.0f;
 const float GameSaveManager::NOTIFY_DURATION = 2.0f;
 const float GameSaveManager::NOTIFY_FADE = 0.5f;
+// Synchronization for waiting on save completion
+static std::mutex s_SaveMutex;
+static std::condition_variable s_SaveCv;
 
 namespace {
     // -------------------------------------------------------------------------
@@ -54,6 +58,15 @@ namespace {
 bool GameSaveManager::IsSaveInProgress()
 {
     return s_SaveInProgress.load();
+}
+
+void GameSaveManager::WaitForSaveToFinish()
+{
+    // Fast path
+    if (!s_SaveInProgress.load()) return;
+
+    std::unique_lock<std::mutex> lk(s_SaveMutex);
+    s_SaveCv.wait(lk, []() { return !s_SaveInProgress.load(); });
 }
 
 void GameSaveManager::Notify_Show(NotifyType type)
@@ -111,7 +124,12 @@ void GameSaveManager::SaveGameAsync(
     std::thread([=]() mutable {
         SaveGame_Internal(metadata, currentLevel,
             playerData, enemyData, platCopy, filepath);
-        s_SaveInProgress.store(false);
+        // set flag under lock then notify to avoid missed wakeups
+        {
+            std::lock_guard<std::mutex> lk(s_SaveMutex);
+            s_SaveInProgress.store(false);
+        }
+        s_SaveCv.notify_all();
         }).detach();
 }
 
@@ -178,9 +196,20 @@ void GameSaveManager::SaveGame_Internal(
     if (doc.HasMember("player") && doc["player"].IsObject())
     {
         rapidjson::Value& playerObj = doc["player"];
+        auto& alloc = doc.GetAllocator();
         playerObj["x"] = player.x;
         playerObj["y"] = player.y;
         playerObj["hp"] = player.hp;
+        playerObj.AddMember("weapon", static_cast<int>(player.weapon), alloc);
+        
+        rapidjson::Value buffsArr(rapidjson::kArrayType);
+        for (const auto& buff : player.buffs) {
+            if (!buff.active) continue;
+            rapidjson::Value b(rapidjson::kObjectType);
+            b.AddMember("type", static_cast<int>(buff.type), alloc);
+            buffsArr.PushBack(b, alloc);
+        }
+        playerObj.AddMember("buffs", buffsArr, alloc);
     }
 
     // 4. Set "completed" flags for all levels
@@ -258,7 +287,7 @@ void GameSaveManager::SaveGame_Internal(
 
 GameSaveManager::PlayerSaveData GameSaveManager::ExtractPlayerData(const Player& p)
 {
-    return { p.pos.x, p.pos.y, p.hp };
+    return { p.pos.x, p.pos.y, p.hp, static_cast<int>(p.weapon), p.buffs };
 }
 
 std::vector<GameSaveManager::EnemySaveData> GameSaveManager::ExtractEnemyData(const std::vector<Enemy>& enemies)
