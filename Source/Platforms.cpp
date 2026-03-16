@@ -98,70 +98,7 @@ Technology is prohibited.
 //		mm.EndBatch();
 //	}
 //}
-//
-void PlatformButton_Draw(std::vector<PlatformButton>& buttons,
-	const std::vector<Platform>& platforms,
-	const Player& player)
-{
-	float dt = (float)AEFrameRateControllerGetFrameTime();
 
-	for (auto& btn : buttons) {   // now non?const, so we can modify
-		if (!btn.buttonSprite) continue;
-
-		bool isActive = false;
-		if (!btn.platformIndices.empty()) {
-			int idx = btn.platformIndices[0];
-			if (idx >= 0 && idx < (int)platforms.size())
-				isActive = platforms[idx].active;
-		}
-
-		// First?draw initialisation
-		if (!btn.spriteInitialized) {
-			btn.buttonSprite->Play(isActive ? "on" : "off");
-			btn.prevState = isActive;
-			btn.spriteInitialized = true;
-		}
-
-		// State change
-		if (isActive != btn.prevState) {
-			if (isActive)
-				btn.buttonSprite->Play("transition");
-			else
-				btn.buttonSprite->Play("off");
-			btn.prevState = isActive;
-		}
-
-		btn.buttonSprite->Update(dt);
-
-		if (btn.buttonSprite->GetCurrentClip() == "transition" && !btn.buttonSprite->IsPlaying())
-			btn.buttonSprite->Play("on");
-
-		MeshManager::Get().DrawSpriteSheet(*btn.buttonSprite, btn.x, btn.y, btn.w, btn.h);
-
-		// ----- "Press E" prompt (unchanged) -----
-		float btnLeft = btn.x - btn.w * 0.5f;
-		float btnRight = btn.x + btn.w * 0.5f;
-		float btnTop = btn.y + btn.h * 0.5f;
-		float btnBottom = btn.y - btn.h * 0.5f;
-		float playerLeft = player.pos.x - player.width * 0.5f;
-		float playerRight = player.pos.x + player.width * 0.5f;
-		float playerBottom = player.pos.y - player.height * 0.5f;
-		float playerTop = player.pos.y + player.height * 0.5f;
-
-		bool overlapX = (playerRight >= btnLeft) && (playerLeft <= btnRight);
-		bool overlapY = (playerTop >= btnBottom) && (playerBottom <= btnTop);
-		if (overlapX && overlapY) {
-			float windowWidth = (float)AEGfxGetWindowWidth();
-			float windowHeight = (float)AEGfxGetWindowHeight();
-			float screenX = (btn.x - globalCam.x) / (windowWidth * 0.5f);
-			float screenY = (btn.y + btn.h + 20.0f - globalCam.y) / (windowHeight * 0.5f);
-			if (screenX > 0.5f)  screenX = 0.5f;
-			if (screenX < -0.9f) screenX = -0.9f;
-			const char* msg = isActive ? "Press E to turn off platforms" : "Press E to turn on platforms";
-			AEGfxPrint(g_FontSmall, msg, screenX, screenY, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f);
-		}
-	}
-}
 //
 //void PlatformsObstacle_Draw(const std::vector<PlatformObstacle>& obstacles)
 //{
@@ -220,6 +157,7 @@ void Platforms_OffsetY(std::vector<Platform>& platforms, float offsetY)
 	}
 }
 
+//deprecated, now in CollisionManager.cpp as spatial version
 bool Platform_CollisionCheck(Player& player, float& previousY, const std::vector<Platform>& platforms) {
 
 	if (player.vel.y > 0.0f) {
@@ -237,8 +175,9 @@ bool Platform_CollisionCheck(Player& player, float& previousY, const std::vector
 		float pfRight = pf.x + pf.w * 0.5f;
 		float pfTop = pf.y + pf.h * 0.5f;
 
-		float playerLeft = player.pos.x - player.width * 0.5f;
-		float playerRight = player.pos.x + player.width * 0.5f;
+		float collisionHalfW = player.width * 0.3f;
+		float playerLeft = player.pos.x - collisionHalfW;
+		float playerRight = player.pos.x + collisionHalfW;
 
 		bool overlapX = (playerRight >= pfLeft) && (playerLeft <= pfRight);
 		bool landedThisFrame = (playerPrevBottom >= pfTop) && (playerCurrBottom <= pfTop);

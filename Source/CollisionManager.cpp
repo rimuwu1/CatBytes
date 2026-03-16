@@ -29,8 +29,6 @@ Technology is prohibited.
 #include "Camera.h"             // for Camera_AddTrauma
 #include "PlayerBullet.h"       // for Player_CheckBulletCollisions
 #include "PlayerMelee.h"        // for PlayerMelee_CheckCollisions
-#include "Fonts.h"
-#include "Camera.h"
 #include <cmath>
 
 namespace CollisionManager
@@ -46,17 +44,6 @@ namespace CollisionManager
             player.vel.y = 0.0f;
             player.grounded = 1;
             playerPrevY = player.pos.y;
-        }
-    }
-
-    // ------------------------------------------------------------------------
-    // Platforms (standard check, usually called only when falling)
-    void HandlePlatforms(Player& player, float playerPrevY, const std::vector<Platform>& platforms)
-    {
-        if (player.vel.y <= 0.0f)
-        {
-            // Now properly declared via Platforms.h
-            Platform_CollisionCheck(player, playerPrevY, platforms);
         }
     }
 
@@ -87,15 +74,16 @@ namespace CollisionManager
                     float playerCurrBottom = player.pos.y - player.height * 0.5f;
 
                     // horizontal overlap
-                    float playerLeft = player.pos.x - player.width * 0.5f;
-                    float playerRight = player.pos.x + player.width * 0.5f;
+                    float collisionHalfW = player.width * 0.2f;
+                    float playerLeft = player.pos.x - collisionHalfW;
+                    float playerRight = player.pos.x + collisionHalfW;
                    
                     bool overlapX = (playerRight > pfLeft) && (playerLeft < pfRight);
                     if (!overlapX) continue;
 
                     // check if player is standing on platform
-                    float tolerance = 2.0f;
-                    if (fabs(playerCurrBottom - pfTop) <= tolerance && overlapX)
+                     float tolerance = 0.1f;
+                     if (fabs(playerCurrBottom - pfTop) <= tolerance && overlapX)
                     {
                         player.grounded = 1;
                         player.pos.y = pfTop + player.height * 0.5f;
@@ -136,20 +124,6 @@ namespace CollisionManager
     }
 
     // ------------------------------------------------------------------------
-    // Obstacles
-    bool HandleObstacles(Player& player, const std::vector<PlatformObstacle>& obstacles)
-    {
-        return CheckObstacleCollision(player, obstacles);   // from Platforms.h
-    }
-
-    // ------------------------------------------------------------------------
-    // Checkpoints
-    void HandleCheckpoints(Player& player, const std::vector<Checkpoint>& checkpoints, bool& checkpointHit, bool& checkpointInRange)
-    {
-        CheckpointCollisionCheck(player, checkpoints, checkpointHit, checkpointInRange);
-    }
-
-    // ------------------------------------------------------------------------
     // Buttons
     void HandleButtons(Player& player, const std::vector<PlatformButton>& buttons, const std::vector<Platform>& platforms)
     {
@@ -186,52 +160,6 @@ namespace CollisionManager
     }
 
     // ------------------------------------------------------------------------
-    // Player vs Enemy (hard/boss)
-    void HandlePlayerEnemyCollisions(Player& player, std::vector<Enemy>& enemies)
-    {
-        for (auto& enemy : enemies)
-        {
-            if (!enemy.isAlive) continue;
-            if (enemy.type == EnemyType::Hard || enemy.type == EnemyType::Boss)
-            {
-                float playerHalfW = player.width * 0.5f;
-                float playerHalfH = player.height * 0.5f;
-                float enemyHalfW = enemy.width * 0.5f;
-                float enemyHalfH = enemy.height * 0.5f;
-                bool overlapX = fabs(enemy.pos.x - player.pos.x) < (enemyHalfW + playerHalfW);
-                bool overlapY = fabs(enemy.pos.y - player.pos.y) < (enemyHalfH + playerHalfH);
-                if (overlapX && overlapY)
-                {
-                    HardEnemy_OnCollision(enemy, player);   // from HardEnemy.h
-                }
-            }
-        }
-    }
-
-    // ------------------------------------------------------------------------
-    // Enemy bullets vs Player
-    void HandleEnemyBulletPlayerCollisions(std::vector<EnemyBullet>& bullets, Player& player)
-    {
-        for (auto& bullet : bullets)
-        {
-            if (!bullet.active) continue;
-            float bulletHalfW = bullet.width * 0.5f;
-            float bulletHalfH = bullet.height * 0.5f;
-            float playerHalfW = player.width * 0.5f;
-            float playerHalfH = player.height * 0.5f;
-            bool overlapX = fabs(bullet.pos.x - player.pos.x) < (bulletHalfW + playerHalfW);
-            bool overlapY = fabs(bullet.pos.y - player.pos.y) < (bulletHalfH + playerHalfH);
-            if (overlapX && overlapY)
-            {
-                Player_ApplyDamage(player, bullet.damage);   // from Player.h
-                Camera_AddTrauma(0.6f);
-                Player_ApplyKnockback(player, bullet.pos.x, bullet.pos.y);
-                bullet.active = false;
-            }
-        }
-    }
-    
-    // ------------------------------------------------------------------------
     // Player bullets vs Enemies
     void HandlePlayerBulletEnemyCollisions(Player& player, std::vector<Enemy>& enemies)
     {
@@ -253,77 +181,9 @@ namespace CollisionManager
         PlayerMelee_CheckCollisions(player, enemyPtrs);   // from PlayerMelee.h
     }
 
-    // Player vs buffs
-    void HandlePlayerBuffCollisions(Player& player, std::vector<Buff>& buffs)
-    {
-        for (auto& buff : buffs) {
-            if (!buff.active) continue;
-
-            float halfW = buff.width * 0.5f;
-            float halfH = buff.height * 0.5f;
-
-            bool overlapX = fabs(player.pos.x - buff.pos.x) < (halfW + player.width * 0.5f);
-            bool overlapY = fabs(player.pos.y - buff.pos.y) < (halfH + player.height * 0.5f);
-
-            if (overlapX && overlapY) {
-                Player_PickupBuff(player, buff);
-            }
-        }
-    }
-
-    CollisionResults HandleAllCollisions(
-        Player& player,
-        float playerPrevY,
-        EnvironmentManager& env,
-        std::vector<Enemy>& enemies,
-        std::vector<EnemyBullet>& enemyBullets)
-    {
-        CollisionResults results = { false, false };
-
-        player.grounded = 0; // assume player is not grounded at start of collision check - prevent player from jumping mid-air
-
-        // Ground (fixed values could become env constants)
-        HandleGround(player, -350.0f, 50.0f, playerPrevY);
-
-        // Platforms (standard falling check)
-        HandlePlatforms(player, playerPrevY, env.GetLevel1Platforms());
-
-        // Landing on any platform (combined correction)
-        HandleLandingOnAnyPlatform(player, playerPrevY,
-            env.GetLevel1Platforms(),
-            env.GetLevel2Platforms(),
-            env.GetLevel3Platforms(),
-            env.GetBossPlatforms());
-
-        // Obstacles store result
-        results.obstacleHit = HandleObstacles(player, env.GetLevel1Obstacles());
-        results.obstacleHit = HandleObstacles(player, env.GetLevel2Obstacles());
-        results.obstacleHit = HandleObstacles(player, env.GetLevel3Obstacles());
-
-        // Walls
-        HandleWalls(player, env.GetWallPlatforms());
-
-        // Checkpoints store result
-        HandleCheckpoints(player, env.GetCheckpoints(), results.checkpointHit, results.checkpointInRange);
-
-        // Buttons - these modify env's buttons and platforms
-        HandleButtons(player, env.GetLevel1Buttons(), env.GetLevel1Platforms());
-        HandleButtons(player, env.GetLevel2Buttons(), env.GetLevel2Platforms());
-        HandleButtons(player, env.GetLevel3Buttons(), env.GetLevel3Platforms());
-
-        // Enemy collisions
-        HandlePlayerEnemyCollisions(player, enemies);
-        HandleEnemyBulletPlayerCollisions(enemyBullets, player);
-        HandlePlayerBulletEnemyCollisions(player, enemies);
-        HandlePlayerMeleeEnemyCollisions(player, enemies);
-
-        return results;
-    }
-    
-
-	//-------------------------------------------------------------------------
-	//---------------------SPATIAL GRID VERSIONS-------------------------------
-	//-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    //---------------------SPATIAL GRID VERSIONS-------------------------------
+    //-------------------------------------------------------------------------
 
 
     // ------------------------------------------------------------------------
@@ -351,14 +211,15 @@ namespace CollisionManager
             float playerCurrBottom = player.pos.y - player.height * 0.5f;
 
             // horizontal overlap
-            float playerLeft = player.pos.x - player.width * 0.5f;
-            float playerRight = player.pos.x + player.width * 0.5f;
+            float collisionHalfW = player.width * 0.2f;
+            float playerLeft = player.pos.x - collisionHalfW;
+            float playerRight = player.pos.x + collisionHalfW;
 
             bool overlapX = (playerRight > pfLeft) && (playerLeft < pfRight);
             if (!overlapX) continue;
 
             // check if player is standing on platform
-            float tolerance = 2.0f;
+            float tolerance = 0.1f;
             if (fabs(playerCurrBottom - pfTop) <= tolerance && overlapX)
             {
                 player.grounded = 1;

@@ -600,32 +600,6 @@ void Enemy_Update(Enemy& enemy, float dt) {
         return;
     }
 
-    /*
-    // Shooting (if applicable)
-    if (enemy.shootCooldown > 0.0f) {
-        enemy.shootTimer -= dt;
-        if (enemy.shootTimer <= 0.0f) {
-            enemy.spriteSheet->Play("attack", true);
-            enemy.hitStunTimer = enemy.spriteSheet->GetClipTotalDuration("attack");
-
-            ObjectManager::Get().SpawnEnemyBullet(
-                enemy,
-                enemy.bulletSpeed,
-                enemy.bulletDamage,
-                enemy.bulletRange
-            );
-
-            //only play audio if enemy is in the camera view
-            if (Enemy_IsInCamera(enemy))
-            {
-                AudioManager::Get().PlayAudio(s_EasyEnemyAttackSound, false);
-            }
-
-            enemy.shootTimer = enemy.shootCooldown;
-            return;
-        }
-    }
-     */
     if (enemy.shootCooldown > 0.0f && enemy.state == EnemyState::Patrol)
     {
         enemy.shootTimer -= dt;
@@ -635,28 +609,6 @@ void Enemy_Update(Enemy& enemy, float dt) {
         }
     }
 
-    /*
-    enemy.vel.x = enemy.direction * enemy.moveSpeed;
-    PhysicsManager::Get().Integrate(enemy.pos, enemy.vel, dt);
-
-    // Patrol movement
-    enemy.pos.x += enemy.direction * enemy.moveSpeed * dt;
-
-    if (enemy.pos.x >= enemy.patrolMaxX) {
-        enemy.pos.x = enemy.patrolMaxX;
-        enemy.direction = -1;
-    }
-    else if (enemy.pos.x <= enemy.patrolMinX) {
-        enemy.pos.x = enemy.patrolMinX;
-        enemy.direction = 1;
-    }
-
-    // Update animation
-        if (enemy.spriteSheet->GetCurrentClip() != "patrol")
-            enemy.spriteSheet->Play("patrol");
-
-        enemy.spriteSheet->Update(dt);
-        */
     switch (enemy.state)
     {
     case EnemyState::Idle:
@@ -863,23 +815,6 @@ void BossEnemy_Update(Enemy& enemy, float dt) {
         }
         return;
     }
-    /*
-    enemy.vel.x = enemy.direction * enemy.moveSpeed;
-    PhysicsManager::Get().Integrate(enemy.pos, enemy.vel, dt);
-    //enemy.pos.x += enemy.direction * enemy.moveSpeed * dt;
-    if (enemy.pos.x >= enemy.patrolMaxX) {
-        enemy.pos.x = enemy.patrolMaxX;
-        enemy.direction = -1;
-    }
-    else if (enemy.pos.x <= enemy.patrolMinX) {
-        enemy.pos.x = enemy.patrolMinX;
-        enemy.direction = 1;
-    }
-    if (enemy.spriteSheet->GetCurrentClip() != "patrol")
-        enemy.spriteSheet->Play("patrol");
-
-    enemy.spriteSheet->Update(dt);
-    */
 
     switch (enemy.state)
     {
@@ -918,83 +853,6 @@ void BossEnemy_Update(Enemy& enemy, float dt) {
 
     enemy.spriteSheet->Update(dt);
 }
-
-// -----------------------------------------------------------------------------
-// Draw enemy on screen (deprecated, in obj manager now)
-// -----------------------------------------------------------------------------
-//void Enemy_Draw(const Enemy& enemy)
-//{
-//    //if (!enemy.isAlive && (!enemy.spriteSheet || enemy.spriteSheet->GetCurrentClip() != "dead"))
-//      //  return;
-//
-//    if (!enemy.spriteSheet)
-//        return;
-//
-//    // dead enemy should disappear after dead animation duration ends
-//    if (!enemy.isAlive)
-//    {
-//        if (enemy.spriteSheet->GetCurrentClip() != "dead")
-//            return;
-//
-//        if (enemy.hitStunTimer <= 0.0f)
-//            return;
-//    }
-//
-//    float scaleX;
-//
-//    if (enemy.facesLeft)
-//        scaleX = (enemy.direction == 1) ? -enemy.width : enemy.width;
-//    else
-//        scaleX = (enemy.direction == -1) ? -enemy.width : enemy.width;
-//
-//    MeshManager::Get().DrawSpriteSheet(
-//        *enemy.spriteSheet,
-//        enemy.pos.x,
-//        enemy.pos.y,
-//        scaleX,
-//        enemy.height,
-//        1.0f
-//    );
-//
-//    // enemy hp bar
-//    if (enemy.isAlive && enemy.maxHitPoints > 0.0f) {
-//        float hpRatio = enemy.hitPoints / enemy.maxHitPoints;
-//
-//        float hpBarWidth = enemy.width * 0.8f;
-//        float hpBarHeight = 6.0f;
-//
-//        float x = enemy.pos.x;
-//        float y = enemy.pos.y + enemy.height * 0.5f + 10.0f;
-//
-//        // outline
-//        MeshManager::Get().DrawSquare(
-//            x,
-//            y,
-//            hpBarWidth + 6.0f,
-//            hpBarHeight + 6.0f,
-//            0, 0, 0, 1.0f
-//        );
-//
-//        // background
-//        MeshManager::Get().DrawSquare(
-//            x, 
-//            y, 
-//            hpBarWidth, 
-//            hpBarHeight, 
-//            40, 40, 40, 1.0f
-//        );
-//
-//        // remaining health
-//        MeshManager::Get().DrawSquare(
-//            x - (hpBarWidth / 2) + (hpBarWidth * hpRatio) * 0.5f,
-//            y, 
-//            hpBarWidth * hpRatio, 
-//            hpBarHeight, 
-//            220, 40, 40, 1.0f
-//        );
-//    }
-//
-//}
 
 // -----------------------------------------------------------------------------
 // called when player collides with enemy
@@ -1098,9 +956,6 @@ void HardEnemy_OnCollision(Enemy& enemy, Player& player)
 // -----------------------------------------------------------------------------
 // Free static resources (mesh and texture) remove after spritesheet
 // -----------------------------------------------------------------------------
-//void Enemy_Free(Enemy& enemy)
-//{
-//}
 
 void Enemy_ApplyKnockback(Enemy& enemy, float knockbackDir)
 {

@@ -30,10 +30,8 @@ namespace CollisionManager
     // Ground collision
     void HandleGround(Player& player, float groundY, float groundHeight, float& playerPrevY);
 
-    // Platform collisions (landing and standing)
-    void HandlePlatforms(Player& player, float playerPrevY, const std::vector<Platform>& platforms);
 
-    // Check landing on any of multiple platform sets (used for combined check)
+
     bool HandleLandingOnAnyPlatform(Player& player, float playerPrevY,
                                     const std::vector<Platform>& platforms1,
                                     const std::vector<Platform>& platforms2,
@@ -43,20 +41,10 @@ namespace CollisionManager
     // Wall collisions (horizontal push)
     void HandleWalls(Player& player, const std::vector<Platform>& walls);
 
-    // Obstacle collisions (deadly)
-    bool HandleObstacles(Player& player, const std::vector<PlatformObstacle>& obstacles);
-
-    // Checkpoint collisions
-    void HandleCheckpoints(Player& player, const std::vector<Checkpoint>& checkpoints, bool& checkpointHit, bool& checkpointInRange);
 
     // Button collisions (toggle platforms)
     void HandleButtons(Player& player, const std::vector<PlatformButton>& buttons, const std::vector<Platform>& platforms);
 
-    // Enemy (hard/boss) collisions with player
-    void HandlePlayerEnemyCollisions(Player& player, std::vector<Enemy>& enemies);
-
-    // Enemy bullet collisions with player
-    void HandleEnemyBulletPlayerCollisions(std::vector<EnemyBullet>& bullets, Player& player);
 
     // Player bullet collisions with enemies
     //void HandlePlayerBulletEnemyCollisions(Player& player, std::vector<Enemy>& enemies);
@@ -80,13 +68,6 @@ namespace CollisionManager
         bool pogoHit;            // true if pogo performed
     };
 
-    CollisionResults HandleAllCollisions(
-        Player& player,
-        float playerPrevY,
-        EnvironmentManager& env,
-        std::vector<Enemy>& enemies,
-        std::vector<EnemyBullet>& enemyBullets
-    );
 
     CollisionResults HandleAllCollisionsSpatial(
         Player& player,

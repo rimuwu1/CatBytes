@@ -47,9 +47,6 @@ struct Checkpoint {
 	float x, y, w, h, r;
 };
 
-void PlatformButton_Draw(std::vector<PlatformButton>& buttons,
-	const std::vector<Platform>& platforms,
-	const Player& player);
 
 //void Platforms_Draw(const std::vector<Platform>& platforms, AEGfxTexture* leftTex, AEGfxTexture* midTex, AEGfxTexture* rightTex);
 

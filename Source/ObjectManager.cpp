@@ -162,14 +162,6 @@ void ObjectManager::Update(float dt)
     RemoveInactiveBuffs();
 }
 
-//// ------------------------------------------------------------------------
-//static bool IsInView(float x, float y, float halfW, float halfH, float camX, float camY) {
-//    return (x + halfW) >= (camX - halfW) &&
-//           (x - halfW) <= (camX + halfW) &&
-//           (y + halfH) >= (camY - halfH) &&
-//           (y - halfH) <= (camY + halfH);
-//}
-
 // ------------------------------------------------------------------------
 void ObjectManager::Draw(float camX, float camY, float screenHalfW, float screenHalfH)
 {
@@ -190,6 +182,7 @@ void ObjectManager::Draw(float camX, float camY, float screenHalfW, float screen
     // --------------------------------------------------------------------
     // 1. Collect all visible sprites into a single list
     // --------------------------------------------------------------------
+    // TODO: move to member
     struct QueuedSprite {
         AEGfxTexture* texture;
         float uvW, uvH;

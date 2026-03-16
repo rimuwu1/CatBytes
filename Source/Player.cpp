@@ -55,8 +55,6 @@ void Player_Init(Player& player, const rapidjson::Value& config)
 	player.maxBullets = config["bullet"]["max_count"].GetInt(); // player gun limit
 	player.fireTimer = 0.0f;
 
-	//playerBullets.clear();
-	//playerBullets.resize(player.maxBullets);
 	player.bullets.clear();
 	player.bullets.resize(player.maxBullets);
 
@@ -98,12 +96,6 @@ void Player_Init(Player& player, const rapidjson::Value& config)
 	player.fireCooldown = bulletJson["cooldown"].GetFloat();
 	player.bulletWidth = bulletJson["width"].GetFloat();
 	player.bulletHeight = bulletJson["height"].GetFloat();
-
-	//for (auto& b : player.bullets)
-	//{
-	//	PlayerBullet_Init(b, player);
-	//	b.damage = player.bulletDamage; // assign damage from JSON
-	//}
 
 	// --- Dynamic SpriteSheet Loading ---
 	if (playerJson.HasMember("animations")) {
@@ -758,13 +750,9 @@ void Player_ApplyKnockback(Player& player, float sourceX, float sourceY)
 
 void Player_CheckBulletCollisions(Player& player, Enemy& enemy)
 {
-	printf("CheckBulletCollisions called, enemy alive=%d, hp=%.1f\n", enemy.isAlive, enemy.hitPoints);
 	for (auto& b : player.bullets)
 	{
 		if (!b.active) continue;
-
-		printf("  bullet active at (%.1f, %.1f), enemy at (%.1f, %.1f)\n",
-			b.pos.x, b.pos.y, enemy.pos.x, enemy.pos.y);
 
 		if (!enemy.isAlive) continue;
 
@@ -776,26 +764,14 @@ void Player_CheckBulletCollisions(Player& player, Enemy& enemy)
 		bool overlapX = fabs(b.pos.x - enemy.pos.x) < (halfW_b + halfW_e);
 		bool overlapY = fabs(b.pos.y - enemy.pos.y) < (halfH_b + halfH_e);
 
-		printf("  overlapX=%d overlapY=%d | distX=%.1f need<%.1f | distY=%.1f need<%.1f\n",
-			overlapX, overlapY,
-			fabs(b.pos.x - enemy.pos.x), (halfW_b + halfW_e),
-			fabs(b.pos.y - enemy.pos.y), (halfH_b + halfH_e));
-
 		if (overlapX && overlapY)
 		{
-			printf("  HIT! damage=%.1f\n", b.damage);
 			enemy.hitPoints -= b.damage;
 			b.active = false;
 
 			// Knockback direction: same as bullet velocity
 			float knockbackDir = (b.vel.x > 0.0f) ? 1.0f : -1.0f;
 			Enemy_OnHit(enemy, b.damage, knockbackDir);
-
-			if (enemy.hitPoints <= 0.0f) {
-				enemy.hitPoints = 0.0f;
-				enemy.justDied = true;
-				enemy.isAlive = false;
-			}
 		}
 	}
 }
@@ -809,7 +785,6 @@ void Player_Free(Player& player)
 {
 	//only for gameplay related memory
 	// free bullets
-	//PlayerBullet_Free();
 
 	//free bullet internal resources (if any)
 	for (auto& b : player.bullets)

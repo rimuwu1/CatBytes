@@ -41,7 +41,9 @@ public:
     void LoadFromConfig(const rapidjson::Document&);
     void Initialize();
     void Update(float dt, const Player& player, float cameraY);
-    void Draw(float camX, float camY, PlayerWeapon weapon, const Player& player, float screenHalfH = 450.0f);
+    void DrawBackground() const;
+    void DrawWorld(float camX, float camY, PlayerWeapon weapon, const Player& player, float screenHalfH);
+    void DrawHUD(float camX, float camY, PlayerWeapon weapon);
 
     const std::vector<PlatformObstacle>& GetCurrentObstacles() const;
 
@@ -108,7 +110,6 @@ private:
 
     // Background system (embedded from Background.cpp)
     void UpdateBackground(float cameraY);
-    void DrawBackground() const;
     int  GetSectionFromY(float y) const;
 
     // Level indicator (using existing free functions)

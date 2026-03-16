@@ -45,7 +45,6 @@ Technology is prohibited.
 #include "Audio.h"
 #include "UIManager.h"
 #include "DebugManager.h"
-#include "Player.h"
 #include "ParticleManager.h"
 
 AEAudio g_GameMusic{};
@@ -252,16 +251,6 @@ void MainGame_Update()
         GameStateManager::Get().next = GS_WINLOSE;
     }
 
-    /*if (!globalCam.debugCam) {
-        const float halfScreenHeight = 900.0f * 0.5f;
-        float camBottomY = globalCam.y - halfScreenHeight;
-        float playerTopY = player.pos.y + player.height * 0.5f;
-        if (playerTopY < camBottomY) {
-            textScreenMessage = "You Lose";
-            GameStateManager::Get().next = GS_WINLOSE;
-        }
-    }*/
-
     if (DebugManager::Get().IsDebugCameraEnabled())
     {
         Camera_Debug(globalCam, dt);
@@ -295,15 +284,18 @@ void MainGame_Draw()
     AESysFrameStart();
 
     Player& player = ObjectManager::Get().GetPlayer();
-    EnvironmentManager::Get().Draw(globalCam.x, globalCam.y, player.weapon, player, 900.0f * 0.5f);
+    EnvironmentManager::Get().DrawBackground();
+    EnvironmentManager::Get().DrawWorld(globalCam.x, globalCam.y, player.weapon, player, 900.0f * 0.5f);
     ObjectManager::Get().Draw(globalCam.x, globalCam.y, 800.0f, 450.0f);
     ParticleManager_Draw();
+    EnvironmentManager::Get().DrawHUD(globalCam.x, globalCam.y, player.weapon);
     GameSaveManager::Notify_Draw();
     //pop up draw over everything
     DebugManager::Get().DrawWorldOverlays(globalCam.x, globalCam.y);
     DebugManager::Get().Draw(globalCam.x, globalCam.y);
     UIManager::Get().Draw(globalCam.x, globalCam.y);
     std::cout << "MainGame:Draw" << std::endl;
+
     AESysFrameEnd();
 }
 

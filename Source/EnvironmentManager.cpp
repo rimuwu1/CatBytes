@@ -468,11 +468,9 @@ void EnvironmentManager::MarkStaticDirty()
 }
 
 // ------------------------------------------------------------------------
-void EnvironmentManager::Draw(float camX, float camY, PlayerWeapon weapon, const Player& player, float screenHalfH)
+void EnvironmentManager::DrawWorld(float camX, float camY, PlayerWeapon weapon, const Player& player, float screenHalfH)
 {
     MeshManager& mm = MeshManager::Get();
-
-    DrawBackground();
 
     const float CULL_MARGIN = 200.0f;
     const float cullHalf = screenHalfH + CULL_MARGIN;
@@ -750,11 +748,14 @@ void EnvironmentManager::Draw(float camX, float camY, PlayerWeapon weapon, const
     // 5. Ground (single colored square)
     // --------------------------------------------------------------------
     mm.DrawSquare(0.0f, -350.0f, 1600.0f, 50.0f, 0, 0, 0);
+}
 
-    // --------------------------------------------------------------------
-    // 6. HUD and level indicator (use immediate drawing)
-    // --------------------------------------------------------------------
-    m_HUD.Draw(mm, camX, camY, weapon);
+// ------------------------------------------------------------------------
+// HUD Drawing
+// ------------------------------------------------------------------------
+void EnvironmentManager::DrawHUD(float camX, float camY, PlayerWeapon weapon)
+{
+    m_HUD.Draw(MeshManager::Get(), camX, camY, weapon);
     LevelIndicator_Draw();
 }
 
