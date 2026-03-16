@@ -43,6 +43,14 @@ struct PlatformObstacle {
 	//bool active = true; //can toggle off if bullet collision for example
 };
 
+struct PlatformLaser {
+
+	float x1, x2, y1, y2, w;
+	bool laserActive;
+	bool laserToggle;
+
+};
+
 struct Checkpoint {
 	float x, y, w, h, r;
 };
@@ -63,4 +71,3 @@ void WallCollisionCheck(Player& player, const std::vector<Platform>& wallPlatfor
 //void CheckpointDraw(const std::vector<Checkpoint>& checkpoint, const Player& player);
 
 void CheckpointCollisionCheck(const Player& player, const std::vector<Checkpoint>& checkpoint, bool& checkpointHit, bool& checkpointInRange);
-

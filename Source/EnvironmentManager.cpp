@@ -226,6 +226,22 @@ void EnvironmentManager::LoadFromConfig(const rapidjson::Document& doc)
             m_level2Obstacles.push_back(obs);
         }
     }
+ 
+    // ---- Lasers (level_2 only) ----
+    if (doc.HasMember("level_2") && doc["level_2"].HasMember("lasers")) {
+        m_level2Lasers.clear();
+        for (const auto& l : doc["level_2"]["lasers"].GetArray()) {
+            PlatformLaser ls{};
+            ls.x1 = l["x1"].GetFloat();
+            ls.x2 = l["x2"].GetFloat();
+            ls.y1 = l["y1"].GetFloat();
+            ls.y2 = l["y2"].GetFloat();
+            ls.w = l["width"].GetFloat();
+            ls.laserActive = l.HasMember("active") ? l["active"].GetBool() : true;
+            ls.laserToggle = l.HasMember("toggeable") ? l["toggeable"].GetBool() : false;
+            m_level2Lasers.push_back(ls);
+        }
+    }
 
     // ---- Walls (level_3 only) ----
     if (doc.HasMember("level_3") && doc["level_3"].HasMember("walls")) {
@@ -296,6 +312,22 @@ void EnvironmentManager::LoadFromConfig(const rapidjson::Document& doc)
         }
     }
 
+    // ---- Lasers (level_3 only) ----
+    if (doc.HasMember("level_3") && doc["level_3"].HasMember("lasers")) {
+        m_level3Lasers.clear();
+        for (const auto& l : doc["level_3"]["lasers"].GetArray()) {
+            PlatformLaser ls{};
+            ls.x1 = l["x1"].GetFloat();
+            ls.x2 = l["x2"].GetFloat();
+            ls.y1 = l["y1"].GetFloat();
+            ls.y2 = l["y2"].GetFloat();
+            ls.w = l["width"].GetFloat();
+            ls.laserActive = l.HasMember("active") ? l["active"].GetBool() : true;
+            ls.laserToggle = l.HasMember("toggeable") ? l["toggeable"].GetBool() : false;
+            m_level3Lasers.push_back(ls);
+        }
+    }
+
     // ---- Checkpoints ----
     if (doc.HasMember("checkpoints")) {
         m_checkpoints.clear();
@@ -333,6 +365,9 @@ void EnvironmentManager::Initialize()
     m_hoverAnim = std::make_unique<SpriteSheet>("Assets/Images/HoverSheet.png", 1, 4, 0, .1f);
     m_checkpointAnim = std::make_unique<SpriteSheet>("Assets/Images/checkpointSheet.png", 1, 10, 0, 0.1f);
     m_spikeTex = TextureManager::Get().LoadTexture("Assets/Images/spikeObstacle.png");
+
+    // load laser texture
+    m_laserTex = TextureManager::Get().LoadTexture("Assets/Images/laserObstacle.png");
 
     // Level indicator initialise (free function)
     LevelIndicator_Initialize();
@@ -475,6 +510,11 @@ void EnvironmentManager::DrawWorld(float camX, float camY, PlayerWeapon weapon, 
     const float CULL_MARGIN = 200.0f;
     const float cullHalf = screenHalfH + CULL_MARGIN;
 
+    auto inView = [&](float objY, float halfH) -> bool {
+        return (objY + halfH) >= (camY - cullHalf) &&
+            (objY - halfH) <= (camY + cullHalf);
+        };
+
     // --------------------------------------------------------------------
     // 1. Static geometry (platforms, obstacles, checkpoints)
     // --------------------------------------------------------------------
@@ -496,11 +536,6 @@ void EnvironmentManager::DrawWorld(float camX, float camY, PlayerWeapon weapon, 
             float opacity = 1.0f, float rotation = 0.0f) {
                 m_spriteBatch.push_back({ tex, uvW, uvH, x, y, w, h, uvOffX, uvOffY, opacity, rotation });
             };
-
-        auto inView = [&](float objY, float halfH) -> bool {
-            return (objY + halfH) >= (camY - cullHalf) &&
-                (objY - halfH) <= (camY + cullHalf);
-        };
 
         const float capWidthLocal = 32.0f;
 
@@ -745,7 +780,26 @@ void EnvironmentManager::DrawWorld(float camX, float camY, PlayerWeapon weapon, 
     drawButtonPrompts(m_level3Buttons);
 
     // --------------------------------------------------------------------
-    // 5. Ground (single colored square)
+    // 3. Lasers
+    // --------------------------------------------------------------------
+    auto collectLasers = [&](const std::vector<PlatformLaser>& lasers) {
+        for (const auto& ls : lasers) {
+            if (!ls.laserActive) continue;
+            float laserHeight = ls.y1 - ls.y2;
+            float laserCenter = (ls.y1 + ls.y2) * 0.5f;
+            if (!inView(laserCenter, laserHeight * 0.5f)) continue;
+            mm.DrawTexturedLine(m_laserTex,
+                ls.x1, ls.y1,
+                ls.x2, ls.y2,
+                ls.w, 64.0f);
+        }
+    };
+
+    collectLasers(m_level2Lasers);
+    collectLasers(m_level3Lasers);
+
+    // --------------------------------------------------------------------
+    // 4. Ground (single colored square)
     // --------------------------------------------------------------------
     mm.DrawSquare(0.0f, -350.0f, 1600.0f, 50.0f, 0, 0, 0);
 }
@@ -882,6 +936,9 @@ void EnvironmentManager::Clear()
     m_level1Buttons.clear();
     m_level2Buttons.clear();
     m_level3Buttons.clear();
+    m_level2Lasers.clear();
+    m_level3Lasers.clear();
+
     // Also clear static cache and mark dirty to avoid stale geometry after a restart/load
     m_staticCache.clear();
     m_staticBatchDirty = true;

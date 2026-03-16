@@ -124,6 +124,51 @@ namespace CollisionManager
     }
 
     // ------------------------------------------------------------------------
+    // Lasers
+    void HandlePlayerLaserCollisions(Player& player, const std::vector<PlatformLaser>& lasers)
+    {
+        for (const auto& ls : lasers)
+        {
+            if (!ls.laserActive) continue;
+
+            float playerLeft = player.pos.x - player.width * 0.5f;
+            float playerRight = player.pos.x + player.width * 0.5f;
+            float playerTop = player.pos.y + player.height * 0.5f;
+            float playerBot = player.pos.y - player.height * 0.5f;
+
+            float laserLeft = std::min(ls.x1, ls.x2) - ls.w * 0.5f;
+            float laserRight = std::max(ls.x1, ls.x2) + ls.w * 0.5f;
+            float laserBot = std::min(ls.y1, ls.y2);
+            float laserTop = std::max(ls.y1, ls.y2);
+
+            bool overlapX = (playerRight > laserLeft) && (playerLeft < laserRight);
+            bool overlapY = (playerTop > laserBot) && (playerBot < laserTop);
+
+            if (overlapX && overlapY)
+            {
+                float pushRight = laserRight - playerLeft;
+                float pushLeft = playerRight - laserLeft;
+
+                if (pushRight < pushLeft)
+                {
+                    player.pos.x += pushRight;
+                }
+                else
+                {
+                    player.pos.x -= pushLeft;
+                }
+
+                float midX = (ls.x1 + ls.x2) * 0.5f;
+                float midY = (ls.y1 + ls.y2) * 0.5f;
+
+                Player_ApplyDamage(player, 1.0f);
+                Camera_AddTrauma(0.6f);
+                Player_ApplyKnockback(player, midX, midY);
+            }
+        }
+    }
+
+    // ------------------------------------------------------------------------
     // Buttons
     void HandleButtons(Player& player, const std::vector<PlatformButton>& buttons, const std::vector<Platform>& platforms)
     {
@@ -436,6 +481,9 @@ namespace CollisionManager
         HandleEnemyBulletPlayerCollisionsSpatial(player, grid);
         HandlePlayerBulletEnemyCollisions(player, enemies); // small no. of bullets
         HandlePlayerMeleeEnemyCollisions(player, enemies); //small no. of bullets
+
+        HandlePlayerLaserCollisions(player, env.GetLevel2Lasers());
+        HandlePlayerLaserCollisions(player, env.GetLevel3Lasers());
 
         return results;
     }

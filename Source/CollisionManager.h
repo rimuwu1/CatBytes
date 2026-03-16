@@ -41,10 +41,11 @@ namespace CollisionManager
     // Wall collisions (horizontal push)
     void HandleWalls(Player& player, const std::vector<Platform>& walls);
 
+    // Laser collisions
+    void HandlePlayerLaserCollisions(Player& player, const std::vector<PlatformLaser>& lasers);
 
     // Button collisions (toggle platforms)
     void HandleButtons(Player& player, const std::vector<PlatformButton>& buttons, const std::vector<Platform>& platforms);
-
 
     // Player bullet collisions with enemies
     //void HandlePlayerBulletEnemyCollisions(Player& player, std::vector<Enemy>& enemies);
@@ -62,10 +63,10 @@ namespace CollisionManager
 
     //----------wrapper for all collisions------------
     struct CollisionResults {
-        bool obstacleHit;       // true if player hit an obstacle
-        bool checkpointHit;      // true if player touched (overlapped) a checkpoint
-        bool checkpointInRange;  // true if player is near a checkpoint (2x range)
-        bool pogoHit;            // true if pogo performed
+        bool obstacleHit;           // true if player hit an obstacle
+        bool checkpointHit;         // true if player touched (overlapped) a checkpoint
+        bool checkpointInRange;     // true if player is near a checkpoint (2x range)
+        bool pogoHit;               // true if pogo performed
     };
 
 

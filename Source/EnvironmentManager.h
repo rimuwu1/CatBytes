@@ -55,10 +55,12 @@ public:
     const std::vector<Platform>& GetLevel2Platforms() const { return m_level2Platforms; }
     const std::vector<PlatformButton>& GetLevel2Buttons() const { return m_level2Buttons; }
     const std::vector<PlatformObstacle>& GetLevel2Obstacles() const { return m_level2Obstacles; }
+    const std::vector<PlatformLaser>& GetLevel2Lasers() const { return m_level2Lasers; }
 
     const std::vector<Platform>& GetLevel3Platforms() const { return m_level3Platforms; }
-    const std::vector<PlatformButton>& GetLevel3Buttons() const { return m_level3Buttons; }
-    const std::vector<PlatformObstacle>& GetLevel3Obstacles() const { return m_level3Obstacles; }
+	const std::vector<PlatformButton>& GetLevel3Buttons() const { return m_level3Buttons; }
+	const std::vector<PlatformObstacle>& GetLevel3Obstacles() const { return m_level3Obstacles; }
+    const std::vector<PlatformLaser>& GetLevel3Lasers() const { return m_level3Lasers; }
 
     const std::vector<Platform>& GetBossPlatforms()  const { return m_bossPlatforms; }
     
@@ -143,7 +145,9 @@ private:
     std::vector<Checkpoint>       m_checkpoints;
     std::vector<PlatformButton>   m_level1Buttons;
     std::vector<PlatformButton>   m_level2Buttons;
-    std::vector<PlatformButton>   m_level3Buttons;
+	std::vector<PlatformButton>   m_level3Buttons;
+    std::vector<PlatformLaser>    m_level2Lasers;
+    std::vector<PlatformLaser>    m_level3Lasers;
 
     bool m_checkpointSaved = false;       // replaces static local in MainGame
     bool m_saveRequested = false;         // internal save request flag
@@ -156,6 +160,9 @@ private:
     int m_buttonTotalFrames = 9;
     float m_buttonFrameDuration = 0.1f;
     std::vector<ButtonClipConfig> m_buttonClips;
+
+    // laser texture
+    AEGfxTexture* m_laserTex = nullptr;
 
     int m_previousSelection = -1;   // for level indicator
     int m_currentSection = 0;
