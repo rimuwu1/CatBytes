@@ -520,7 +520,7 @@
           "hp": 20.0,
           "speed": 150.0,
           "damage": 1.0,
-          "shoot_cooldown": 1.0,
+          "shoot_cooldown": 0.5,
           "bullet_speed": 800.0,
           "bullet_damage": 1.0,
           "bullet_range": 1600.0,
@@ -682,6 +682,8 @@
           "patrol_max_x": 200.0,
           "idle_duration": 1.0,
           "knockback_velocity": 100.0,
+          "return_to_home_only": true,
+          "start_direction": 1,
           "animations": {
             "file": "Assets/Images/EasyEnemySheet.png",
             "rows": 5,
@@ -728,33 +730,65 @@
           "patrol_max_x": 200.0,
           "idle_duration": 1.0,
           "knockback_velocity": 50.0,
+          "return_to_home_only": true,
+          "start_direction": 1,
           "animations": {
             "file": "Assets/Images/EasyEnemySheet.png",
             "rows": 5,
             "cols": 4,
             "clips": [
-              { "name": "patrol", "start": 0, "end": 3, "duration": 0.1, "loop": true },
-              { "name": "attack", "start": 4, "end": 7, "duration": 0.1, "loop": true },
-              { "name": "hit", "start": 8, "end": 11, "duration": 0.1, "loop": false },
-              { "name": "dead", "start": 12, "end": 15, "duration": 0.1, "loop": false },
-              { "name": "idle", "start": 16, "end": 19, "duration": 0.1, "loop": false}
-              ]
-            },
-            "bullet_animations": {
-              "file": "Assets/Images/EasyEnemyBulletSheet.png",
-              "rows": 1,
-              "cols": 4,
-              "clips": [
-                {
-                  "name": "fly",
-                  "start": 0,
-                  "end": 3,
-                  "duration": 0.25,
-                  "loop": false
-                }
-              ]
-            }
+              {
+                "name": "patrol",
+                "start": 0,
+                "end": 3,
+                "duration": 0.1,
+                "loop": true
+              },
+              {
+                "name": "attack",
+                "start": 4,
+                "end": 7,
+                "duration": 0.1,
+                "loop": true
+              },
+              {
+                "name": "hit",
+                "start": 8,
+                "end": 11,
+                "duration": 0.1,
+                "loop": false
+              },
+              {
+                "name": "dead",
+                "start": 12,
+                "end": 15,
+                "duration": 0.1,
+                "loop": false
+              },
+              {
+                "name": "idle",
+                "start": 16,
+                "end": 19,
+                "duration": 0.1,
+                "loop": false
+              }
+            ]
           },
+          "bullet_animations": {
+            "file": "Assets/Images/EasyEnemyBulletSheet.png",
+            "rows": 1,
+            "cols": 4,
+            "clips": [
+              {
+                "name": "fly",
+                "start": 0,
+                "end": 3,
+                "duration": 0.25,
+                "loop": false
+              }
+            ]
+          }
+        },
           {
           "type": "hard",
           "x": 375.0,
@@ -823,11 +857,9 @@
         "bullet_width": 30.0,
         "bullet_height": 30.0,
         "patrol_min_x": -400.0,
-        "patrol_max_x": 400.0,
+        "patrol_max_x": 0.0,
         "idle_duration": 1.0,
         "knockback_velocity": 300.0,
-        "return_to_home_only": true,
-        "start_direction": -1,
         "animations": {
           "file": "Assets/Images/EasyEnemySheet.png",
           "rows": 5,
@@ -864,12 +896,10 @@
           "bullet_range": 1600.0,
           "bullet_width": 30.0,
           "bullet_height": 30.0,
-          "patrol_min_x": -400.0,
+          "patrol_min_x": 0.0,
           "patrol_max_x": 400.0,
           "idle_duration": 1.0,
           "knockback_velocity": 300.0,
-          "return_to_home_only": true,
-          "start_direction": 1,
           "animations": {
             "file": "Assets/Images/EasyEnemySheet.png",
             "rows": 5,
@@ -926,96 +956,12 @@
               }
             ]
           }
-        },
-        {
-          "type": "easy",
-          "x": 700.0,
-          "y": 7710.0,
-          "width": 80.0,
-          "height": 80.0,
-          "hp": 20.0,
-          "speed": 100.0,
-          "damage": 1.0,
-          "shoot_cooldown": 0.5,
-          "bullet_speed": 900.0,
-          "bullet_damage": 1.0,
-          "bullet_range": 1600.0,
-          "bullet_width": 30.0,
-          "bullet_height": 30.0,
-          "patrol_min_x": 650.0,
-          "patrol_max_x": 750.0,
-          "idle_duration": 1.0,
-          "knockback_velocity": 200.0,
-          "return_to_home_only": true,
-          "start_direction": -1,
-          "animations": {
-            "file": "Assets/Images/EasyEnemySheet.png",
-            "rows": 5,
-            "cols": 4,
-            "clips": [
-              { "name": "patrol", "start": 0, "end": 3, "duration": 0.1, "loop": true },
-              { "name": "attack", "start": 4, "end": 7, "duration": 0.1, "loop": true },
-              { "name": "hit", "start": 8, "end": 11, "duration": 0.1, "loop": false },
-              { "name": "dead", "start": 12, "end": 15, "duration": 0.1, "loop": false },
-              { "name": "idle", "start": 16, "end": 19, "duration": 0.1, "loop": false }
-            ]
-          },
-          "bullet_animations": {
-            "file": "Assets/Images/EasyEnemyBulletSheet.png",
-            "rows": 1,
-            "cols": 4,
-            "clips": [
-              { "name": "fly", "start": 0, "end": 3, "duration": 0.25, "loop": false }
-            ]
-          }
         }
         ,
         {
           "type": "easy",
           "x": 700.0,
           "y": 8010.0,
-          "width": 80.0,
-          "height": 80.0,
-          "hp": 20.0,
-          "speed": 100.0,
-          "damage": 1.0,
-          "shoot_cooldown": 0.5,
-          "bullet_speed": 900.0,
-          "bullet_damage": 1.0,
-          "bullet_range": 1600.0,
-          "bullet_width": 30.0,
-          "bullet_height": 30.0,
-          "patrol_min_x": 650.0,
-          "patrol_max_x": 750.0,
-          "idle_duration": 1.0,
-          "knockback_velocity": 200.0,
-          "return_to_home_only": true,
-          "start_direction": -1,
-          "animations": {
-            "file": "Assets/Images/EasyEnemySheet.png",
-            "rows": 5,
-            "cols": 4,
-            "clips": [
-              { "name": "patrol", "start": 0, "end": 3, "duration": 0.1, "loop": true },
-              { "name": "attack", "start": 4, "end": 7, "duration": 0.1, "loop": true },
-              { "name": "hit", "start": 8, "end": 11, "duration": 0.1, "loop": false },
-              { "name": "dead", "start": 12, "end": 15, "duration": 0.1, "loop": false },
-              { "name": "idle", "start": 16, "end": 19, "duration": 0.1, "loop": false }
-            ]
-          },
-          "bullet_animations": {
-            "file": "Assets/Images/EasyEnemyBulletSheet.png",
-            "rows": 1,
-            "cols": 4,
-            "clips": [
-              { "name": "fly", "start": 0, "end": 3, "duration": 0.25, "loop": false }
-            ]
-          }
-        },
-        {
-          "type": "easy",
-          "x": 700.0,
-          "y": 8310.0,
           "width": 80.0,
           "height": 80.0,
           "hp": 20.0,
