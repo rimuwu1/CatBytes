@@ -31,6 +31,7 @@ Technology is prohibited.
 #include "SpriteSheet.h"
 #include <fstream>
 #include <iostream>
+#include <cmath>
 #include "rapidjson/document.h"
 #include "rapidjson/filereadstream.h"
 #include "rapidjson/istreamwrapper.h"
@@ -42,8 +43,8 @@ static AEAudio s_BossAttackSound{};
 
 static bool Enemy_IsInCamera(const Enemy& enemy)
 {
-    const float halfScreenW = 1600.0f * 0.5f; // adjust if your game width is different
-    const float halfScreenH = 900.0f * 0.5f;  // from your camera code
+    const float halfScreenW = 1600.0f * 0.5f; 
+    const float halfScreenH = 900.0f * 0.5f;
 
     const float camLeft = globalCam.x - halfScreenW;
     const float camRight = globalCam.x + halfScreenW;
@@ -107,6 +108,39 @@ static void Enemy_SetState(Enemy& enemy, EnemyState newState)
 
             enemy.shootTimer = enemy.shootCooldown;
         }
+    }
+}
+
+static bool Enemy_MoveWithinPatrolBounds(Enemy& enemy, float dx)
+{
+    const float halfWidth = enemy.width * 0.5f;
+
+    // patrolMinX/patrolMaxX are platform edges
+    const float minCenterX = enemy.patrolMinX + halfWidth;
+    const float maxCenterX = enemy.patrolMaxX - halfWidth;
+
+    const float nextX = enemy.pos.x + dx;
+
+    if (nextX <= minCenterX)
+    {
+        enemy.pos.x = minCenterX;
+        enemy.direction = 1;
+        enemy.knockbackVel = { 0.0f, 0.0f };
+        enemy.knockbackTimer = 0.0f;
+        return true;
+    }
+    else if (nextX >= maxCenterX)
+    {
+        enemy.pos.x = maxCenterX;
+        enemy.direction = -1;
+        enemy.knockbackVel = { 0.0f, 0.0f };
+        enemy.knockbackTimer = 0.0f;
+        return true;
+    }
+    else
+    {
+        enemy.pos.x = nextX;
+        return false;
     }
 }
 
@@ -198,7 +232,13 @@ void Enemy_Init(Enemy& enemy, const rapidjson::Value& config) {
 
     enemy.shootTimer = enemy.shootCooldown;
     enemy.vel = { 0.0f, 0.0f };
-    enemy.direction = 1;
+
+    if (config.HasMember("start_direction") && config["start_direction"].IsInt())
+        enemy.direction = (config["start_direction"].GetInt() < 0) ? -1 : 1;
+    else
+        enemy.direction = 1;
+
+    enemy.homeDirection = enemy.direction;
 
     if (enemy.hitPoints <= 0.0f) {
         enemy.hitPoints = 0.0f;
@@ -210,6 +250,12 @@ void Enemy_Init(Enemy& enemy, const rapidjson::Value& config) {
     }
     enemy.isPlayerColliding = false;
     enemy.type = EnemyType::Easy;
+    enemy.homeX = enemy.pos.x;
+
+    if (config.HasMember("return_to_home_only") && config["return_to_home_only"].IsBool())
+        enemy.returnToHomeOnly = config["return_to_home_only"].GetBool();
+    else
+        enemy.returnToHomeOnly = false;
 
     // Patrol bounds
     if (config.HasMember("patrol_min_x") && config["patrol_min_x"].IsFloat())
@@ -347,7 +393,14 @@ void HardEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
 
     enemy.shootCooldown = 0.0f; // no shooting
     enemy.vel = { 0.0f, 0.0f };
-    enemy.direction = 1;
+
+    if (config.HasMember("start_direction") && config["start_direction"].IsInt())
+        enemy.direction = (config["start_direction"].GetInt() < 0) ? -1 : 1;
+    else
+        enemy.direction = 1;
+
+    enemy.homeDirection = enemy.direction;
+
     if (enemy.hitPoints <= 0.0f) {
         enemy.hitPoints = 0.0f;
         enemy.justDied = true;
@@ -358,6 +411,13 @@ void HardEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
     }
     enemy.isPlayerColliding = false;
     enemy.type = EnemyType::Hard;
+
+    enemy.homeX = enemy.pos.x;
+
+    if (config.HasMember("return_to_home_only") && config["return_to_home_only"].IsBool())
+        enemy.returnToHomeOnly = config["return_to_home_only"].GetBool();
+    else
+        enemy.returnToHomeOnly = false;
 
     // Patrol bounds
     if (config.HasMember("patrol_min_x") && config["patrol_min_x"].IsFloat())
@@ -476,7 +536,14 @@ void BossEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
 
     enemy.shootCooldown = 0.0f;
     enemy.vel = { 0.0f, 0.0f };
-    enemy.direction = 1;
+
+    if (config.HasMember("start_direction") && config["start_direction"].IsInt())
+        enemy.direction = (config["start_direction"].GetInt() < 0) ? -1 : 1;
+    else
+        enemy.direction = 1;
+
+    enemy.homeDirection = enemy.direction;
+
     if (enemy.hitPoints <= 0.0f) {
         enemy.hitPoints = 0.0f;
         enemy.isAlive = false;
@@ -486,6 +553,13 @@ void BossEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
     }
     enemy.isPlayerColliding = false;
     enemy.type = EnemyType::Boss;
+
+    enemy.homeX = enemy.pos.x;
+
+    if (config.HasMember("return_to_home_only") && config["return_to_home_only"].IsBool())
+        enemy.returnToHomeOnly = config["return_to_home_only"].GetBool();
+    else
+        enemy.returnToHomeOnly = false;
 
     // Patrol bounds
     if (config.HasMember("patrol_min_x") && config["patrol_min_x"].IsFloat())
@@ -577,7 +651,7 @@ void Enemy_Update(Enemy& enemy, float dt) {
         if (enemy.knockbackTimer > 0.0f)
         {
             enemy.knockbackTimer -= dt;
-            enemy.pos.x += enemy.knockbackVel.x * dt;
+            Enemy_MoveWithinPatrolBounds(enemy, enemy.knockbackVel.x * dt);
             if (enemy.knockbackTimer <= 0.0f)
             {
                 enemy.knockbackTimer = 0.0f;
@@ -600,12 +674,28 @@ void Enemy_Update(Enemy& enemy, float dt) {
         return;
     }
 
-    if (enemy.shootCooldown > 0.0f && enemy.state == EnemyState::Patrol)
+    if (enemy.shootCooldown > 0.0f)
     {
-        enemy.shootTimer -= dt;
-        if (enemy.shootTimer <= 0.0f)
+        bool canShoot = false;
+
+        if (enemy.returnToHomeOnly)
         {
-            Enemy_SetState(enemy, EnemyState::Attack);
+            const float epsilon = 1.0f;
+            const bool atHome = fabsf(enemy.homeX - enemy.pos.x) <= epsilon;
+            canShoot = atHome && (enemy.state == EnemyState::Idle);
+        }
+        else
+        {
+            canShoot = (enemy.state == EnemyState::Patrol);
+        }
+
+        if (canShoot)
+        {
+            enemy.shootTimer -= dt;
+            if (enemy.shootTimer <= 0.0f)
+            {
+                Enemy_SetState(enemy, EnemyState::Attack);
+            }
         }
     }
 
@@ -620,27 +710,51 @@ void Enemy_Update(Enemy& enemy, float dt) {
         break;
 
     case EnemyState::Patrol:
-        enemy.vel.x = enemy.direction * enemy.moveSpeed;
-        PhysicsManager::Get().Integrate(enemy.pos, enemy.vel, dt);
+    {
+        if (enemy.returnToHomeOnly)
+        {
+            const float dxToHome = enemy.homeX - enemy.pos.x;
+            const float epsilon = 1.0f;
 
-        if (enemy.pos.x >= enemy.patrolMaxX) {
-            enemy.pos.x = enemy.patrolMaxX;
-            enemy.direction = -1;
-            Enemy_SetState(enemy, EnemyState::Idle);
+            if (fabsf(dxToHome) <= epsilon)
+            {
+                enemy.pos.x = enemy.homeX;
+                enemy.direction = enemy.homeDirection;
+                enemy.vel = { 0.0f, 0.0f };
+                Enemy_SetState(enemy, EnemyState::Idle);
+            }
+            else
+            {
+                enemy.direction = (dxToHome > 0.0f) ? 1 : -1;
+                enemy.vel.x = enemy.direction * enemy.moveSpeed;
+                Enemy_MoveWithinPatrolBounds(enemy, enemy.vel.x * dt);
+            }
         }
-        else if (enemy.pos.x <= enemy.patrolMinX) {
-            enemy.pos.x = enemy.patrolMinX;
-            enemy.direction = 1;
-            Enemy_SetState(enemy, EnemyState::Idle);
+        else
+        {
+            enemy.vel.x = enemy.direction * enemy.moveSpeed;
+
+            const bool hitBound = Enemy_MoveWithinPatrolBounds(enemy, enemy.vel.x * dt);
+
+            if (hitBound)
+            {
+                Enemy_SetState(enemy, EnemyState::Idle);
+            }
         }
         break;
+    }
 
     case EnemyState::Attack:
         enemy.stateTimer -= dt;
         enemy.vel = { 0.0f, 0.0f };
 
         if (enemy.stateTimer <= 0.0f)
-            Enemy_SetState(enemy, EnemyState::Patrol);
+        {
+            if (enemy.returnToHomeOnly)
+                Enemy_SetState(enemy, EnemyState::Idle);
+            else
+                Enemy_SetState(enemy, EnemyState::Patrol);
+        }
         break;
     }
 
@@ -679,7 +793,7 @@ void HardEnemy_Update(Enemy& enemy, float dt) {
         if (enemy.knockbackTimer > 0.0f)
         {
             enemy.knockbackTimer -= dt;
-            enemy.pos.x += enemy.knockbackVel.x * dt;
+            Enemy_MoveWithinPatrolBounds(enemy, enemy.knockbackVel.x * dt);
             if (enemy.knockbackTimer <= 0.0f)
             {
                 enemy.knockbackTimer = 0.0f;
@@ -702,25 +816,6 @@ void HardEnemy_Update(Enemy& enemy, float dt) {
         return;
     }
 
-    /*
-    enemy.vel.x = enemy.direction * enemy.moveSpeed;
-    PhysicsManager::Get().Integrate(enemy.pos, enemy.vel, dt);
-    enemy.pos.x += enemy.direction * enemy.moveSpeed * dt;
-
-    if (enemy.pos.x >= enemy.patrolMaxX) {
-        enemy.pos.x = enemy.patrolMaxX;
-        enemy.direction = -1;
-    }
-    else if (enemy.pos.x <= enemy.patrolMinX) {
-        enemy.pos.x = enemy.patrolMinX;
-        enemy.direction = 1;
-    }
-
-    if (enemy.spriteSheet->GetCurrentClip() != "patrol")
-        enemy.spriteSheet->Play("patrol");
-
-    enemy.spriteSheet->Update(dt);
-    */
     switch (enemy.state)
     {
     case EnemyState::Idle:
@@ -732,27 +827,51 @@ void HardEnemy_Update(Enemy& enemy, float dt) {
         break;
 
     case EnemyState::Patrol:
-        enemy.vel.x = enemy.direction * enemy.moveSpeed;
-        PhysicsManager::Get().Integrate(enemy.pos, enemy.vel, dt);
+    {
+        if (enemy.returnToHomeOnly)
+        {
+            const float dxToHome = enemy.homeX - enemy.pos.x;
+            const float epsilon = 1.0f;
 
-        if (enemy.pos.x >= enemy.patrolMaxX) {
-            enemy.pos.x = enemy.patrolMaxX;
-            enemy.direction = -1;
-            Enemy_SetState(enemy, EnemyState::Idle);
+            if (fabsf(dxToHome) <= epsilon)
+            {
+                enemy.pos.x = enemy.homeX;
+                enemy.direction = enemy.homeDirection;
+                enemy.vel = { 0.0f, 0.0f };
+                Enemy_SetState(enemy, EnemyState::Idle);
+            }
+            else
+            {
+                enemy.direction = (dxToHome > 0.0f) ? 1 : -1;
+                enemy.vel.x = enemy.direction * enemy.moveSpeed;
+                Enemy_MoveWithinPatrolBounds(enemy, enemy.vel.x * dt);
+            }
         }
-        else if (enemy.pos.x <= enemy.patrolMinX) {
-            enemy.pos.x = enemy.patrolMinX;
-            enemy.direction = 1;
-            Enemy_SetState(enemy, EnemyState::Idle);
+        else
+        {
+            enemy.vel.x = enemy.direction * enemy.moveSpeed;
+
+            const bool hitBound = Enemy_MoveWithinPatrolBounds(enemy, enemy.vel.x * dt);
+
+            if (hitBound)
+            {
+                Enemy_SetState(enemy, EnemyState::Idle);
+            }
         }
         break;
+    }
 
     case EnemyState::Attack:
         enemy.stateTimer -= dt;
         enemy.vel = { 0.0f, 0.0f };
 
         if (enemy.stateTimer <= 0.0f)
-            Enemy_SetState(enemy, EnemyState::Patrol);
+        {
+            if (enemy.returnToHomeOnly)
+                Enemy_SetState(enemy, EnemyState::Idle);
+            else
+                Enemy_SetState(enemy, EnemyState::Patrol);
+        }
         break;
     }
 
@@ -793,7 +912,7 @@ void BossEnemy_Update(Enemy& enemy, float dt) {
         if (enemy.knockbackTimer > 0.0f)
         {
             enemy.knockbackTimer -= dt;
-            enemy.pos.x += enemy.knockbackVel.x * dt;
+            Enemy_MoveWithinPatrolBounds(enemy, enemy.knockbackVel.x * dt);
             if (enemy.knockbackTimer <= 0.0f)
             {
                 enemy.knockbackTimer = 0.0f;
@@ -827,27 +946,51 @@ void BossEnemy_Update(Enemy& enemy, float dt) {
         break;
 
     case EnemyState::Patrol:
-        enemy.vel.x = enemy.direction * enemy.moveSpeed;
-        PhysicsManager::Get().Integrate(enemy.pos, enemy.vel, dt);
+    {
+        if (enemy.returnToHomeOnly)
+        {
+            const float dxToHome = enemy.homeX - enemy.pos.x;
+            const float epsilon = 1.0f;
 
-        if (enemy.pos.x >= enemy.patrolMaxX) {
-            enemy.pos.x = enemy.patrolMaxX;
-            enemy.direction = -1;
-            Enemy_SetState(enemy, EnemyState::Idle);
+            if (fabsf(dxToHome) <= epsilon)
+            {
+                enemy.pos.x = enemy.homeX;
+                enemy.direction = enemy.homeDirection;
+                enemy.vel = { 0.0f, 0.0f };
+                Enemy_SetState(enemy, EnemyState::Idle);
+            }
+            else
+            {
+                enemy.direction = (dxToHome > 0.0f) ? 1 : -1;
+                enemy.vel.x = enemy.direction * enemy.moveSpeed;
+                Enemy_MoveWithinPatrolBounds(enemy, enemy.vel.x * dt);
+            }
         }
-        else if (enemy.pos.x <= enemy.patrolMinX) {
-            enemy.pos.x = enemy.patrolMinX;
-            enemy.direction = 1;
-            Enemy_SetState(enemy, EnemyState::Idle);
+        else
+        {
+            enemy.vel.x = enemy.direction * enemy.moveSpeed;
+
+            const bool hitBound = Enemy_MoveWithinPatrolBounds(enemy, enemy.vel.x * dt);
+
+            if (hitBound)
+            {
+                Enemy_SetState(enemy, EnemyState::Idle);
+            }
         }
         break;
+    }
 
     case EnemyState::Attack:
         enemy.stateTimer -= dt;
         enemy.vel = { 0.0f, 0.0f };
 
         if (enemy.stateTimer <= 0.0f)
-            Enemy_SetState(enemy, EnemyState::Patrol);
+        {
+            if (enemy.returnToHomeOnly)
+                Enemy_SetState(enemy, EnemyState::Idle);
+            else
+                Enemy_SetState(enemy, EnemyState::Patrol);
+        }
         break;
     }
 

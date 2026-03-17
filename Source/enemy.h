@@ -55,7 +55,8 @@ struct Enemy
 
     float moveSpeed = 0.0f;
     int direction = 1;
-    int isAlive = 0;
+    int homeDirection = 1;
+    bool isAlive = false;
     bool justDied = false;
 
     float hitPoints = 0.0f;
@@ -65,6 +66,9 @@ struct Enemy
 
     float patrolMinX = 0.0f;
     float patrolMaxX = 0.0f;
+
+    bool returnToHomeOnly = false;
+    float homeX = 0.0f;
 
     // Shooting (for enemies that shoot)
     float shootCooldown = 0.0f;
@@ -95,10 +99,7 @@ void Enemy_Update(Enemy& enemy, float dt);
 void HardEnemy_Update(Enemy& enemy, float dt);
 void BossEnemy_Update(Enemy& enemy, float dt);
 
-// Draw, onHit, setGraphics, free
-void Enemy_Draw(const Enemy& enemy);
 void Enemy_OnHit(Enemy& enemy, float damage, float knockbackDir = 0.0f);
 void Enemy_OnDeath(Enemy& enemy);
-//void Enemy_Free(Enemy& enemy);
 void HardEnemy_OnCollision(Enemy& enemy, Player& player);
 void Enemy_ApplyKnockback(Enemy& enemy, float knockbackDir);
