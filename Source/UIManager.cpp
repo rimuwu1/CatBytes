@@ -19,7 +19,6 @@ Technology is prohibited.
 #include "GameStateManager.h"
 #include "GameSaveManager.h"
 #include "AudioManager.h"
-#include "Audio.h"
 
 // Layout constants - ALL positions in pixels (screen center = 0,0).
 // DrawSquare  : pixel center (x,y) + pixel width/height
@@ -85,8 +84,8 @@ void UIManager::ShowPause()
 {
     if (m_PauseActive) return;  // already open: ignore re-entry
     if (!s_PauseSoundsLoaded) {
-        s_PauseHoverSound = AudioManager::Get().LoadAudio(Audio::HOVER_BUTTON, false);
-        s_PauseClickSound = AudioManager::Get().LoadAudio(Audio::CLICK_BUTTON, false);
+        s_PauseHoverSound = AudioManager::Get().GetAudio("hover_button");
+        s_PauseClickSound = AudioManager::Get().GetAudio("click_button");
         s_PauseSoundsLoaded = true;
     }
     m_PauseActive = true;

@@ -17,16 +17,15 @@
 #include "GameStateManager.h"
 #include "Fonts.h"
 #include "AudioManager.h"
-#include "Audio.h"
 #include "GameSaveManager.h"
 #include "UIManager.h"
 #include "Camera.h"
 #include "TextureManager.h"
 #include "MeshManager.h"
-
 #include <fstream>
 #include <sstream>
 #include "rapidjson/document.h"
+#include "rapidjson/istreamwrapper.h"
 #include <string>
 
 static int frameCounter = 0;
@@ -90,6 +89,35 @@ enum MenuButton {
     BTN_EXIT
 };
 
+static void LoadAudioBankForMenu()
+{
+    auto tryLoadAudioFromFile = [](const char* path) -> bool
+        {
+            std::ifstream ifs(path);
+            if (!ifs.is_open())
+                return false;
+
+            rapidjson::IStreamWrapper isw(ifs);
+            rapidjson::Document doc;
+            doc.ParseStream(isw);
+
+            if (doc.HasParseError() || !doc.IsObject())
+                return false;
+
+            if (!doc.HasMember("audio") || !doc["audio"].IsObject())
+                return false;
+
+            AudioManager::Get().LoadFromJson(doc["audio"]);
+            return true;
+        };
+
+    // Try save first, but if save does not contain audio, fall back to config
+    if (!tryLoadAudioFromFile("Assets/Data/GameSave.json"))
+    {
+        tryLoadAudioFromFile("Assets/Data/GameConfig.json");
+    }
+}
+
 // ----------------------------------------------------------------------------
 // Helper: check if mouse is over a button at given Y (baseline)
 // ----------------------------------------------------------------------------
@@ -114,6 +142,7 @@ void MainMenu_Load()
 void MainMenu_Initialize()
 {
     frameCounter = 0;
+    LoadAudioBankForMenu();
 
     // Stop game music if still playing
     if (g_GameMusicPlaying)
@@ -123,11 +152,11 @@ void MainMenu_Initialize()
     }
 
     // Start main menu music
-    g_MainMenuMusic = AudioManager::Get().LoadAudio(Audio::MAIN_MENU_MUSIC, true);
+    g_MainMenuMusic = AudioManager::Get().GetAudio("main_menu_music");
     AudioManager::Get().PlayAudio(g_MainMenuMusic, true);
 
-    g_HoverSound = AudioManager::Get().LoadAudio(Audio::HOVER_BUTTON, false);
-    g_ClickSound = AudioManager::Get().LoadAudio(Audio::CLICK_BUTTON, false);
+    g_HoverSound = AudioManager::Get().GetAudio("hover_button");
+    g_ClickSound = AudioManager::Get().GetAudio("click_button");
     g_PreviousHoveredButton = 0;
 
     // Clear any leftover popup state from a previous visit to this screen

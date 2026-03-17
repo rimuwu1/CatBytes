@@ -14,12 +14,12 @@ Technology is prohibited.
 */
 /* End Header **************************************************************************/
 
-
 #pragma once
 
 #include <map>
 #include <string>
-#include "AEAudio.h" 
+#include "AEAudio.h"
+#include "rapidjson/document.h"
 
 class AudioManager
 {
@@ -29,19 +29,27 @@ public:
     AudioManager(const AudioManager&) = delete;
     AudioManager& operator=(const AudioManager&) = delete;
 
-    // Load/unload audio
-    AEAudio LoadAudio(const std::string& filepath, bool isMusic = false);  // not pointer
+    // Load/unload audio by filepath
+    AEAudio LoadAudio(const std::string& filepath, bool isMusic = false);
     void UnloadAudio(AEAudio audioHandle);
     void UnloadAll();
 
+    // Load audio from JSON
+    void LoadFromJson(const rapidjson::Value& audioConfig);
+
+    // Access by key
+    AEAudio GetAudio(const std::string& key) const;
+
     // Play/Stop
     void PlayAudio(AEAudio audioHandle, bool loop = false);
+    void PlayAudio(const std::string& key, bool loop = false);
     void StopAudio(AEAudio audioHandle);
 
 private:
     AudioManager();
     ~AudioManager();
 
-    std::map<std::string, AEAudio> audioMap;// store AEAudio by value
-    AEAudioGroup musicGroup;// group for looping music
+    std::map<std::string, AEAudio> audioMap;// filepath, AEAudio
+    std::map<std::string, AEAudio> audioKeyMap; // json key, AEAudio
+    AEAudioGroup musicGroup;
 };

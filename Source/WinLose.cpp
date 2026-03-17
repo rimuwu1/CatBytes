@@ -21,7 +21,6 @@ Technology is prohibited.
 #include "WinLose.h"
 #include "Fonts.h"
 #include "AudioManager.h"
-#include "Audio.h"
 
 const char* textScreenMessage = "You Lose";
 
@@ -31,8 +30,8 @@ static bool s_SoundPlayed = false;
 
 void WinLose_Load()
 {
-    s_WinSound = AudioManager::Get().LoadAudio(Audio::WIN_EFFECT, false);
-    s_LoseSound = AudioManager::Get().LoadAudio(Audio::LOSE_EFFECT, false);
+    s_WinSound = AudioManager::Get().GetAudio("win_effect");
+    s_LoseSound = AudioManager::Get().GetAudio("lose_effect");
 }
 
 void WinLose_Initialize()

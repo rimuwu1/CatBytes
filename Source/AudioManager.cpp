@@ -23,7 +23,7 @@ AudioManager& AudioManager::Get()
 
 AudioManager::AudioManager()
 {
-    musicGroup = AEAudioCreateGroup();  //create music group
+    musicGroup = AEAudioCreateGroup();
 }
 
 AudioManager::~AudioManager()
@@ -51,21 +51,55 @@ AEAudio AudioManager::LoadAudio(const std::string& filepath, bool isMusic)
     return handle;
 }
 
+void AudioManager::LoadFromJson(const rapidjson::Value& audioConfig)
+{
+    if (!audioConfig.IsObject())
+        return;
+
+    for (auto it = audioConfig.MemberBegin(); it != audioConfig.MemberEnd(); ++it)
+    {
+        const std::string key = it->name.GetString();
+
+        if (!it->value.IsString())
+            continue;
+
+        const std::string filepath = it->value.GetString();
+
+        // crude music detection by key name
+        const bool isMusic = (key.find("music") != std::string::npos);
+
+        AEAudio handle = LoadAudio(filepath, isMusic);
+        audioKeyMap[key] = handle;
+    }
+}
+
+AEAudio AudioManager::GetAudio(const std::string& key) const
+{
+    auto it = audioKeyMap.find(key);
+    if (it != audioKeyMap.end())
+        return it->second;
+
+    return AEAudio{};
+}
+
 void AudioManager::UnloadAudio(AEAudio audioHandle)
 {
     AEAudioUnloadAudio(audioHandle);
 
-    // remove from map
     for (auto it = audioMap.begin(); it != audioMap.end(); )
     {
-        if (it->second.fmod_sound  == audioHandle.fmod_sound)
-        {
-            it = audioMap.erase(it); //erase returns next iterator
-        }
+        if (it->second.fmod_sound == audioHandle.fmod_sound)
+            it = audioMap.erase(it);
         else
-        {
             ++it;
-        }
+    }
+
+    for (auto it = audioKeyMap.begin(); it != audioKeyMap.end(); )
+    {
+        if (it->second.fmod_sound == audioHandle.fmod_sound)
+            it = audioKeyMap.erase(it);
+        else
+            ++it;
     }
 }
 
@@ -75,7 +109,9 @@ void AudioManager::UnloadAll()
     {
         AEAudioUnloadAudio(it->second);
     }
+
     audioMap.clear();
+    audioKeyMap.clear();
 }
 
 void AudioManager::PlayAudio(AEAudio audioHandle, bool loop)
@@ -83,7 +119,12 @@ void AudioManager::PlayAudio(AEAudio audioHandle, bool loop)
     AEAudioPlay(audioHandle, musicGroup, 1.0f, 1.0f, loop ? -1 : 0);
 }
 
+void AudioManager::PlayAudio(const std::string& key, bool loop)
+{
+    PlayAudio(GetAudio(key), loop);
+}
+
 void AudioManager::StopAudio(AEAudio /*audioHandle*/)
 {
-    AEAudioStopGroup(musicGroup);// stops entire group
+    AEAudioStopGroup(musicGroup);
 }

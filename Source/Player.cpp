@@ -32,7 +32,6 @@ Technology is prohibited.
 #include "rapidjson/istreamwrapper.h"
 #include "SpriteSheet.h"
 #include "AudioManager.h"
-#include "Audio.h"
 #include "DebugManager.h"
 #include "PhysicsManager.h"
 #include "Platforms.h"
@@ -159,9 +158,9 @@ void Player_Init(Player& player, const rapidjson::Value& config)
 	//load player audios
 	if (!s_PlayerAudioLoaded)
 	{
-		s_GunAttackSound = AudioManager::Get().LoadAudio(Audio::PLAYER_GUN_ATTACK, false);
-		s_MeleeAttackSound = AudioManager::Get().LoadAudio(Audio::PLAYER_MELEE_ATTACK, false);
-		s_JumpSound = AudioManager::Get().LoadAudio(Audio::JUMP, false);
+		s_GunAttackSound = AudioManager::Get().GetAudio("player_gun_attack");
+		s_MeleeAttackSound = AudioManager::Get().GetAudio("player_melee_attack");
+		s_JumpSound = AudioManager::Get().GetAudio("jump");
 		s_PlayerAudioLoaded = true;
 	}
 

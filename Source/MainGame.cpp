@@ -42,7 +42,6 @@ Technology is prohibited.
 #include "rapidjson/filereadstream.h"
 #include "rapidjson/istreamwrapper.h"
 #include "AudioManager.h"
-#include "Audio.h"
 #include "UIManager.h"
 #include "DebugManager.h"
 #include "ParticleManager.h"
@@ -138,13 +137,14 @@ void MainGame_Initialize()
     EnvironmentManager::Get().Clear();
 
     ParseConfigFromDisk();
+    AudioManager::Get().LoadFromJson(GetConfigDoc()["audio"]);
     ApplyConfigToManagers();
     DebugManager::Get().Initialize();
     ParticleManager_Init();
     //Stop main menu music
     AudioManager::Get().StopAudio(g_MainMenuMusic);
     //Start game music (looped)
-    g_GameMusic = AudioManager::Get().LoadAudio(Audio::GAME_MUSIC, true);
+    g_GameMusic = AudioManager::Get().GetAudio("game_music");
     AudioManager::Get().PlayAudio(g_GameMusic, true); // loop = true
     g_GameMusicPlaying = true;
     std::cout << "MainGame:Initialize" << std::endl;

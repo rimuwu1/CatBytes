@@ -26,7 +26,6 @@ Technology is prohibited.
 #include "Player.h"
 #include "Buff.h"
 #include "AudioManager.h"
-#include "Audio.h"
 #include "Camera.h"
 #include "SpriteSheet.h"
 #include <fstream>
@@ -151,7 +150,7 @@ static bool Enemy_MoveWithinPatrolBounds(Enemy& enemy, float dx)
 void Enemy_Init(Enemy& enemy, const rapidjson::Value& config) {
     enemy.facesLeft = true;
 
-    s_EasyEnemyAttackSound = AudioManager::Get().LoadAudio(Audio::EASY_ENEMY_ATTACK);
+    s_EasyEnemyAttackSound = AudioManager::Get().GetAudio("easy_enemy_attack");
 
     // Position (required, but provide fallback)
     if (config.HasMember("x") && config["x"].IsFloat())
@@ -335,7 +334,7 @@ void Enemy_Init(Enemy& enemy, const rapidjson::Value& config) {
 
 void HardEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
 
-    s_HardEnemyAttackSound = AudioManager::Get().LoadAudio(Audio::HARD_ENEMY_ATTACK);
+    s_HardEnemyAttackSound = AudioManager::Get().GetAudio("hard_enemy_attack");
 
     // Position
     if (config.HasMember("x") && config["x"].IsFloat())

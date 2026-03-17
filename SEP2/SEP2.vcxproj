@@ -11,7 +11,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\Source\Audio.cpp" />
     <ClCompile Include="..\Source\AudioManager.cpp" />
     <ClCompile Include="..\Source\Background.cpp" />
     <ClCompile Include="..\Source\BossRoom.cpp" />
@@ -51,7 +50,6 @@
     <ClCompile Include="..\Source\WinLose.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\Source\Audio.h" />
     <ClInclude Include="..\Source\AudioManager.h" />
     <ClInclude Include="..\Source\Background.h" />
     <ClInclude Include="..\Source\BossRoom.h" />

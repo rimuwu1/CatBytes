@@ -1,12 +1,30 @@
 {
-    "metadata": {
-        "game_version": "1.0",
-        "save_date": "00-00-0000 00:00:00",
-        "current_level": 3,
-        "total_levels": 4,
-        "levels_completed": 0,
-        "player_lives": 3
-    },
+  "metadata": {
+    "game_version": "1.0",
+    "save_date": "00-00-0000 00:00:00",
+    "current_level": 3,
+    "total_levels": 4,
+    "levels_completed": 0,
+    "player_lives": 3
+  },
+    "audio": {
+  "main_menu_music": "Assets/Audio/MUSIC-STINGER_GEN-HDF-17880.wav",
+  "game_music": "Assets/Audio/DATA DANCE - NewAge MSCNEW2_13.wav",
+
+  "hover_button": "Assets/Audio/SCI-FI-DOOR_GEN-HDF-20601.wav",
+  "click_button": "Assets/Audio/SCI-FI-DOOR_GEN-HDF-20603.wav",
+
+  "jump": "Assets/Audio/SCI-FI-POWER-UP_GEN-HDF-20769.wav",
+  "player_gun_attack": "Assets/Audio/SciFiLazer CTE02_38.1.wav",
+  "player_melee_attack": "Assets/Audio/SCI-FI-DOOR_GEN-HDF-20610.wav",
+
+  "easy_enemy_attack": "Assets/Audio/SCI-FI-ELECTRICITY_GEN-HDF-20641.wav",
+  "hard_enemy_attack": "Assets/Audio/SCI-FI-DOOR_GEN-HDF-20602.wav",
+  "boss_attack": "Assets/Audio/HORROR_GEN-HDF-14515.wav",
+
+  "win_effect": "Assets/Audio/SCI-FI-DOOR_GEN-HDF-20604.wav",
+  "lose_effect": "Assets/Audio/SciFiLazer CTE02_38.2.wav"
+},
     "player": {
             "x": 0.0,
             "y": -300.0,
