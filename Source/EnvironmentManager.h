@@ -61,6 +61,7 @@ public:
 	const std::vector<PlatformButton>& GetLevel3Buttons() const { return m_level3Buttons; }
 	const std::vector<PlatformObstacle>& GetLevel3Obstacles() const { return m_level3Obstacles; }
     const std::vector<PlatformLaser>& GetLevel3Lasers() const { return m_level3Lasers; }
+    const std::vector<PlatformComputer>& GetLevel3Computers() const { return m_level3Computers; }
 
     const std::vector<Platform>& GetBossPlatforms()  const { return m_bossPlatforms; }
     
@@ -148,6 +149,7 @@ private:
 	std::vector<PlatformButton>   m_level3Buttons;
     std::vector<PlatformLaser>    m_level2Lasers;
     std::vector<PlatformLaser>    m_level3Lasers;
+    std::vector<PlatformComputer> m_level3Computers;
 
     bool m_checkpointSaved = false;       // replaces static local in MainGame
     bool m_saveRequested = false;         // internal save request flag
@@ -161,8 +163,21 @@ private:
     float m_buttonFrameDuration = 0.1f;
     std::vector<ButtonClipConfig> m_buttonClips;
 
+    // computer (also uses button clip config)
+    std::string m_computerFilePath = "Assets/Images/computer.png";
+    int m_computerRows = 2;
+    int m_computerCols = 4;
+    int m_computerTotalFrames = 8;
+    float m_computerFrameDuration = 0.1f;
+    std::vector<ButtonClipConfig> m_computerClips;
+
     // laser texture
     AEGfxTexture* m_laserTex = nullptr;
+
+    // wall texture
+    AEGfxTexture* m_wallLeftTex = nullptr;
+    AEGfxTexture* m_wallMidTex = nullptr;
+    AEGfxTexture* m_wallRightTex = nullptr;
 
     int m_previousSelection = -1;   // for level indicator
     int m_currentSection = 0;

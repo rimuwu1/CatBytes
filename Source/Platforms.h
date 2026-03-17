@@ -46,13 +46,22 @@ struct PlatformObstacle {
 struct PlatformLaser {
 
 	float x1, x2, y1, y2, w;
-	bool laserActive;
-	bool laserToggle;
+	mutable bool laserActive;
+	mutable bool laserToggle;
 
 };
 
 struct Checkpoint {
 	float x, y, w, h, r;
+};
+
+struct PlatformComputer {
+	float x, y, w, h;
+	std::vector<int> laserIndices;
+	mutable bool wasPressed = false;
+	mutable bool prevState = false;
+	mutable bool spriteInitialized = false;
+	std::unique_ptr<SpriteSheet> computerSprite;
 };
 
 

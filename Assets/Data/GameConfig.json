@@ -221,6 +221,19 @@
         { "name": "on", "start": 4, "end": 7, "duration": 0.1, "loop": true }
     ]
 },
+  "computer": {
+    "file": "Assets/Images/computer.png",
+    "rows": 2,
+    "columns": 4,
+    "total_frames": 8,
+    "frame_duration": 0.1,
+    "clips": [
+      { "name": "off", "start": 0, "end": 0, "duration": 0.1, "loop":  false },
+      { "name": "transition", "start": 0, "end": 3, "duration": 0.2, "loop":  false },
+      { "name": "on", "start": 4, "end": 7, "duration": 0.2, "loop":  true }
+    ]
+
+  },
     "checkpoints": [
         { "x": -350.0, "y": 1790.0, "width": 40.0, "height": 40.0 },
         { "x": -400.0, "y": 2990.0, "width": 40.0, "height": 40.0 },
@@ -1176,11 +1189,11 @@
             { "x":   75.0, "y": 6900.0, "width":  25.0, "height": 40.0, "active":  true },
             { "x":    0.0, "y": 7050.0, "width": 200.0, "height": 40.0, "active":  true },
             { "x":  500.0, "y": 6600.0, "width": 150.0, "height": 40.0, "active":  true },
-            { "x":  690.0, "y": 6750.0, "width": 150.0, "height": 40.0, "active":  true },
-            { "x":  500.0, "y": 6900.0, "width": 150.0, "height": 40.0, "active":  true },
-            { "x":  690.0, "y": 7050.0, "width": 150.0, "height": 40.0, "active":  true },
-            { "x":  500.0, "y": 7200.0, "width": 150.0, "height": 40.0, "active":  true },
-            { "x":  690.0, "y": 7350.0, "width": 150.0, "height": 40.0, "active":  true },
+            { "x":  690.0, "y": 6750.0, "width": 140.0, "height": 40.0, "active":  true },
+            { "x":  550.0, "y": 6900.0, "width": 130.0, "height": 40.0, "active":  true },
+            { "x":  700.0, "y": 7050.0, "width": 120.0, "height": 40.0, "active":  true },
+            { "x":  600.0, "y": 7200.0, "width": 110.0, "height": 40.0, "active":  true },
+            { "x":  710.0, "y": 7350.0, "width": 100.0, "height": 40.0, "active":  true },
             { "x": -200.0, "y": 7350.0, "width":1100.0, "height": 40.0, "active":  true },
             { "x":  200.0, "y": 7500.0, "width": 100.0, "height": 40.0, "active":  true },
             { "x":  400.0, "y": 7650.0, "width": 250.0, "height": 40.0, "active":  true },
@@ -1238,14 +1251,19 @@
             { "x": -125.0, "y": 8140.0, "width": 50.0, "height": 40.0, "rotation":  0.0}
         ],
         "lasers": [
-            { "x1": 350.0, "x2": 350.0, "y1": 5700.0, "y2": 6000.0, "width": 10.0, "active": true, "toggeable" : false},
-            { "x1": 400.0, "x2": 400.0, "y1": 5700.0, "y2": 6000.0, "width": 10.0, "active": true, "toggeable" : false},
-            { "x1": 500.0, "x2": 500.0, "y1": 5700.0, "y2": 6000.0, "width": 10.0, "active": true, "toggeable" : false},
-            { "x1": 550.0, "x2": 550.0, "y1": 5700.0, "y2": 6000.0, "width": 10.0, "active": true, "toggeable" : false}
+            { "x1": 350.0, "x2": 350.0, "y1": 5700.0, "y2": 6000.0, "width": 10.0, "active": true, "toggeable" : true },
+            { "x1": 400.0, "x2": 400.0, "y1": 5700.0, "y2": 6000.0, "width": 10.0, "active": true, "toggeable" : true },
+            { "x1": 500.0, "x2": 500.0, "y1": 5700.0, "y2": 6000.0, "width": 10.0, "active": true, "toggeable" : true },
+            { "x1": 550.0, "x2": 550.0, "y1": 5700.0, "y2": 6000.0, "width": 10.0, "active": true, "toggeable" : true },
+            { "x1": 200.0, "x2": 200.0, "y1": 8250.0, "y2": 8550.0, "width": 10.0, "active": true, "toggeable" : false },
+            { "x1": 500.0, "x2": 500.0, "y1": 8250.0, "y2": 8550.0, "width": 10.0, "active": true, "toggeable" : false }
         ],
         "walls": [
             { "x": -450.0, "y": 8250.0, "width": 20.0, "height": 1800.0 },
             { "x":  100.0, "y": 8250.0, "width": 20.0, "height": 1800.0 }
+        ],
+        "computers": [
+            { "x":    0.0, "y": 7115.0, "width": 100.0, "height": 100.0, "laserIndices": [0, 1, 2, 3] }
         ]
     },
     "level_4": {

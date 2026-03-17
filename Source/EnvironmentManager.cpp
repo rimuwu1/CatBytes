@@ -90,6 +90,43 @@ void EnvironmentManager::LoadFromConfig(const rapidjson::Document& doc)
         };
     }
 
+    // ---- Computer configuration (must be read before creating buttons) ----
+    if (doc.HasMember("computer") && doc["computer"].IsObject())
+    {
+        const auto& compCfg = doc["computer"];
+        m_computerFilePath = compCfg["file"].GetString();
+        m_computerRows = compCfg["rows"].GetInt();
+        m_computerCols = compCfg["columns"].GetInt();
+        m_computerTotalFrames = compCfg["total_frames"].GetInt();
+        m_computerFrameDuration = compCfg["frame_duration"].GetFloat();
+
+        m_computerClips.clear();
+        
+        for (const auto& clip : compCfg["clips"].GetArray())
+        {
+            ButtonClipConfig cfg;
+            cfg.name = clip["name"].GetString();
+            cfg.start = clip["start"].GetInt();
+            cfg.end = clip["end"].GetInt();
+            cfg.duration = clip["duration"].GetFloat();
+            cfg.loop = clip["loop"].GetBool();
+            m_computerClips.push_back(cfg);
+        }
+    }
+    else 
+    {
+        m_computerFilePath = "Assets/Images/computer.png";
+        m_computerRows = 2;
+        m_computerCols = 4;
+        m_computerTotalFrames = 8;
+        m_computerFrameDuration = 0.1f;
+        m_computerClips = {
+            { "off", 0, 0, 0.1f, false },
+            { "transition", 0, 3, 0.5f, false },
+            { "on", 4, 7, 0.1f, true }
+        };
+    }
+
     // ---- Platforms per level ----
     const struct { const char* key; std::vector<Platform>* target; } platformMaps[] = {
         { "level_1", &m_level1Platforms },
@@ -328,6 +365,42 @@ void EnvironmentManager::LoadFromConfig(const rapidjson::Document& doc)
         }
     }
 
+    // ---- Computers (level_3 only) ----
+    if (doc.HasMember("level_3") && doc["level_3"].HasMember("computers")) {
+        m_level3Computers.clear();
+        for (const auto& c : doc["level_3"]["computers"].GetArray()) {
+            PlatformComputer comp{};
+            comp.x = c["x"].GetFloat();
+            comp.y = c["y"].GetFloat();
+            comp.w = c["width"].GetFloat();
+            comp.h = c["height"].GetFloat();
+
+            comp.computerSprite = std::make_unique<SpriteSheet>(
+                m_computerFilePath.c_str(),
+                m_computerRows,
+                m_computerCols,
+                m_computerTotalFrames,
+                m_computerFrameDuration
+            );
+
+            for (const auto& clipCfg : m_computerClips)
+            {
+                comp.computerSprite->AddClip(clipCfg.name.c_str(), clipCfg.start,
+                    clipCfg.end, clipCfg.duration, clipCfg.loop);
+            }
+            comp.computerSprite->Play("off");
+
+            if (c.HasMember("laserIndices") && c["laserIndices"].IsArray())
+            {
+                for (const auto& index : c["laserIndices"].GetArray())
+                {
+                    comp.laserIndices.push_back(index.GetInt());
+                }
+            }
+            m_level3Computers.push_back(std::move(comp));
+        }
+    }
+
     // ---- Checkpoints ----
     if (doc.HasMember("checkpoints")) {
         m_checkpoints.clear();
@@ -368,6 +441,11 @@ void EnvironmentManager::Initialize()
 
     // load laser texture
     m_laserTex = TextureManager::Get().LoadTexture("Assets/Images/laserObstacle.png");
+
+    // load wall texture
+    m_wallLeftTex = TextureManager::Get().LoadTexture("Assets/Images/wall_left.png");
+    m_wallMidTex = TextureManager::Get().LoadTexture("Assets/Images/wall_mid.png");
+    m_wallRightTex = TextureManager::Get().LoadTexture("Assets/Images/wall_right.png");
 
     // Level indicator initialise (free function)
     LevelIndicator_Initialize();
@@ -437,8 +515,33 @@ void EnvironmentManager::RebuildStaticCache()
     collectPlatforms(m_level2Platforms);
     collectPlatforms(m_level3Platforms);
     collectPlatforms(m_bossPlatforms);
-    collectPlatforms(m_wallPlatforms);
-    collectPlatforms(m_level3WallPlatforms);
+
+    // collect walls
+    auto collectWalls = [&](const std::vector<Platform>& walls) {
+        for (const auto& w : walls)
+        {
+            if (!w.active) continue;
+
+            float leftX = w.x - w.w * 0.5f + capWidth * 0.5f;
+            float rightX = w.x + w.w * 0.5f - capWidth * 0.5f;
+
+            addSprite(m_wallLeftTex, 1.0f, 1.0f, leftX, w.y, capWidth, w.h, 0.0f, 0.0f);
+            addSprite(m_wallRightTex, 1.0f, 1.0f, rightX, w.y, capWidth, w.h, 0.0f, 0.0f);
+
+            float midStartX = leftX + capWidth * 0.5f;
+            float midEndX = rightX - capWidth * 0.5f;
+            float midWidth = midEndX - midStartX;
+
+            if (midWidth > 0.0f)
+            {
+                float midCenterX = (midStartX + midEndX) * 0.5f;
+                addSprite(m_wallMidTex, 1.0f, 1.0f, midCenterX, w.y, midWidth, w.h, 0.0f, 0.0f);
+            }
+        }
+    };
+
+    collectWalls(m_wallPlatforms);
+    collectWalls(m_level3WallPlatforms);
 
     // Collect obstacles (no culling here)
     auto collectObstacles = [&](const std::vector<PlatformObstacle>& obstacles) {
@@ -746,6 +849,69 @@ void EnvironmentManager::DrawWorld(float camX, float camY, PlayerWeapon weapon, 
     collectButtons(m_level2Buttons, m_level2Platforms);
     collectButtons(m_level3Buttons, m_level3Platforms);
 
+    // --------------------------------------------------------------------
+    // 3. Computers
+    // --------------------------------------------------------------------
+    auto collectComputers = [&](std::vector<PlatformComputer>& computers, const std::vector<PlatformLaser>& lasers)
+    {
+        for (auto& comp : computers)
+        {
+            if (!comp.computerSprite) continue;
+
+            bool isActive = false;
+
+            if (!comp.laserIndices.empty())
+            {
+                int index = comp.laserIndices[0];
+
+                if (index >= 0 && index < (int)lasers.size())
+                {
+                    isActive = !lasers[index].laserActive;
+                }
+            }
+
+            // initialize first draw
+            if (!comp.spriteInitialized)
+            {
+                comp.computerSprite->Play(isActive ? "on" : "off");
+                comp.prevState = isActive;
+                comp.spriteInitialized = true;
+            }
+
+            // state change
+            if (isActive != comp.prevState)
+            {
+                if (isActive)
+                {
+                    comp.computerSprite->Play("transition");
+                }
+                else
+                {
+                    comp.computerSprite->Play("off");
+                }
+                comp.prevState = isActive;
+            }
+
+            // advance animation
+            comp.computerSprite->Update(dt);
+
+            if (comp.computerSprite->GetCurrentClip() == "transition" && !comp.computerSprite->IsPlaying())
+            {
+                comp.computerSprite->Play("on");
+            }
+
+            // add to batch
+            addSprite(comp.computerSprite->GetTexture(),
+                      comp.computerSprite->GetSpriteUVWidth(),
+                      comp.computerSprite->GetSpriteUVHeight(),
+                      comp.x, comp.y, comp.w, comp.h,
+                      comp.computerSprite->GetUVOffsetX(),
+                      comp.computerSprite->GetUVOffsetY());
+        }
+    };
+
+    collectComputers(m_level3Computers, m_level3Lasers);
+
     // Draw batched buttons
     flushBatch();
 
@@ -779,8 +945,39 @@ void EnvironmentManager::DrawWorld(float camX, float camY, PlayerWeapon weapon, 
     drawButtonPrompts(m_level2Buttons);
     drawButtonPrompts(m_level3Buttons);
 
+    // Draw immediate "Press E" prompts for computers when player overlaps
+    auto drawComputerPrompts = [&](const std::vector<PlatformComputer>& computers) {
+        for (const auto& comp : computers) {
+
+            float compLeft = comp.x - comp.w * 0.5f;
+            float compRight = comp.x + comp.w * 0.5f;
+            float compTop = comp.y + comp.h * 0.5f;
+            float compBot = comp.y - comp.h * 0.5f;
+
+            float playerLeft = player.pos.x - player.width * 0.5f;
+            float playerRight = player.pos.x + player.width * 0.5f;
+            float playerTop = player.pos.y + player.height * 0.5f;
+            float playerBot = player.pos.y - player.height * 0.5f;
+
+            bool overlapX = (playerRight >= compLeft) && (playerLeft <= compRight);
+            bool overlapY = (playerTop >= compBot) && (playerBot <= compTop);
+
+            if (overlapX && overlapY) {
+                float windowWidth = (float)AEGfxGetWindowWidth();
+                float windowHeight = (float)AEGfxGetWindowHeight();
+                float screenX = (comp.x - camX) / (windowWidth * 0.5f);
+                float screenY = (comp.y + comp.h + 20.0f - camY) / (windowHeight * 0.5f);
+                if (screenX > 0.5f)  screenX = 0.5f;
+                if (screenX < -0.9f) screenX = -0.9f;
+                AEGfxPrint(g_FontSmall, "Press E to toggle lasers", screenX, screenY, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f);
+            }
+        }
+    };
+
+    drawComputerPrompts(m_level3Computers);
+
     // --------------------------------------------------------------------
-    // 3. Lasers
+    // 4. Lasers
     // --------------------------------------------------------------------
     auto collectLasers = [&](const std::vector<PlatformLaser>& lasers) {
         for (const auto& ls : lasers) {
@@ -799,7 +996,7 @@ void EnvironmentManager::DrawWorld(float camX, float camY, PlayerWeapon weapon, 
     collectLasers(m_level3Lasers);
 
     // --------------------------------------------------------------------
-    // 4. Ground (single colored square)
+    // 5. Ground (single colored square)
     // --------------------------------------------------------------------
     mm.DrawSquare(0.0f, -350.0f, 1600.0f, 50.0f, 0, 0, 0);
 }
@@ -938,6 +1135,7 @@ void EnvironmentManager::Clear()
     m_level3Buttons.clear();
     m_level2Lasers.clear();
     m_level3Lasers.clear();
+    m_level3Computers.clear();
 
     // Also clear static cache and mark dirty to avoid stale geometry after a restart/load
     m_staticCache.clear();

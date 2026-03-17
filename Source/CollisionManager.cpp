@@ -205,6 +205,38 @@ namespace CollisionManager
     }
 
     // ------------------------------------------------------------------------
+    // Computers
+    void HandleComputers(Player& player, const std::vector<PlatformComputer>& computers, const std::vector<PlatformLaser>& lasers)
+    {
+        for (auto& comp : computers)
+        {
+            float compLeft = comp.x - comp.w * 0.5f;
+            float compRight = comp.x + comp.w * 0.5f;
+            float compTop = comp.y + comp.h * 0.5f;
+            float compBot = comp.y - comp.h * 0.5f;
+
+            float playerLeft = player.pos.x - player.width * 0.5f;
+            float playerRight = player.pos.x + player.width * 0.5f;
+            float playerTop = player.pos.y + player.height * 0.5f;
+            float playerBot = player.pos.y - player.height * 0.5f;
+
+            bool overlapX = (playerRight >= compLeft) && (playerLeft <= compRight);
+            bool overlapY = (playerTop >= compBot) && (playerBot <= compTop);
+
+            if (overlapX && overlapY && AEInputCheckTriggered('E'))
+            {
+                for (int index : comp.laserIndices)
+                {
+                    if (index >= 0 && index < (int)lasers.size())
+                    {
+                        lasers[index].laserActive = !lasers[index].laserActive;
+                    }
+                }
+            }
+        }
+    }
+
+    // ------------------------------------------------------------------------
     // Player bullets vs Enemies
     void HandlePlayerBulletEnemyCollisions(Player& player, std::vector<Enemy>& enemies)
     {
@@ -484,6 +516,8 @@ namespace CollisionManager
 
         HandlePlayerLaserCollisions(player, env.GetLevel2Lasers());
         HandlePlayerLaserCollisions(player, env.GetLevel3Lasers());
+
+        HandleComputers(player, env.GetLevel3Computers(), env.GetLevel3Lasers());
 
         return results;
     }

@@ -47,6 +47,9 @@ namespace CollisionManager
     // Button collisions (toggle platforms)
     void HandleButtons(Player& player, const std::vector<PlatformButton>& buttons, const std::vector<Platform>& platforms);
 
+    // Computer collisions (toggle lasers)
+    void HandleComputers(Player& player, const std::vector<PlatformComputer>& computers, const std::vector<PlatformLaser>& lasers);
+
     // Player bullet collisions with enemies
     //void HandlePlayerBulletEnemyCollisions(Player& player, std::vector<Enemy>& enemies);
 
