@@ -62,6 +62,7 @@ public:
 	const std::vector<PlatformObstacle>& GetLevel3Obstacles() const { return m_level3Obstacles; }
     const std::vector<PlatformLaser>& GetLevel3Lasers() const { return m_level3Lasers; }
     const std::vector<PlatformComputer>& GetLevel3Computers() const { return m_level3Computers; }
+    const std::vector<Platform>& GetLevel3ToggleWalls() const { return m_level3ToggleWalls; }
 
     const std::vector<Platform>& GetBossPlatforms()  const { return m_bossPlatforms; }
     
@@ -140,6 +141,7 @@ private:
     std::vector<Platform>         m_bossPlatforms;
     std::vector<Platform>         m_wallPlatforms;
     std::vector<Platform>         m_level3WallPlatforms;
+    std::vector<Platform>         m_level3ToggleWalls;
     std::vector<PlatformObstacle> m_level1Obstacles;
     std::vector<PlatformObstacle> m_level2Obstacles;
     std::vector<PlatformObstacle> m_level3Obstacles;

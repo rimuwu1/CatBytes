@@ -29,12 +29,12 @@ struct Platform {
 
 struct PlatformButton {
 	float x, y, w, h;
-	int platformIndex;					// remove after adding asset
-	std::vector<int> platformIndices;	// use vector to allow multiple platforms toggle
-	mutable bool wasPressed = false;			// allow modification even if it's const
-	mutable bool prevState = false;				// track switch's previous state (active/inactive)
-	mutable bool spriteInitialized = false;		// track sprite initialization
-	std::unique_ptr<SpriteSheet> buttonSprite;	// sprite for the button
+	std::vector<int> platformIndices;						// use vector to allow multiple platforms toggle
+	mutable bool wasPressed = false;						// allow modification even if it's const
+	mutable bool prevState = false;							// track switch's previous state (active/inactive)
+	mutable bool spriteInitialized = false;					// track sprite initialization
+	std::unique_ptr<SpriteSheet> buttonSprite;				// sprite for the button
+	std::string btnPrompt = "Press E to toggle platforms";	// default prompt
 };
 
 struct PlatformObstacle {

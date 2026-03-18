@@ -503,11 +503,13 @@ namespace CollisionManager
 
         HandleWalls(player, env.GetWallPlatforms()); //small number, can just use non-spatial version
         HandleWalls(player, env.GetLevel3WallPlatforms());
+        HandleWalls(player, env.GetLevel3ToggleWalls());
 
         // Buttons - these modify env's buttons and platforms
         HandleButtons(player, env.GetLevel1Buttons(), env.GetLevel1Platforms());
         HandleButtons(player, env.GetLevel2Buttons(), env.GetLevel2Platforms()); //small no. too
         HandleButtons(player, env.GetLevel3Buttons(), env.GetLevel3Platforms());
+        HandleButtons(player, env.GetLevel3Buttons(), env.GetLevel3ToggleWalls());
 
         HandlePlayerEnemyCollisionsSpatial(player, grid);
         HandleEnemyBulletPlayerCollisionsSpatial(player, grid);

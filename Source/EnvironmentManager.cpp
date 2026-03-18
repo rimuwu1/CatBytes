@@ -163,6 +163,7 @@ void EnvironmentManager::LoadFromConfig(const rapidjson::Document& doc)
             btn.w = b["width"].GetFloat();
             btn.h = b["height"].GetFloat();
             btn.wasPressed = false;
+            btn.btnPrompt = b.HasMember("prompt") ? b["prompt"].GetString() : "Press E to toggle platforms";
 
             // --- Create per-button sprite from stored config ---
             btn.buttonSprite = std::make_unique<SpriteSheet>(
@@ -219,6 +220,8 @@ void EnvironmentManager::LoadFromConfig(const rapidjson::Document& doc)
             btn.w = b["width"].GetFloat();
             btn.h = b["height"].GetFloat();
             btn.wasPressed = false;
+            btn.btnPrompt = b.HasMember("prompt") ? b["prompt"].GetString() : "Press E to toggle platforms";
+
             // --- Create per?button sprite from stored config ---
             btn.buttonSprite = std::make_unique<SpriteSheet>(
                 m_buttonFilePath.c_str(),
@@ -304,6 +307,8 @@ void EnvironmentManager::LoadFromConfig(const rapidjson::Document& doc)
             btn.w = b["width"].GetFloat();
             btn.h = b["height"].GetFloat();
             btn.wasPressed = false;
+            btn.btnPrompt = b.HasMember("prompt") ? b["prompt"].GetString() : "Press E to toggle platforms";
+
             // --- Create per?button sprite from stored config ---
             btn.buttonSprite = std::make_unique<SpriteSheet>(
                 m_buttonFilePath.c_str(),
@@ -398,6 +403,21 @@ void EnvironmentManager::LoadFromConfig(const rapidjson::Document& doc)
                 }
             }
             m_level3Computers.push_back(std::move(comp));
+        }
+    }
+
+    // ---- Toggleable Walls (level_3 only) ----
+    if (doc.HasMember("level_3") && doc["level_3"].HasMember("toggleable_walls")) {
+        m_level3ToggleWalls.clear();
+        for (const auto& tw : doc["level_3"]["toggleable_walls"].GetArray()) {
+            Platform toggleWall{};
+            toggleWall.x = tw["x"].GetFloat();
+            toggleWall.y = tw["y"].GetFloat();
+            toggleWall.w = tw["width"].GetFloat();
+            toggleWall.h = tw["height"].GetFloat();
+            toggleWall.active = tw.HasMember("active") ? tw["active"].GetBool() : true;
+            
+            m_level3ToggleWalls.push_back(toggleWall);
         }
     }
 
@@ -542,6 +562,7 @@ void EnvironmentManager::RebuildStaticCache()
 
     collectWalls(m_wallPlatforms);
     collectWalls(m_level3WallPlatforms);
+    collectWalls(m_level3ToggleWalls);
 
     // Collect obstacles (no culling here)
     auto collectObstacles = [&](const std::vector<PlatformObstacle>& obstacles) {
@@ -936,7 +957,7 @@ void EnvironmentManager::DrawWorld(float camX, float camY, PlayerWeapon weapon, 
                 float screenY = (btn.y + btn.h + 20.0f - camY) / (windowHeight * 0.5f);
                 if (screenX > 0.5f)  screenX = 0.5f;
                 if (screenX < -0.9f) screenX = -0.9f;
-                AEGfxPrint(g_FontSmall, "Press E to toggle platforms", screenX, screenY, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f);
+                AEGfxPrint(g_FontSmall, btn.btnPrompt.c_str(), screenX, screenY, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f);
             }
         }
     };
@@ -1124,19 +1145,26 @@ void EnvironmentManager::Clear()
     m_level2Platforms.clear();
     m_level3Platforms.clear();
     m_bossPlatforms.clear();
+
     m_wallPlatforms.clear();
     m_level3WallPlatforms.clear();
+    m_level3ToggleWalls.clear();
+
     m_level1Obstacles.clear();
     m_level2Obstacles.clear();
     m_level3Obstacles.clear();
+
     m_checkpoints.clear();
+
     m_level1Buttons.clear();
     m_level2Buttons.clear();
     m_level3Buttons.clear();
+
     m_level2Lasers.clear();
     m_level3Lasers.clear();
-    m_level3Computers.clear();
 
+    m_level3Computers.clear();
+   
     // Also clear static cache and mark dirty to avoid stale geometry after a restart/load
     m_staticCache.clear();
     m_staticBatchDirty = true;
