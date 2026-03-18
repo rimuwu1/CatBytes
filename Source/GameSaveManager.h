@@ -64,6 +64,8 @@ public:
         const Player& player,
         const std::vector<Enemy>& enemies,
         const std::vector<Platform>& platforms,
+        float levelMinY = -FLT_MAX,
+        float levelMaxY = FLT_MAX,
         const std::string& filepath = "Assets/Data/GameSave.json");
 
     // ----- Reset save file (copy config over save) -----------------------
@@ -83,7 +85,10 @@ private:
 
     // Helper to extract minimal data for threading
     static PlayerSaveData ExtractPlayerData(const Player& p);
-    static std::vector<EnemySaveData> ExtractEnemyData(const std::vector<Enemy>& enemies);
+    static std::vector<EnemySaveData> ExtractEnemyData(
+        const std::vector<Enemy>& enemies,
+        float levelMinY = -FLT_MAX,
+        float levelMaxY = FLT_MAX);
 
     // ----- Static members -------------------------------------------------
     static std::atomic<bool>  s_SaveInProgress;

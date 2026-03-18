@@ -30,6 +30,7 @@ struct Platform {
 struct PlatformButton {
 	float x, y, w, h;
 	std::vector<int> platformIndices;						// use vector to allow multiple platforms toggle
+	std::vector<int> wallIndices;							// indices into toggle walls vector
 	mutable bool wasPressed = false;						// allow modification even if it's const
 	mutable bool prevState = false;							// track switch's previous state (active/inactive)
 	mutable bool spriteInitialized = false;					// track sprite initialization

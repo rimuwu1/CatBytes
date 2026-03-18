@@ -17,6 +17,7 @@ Technology is prohibited.
 #pragma once
 #include "Player.h"
 #include "enemy.h"
+#include "EnemyBullet.h"
 #include <vector>
 
 // ----------------------------------------------------------------------------
@@ -37,6 +38,12 @@ void PlayerMelee_Update(Player& player, Enemy& enemy);
 // Calls PlayerMelee_Update for each enemy in the list
 // ----------------------------------------------------------------------------
 void PlayerMelee_CheckCollisions(Player& player, std::vector<Enemy*>& enemies);
+
+// ----------------------------------------------------------------------------
+// Deflects enemy bullets when player is attacking with melee
+// Uses the same slash hitbox as melee collision
+// ----------------------------------------------------------------------------
+void PlayerMelee_DeflectBullets(Player& player, std::vector<EnemyBullet*>& bullets);
 
 
 

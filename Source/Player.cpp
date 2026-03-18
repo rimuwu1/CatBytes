@@ -694,6 +694,7 @@ void Player_ApplyDamage(Player& player, float damage)
 {
 	if (player.hp <= 0.0f)
 		return;
+	if (player.isHurt) return; // i-frames active, ignore damage
 	if (!DebugManager::Get().IsGodModeActive()) {
 		player.hp -= damage;
 

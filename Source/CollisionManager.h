@@ -44,11 +44,28 @@ namespace CollisionManager
     // Laser collisions
     void HandlePlayerLaserCollisions(Player& player, const std::vector<PlatformLaser>& lasers);
 
-    // Button collisions (toggle platforms)
-    void HandleButtons(Player& player, const std::vector<PlatformButton>& buttons, const std::vector<Platform>& platforms);
+    // Toggle type for button/computer interactions
+    enum class ToggleType {
+        None,
+        Platform,   // button toggles platforms
+        Wall,       // button toggles toggle walls
+        Laser       // computer toggles lasers
+    };
 
-    // Computer collisions (toggle lasers)
-    void HandleComputers(Player& player, const std::vector<PlatformComputer>& computers, const std::vector<PlatformLaser>& lasers);
+    // Button toggle result - returns position and type of toggled element
+    struct ButtonToggleResult {
+        bool triggered = false;
+        float buttonX  = 0.0f;  // button/computer X position for matching
+        float buttonY  = 0.0f;  // button/computer Y position for matching
+        float targetY  = 0.0f;  // camera pan target Y
+        ToggleType type = ToggleType::None;
+    };
+
+    // Button collisions (toggle platforms or walls)
+    ButtonToggleResult HandleButtons(Player& player, const std::vector<PlatformButton>& buttons, const std::vector<Platform>& platforms, const std::vector<Platform>& toggleWalls);
+
+    // Computer collisions (toggle lasers) - returns result for camera pan
+    ButtonToggleResult HandleComputers(Player& player, const std::vector<PlatformComputer>& computers, const std::vector<PlatformLaser>& lasers);
 
     // Player bullet collisions with enemies
     //void HandlePlayerBulletEnemyCollisions(Player& player, std::vector<Enemy>& enemies);
@@ -66,10 +83,12 @@ namespace CollisionManager
 
     //----------wrapper for all collisions------------
     struct CollisionResults {
-        bool obstacleHit;           // true if player hit an obstacle
-        bool checkpointHit;         // true if player touched (overlapped) a checkpoint
-        bool checkpointInRange;     // true if player is near a checkpoint (2x range)
-        bool pogoHit;               // true if pogo performed
+        bool obstacleHit      = false;
+        bool pogoHit          = false;
+        bool checkpointInRange = false;
+        bool checkpointHit    = false;
+        ButtonToggleResult pendingToggle;   // for buttons (platforms/walls)
+        ButtonToggleResult pendingComputer; // for computers (lasers)
     };
 
 

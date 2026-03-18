@@ -170,7 +170,7 @@ namespace CollisionManager
 
     // ------------------------------------------------------------------------
     // Buttons
-    void HandleButtons(Player& player, const std::vector<PlatformButton>& buttons, const std::vector<Platform>& platforms)
+    ButtonToggleResult HandleButtons(Player& player, const std::vector<PlatformButton>& buttons, const std::vector<Platform>& platforms, const std::vector<Platform>& toggleWalls)
     {
         for (auto& btn : buttons)
         {
@@ -190,23 +190,33 @@ namespace CollisionManager
 
             if (inRange && AEInputCheckTriggered('E'))
             {
-                for (int index : btn.platformIndices) {
+                // Determine toggle type and target position based on what this button controls
+                ToggleType type = ToggleType::None;
+                float targetY = btn.y; // default to button Y
 
-                    if (index >= 0 && index < (int)platforms.size()) {
-
-                        platforms[index].active = !platforms[index].active;
-                        EnvironmentManager::Get().MarkStaticDirty();
-
-                    }
-
+                if (!btn.wallIndices.empty()) {
+                    type = ToggleType::Wall;
+                    // Use first wall's Y position as camera target
+                    int idx = btn.wallIndices[0];
+                    if (idx >= 0 && idx < (int)toggleWalls.size())
+                        targetY = toggleWalls[idx].y;
+                } else if (!btn.platformIndices.empty()) {
+                    type = ToggleType::Platform;
+                    // Use first platform's Y position as camera target
+                    int idx = btn.platformIndices[0];
+                    if (idx >= 0 && idx < (int)platforms.size())
+                        targetY = platforms[idx].y;
                 }
+
+                return { true, btn.x, btn.y, targetY, type };
             }
         }
+        return { false, 0.0f, 0.0f, 0.0f, ToggleType::None };
     }
 
     // ------------------------------------------------------------------------
     // Computers
-    void HandleComputers(Player& player, const std::vector<PlatformComputer>& computers, const std::vector<PlatformLaser>& lasers)
+    ButtonToggleResult HandleComputers(Player& player, const std::vector<PlatformComputer>& computers, const std::vector<PlatformLaser>& lasers)
     {
         for (auto& comp : computers)
         {
@@ -225,15 +235,17 @@ namespace CollisionManager
 
             if (overlapX && overlapY && AEInputCheckTriggered('E'))
             {
-                for (int index : comp.laserIndices)
-                {
-                    if (index >= 0 && index < (int)lasers.size())
-                    {
-                        lasers[index].laserActive = !lasers[index].laserActive;
-                    }
+                // Find first laser's Y position for camera target
+                float targetY = comp.y;
+                if (!comp.laserIndices.empty()) {
+                    int idx = comp.laserIndices[0];
+                    if (idx >= 0 && idx < (int)lasers.size())
+                        targetY = (lasers[idx].y1 + lasers[idx].y2) * 0.5f;
                 }
+                return { true, comp.x, comp.y, targetY, ToggleType::Laser };
             }
         }
+        return { false, 0.0f, 0.0f, 0.0f, ToggleType::None };
     }
 
     // ------------------------------------------------------------------------
@@ -505,21 +517,42 @@ namespace CollisionManager
         HandleWalls(player, env.GetLevel3WallPlatforms());
         HandleWalls(player, env.GetLevel3ToggleWalls());
 
-        // Buttons - these modify env's buttons and platforms
-        HandleButtons(player, env.GetLevel1Buttons(), env.GetLevel1Platforms());
-        HandleButtons(player, env.GetLevel2Buttons(), env.GetLevel2Platforms()); //small no. too
-        HandleButtons(player, env.GetLevel3Buttons(), env.GetLevel3Platforms());
-        HandleButtons(player, env.GetLevel3Buttons(), env.GetLevel3ToggleWalls());
+        // Empty vector for levels without toggle walls
+        static const std::vector<Platform> emptyWalls;
+
+        // Buttons - check for triggered button and return first one
+        if (!results.pendingToggle.triggered) {
+            auto r = HandleButtons(player, env.GetLevel1Buttons(), env.GetLevel1Platforms(), emptyWalls);
+            if (r.triggered) results.pendingToggle = r;
+        }
+        if (!results.pendingToggle.triggered) {
+            auto r = HandleButtons(player, env.GetLevel2Buttons(), env.GetLevel2Platforms(), emptyWalls);
+            if (r.triggered) results.pendingToggle = r;
+        }
+        if (!results.pendingToggle.triggered) {
+            auto r = HandleButtons(player, env.GetLevel3Buttons(), env.GetLevel3Platforms(), env.GetLevel3ToggleWalls());
+            if (r.triggered) results.pendingToggle = r;
+        }
 
         HandlePlayerEnemyCollisionsSpatial(player, grid);
         HandleEnemyBulletPlayerCollisionsSpatial(player, grid);
+        
+        // Bullet deflection — player melee hits active enemy bullets
+        std::vector<EnemyBullet*> nearbyBullets;
+        grid.GetNearbyBullets(player.pos.y, player.height, nearbyBullets);
+        PlayerMelee_DeflectBullets(player, nearbyBullets);
+        
         HandlePlayerBulletEnemyCollisions(player, enemies); // small no. of bullets
         HandlePlayerMeleeEnemyCollisions(player, enemies); //small no. of bullets
 
         HandlePlayerLaserCollisions(player, env.GetLevel2Lasers());
         HandlePlayerLaserCollisions(player, env.GetLevel3Lasers());
 
-        HandleComputers(player, env.GetLevel3Computers(), env.GetLevel3Lasers());
+        // Computers - check for triggered computer and return first one
+        if (!results.pendingComputer.triggered) {
+            auto r = HandleComputers(player, env.GetLevel3Computers(), env.GetLevel3Lasers());
+            if (r.triggered) results.pendingComputer = r;
+        }
 
         return results;
     }

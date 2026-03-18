@@ -111,6 +111,8 @@ void GameSaveManager::SaveGameAsync(
     const Player& player,
     const std::vector<Enemy>& enemies,
     const std::vector<Platform>& platforms,
+    float levelMinY,
+    float levelMaxY,
     const std::string& filepath)
 {
     if (s_SaveInProgress.load()) return;
@@ -118,7 +120,7 @@ void GameSaveManager::SaveGameAsync(
 
     // Extract only trivially copyable data
     PlayerSaveData              playerData = ExtractPlayerData(player);
-    std::vector<EnemySaveData>  enemyData = ExtractEnemyData(enemies);
+    std::vector<EnemySaveData>  enemyData = ExtractEnemyData(enemies, levelMinY, levelMaxY);
     std::vector<Platform>       platCopy = platforms;
 
     std::thread([=]() mutable {
@@ -200,8 +202,15 @@ void GameSaveManager::SaveGame_Internal(
         playerObj["x"] = player.x;
         playerObj["y"] = player.y;
         playerObj["hp"] = player.hp;
-        playerObj.AddMember("weapon", static_cast<int>(player.weapon), alloc);
+        // weapon — update in place if exists, add if not
+        if (playerObj.HasMember("weapon"))
+            playerObj["weapon"] = static_cast<int>(player.weapon);
+        else
+            playerObj.AddMember("weapon", static_cast<int>(player.weapon), alloc);
         
+        // buffs — always remove then re-add to avoid duplicate arrays
+        if (playerObj.HasMember("buffs"))
+            playerObj.RemoveMember("buffs");
         rapidjson::Value buffsArr(rapidjson::kArrayType);
         for (const auto& buff : player.buffs) {
             if (!buff.active) continue;
@@ -290,11 +299,13 @@ GameSaveManager::PlayerSaveData GameSaveManager::ExtractPlayerData(const Player&
     return { p.pos.x, p.pos.y, p.hp, static_cast<int>(p.weapon), p.buffs };
 }
 
-std::vector<GameSaveManager::EnemySaveData> GameSaveManager::ExtractEnemyData(const std::vector<Enemy>& enemies)
+std::vector<GameSaveManager::EnemySaveData> GameSaveManager::ExtractEnemyData(
+    const std::vector<Enemy>& enemies, float levelMinY, float levelMaxY)
 {
     std::vector<EnemySaveData> out;
-    out.reserve(enemies.size());
-    for (const auto& e : enemies)
-        out.push_back({ e.pos.x, e.pos.y, e.hitPoints });
+    for (const auto& e : enemies) {
+        if (e.pos.y >= levelMinY && e.pos.y <= levelMaxY)
+            out.push_back({ e.pos.x, e.pos.y, e.hitPoints });
+    }
     return out;
 }

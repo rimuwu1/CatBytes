@@ -39,6 +39,7 @@ public:
     EnvironmentManager& operator=(const EnvironmentManager&) = delete;
 
     void LoadFromConfig(const rapidjson::Document&);
+    void LoadAssetsFromConfig(const rapidjson::Document& doc);
     void Initialize();
     void Update(float dt, const Player& player, float cameraY);
     void DrawBackground() const;
@@ -77,6 +78,7 @@ public:
 
     // Current background section (0 based)
     int GetCurrentSection() const { return m_currentSection; }
+    float GetSectionHeight(int index) const { return m_sectionHeights[index]; }
 
     // Spatial partitioning
     SpatialGrid& GetSpatialGrid() { return m_spatialGrid; }

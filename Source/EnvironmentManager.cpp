@@ -85,7 +85,7 @@ void EnvironmentManager::LoadFromConfig(const rapidjson::Document& doc)
         m_buttonFrameDuration = 0.1f;
         m_buttonClips = {
             {"off", 8, 8, 0.1f, false},
-            {"transition", 0, 3, 0.5f, false},
+            {"transition", 0, 3, 0.2f, false},
             {"on", 4, 7, 0.1f, true}
         };
     }
@@ -335,6 +335,12 @@ void EnvironmentManager::LoadFromConfig(const rapidjson::Document& doc)
                 }
             }
 
+            if (b.HasMember("wallIndices") && b["wallIndices"].IsArray()) {
+                for (const auto& index : b["wallIndices"].GetArray()) {
+                    btn.wallIndices.push_back(index.GetInt());
+                }
+            }
+
             m_level3Buttons.push_back(std::move(btn));
         }
     }
@@ -442,32 +448,59 @@ void EnvironmentManager::LoadFromConfig(const rapidjson::Document& doc)
 }
 
 // ------------------------------------------------------------------------
+// Load environment assets from config (textures and spritesheets)
+// ------------------------------------------------------------------------
+void EnvironmentManager::LoadAssetsFromConfig(const rapidjson::Document& doc)
+{
+    if (!doc.HasMember("environment") || !doc["environment"].IsObject()) return;
+    const auto& env = doc["environment"];
+
+    auto loadTex = [&](const char* key) -> AEGfxTexture* {
+        if (env.HasMember(key) && env[key].IsString())
+            return TextureManager::Get().LoadTexture(env[key].GetString());
+        return nullptr;
+    };
+
+    m_leftTex   = loadTex("platform_left");
+    m_midTex    = loadTex("platform_mid");
+    m_rightTex  = loadTex("platform_right");
+    m_spikeTex  = loadTex("spike");
+    m_laserTex  = loadTex("laser");
+    m_wallLeftTex  = loadTex("wall_left");
+    m_wallMidTex   = loadTex("wall_mid");
+    m_wallRightTex = loadTex("wall_right");
+
+    if (env.HasMember("hover_anim") && env["hover_anim"].IsObject()) {
+        const auto& a = env["hover_anim"];
+        m_hoverAnim = std::make_unique<SpriteSheet>(
+            a["file"].GetString(),
+            a["rows"].GetInt(),
+            a["cols"].GetInt(),
+            a["start"].GetInt(),
+            static_cast<float>(a["duration"].GetDouble())
+        );
+    }
+
+    if (env.HasMember("checkpoint_anim") && env["checkpoint_anim"].IsObject()) {
+        const auto& a = env["checkpoint_anim"];
+        m_checkpointAnim = std::make_unique<SpriteSheet>(
+            a["file"].GetString(),
+            a["rows"].GetInt(),
+            a["cols"].GetInt(),
+            a["start"].GetInt(),
+            static_cast<float>(a["duration"].GetDouble())
+        );
+    }
+}
+
+// ------------------------------------------------------------------------
 // Initialize textures and one-time setup only, safe to call once at startup
 // ------------------------------------------------------------------------
 void EnvironmentManager::Initialize()
 {
-    // Background initial colour
-    m_currentColour = m_backgroundColours[0];
-    m_previousSelection = -1;
-
-    // Load platform textures
-    m_leftTex = TextureManager::Get().LoadTexture("Assets/Images/platform_left.png");
-    m_midTex = TextureManager::Get().LoadTexture("Assets/Images/platform_middle.png");
-    m_rightTex = TextureManager::Get().LoadTexture("Assets/Images/platform_right.png");
-
-    m_hoverAnim = std::make_unique<SpriteSheet>("Assets/Images/HoverSheet.png", 1, 4, 0, .1f);
-    m_checkpointAnim = std::make_unique<SpriteSheet>("Assets/Images/checkpointSheet.png", 1, 10, 0, 0.1f);
-    m_spikeTex = TextureManager::Get().LoadTexture("Assets/Images/spikeObstacle.png");
-
-    // load laser texture
-    m_laserTex = TextureManager::Get().LoadTexture("Assets/Images/laserObstacle.png");
-
-    // load wall texture
-    m_wallLeftTex = TextureManager::Get().LoadTexture("Assets/Images/wall_left.png");
-    m_wallMidTex = TextureManager::Get().LoadTexture("Assets/Images/wall_mid.png");
-    m_wallRightTex = TextureManager::Get().LoadTexture("Assets/Images/wall_right.png");
-
-    // Level indicator initialise (free function)
+    m_currentColour      = m_backgroundColours[0];
+    m_previousSelection  = -1;
+    // Assets loaded via LoadAssetsFromConfig — called from ApplyConfigToManagers in MainGame.cpp
     LevelIndicator_Initialize();
 }
 

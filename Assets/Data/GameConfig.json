@@ -7,6 +7,30 @@
     "levels_completed": 0,
     "player_lives": 3
   },
+  "environment": {
+    "platform_left":   "Assets/Images/platform_left.png",
+    "platform_mid":    "Assets/Images/platform_middle.png",
+    "platform_right":  "Assets/Images/platform_right.png",
+    "spike":           "Assets/Images/spikeObstacle.png",
+    "laser":           "Assets/Images/laserObstacle.png",
+    "wall_left":       "Assets/Images/wall_left.png",
+    "wall_mid":        "Assets/Images/wall_mid.png",
+    "wall_right":      "Assets/Images/wall_right.png",
+    "hover_anim": {
+      "file":   "Assets/Images/HoverSheet.png",
+      "rows":   1,
+      "cols":   4,
+      "start":  0,
+      "duration": 0.1
+    },
+    "checkpoint_anim": {
+      "file":   "Assets/Images/checkpointSheet.png",
+      "rows":   1,
+      "cols":   10,
+      "start":  0,
+      "duration": 0.1
+    }
+  },
     "audio": {
   "main_menu_music": "Assets/Audio/MUSIC-STINGER_GEN-HDF-17880.wav",
   "game_music": "Assets/Audio/DATA DANCE - NewAge MSCNEW2_13.wav",
@@ -217,7 +241,7 @@
     "frame_duration": 0.1,
     "clips": [
         { "name": "off", "start": 8, "end": 8, "duration": 0.1, "loop": false },
-        { "name": "transition", "start": 0, "end": 3, "duration": 0.5, "loop": false },
+        { "name": "transition", "start": 0, "end": 3, "duration": 0.2, "loop": false },
         { "name": "on", "start": 4, "end": 7, "duration": 0.1, "loop": true }
     ]
 },
@@ -1224,7 +1248,7 @@
         ],
         "buttons": [
             { "x": -600.0, "y": 4990.0, "width": 40.0, "height": 40.0, "platformIndices": [10, 11, 12, 13, 14, 15, 16] },
-            { "x":  300.0, "y": 6040.0, "width": 40.0, "height": 40.0, "platformIndices": [0], "prompt": "Press E to toggle wall" },
+            { "x":  300.0, "y": 6040.0, "width": 40.0, "height": 40.0, "wallIndices": [0], "prompt": "Press E to toggle wall" },
             { "x":  700.0, "y": 8590.0, "width": 40.0, "height": 40.0, "platformIndices": [54, 55, 56, 58] },
             { "x": -350.0, "y": 9040.0, "width": 40.0, "height": 40.0, "platformIndices": [63] },
             { "x":   -5.0, "y": 8590.0, "width": 40.0, "height": 40.0, "platformIndices": [64] },

@@ -50,6 +50,14 @@ AEAudio g_GameMusic{};
 bool g_GameMusicPlaying = false;
 extern AEAudio g_MainMenuMusic;
 
+// Camera pan sequence state for button toggles
+static bool  g_pendingToggle      = false;
+static float g_pendingToggleTimer = 0.0f;
+static float g_pendingToggleMidpt = 0.0f;
+static float g_pendingToggleBtnX  = 0.0f;  // button/computer X for matching
+static float g_pendingToggleBtnY  = 0.0f;  // button/computer Y for matching
+static CollisionManager::ToggleType g_pendingToggleType = CollisionManager::ToggleType::None;
+
 namespace {
     rapidjson::Document configDoc;   // static to this file
 
@@ -95,6 +103,7 @@ namespace {
 static void ApplyConfigToManagers()
 {
     EnvironmentManager::Get().LoadFromConfig(GetConfigDoc());
+    EnvironmentManager::Get().LoadAssetsFromConfig(GetConfigDoc());
     ObjectManager::Get().LoadFromConfig(GetConfigDoc());
 
     // Sync HUD inventory from restored player buffs
@@ -131,6 +140,12 @@ void MainGame_Initialize()
 {
     // Clear any leftover popup state from a previous visit to this screen
     UIManager::Get().Reset();
+
+    // Reset camera sequence state
+    g_pendingToggle      = false;
+    g_pendingToggleTimer = 0.0f;
+    g_pendingToggleType  = CollisionManager::ToggleType::None;
+    g_camSequenceActive  = false;
 
     // clear old game objects/environment before reloading from JSON
     ObjectManager::Get().Clear();
@@ -176,90 +191,204 @@ void MainGame_Update()
 
     float playerPrevY = player.pos.y;
 
-    for (const auto& e : enemies) {
-        if (e.justDied) {
-            Camera_AddTrauma(0.3f);
-            ParticleManager_Emit(e.pos.x, e.pos.y, 20, 300.f, 191, 64, 255); //purple cos them enemies are purple
+    // ================== GAMEPLAY LOGIC (paused during camera sequence) ==================
+    if (!g_camSequenceActive) {
+        for (const auto& e : enemies) {
+            if (e.justDied) {
+                Camera_AddTrauma(0.3f);
+                ParticleManager_Emit(e.pos.x, e.pos.y, 20, 300.f, 191, 64, 255); //purple cos them enemies are purple
+            }
+        }
+
+        ObjectManager::Get().Update(dt);
+        ParticleManager_Update(dt);
+
+        ObjectManager::Get().RebuildSpatialGrid();
+
+        // ================== COLLISION HANDLING ==================
+        auto results = CollisionManager::HandleAllCollisionsSpatial(
+            player,
+            playerPrevY,
+            EnvironmentManager::Get(),
+            ObjectManager::Get().GetAllEnemies()
+        );
+
+        //obstacle reaction
+        if (results.obstacleHit)
+        {
+            Player_ApplyDamage(player, 1.0f);
+            // Knockback horizontally away from player's movement direction
+            float knockDir = player.facingRight ? -1.0f : 1.0f;
+            if (player.vel.x > 0.0f) knockDir = -1.0f;
+            else if (player.vel.x < 0.0f) knockDir = 1.0f;
+            
+            player.knockbackVel.x = knockDir * player.knockbackVelocity;
+            player.knockbackVel.y = player.grounded ? 0.0f : player.knockbackAirUp;
+            player.knockbackTimer = player.hurtTimer;
+            player.vel.x = player.knockbackVel.x;
+            player.vel.y = player.knockbackVel.y;
+        }
+
+        // Pogo reaction
+        if (results.pogoHit) {
+            if (!player.pogoJustPerformed) {
+                player.vel.y = player.pogoVelocity;
+                player.pogoJustPerformed = true;
+                player.grounded = false;
+                player.downSlashJumped = false;
+            }
+        }
+        else {
+            player.pogoJustPerformed = false;
+        }
+
+        // ----- Camera pan sequence for button toggles -----
+        // Start camera sequence if a button was just triggered
+        if (results.pendingToggle.triggered && !g_camSequenceActive && !g_pendingToggle) {
+            Camera_StartSequence(results.pendingToggle.targetY, globalCam.y);
+            g_pendingToggle      = true;
+            g_pendingToggleMidpt = g_camSequenceDuration + g_camHoldDuration * 0.5f;
+            g_pendingToggleTimer = 0.0f;
+            g_pendingToggleBtnX  = results.pendingToggle.buttonX;
+            g_pendingToggleBtnY  = results.pendingToggle.buttonY;
+            g_pendingToggleType  = results.pendingToggle.type;
+        }
+
+        // ----- Camera pan sequence for computer toggles (lasers) -----
+        if (results.pendingComputer.triggered && !g_camSequenceActive && !g_pendingToggle) {
+            Camera_StartSequence(results.pendingComputer.targetY, globalCam.y);
+            g_pendingToggle      = true;
+            g_pendingToggleMidpt = g_camSequenceDuration + g_camHoldDuration * 0.5f;
+            g_pendingToggleTimer = 0.0f;
+            g_pendingToggleBtnX  = results.pendingComputer.buttonX;
+            g_pendingToggleBtnY  = results.pendingComputer.buttonY;
+            g_pendingToggleType  = results.pendingComputer.type;
+        }
+
+        // Lock player movement during camera sequence
+        if (g_camSequenceActive) {
+            player.vel.x = 0.0f;
+            // suppress jump input by zeroing velocity but keep grounded state
+            player.vel.y = (player.grounded ? 0.0f : player.vel.y);
+        }
+
+        // ----- Checkpoint & save -----
+        EnvironmentManager::Get().SetCheckpointInRange(results.checkpointInRange);
+
+        if (results.checkpointInRange && AEInputCheckTriggered('E') || EnvironmentManager::Get().isSaveRequested())
+        {
+            int currentSection = EnvironmentManager::Get().GetCurrentSection();
+            int currentLevel = currentSection + 1;
+            const std::vector<Platform>* currentPlatforms = nullptr;
+            switch (currentLevel) {
+            case 1:  currentPlatforms = &EnvironmentManager::Get().GetLevel1Platforms(); break;
+            case 2:  currentPlatforms = &EnvironmentManager::Get().GetLevel2Platforms(); break;
+            case 3:  currentPlatforms = &EnvironmentManager::Get().GetLevel3Platforms(); break;
+            case 4:  currentPlatforms = &EnvironmentManager::Get().GetBossPlatforms();   break;
+            default: currentPlatforms = &EnvironmentManager::Get().GetLevel1Platforms(); break;
+            }
+
+            GameSaveManager::Metadata meta{ "", currentLevel, currentSection, static_cast<int>(ObjectManager::Get().GetPlayerHP()) };
+            
+            float levelMinY = (currentSection == 0) ? -FLT_MAX : EnvironmentManager::Get().GetSectionHeight(currentSection - 1);
+            float levelMaxY = EnvironmentManager::Get().GetSectionHeight(currentSection);
+            
+            GameSaveManager::SaveGameAsync(meta, currentLevel, player, enemies, *currentPlatforms, levelMinY, levelMaxY);
+            GameSaveManager::Notify_Show(GameSaveManager::NotifyType::SAVED);
+            ParticleManager_Emit(player.pos.x, player.pos.y, 15, 200.f, 255, 255, 255);
+        }
+
+        if (ObjectManager::Get().IsBossDefeated()) {
+            textScreenMessage = "You Win";
+            GameStateManager::Get().next = GS_WINLOSE;
+        }
+    }
+    // ================== END GAMEPLAY LOGIC ==================
+
+    // Fire the toggle at the midpoint of the sequence (during hold phase)
+    if (g_pendingToggle) {
+        g_pendingToggleTimer += dt;
+        if (g_pendingToggleTimer >= g_pendingToggleMidpt) {
+            // Fire the toggle based on type
+            switch (g_pendingToggleType) {
+            case CollisionManager::ToggleType::Platform: {
+                // Find and fire the matching button for platform toggles
+                auto firePlatformButton = [&](const std::vector<PlatformButton>& buttons,
+                                              std::vector<Platform>& platforms) {
+                    for (const auto& btn : buttons) {
+                        if (fabs(btn.x - g_pendingToggleBtnX) < 1.0f &&
+                            fabs(btn.y - g_pendingToggleBtnY) < 1.0f) {
+                            for (int idx : btn.platformIndices) {
+                                if (idx >= 0 && idx < (int)platforms.size())
+                                    platforms[idx].active = !platforms[idx].active;
+                            }
+                            EnvironmentManager::Get().MarkStaticDirty();
+                            return true;
+                        }
+                    }
+                    return false;
+                };
+
+                const auto& level1Buttons = EnvironmentManager::Get().GetLevel1Buttons();
+                const auto& level2Buttons = EnvironmentManager::Get().GetLevel2Buttons();
+                const auto& level3Buttons = EnvironmentManager::Get().GetLevel3Buttons();
+
+                if (!firePlatformButton(level1Buttons, const_cast<std::vector<Platform>&>(EnvironmentManager::Get().GetLevel1Platforms())))
+                if (!firePlatformButton(level2Buttons, const_cast<std::vector<Platform>&>(EnvironmentManager::Get().GetLevel2Platforms())))
+                    firePlatformButton(level3Buttons, const_cast<std::vector<Platform>&>(EnvironmentManager::Get().GetLevel3Platforms()));
+                break;
+            }
+            case CollisionManager::ToggleType::Wall: {
+                // Find and fire the matching button for wall toggles (level 3 only)
+                const auto& level3Buttons = EnvironmentManager::Get().GetLevel3Buttons();
+                auto& toggleWalls = const_cast<std::vector<Platform>&>(EnvironmentManager::Get().GetLevel3ToggleWalls());
+
+                for (const auto& btn : level3Buttons) {
+                    if (fabs(btn.x - g_pendingToggleBtnX) < 1.0f &&
+                        fabs(btn.y - g_pendingToggleBtnY) < 1.0f) {
+                        for (int idx : btn.wallIndices) {
+                            if (idx >= 0 && idx < (int)toggleWalls.size())
+                                toggleWalls[idx].active = !toggleWalls[idx].active;
+                        }
+                        EnvironmentManager::Get().MarkStaticDirty();
+                        break;
+                    }
+                }
+                break;
+            }
+            case CollisionManager::ToggleType::Laser: {
+                // Find and fire the matching computer for laser toggles (level 3 only)
+                const auto& level3Computers = EnvironmentManager::Get().GetLevel3Computers();
+                const auto& lasers = EnvironmentManager::Get().GetLevel3Lasers();
+
+                for (const auto& comp : level3Computers) {
+                    if (fabs(comp.x - g_pendingToggleBtnX) < 1.0f &&
+                        fabs(comp.y - g_pendingToggleBtnY) < 1.0f) {
+                        for (int idx : comp.laserIndices) {
+                            if (idx >= 0 && idx < (int)lasers.size())
+                                lasers[idx].laserActive = !lasers[idx].laserActive;
+                        }
+                        break;
+                    }
+                }
+                break;
+            }
+            default:
+                break;
+            }
+
+            g_pendingToggle = false;
+            g_pendingToggleType = CollisionManager::ToggleType::None;
         }
     }
 
-    ObjectManager::Get().Update(dt);
-    ParticleManager_Update(dt);
-
-    ObjectManager::Get().RebuildSpatialGrid();
-
-    // ================== COLLISION HANDLING ==================
-    auto results = CollisionManager::HandleAllCollisionsSpatial(
-        player,
-        playerPrevY,
-        EnvironmentManager::Get(),
-        ObjectManager::Get().GetAllEnemies()
-    );
-
-    //obstacle reaction
-    if (results.obstacleHit)
-    {
-        Player_ApplyDamage(player, 1.0f);
-        // Knockback horizontally away from player's movement direction
-        float knockDir = player.facingRight ? -1.0f : 1.0f;
-        if (player.vel.x > 0.0f) knockDir = -1.0f;
-        else if (player.vel.x < 0.0f) knockDir = 1.0f;
-        
-        player.knockbackVel.x = knockDir * player.knockbackVelocity;
-        player.knockbackVel.y = player.grounded ? 0.0f : player.knockbackAirUp;
-        player.knockbackTimer = player.hurtTimer;
-        player.vel.x = player.knockbackVel.x;
-        player.vel.y = player.knockbackVel.y;
+    if (!Camera_UpdateSequence(globalCam, dt)) {
+        // sequence inactive — normal follow
+        if (DebugManager::Get().IsDebugCameraEnabled())
+            Camera_Debug(globalCam, dt);
+        else
+            Camera_FollowPlayer(globalCam, player.pos.x, player.pos.y, dt);
     }
-
-    // Pogo reaction
-    if (results.pogoHit) {
-        if (!player.pogoJustPerformed) {
-            player.vel.y = player.pogoVelocity;
-            player.pogoJustPerformed = true;
-            player.grounded = false;
-            player.downSlashJumped = false;
-        }
-    }
-    else {
-        player.pogoJustPerformed = false;
-    }
-
-    // ----- Checkpoint & save -----
-    EnvironmentManager::Get().SetCheckpointInRange(results.checkpointInRange);
-
-    if (results.checkpointInRange && AEInputCheckTriggered('E') || EnvironmentManager::Get().isSaveRequested())
-    {
-        int currentSection = EnvironmentManager::Get().GetCurrentSection();
-        int currentLevel = currentSection + 1;
-        const std::vector<Platform>* currentPlatforms = nullptr;
-        switch (currentLevel) {
-        case 1:  currentPlatforms = &EnvironmentManager::Get().GetLevel1Platforms(); break;
-        case 2:  currentPlatforms = &EnvironmentManager::Get().GetLevel2Platforms(); break;
-        case 3:  currentPlatforms = &EnvironmentManager::Get().GetLevel3Platforms(); break;
-        case 4:  currentPlatforms = &EnvironmentManager::Get().GetBossPlatforms();   break;
-        default: currentPlatforms = &EnvironmentManager::Get().GetLevel1Platforms(); break;
-        }
-
-        GameSaveManager::Metadata meta{ "", currentLevel, currentSection, static_cast<int>(ObjectManager::Get().GetPlayerHP()) };
-        GameSaveManager::SaveGameAsync(meta, currentLevel, player, enemies, *currentPlatforms);
-        GameSaveManager::Notify_Show(GameSaveManager::NotifyType::SAVED);
-    }
-
-    if (ObjectManager::Get().IsBossDefeated()) {
-        textScreenMessage = "You Win";
-        GameStateManager::Get().next = GS_WINLOSE;
-    }
-
-    if (DebugManager::Get().IsDebugCameraEnabled())
-    {
-        Camera_Debug(globalCam, dt);
-    }
-    else 
-    {
-        Camera_FollowPlayer(globalCam, player.pos.x, player.pos.y, dt);
-    }
-
     Camera_UpdateShake(globalCam, dt);
     Camera_Apply(globalCam);
 

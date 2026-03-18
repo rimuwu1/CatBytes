@@ -17,6 +17,7 @@ Technology is prohibited.
 #include "pch.h"
 #include "PlayerMelee.h"
 #include "MeshManager.h"
+#include "ParticleManager.h"
 #include <cmath>
 #include <vector>
 
@@ -148,6 +149,32 @@ void PlayerMelee_CheckCollisions(Player& player, std::vector<Enemy*>& enemies)
                 player.grounded = false;
                 player.downSlashJumped = true;
             }
+        }
+    }
+}
+
+void PlayerMelee_DeflectBullets(Player& player, std::vector<EnemyBullet*>& bullets)
+{
+    if (!player.isAttacking) return;
+
+    // Use the same slash hitbox as melee collision
+    float slashOffsetX = player.facingRight ? player.width * 0.5f + 20.0f : -(player.width * 0.5f + 20.0f);
+    float slashX = player.pos.x + slashOffsetX;
+    float slashY = player.pos.y;
+    float slashHalfW = player.width * 0.5f;
+    float slashHalfH = player.height * 0.5f;
+
+    for (auto* b : bullets) {
+        if (!b->active) continue;
+
+        float distX = fabs(b->pos.x - slashX);
+        float distY = fabs(b->pos.y - slashY);
+
+        if (distX < (slashHalfW + b->width * 0.5f) &&
+            distY < (slashHalfH + b->height * 0.5f))
+        {
+            b->active = false;
+            ParticleManager_Emit(b->pos.x, b->pos.y, 8, 200.f, 255, 255, 100);
         }
     }
 }

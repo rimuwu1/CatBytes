@@ -103,3 +103,58 @@ void Camera_UpdateShake(Camera& cam, float dt) {
     cam.x += sinf(camShakeTime * 1.1f) * shake * 20.0f;
     cam.y += cosf(camShakeTime * 0.9f) * shake * 20.0f;
 }
+
+// Camera pan sequence state
+bool  g_camSequenceActive   = false;
+float g_camSequenceTimer    = 0.0f;
+float g_camSequenceDuration = 0.6f;
+float g_camHoldDuration     = 1.0f;
+float g_camTargetY          = 0.0f;
+float g_camReturnY          = 0.0f;
+
+void Camera_StartSequence(float targetY, float currentY,
+                          float panDuration, float holdDuration)
+{
+    g_camTargetY          = targetY;
+    g_camReturnY          = currentY;
+    g_camSequenceTimer    = 0.0f;
+    g_camSequenceDuration = panDuration;
+    g_camHoldDuration     = holdDuration;
+    g_camSequenceActive   = true;
+}
+
+bool Camera_UpdateSequence(Camera& cam, float dt)
+{
+    if (!g_camSequenceActive) return false;
+
+    g_camSequenceTimer += dt;
+    float panDur  = g_camSequenceDuration;
+    float holdDur = g_camHoldDuration;
+    float totalDur = panDur + holdDur + panDur;
+
+    cam.x = 0.0f; // always locked
+
+    if (g_camSequenceTimer < panDur) {
+        // phase 1: pan to target
+        float t = g_camSequenceTimer / panDur;
+        t = t * t * (3.0f - 2.0f * t); // smoothstep
+        cam.y = g_camReturnY + (g_camTargetY - g_camReturnY) * t;
+
+    } else if (g_camSequenceTimer < panDur + holdDur) {
+        // phase 2: hold at target
+        cam.y = g_camTargetY;
+
+    } else {
+        // phase 3: pan back to return position
+        float t = (g_camSequenceTimer - panDur - holdDur) / panDur;
+        t = t * t * (3.0f - 2.0f * t);
+        cam.y = g_camTargetY + (g_camReturnY - g_camTargetY) * t;
+    }
+
+    if (g_camSequenceTimer >= totalDur) {
+        g_camSequenceActive = false;
+        cam.y = g_camReturnY;
+        return false;
+    }
+    return true;
+}

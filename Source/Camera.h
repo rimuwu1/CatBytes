@@ -38,3 +38,15 @@ void Camera_UpdateShake(Camera& cam, float dt);
 
 // for debug
 void Camera_Debug(Camera& cam, float dt);
+
+// Camera pan sequence
+extern bool  g_camSequenceActive;
+extern float g_camSequenceTimer;
+extern float g_camSequenceDuration;
+extern float g_camHoldDuration;
+extern float g_camTargetY;
+extern float g_camReturnY;
+
+void Camera_StartSequence(float targetY, float currentY,
+                          float panDuration = 0.6f, float holdDuration = 1.0f);
+bool Camera_UpdateSequence(Camera& cam, float dt);  // returns true while active
