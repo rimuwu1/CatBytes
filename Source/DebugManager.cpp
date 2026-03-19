@@ -11,6 +11,12 @@
   |  F1          Toggle stats overlay  (always)                 |
   |  F2          Open/close console    (always)                 |
   |  F6          Toggle hitbox overlays (always)                |
+  |  platformedit [on|off]       Toggle platform index labels    |
+  |  selectplatform <L> <N>      Select platform at level L #N   |
+  |  setpos <x> <y>              Move selected platform           |
+  |  printsel                    Print selected platform info     |
+  |  setlength <value>           Set selected platform width      |
+  |               - includes lasers & obstacles                 |
   |  0           Toggle debug camera  (always)                 |
   |  L           Manual save          (always)                 |
   |  M           Reset save           (always)                 |
@@ -33,6 +39,7 @@
   |  help                  List all commands                    |
   |  clear                 Clear console log                    |
   |  godmode [on|off]     Toggle god mode                       |
+  |  noclip [on|off]      Toggle noclip/fly mode                |
   |  kill                  Kill all alive enemies               |
   |  win                   Force Win screen                     |
   |  lose                  Force Lose screen                    |
@@ -40,6 +47,7 @@
   |  save                  Trigger manual game save             |
   |  reset                 Reset save file                      |
   |  tp <1|2|3|4|boss>    Teleport to section start            |
+  |  tpxy <x> <y>         Teleport to exact world coords       |
   |  hp <value>           Set player HP (float)                 |
   |  section              Print current section/level           |
   |  pos                  Print player position                 |
@@ -106,10 +114,10 @@ static constexpr int   CON_MAX_VISIBLE = 4;
 static constexpr struct { const char* key; float x; float y; } k_TpSpots[] =
 {
     { "1",    0.f,   -120.f },  // first platform of level 1 (center)
-    { "2",   0.f, 2110.f },  // first platform of level 2
+    { "2",   0.f, 1810.f },  // first platform of level 2
     { "3",    0.f, 4600.f },  // first platform of level 3
-    { "4",      0.f, 7500.f },  // start of level 4 (boss room i think)
-    { "boss",   0.f, 100200.f },  // boss arena (uhh i dont think this platform is supposed to be here but)
+    { "4",      520.f, 9660.f },  // start of level 4 (boss room i think)
+    { "boss",   0.f, 7500.f },  // boss arena (uhh i dont think this platform is supposed to be here but)
 };
 static constexpr int k_TpCount = (int)(sizeof(k_TpSpots) / sizeof(k_TpSpots[0]));
 
@@ -145,6 +153,7 @@ void DebugManager::Initialize()
     m_OverlayOn = false;
     m_HitboxOn = false;   // hitboxes off by default; toggle with F6 or 'hitbox' command
     m_GridOn = false;     // grid off by default; toggle with 'showgrid' command
+    m_Noclip = false;
     m_ConsoleOpen = false;
     m_InputBuffer.clear();
     m_AutoHint.clear();
@@ -167,6 +176,7 @@ void DebugManager::Reset()
 {
     m_GodMode = false;
     m_DebugCamera = false;
+    m_Noclip = false;
     m_ConsoleOpen = false;
     m_InputBuffer.clear();
     m_AutoHint.clear();
@@ -223,7 +233,7 @@ bool DebugManager::Update(float dt)
         m_HitboxOn = !m_HitboxOn;
 
     // 0 - toggle debug camera (always active)
-    if (AEInputCheckTriggered(AEVK_0))
+    if (!m_ConsoleOpen && AEInputCheckTriggered(AEVK_0))
     {
         m_DebugCamera = !m_DebugCamera;
         globalCam.debugCam = m_DebugCamera;
@@ -234,17 +244,20 @@ bool DebugManager::Update(float dt)
         }
     }
 
-    // L - manual save (always active)
-    if (AEInputCheckTriggered('L'))
+    if (!m_ConsoleOpen)
     {
-        EnvironmentManager::Get().RequestSave();
-    }
+        // L - manual save (only when console is closed)
+        if (AEInputCheckTriggered('L'))
+        {
+            EnvironmentManager::Get().RequestSave();
+        }
 
-    // M - reset save (always active)
-    if (AEInputCheckTriggered('M'))
-    {
-        GameSaveManager::ResetSave();
-        GameSaveManager::Notify_Show(GameSaveManager::NotifyType::RESET);
+        // M - reset save (only when console is closed)
+        if (AEInputCheckTriggered('M'))
+        {
+            GameSaveManager::ResetSave();
+            GameSaveManager::Notify_Show(GameSaveManager::NotifyType::RESET);
+        }
     }
 
     // Console is modal -- consume all game input while open
@@ -378,6 +391,30 @@ void DebugManager::RegisterBuiltinCommands()
             Log("Manual save triggered.");
         });
 
+    // ---- setlength ------------------------------------------------------
+    RegisterCommand("setlength", "setlength <value>",
+        "Set selected platform width (length). Center position stays fixed.",
+        [this](const std::vector<std::string>& args)
+        {
+            if (!m_SelectedPlatform) {
+                Log("No platform selected. Use selectplatform <level> <index>.");
+                return;
+            }
+            if (args.size() < 2) { Log("Usage: setlength <value>"); return; }
+            try {
+                float len = std::stof(args[1]);
+                if (len <= 0.f) { Log("Length must be greater than 0."); return; }
+                m_SelectedPlatform->w = len;
+                EnvironmentManager::Get().MarkStaticDirty();
+                char buf[64];
+                snprintf(buf, sizeof(buf),
+                    "Platform L%d #%d width set to %.1f",
+                    m_SelectedPlatformLevel, m_SelectedPlatformIdx, (double)len);
+                Log(buf);
+            }
+            catch (...) { Log("Invalid value."); }
+        });
+
     // ---- reset ---------------------------------------------------------------
     RegisterCommand("reset", "reset", "Reset save file.",
         [this](const std::vector<std::string>&)
@@ -411,6 +448,39 @@ void DebugManager::RegisterBuiltinCommands()
             }
             Log("Unknown destination '" + dest + "'. Options: 1 2 3 4 boss");
         });
+
+    // ---- tpxy ---------------------------------------------------------------
+    RegisterCommand("tpxy", "tpxy <x> <y>", "Teleport player to exact world coordinates.",
+        [this](const std::vector<std::string>& args)
+        {
+            if (args.size() < 3) { Log("Usage: tpxy <x> <y>"); return; }
+            try {
+                float x = std::stof(args[1]);
+                float y = std::stof(args[2]);
+                Player& p = ObjectManager::Get().GetPlayer();
+                p.pos.x = x;
+                p.pos.y = y;
+                p.vel.x = 0.f;
+                p.vel.y = 0.f;
+                p.grounded = 0;
+                char buf[64];
+                snprintf(buf, sizeof(buf), "Teleported to (%.1f, %.1f)", (double)x, (double)y);
+                Log(buf);
+            }
+            catch (...) { Log("Invalid coordinates."); }
+        });
+
+    // ---- noclip -------------------------------------------------------------
+    RegisterCommand("noclip", "noclip [on|off]", "Toggle noclip/fly mode (disables gravity, free movement).",
+        [this](const std::vector<std::string>& args)
+        {
+            if (args.size() >= 2)
+                m_Noclip = (ToLower(args[1]) == "on");
+            else
+                m_Noclip = !m_Noclip;
+            Log(std::string("Noclip: ") + (m_Noclip ? "ON" : "OFF"));
+        });
+
 
     // ---- hp -----------------------------------------------------------------
     RegisterCommand("hp", "hp <value>", "Set player HP (float).",
@@ -475,6 +545,104 @@ void DebugManager::RegisterBuiltinCommands()
             else
                 m_HitboxOn = !m_HitboxOn;
             Log(std::string("Hitbox overlays: ") + (m_HitboxOn ? "ON" : "OFF"));
+        });
+
+    // ---- platformedit ---------------------------------------------------
+    RegisterCommand("platformedit", "platformedit [on|off]",
+        "Toggle level/index labels over all platforms.",
+        [this](const std::vector<std::string>& args)
+        {
+            if (args.size() >= 2)
+                m_PlatformEditMode = (ToLower(args[1]) == "on");
+            else
+                m_PlatformEditMode = !m_PlatformEditMode;
+            m_SelectedPlatform      = nullptr;
+            m_SelectedPlatformLevel = -1;
+            m_SelectedPlatformIdx   = -1;
+            Log(std::string("Platform edit mode: ") +
+                (m_PlatformEditMode ? "ON — labels visible, use selectplatform <L> <N>" : "OFF"));
+        });
+
+    // ---- selectplatform -------------------------------------------------
+    RegisterCommand("selectplatform", "selectplatform <level> <index>",
+        "Select a platform by level (1-4) and index for editing.",
+        [this](const std::vector<std::string>& args)
+        {
+            if (args.size() < 3) { Log("Usage: selectplatform <level> <index>"); return; }
+            try {
+                int lvl = std::stoi(args[1]);
+                int idx = std::stoi(args[2]);
+
+                auto& env = EnvironmentManager::Get();
+                std::vector<Platform>* levelPtrs[] = {
+                    const_cast<std::vector<Platform>*>(&env.GetLevel1Platforms()),
+                    const_cast<std::vector<Platform>*>(&env.GetLevel2Platforms()),
+                    const_cast<std::vector<Platform>*>(&env.GetLevel3Platforms()),
+                    const_cast<std::vector<Platform>*>(&env.GetBossPlatforms())
+                };
+
+                if (lvl < 1 || lvl > 4) { Log("Level must be 1-4."); return; }
+                auto& plats = *levelPtrs[lvl - 1];
+                if (idx < 0 || idx >= (int)plats.size()) {
+                    Log("Index out of range. Max: " + std::to_string((int)plats.size() - 1));
+                    return;
+                }
+
+                m_SelectedPlatform      = &plats[idx];
+                m_SelectedPlatformLevel = lvl;
+                m_SelectedPlatformIdx   = idx;
+                char buf[96];
+                snprintf(buf, sizeof(buf),
+                    "Selected L%d #%d  pos(%.1f, %.1f)  size(%.0f x %.0f)  active=%d",
+                    lvl, idx,
+                    (double)plats[idx].x, (double)plats[idx].y,
+                    (double)plats[idx].w, (double)plats[idx].h,
+                    (int)plats[idx].active);
+                Log(buf);
+            }
+            catch (...) { Log("Invalid arguments."); }
+        });
+
+    // ---- setpos ---------------------------------------------------------
+    RegisterCommand("setpos", "setpos <x> <y>",
+        "Move selected platform to new world position.",
+        [this](const std::vector<std::string>& args)
+        {
+            if (!m_SelectedPlatform) {
+                Log("No platform selected. Use selectplatform <level> <index>.");
+                return;
+            }
+            if (args.size() < 3) { Log("Usage: setpos <x> <y>"); return; }
+            try {
+                float x = std::stof(args[1]);
+                float y = std::stof(args[2]);
+                m_SelectedPlatform->x = x;
+                m_SelectedPlatform->y = y;
+                EnvironmentManager::Get().MarkStaticDirty();
+                char buf[64];
+                snprintf(buf, sizeof(buf),
+                    "Platform L%d #%d moved to (%.1f, %.1f)",
+                    m_SelectedPlatformLevel, m_SelectedPlatformIdx,
+                    (double)x, (double)y);
+                Log(buf);
+            }
+            catch (...) { Log("Invalid coordinates."); }
+        });
+
+    // ---- printsel -------------------------------------------------------
+    RegisterCommand("printsel", "printsel",
+        "Print selected platform info.",
+        [this](const std::vector<std::string>&)
+        {
+            if (!m_SelectedPlatform) { Log("No platform selected."); return; }
+            char buf[96];
+            snprintf(buf, sizeof(buf),
+                "L%d #%d  pos(%.1f, %.1f)  size(%.0f x %.0f)  active=%d",
+                m_SelectedPlatformLevel, m_SelectedPlatformIdx,
+                (double)m_SelectedPlatform->x, (double)m_SelectedPlatform->y,
+                (double)m_SelectedPlatform->w, (double)m_SelectedPlatform->h,
+                (int)m_SelectedPlatform->active);
+            Log(buf);
         });
 
     // ---- showgrid -----------------------------------------------------------
@@ -1019,16 +1187,43 @@ static void DrawEntityLabel(float worldX, float worldY, float entityH,
 
 void DebugManager::DrawWorldOverlays(float camX, float camY) const
 {
-    if (!m_HitboxOn && !m_GridOn) return;
+    const float winW = (float)AEGfxGetWindowWidth();
+    const float winH = (float)AEGfxGetWindowHeight();
 
     if (m_GridOn) {
         EnvironmentManager::Get().GetSpatialGrid().DebugDrawGrid();
     }
 
-    if (!m_HitboxOn) return;
+    // Platform edit labels run independently of hitbox mode
+    if (m_PlatformEditMode) {
+        auto drawPlatformLabels = [&](const std::vector<Platform>& platforms, int level) {
+            for (int i = 0; i < (int)platforms.size(); ++i) {
+                const Platform& pf = platforms[i];
+                // Highlight selected platform with white thick outline
+                bool isSelected = (m_SelectedPlatform == &pf);
+                int r = isSelected ? 255 : 180;
+                int g = isSelected ? 255 : 180;
+                int b = isSelected ? 255 :  60;
+                float thickness = isSelected ? 5.f : 2.f;
+                DrawOutline(pf.x, pf.y, pf.w, pf.h, r, g, b, 0.85f, thickness);
 
-    const float winW = (float)AEGfxGetWindowWidth();
-    const float winH = (float)AEGfxGetWindowHeight();
+                char lbl[32];
+                snprintf(lbl, sizeof(lbl), "L%d #%d", level, i);
+                DrawEntityLabel(pf.x, pf.y, pf.h,
+                    lbl, camX, camY, winW, winH,
+                    r / 255.f, g / 255.f, b / 255.f);
+            }
+        };
+
+        auto& env = EnvironmentManager::Get();
+        drawPlatformLabels(env.GetLevel1Platforms(), 1);
+        drawPlatformLabels(env.GetLevel2Platforms(), 2);
+        drawPlatformLabels(env.GetLevel3Platforms(), 3);
+        drawPlatformLabels(env.GetBossPlatforms(),   4);
+    }
+
+    if (!m_HitboxOn && !m_GridOn && !m_PlatformEditMode) return;
+    if (!m_HitboxOn) return;
 
     // ---- Player (cyan) ------------------------------------------------------
     {
@@ -1049,6 +1244,39 @@ void DebugManager::DrawWorldOverlays(float camX, float camY) const
             if (!b.active) continue;
             DrawOutline(b.pos.x, b.pos.y, b.width, b.height, 255, 240, 0, 0.90f, 2.f);
             DrawArrow(b.pos.x, b.pos.y, b.width * 0.5f, b.vel.x >= 0.f, 255, 240, 0, 0.85f);
+        }
+
+        // ---- Player slash hitbox (magenta outline, only when attacking) ----------
+        if (p.isAttacking)
+        {
+            const float offset = 20.0f;
+            float slashX = p.pos.x;
+            float slashY = p.pos.y;
+            float slashW = p.width;
+            float slashH = p.height;
+
+            switch (p.slashDirection) {
+            case SlashDirection::HORIZONTAL:
+                slashX += p.facingRight ? p.width * 0.5f + offset : -(p.width * 0.5f + offset);
+                // width and height unchanged — horizontal box
+                break;
+            case SlashDirection::UP:
+                slashY += p.height * 0.5f + offset;
+                // sprite is rotated 90 degrees — swap width and height for the box
+                slashW = p.height;
+                slashH = p.width;
+                break;
+            case SlashDirection::DOWN:
+                slashY -= p.height * 0.5f + offset;
+                // sprite is rotated -90 degrees — swap width and height for the box
+                slashW = p.height;
+                slashH = p.width;
+                break;
+            }
+
+            DrawOutline(slashX, slashY, slashW, slashH, 255, 0, 255, 0.90f);
+            DrawEntityLabel(slashX, slashY, slashH,
+                "SLASH", camX, camY, winW, winH, 1.f, 0.f, 1.f);
         }
     }
 
@@ -1090,6 +1318,87 @@ void DebugManager::DrawWorldOverlays(float camX, float camY) const
             DrawOutline(b.pos.x, b.pos.y, (float)b.width, (float)b.height, 255, 140, 0, 0.85f, 2.f);
             DrawArrow(b.pos.x, b.pos.y, b.width * 0.5f, b.direction, 255, 140, 0, 0.80f);
         }
+    }
+
+    // ---- Platform edit mode — level/index labels over every platform --------
+    if (m_PlatformEditMode) {
+        auto drawPlatformLabels = [&](const std::vector<Platform>& platforms, int level) {
+            for (int i = 0; i < (int)platforms.size(); ++i) {
+                const Platform& pf = platforms[i];
+                // Highlight selected platform with white thick outline
+                bool isSelected = (m_SelectedPlatform == &pf);
+                int r = isSelected ? 255 : 180;
+                int g = isSelected ? 255 : 180;
+                int b = isSelected ? 255 :  60;
+                float thickness = isSelected ? 5.f : 2.f;
+                DrawOutline(pf.x, pf.y, pf.w, pf.h, r, g, b, 0.85f, thickness);
+
+                char lbl[32];
+                snprintf(lbl, sizeof(lbl), "L%d #%d", level, i);
+                DrawEntityLabel(pf.x, pf.y, pf.h,
+                    lbl, camX, camY, winW, winH,
+                    r / 255.f, g / 255.f, b / 255.f);
+            }
+        };
+
+        auto& env = EnvironmentManager::Get();
+        drawPlatformLabels(env.GetLevel1Platforms(), 1);
+        drawPlatformLabels(env.GetLevel2Platforms(), 2);
+        drawPlatformLabels(env.GetLevel3Platforms(), 3);
+        drawPlatformLabels(env.GetBossPlatforms(),   4);
+    }
+    // ---- Obstacles / spikes (yellow-green outline) --------------------------
+    {
+        auto drawObstacles = [&](const std::vector<PlatformObstacle>& obstacles) {
+            for (const auto& obs : obstacles) {
+                DrawOutline(obs.x, obs.y, obs.w, obs.h, 180, 255, 0, 0.85f);
+                DrawEntityLabel(obs.x, obs.y, obs.h,
+                    "SPIKE", camX, camY, winW, winH, 0.7f, 1.f, 0.f);
+            }
+        };
+        auto& env = EnvironmentManager::Get();
+        drawObstacles(env.GetLevel1Obstacles());
+        drawObstacles(env.GetLevel2Obstacles());
+        drawObstacles(env.GetLevel3Obstacles());
+    }
+
+    // ---- Lasers (red outline along actual laser direction) -------------------
+    {
+        auto drawLasers = [&](const std::vector<PlatformLaser>& lasers) {
+            for (const auto& ls : lasers) {
+                if (!ls.laserActive) continue;
+
+                // Direction and perpendicular
+                float dx = ls.x2 - ls.x1;
+                float dy = ls.y2 - ls.y1;
+                float len = sqrtf(dx * dx + dy * dy);
+                if (len < 1e-6f) continue;
+
+                float nx = -dy / len * (ls.w * 0.5f); // perpendicular offset
+                float ny =  dx / len * (ls.w * 0.5f);
+
+                // Four corners of the rotated rectangle
+                float ax = ls.x1 + nx, ay = ls.y1 + ny;
+                float bx = ls.x2 + nx, by = ls.y2 + ny;
+                float cx = ls.x2 - nx, cy = ls.y2 - ny;
+                float dx2 = ls.x1 - nx, dy2 = ls.y1 - ny;
+
+                const float t = 3.f; // outline thickness
+                MeshManager::Get().DrawLine(ax, ay, bx, by, t, 255, 30, 30, 0.90f);
+                MeshManager::Get().DrawLine(bx, by, cx, cy, t, 255, 30, 30, 0.90f);
+                MeshManager::Get().DrawLine(cx, cy, dx2, dy2, t, 255, 30, 30, 0.90f);
+                MeshManager::Get().DrawLine(dx2, dy2, ax, ay, t, 255, 30, 30, 0.90f);
+
+                // Label at midpoint
+                float midX = (ls.x1 + ls.x2) * 0.5f;
+                float midY = (ls.y1 + ls.y2) * 0.5f;
+                DrawEntityLabel(midX, midY, ls.w,
+                    "LASER", camX, camY, winW, winH, 1.f, 0.12f, 0.12f);
+            }
+        };
+        auto& env = EnvironmentManager::Get();
+        drawLasers(env.GetLevel2Lasers());
+        drawLasers(env.GetLevel3Lasers());
     }
 }
 

@@ -220,13 +220,19 @@ void Player_Init(Player& player, const rapidjson::Value& config)
 
 void Player_Update(Player& player, float dt)
 {
-	PhysicsManager& physics = PhysicsManager::Get();
+    PhysicsManager& physics = PhysicsManager::Get();
 
-	if (AEInputCheckTriggered(AEVK_SPACE))
-	{
-		// play jump sound
-		AudioManager::Get().PlayAudio(s_JumpSound, false);
-	}
+    static int s_prevGrounded = 1;
+
+    if (AEInputCheckTriggered(AEVK_SPACE))
+    {
+        // play jump sound
+        AudioManager::Get().PlayAudio(s_JumpSound, false);
+
+        // Jump dust burst from player feet
+        ParticleManager_Emit(player.pos.x, player.pos.y - player.height * 0.5f,
+            10, 120.f, 200, 200, 200);
+    }
 
 	// Apply gravity (skipped while grounded so velocity does not accumulate)
 	physics.ApplyGravity(player.vel.y, static_cast<bool>(player.grounded), dt);
@@ -586,10 +592,17 @@ void Player_Update(Player& player, float dt)
 		player.spriteSheet->Update(dt);
 	}
 
-	// Update state trackers
-	player.wasAttacking = player.isAttacking;
-	player.wasWalking = isWalking;
-	player.wasHurt = player.isHurt;
+    // Landing dust — fires once when player touches ground
+    if (!s_prevGrounded && player.grounded) {
+        ParticleManager_Emit(player.pos.x, player.pos.y - player.height * 0.5f,
+            12, 100.f, 220, 220, 220);
+    }
+    s_prevGrounded = player.grounded;
+
+    // Update state trackers
+    player.wasAttacking = player.isAttacking;
+    player.wasWalking = isWalking;
+    player.wasHurt = player.isHurt;
 }
 
 void Player_Draw(const Player& player)

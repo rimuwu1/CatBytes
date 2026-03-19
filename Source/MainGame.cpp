@@ -96,6 +96,9 @@ namespace {
     }
 } // anon namespace
 
+// Walking emitter handle
+static EmitterHandle g_walkEmitter = INVALID_EMITTER;
+
 
 // ------------------------------------------------------------------------
 // Applies the already-parsed GetConfigDoc() to all managers + resets camera
@@ -156,6 +159,7 @@ void MainGame_Initialize()
     ApplyConfigToManagers();
     DebugManager::Get().Initialize();
     ParticleManager_Init();
+    g_walkEmitter = INVALID_EMITTER;
     //Stop main menu music
     AudioManager::Get().StopAudio(g_MainMenuMusic);
     //Start game music (looped)
@@ -201,7 +205,35 @@ void MainGame_Update()
         }
 
         ObjectManager::Get().Update(dt);
+
+        // Walking dust emitter — start when grounded and moving, stop otherwise
+        bool isWalking = player.grounded && fabs(player.vel.x) > 10.0f;
+        if (isWalking) {
+            if (g_walkEmitter == INVALID_EMITTER) {
+                // Emit from player feet, grey/white dust, slow upward drift
+                g_walkEmitter = ParticleManager_EmitterStart(
+                    player.pos.x, player.pos.y - player.height * 0.5f,
+                    12, 60.f, 200, 200, 200, 0.15f, 0.3f, 3.0f, 6.0f);
+            } else {
+                ParticleManager_EmitterMove(g_walkEmitter,
+                    player.pos.x, player.pos.y - player.height * 0.5f);
+            }
+        } else {
+            if (g_walkEmitter != INVALID_EMITTER) {
+                ParticleManager_EmitterStop(g_walkEmitter);
+                g_walkEmitter = INVALID_EMITTER;
+            }
+        }
+
         ParticleManager_Update(dt);
+
+        // Noclip: override gravity and allow free vertical movement
+        if (DebugManager::Get().IsNoclipActive()) {
+            player.vel.y = 0.0f;
+            player.grounded = 1;
+            if (AEInputCheckCurr(AEVK_W)) player.pos.y += 400.f * dt;
+            if (AEInputCheckCurr(AEVK_S)) player.pos.y -= 400.f * dt;
+        }
 
         ObjectManager::Get().RebuildSpatialGrid();
 

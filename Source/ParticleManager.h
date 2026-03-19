@@ -15,8 +15,46 @@ Technology is prohibited.
 
 #pragma once
 
+#include "AEEngine.h"
+
 void ParticleManager_Init();
 void ParticleManager_Emit(float x, float y, int count, float speed,
                           int r, int g, int b);
+// Textured one-shot burst — pass a pre-loaded AEGfxTexture*
+void ParticleManager_EmitTextured(float x, float y, int count, float speed,
+                                  AEGfxTexture* tex,
+                                  float minLife = 0.3f, float maxLife = 0.5f,
+                                  float minSize = 6.0f, float maxSize = 12.0f);
+
 void ParticleManager_Update(float dt);
 void ParticleManager_Draw();
+
+// Emitter handle — store this to control a running emitter
+using EmitterHandle = int;
+static constexpr EmitterHandle INVALID_EMITTER = -1;
+
+// Start a continuous emitter. Returns a handle to control it.
+EmitterHandle ParticleManager_EmitterStart(
+    float x, float y,
+    int   particlesPerSecond,
+    float speed,
+    int r, int g, int b,
+    float minLife = 0.2f, float maxLife = 0.4f,
+    float minSize = 4.0f, float maxSize = 8.0f);
+
+// Textured continuous emitter
+EmitterHandle ParticleManager_EmitterStartTextured(
+    float x, float y,
+    int   particlesPerSecond,
+    float speed,
+    AEGfxTexture* tex,
+    float minLife = 0.2f, float maxLife = 0.4f,
+    float minSize = 4.0f, float maxSize = 8.0f);
+
+// Update emitter position (call every frame for moving emitters)
+void ParticleManager_EmitterMove(EmitterHandle handle, float x, float y);
+
+// Stop a running emitter
+void ParticleManager_EmitterStop(EmitterHandle handle);
+
+// Tick all active emitters — called inside ParticleManager_Update

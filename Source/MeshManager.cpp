@@ -382,33 +382,16 @@ void MeshManager::DrawTexturedLine(AEGfxTexture* texture,
         float segStartX = x1 + fullTiles * tileLength * dirX;
         float segStartY = y1 + fullTiles * tileLength * dirY;
 
-        // Build transform for this partial segment
         AEMtx33Scale(&scale, remainder, thickness);
         AEMtx33Trans(&translate, segStartX, segStartY);
-
         AEMtx33Concat(&transform, &rotate, &scale);
         AEMtx33Concat(&transform, &translate, &transform);
 
-        // For the partial tile, we need a mesh that maps only the beginning of the texture.
-        // Create a temporary mesh with UVs from 0 to (remainder / tileLength) in U direction.
-        float uMax = remainder / tileLength;  // fraction of texture to show
-
-        AEGfxMeshStart();
-        // First triangle
-        AEGfxTriAdd(0.0f, -0.5f, 0xFFFFFFFF, 0.0f, 0.0f,
-            1.0f, -0.5f, 0xFFFFFFFF, uMax, 0.0f,
-            0.0f, 0.5f, 0xFFFFFFFF, 0.0f, 1.0f);
-        // Second triangle
-        AEGfxTriAdd(1.0f, -0.5f, 0xFFFFFFFF, uMax, 0.0f,
-            1.0f, 0.5f, 0xFFFFFFFF, uMax, 1.0f,
-            0.0f, 0.5f, 0xFFFFFFFF, 0.0f, 1.0f);
-        AEGfxVertexList* partialMesh = AEGfxMeshEnd();
-
         AEGfxSetTransform(transform.m);
         AEGfxTextureSet(texture, 0, 0);
-        AEGfxMeshDraw(partialMesh, AE_GFX_MDM_TRIANGLES);
-
-        AEGfxMeshFree(partialMesh);
+        // Reuse cached line mesh — texture will stretch/clamp on partial tile
+        // which is visually acceptable for a laser beam
+        AEGfxMeshDraw(GetMesh("line"), AE_GFX_MDM_TRIANGLES);
     }
 }
 

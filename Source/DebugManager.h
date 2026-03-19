@@ -29,6 +29,7 @@ Technology is prohibited.
 #include <vector>
 #include <functional>
 #include <unordered_map>
+#include "Platforms.h"
 
 // ============================================================================
 #ifdef ENABLE_DEBUG_MANAGER
@@ -64,6 +65,7 @@ public:
     bool IsGodModeActive()  const { return m_GodMode; }
     bool IsHitboxVisible()  const { return m_HitboxOn; }
     bool IsDebugCameraEnabled() const { return m_DebugCamera; }
+    bool IsNoclipActive() const { return m_Noclip; }
 
     // ---- Console log -------------------------------------------------------
     void Log(const std::string& msg);
@@ -103,7 +105,14 @@ private:
     bool  m_GridOn = false;     ///< showgrid command - spatial grid visualization
     bool  m_GodMode = false;
     bool  m_DebugCamera = false; ///< Debug camera override (0 key)
+    bool  m_Noclip = false;      ///< Noclip/fly mode (disables gravity, free movement)
     bool  m_Initialized = false;
+
+    // ---- Platform edit mode ------------------------------------------------
+    bool     m_PlatformEditMode    = false;
+    Platform* m_SelectedPlatform   = nullptr;
+    int      m_SelectedPlatformLevel = -1;
+    int      m_SelectedPlatformIdx   = -1;
 
     // ---- Console -----------------------------------------------------------
     bool        m_ConsoleOpen = false;
@@ -141,6 +150,7 @@ public:
     bool IsGodModeActive()  const { return false; }
     bool IsHitboxVisible()  const { return false; }
     bool IsDebugCameraEnabled() const { return false; }
+    bool IsNoclipActive() const { return false; }
     void Log(const std::string&) {}
     void RegisterCommand(const std::string&, const std::string&,
         const std::string&,
