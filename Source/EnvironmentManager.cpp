@@ -464,7 +464,6 @@ void EnvironmentManager::LoadAssetsFromConfig(const rapidjson::Document& doc)
     m_leftTex   = loadTex("platform_left");
     m_midTex    = loadTex("platform_mid");
     m_rightTex  = loadTex("platform_right");
-    m_spikeTex  = loadTex("spike");
     m_laserTex  = loadTex("laser");
     m_wallLeftTex  = loadTex("wall_left");
     m_wallMidTex   = loadTex("wall_mid");
@@ -491,6 +490,17 @@ void EnvironmentManager::LoadAssetsFromConfig(const rapidjson::Document& doc)
             static_cast<float>(a["duration"].GetDouble())
         );
     }
+
+    if (env.HasMember("spike_anim") && env["spike_anim"].IsObject()) {
+        const auto& a = env["spike_anim"];
+        m_spikeAnim = std::make_unique<SpriteSheet>(
+            a["file"].GetString(),
+            a["rows"].GetInt(),
+            a["cols"].GetInt(),
+            a["start"].GetInt(),
+            static_cast<float>(a["duration"].GetDouble())
+        );
+    }
 }
 
 // ------------------------------------------------------------------------
@@ -509,8 +519,9 @@ void EnvironmentManager::Update(float dt, const Player& player, float cameraY)
 {
     m_HUD.Update(dt, player, player.weapon);
 
-    m_hoverAnim->Update(dt);
-    m_checkpointAnim->Update(dt);
+    if (m_hoverAnim) m_hoverAnim->Update(dt);
+    if (m_checkpointAnim) m_checkpointAnim->Update(dt);
+    if (m_spikeAnim) m_spikeAnim->Update(dt);
 
     UpdateBackground(cameraY);
 
@@ -597,16 +608,7 @@ void EnvironmentManager::RebuildStaticCache()
     collectWalls(m_level3WallPlatforms);
     collectWalls(m_level3ToggleWalls);
 
-    // Collect obstacles (no culling here)
-    auto collectObstacles = [&](const std::vector<PlatformObstacle>& obstacles) {
-        for (const auto& o : obstacles) {
-            addSprite(m_spikeTex, 1.0f, 1.0f, o.x, o.y, o.w, o.h, 0.0f, 0.0f);
-        }
-    };
-
-    collectObstacles(m_level1Obstacles);
-    collectObstacles(m_level2Obstacles);
-    collectObstacles(m_level3Obstacles);
+    // NOTE: spikes are animated and must not be added to the static cache
 
     // NOTE: Checkpoints and hover animations are dynamic and must be
     // submitted per-frame in Draw(); do not cache checkpoint sprites here.
@@ -683,7 +685,7 @@ void EnvironmentManager::DrawWorld(float camX, float camY, PlayerWeapon weapon, 
     // 1.b Dynamic animated sprites (hover animation & checkpoints)
     // These use per-frame UV offsets so they must be submitted each frame.
     // --------------------------------------------------------------------
-    if (m_hoverAnim || m_checkpointAnim) {
+    if (m_hoverAnim || m_checkpointAnim || m_spikeAnim) {
         // Build a temporary batch for animated sprites
         m_spriteBatch.clear();
 
@@ -739,6 +741,24 @@ void EnvironmentManager::DrawWorld(float camX, float camY, PlayerWeapon weapon, 
                     m_checkpointAnim->GetUVOffsetX(),
                     m_checkpointAnim->GetUVOffsetY());
             }
+        }
+
+        // Spike obstacles (animated) - drawn per-frame
+        if (m_spikeAnim) {
+            auto drawObstacles = [&](const std::vector<PlatformObstacle>& obstacles) {
+                for (const auto& o : obstacles) {
+                    if (!inView(o.y, o.h * 0.5f)) continue;
+                    addSpriteDyn(m_spikeAnim->GetTexture(),
+                        m_spikeAnim->GetSpriteUVWidth(),
+                        m_spikeAnim->GetSpriteUVHeight(),
+                        o.x, o.y, o.w, o.h,
+                        m_spikeAnim->GetUVOffsetX(),
+                        m_spikeAnim->GetUVOffsetY());
+                }
+            };
+            drawObstacles(m_level1Obstacles);
+            drawObstacles(m_level2Obstacles);
+            drawObstacles(m_level3Obstacles);
         }
 
         // Flush the dynamic sprite batch (sort & submit)
@@ -1197,8 +1217,11 @@ void EnvironmentManager::Clear()
     m_level3Lasers.clear();
 
     m_level3Computers.clear();
-   
+    
     // Also clear static cache and mark dirty to avoid stale geometry after a restart/load
     m_staticCache.clear();
     m_staticBatchDirty = true;
+
+    // Destroy animated spike sprite if present
+    m_spikeAnim.reset();
 }

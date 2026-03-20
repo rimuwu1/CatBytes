@@ -59,8 +59,8 @@ public:
     const std::vector<PlatformLaser>& GetLevel2Lasers() const { return m_level2Lasers; }
 
     const std::vector<Platform>& GetLevel3Platforms() const { return m_level3Platforms; }
-	const std::vector<PlatformButton>& GetLevel3Buttons() const { return m_level3Buttons; }
-	const std::vector<PlatformObstacle>& GetLevel3Obstacles() const { return m_level3Obstacles; }
+    const std::vector<PlatformButton>& GetLevel3Buttons() const { return m_level3Buttons; }
+    const std::vector<PlatformObstacle>& GetLevel3Obstacles() const { return m_level3Obstacles; }
     const std::vector<PlatformLaser>& GetLevel3Lasers() const { return m_level3Lasers; }
     const std::vector<PlatformComputer>& GetLevel3Computers() const { return m_level3Computers; }
     const std::vector<Platform>& GetLevel3ToggleWalls() const { return m_level3ToggleWalls; }
@@ -129,7 +129,7 @@ private:
     // Platform textures
     std::unique_ptr<SpriteSheet> m_hoverAnim;
     std::unique_ptr<SpriteSheet> m_checkpointAnim;
-    AEGfxTexture* m_spikeTex = nullptr;
+    std::unique_ptr<SpriteSheet> m_spikeAnim;
     AEGfxTexture* m_leftTex = nullptr;
     AEGfxTexture* m_midTex = nullptr;
     AEGfxTexture* m_rightTex = nullptr;
@@ -150,7 +150,7 @@ private:
     std::vector<Checkpoint>       m_checkpoints;
     std::vector<PlatformButton>   m_level1Buttons;
     std::vector<PlatformButton>   m_level2Buttons;
-	std::vector<PlatformButton>   m_level3Buttons;
+    std::vector<PlatformButton>   m_level3Buttons;
     std::vector<PlatformLaser>    m_level2Lasers;
     std::vector<PlatformLaser>    m_level3Lasers;
     std::vector<PlatformComputer> m_level3Computers;
