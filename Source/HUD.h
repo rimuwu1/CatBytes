@@ -35,6 +35,7 @@ public:
 	bool IsPauseButtonClicked(float camX, float camY) const;
 	void AddBuffToInventory(BuffType buffType);
 	void UseBuffFromInventory(Player& player, int slot);
+	int FindBuffSlot(BuffType buffType) const;
 
 	void InitFromConfig(const rapidjson::Value& doc);
 	void Update(float dt, const Player& player, PlayerWeapon weapon);
@@ -96,14 +97,14 @@ private:
 		float height = 80.0f;
 
 		float minY = 0.0f;
-		float maxY = 7500.0f;
+		float maxY = 9600.0f;
 
 		float gap = 0.0f;
 		float paddingX = 2.0f;
 		float paddingY = 2.0f;
 		float overlapY = 1.0f;
 
-		std::array<float, 3> segmentEndY{ 1900.0f, 4550.0f, 7500.0f };
+		std::array<float, 3> segmentEndY{ 1900.0f, 4650.0f, 9600.0f };
 
 		float trackerRadius = 5.0f;
 		int trackerR = 255, trackerG = 255, trackerB = 255;
@@ -146,11 +147,14 @@ private:
 		AEGfxTexture* slotTexture = nullptr;
 		AEGfxTexture* shieldTexture = nullptr;
 		AEGfxTexture* fullHpTexture = nullptr;
-		AEGfxTexture* godModeTexture = nullptr;
+		AEGfxTexture* dashTexture = nullptr;
 
 		// Tracks buff type for each slot
 		std::array<BuffType, 3> slots { 
 			BuffType::NONE, BuffType::NONE, BuffType::NONE 
+		};
+		std::array<int, 3> counts{
+			0, 0, 0
 		};
 
 		bool ready = false;

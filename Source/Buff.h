@@ -24,7 +24,7 @@ enum class BuffType {
     NONE,
     SHIELD,
     FULL_HP,
-    GOD_MODE
+    DASH
 };
 
 class Buff {

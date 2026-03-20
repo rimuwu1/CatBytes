@@ -27,8 +27,8 @@ Buff::Buff(BuffType type, float x, float y, float width, float height)
     case BuffType::FULL_HP:
         texture = TextureManager::Get().LoadTexture("Assets/Images/full_hp_buff.png");
         break;
-    case BuffType::GOD_MODE:
-        texture = TextureManager::Get().LoadTexture("Assets/Images/god_mode_buff.png");
+    case BuffType::DASH:
+        texture = TextureManager::Get().LoadTexture("Assets/Images/dash_buff.png");
         break;
     default:
         break;
@@ -39,12 +39,14 @@ void Buff::Activate(Player& player) {
     switch (type) {
     case BuffType::SHIELD:
         player.shieldActive = true;
+        player.shieldTimer = 10.0f;
         break;
     case BuffType::FULL_HP:
         player.hp = player.maxHP;
         break;
-    case BuffType::GOD_MODE:
+    case BuffType::DASH:
         // activate godmode (TBA)
+        player.dashEnabled = true;
         break;
     default:
         break;
@@ -56,8 +58,9 @@ void Buff::Deactivate(Player& player) {
     switch (type) {
     case BuffType::SHIELD:
         player.shieldActive = false;
+        player.shieldTimer = 0.0f;
         break;
-    case BuffType::GOD_MODE:
+    case BuffType::DASH:
         // activate godmode (TBA)
         break;
     default:
@@ -67,9 +70,12 @@ void Buff::Deactivate(Player& player) {
 
 void Buff::Update(float dt) {
     // Update logic e.g. buff expiry timer etc (TBA)
+    (void)dt; // TBA
 }
 
 void Buff::Draw(float camX, float camY) const {
+    (void)camX;
+    (void)camY;
     if (!active || !texture) return;
     MeshManager::Get().DrawTexturedSquare(texture, pos.x, pos.y, width, height, 1.0f);
 }

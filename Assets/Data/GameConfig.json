@@ -105,8 +105,9 @@
             { "name": "claw2normal", "start": 80, "end": 82, "duration": 0.1, "loop": false },
             { "name": "claw2gun", "start": 85, "end": 89, "duration": 0.1, "loop": false },
             { "name": "gun2normal", "start": 90, "end": 93, "duration": 0.1, "loop": false },
-            { "name": "gun2claw", "start": 90, "end": 93, "duration": 0.1, "loop": false }
-                ]
+            { "name": "gun2claw", "start": 90, "end": 93, "duration": 0.1, "loop": false },
+            { "name": "dash", "start": 20, "end": 22, "duration": 0.05, "loop": false }
+        ]
             },
             "slash": {
         "file": "Assets/Images/SlashSheet.png",
@@ -211,8 +212,8 @@
       "trackerRadius": 5,
       "segments": [
         { "endY": 1900 },
-        { "endY": 4550 },
-        { "endY": 7500 }
+        { "endY": 4650 },
+        { "endY": 9600 }
       ],
       "texture": "Assets/Images/progressBar.png"
     },
@@ -236,7 +237,7 @@
       "slotTexture": "Assets/Images/inventorySlot.png",
       "shieldIcon": "Assets/Images/shield_buff.png",
       "fullHpIcon": "Assets/Images/full_hp_buff.png",
-      "godModeIcon": "Assets/Images/god_mode_buff.png"
+      "dashIcon": "Assets/Images/dash_buff.png"
     }
   },
     "button": {

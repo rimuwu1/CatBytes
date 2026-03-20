@@ -56,6 +56,7 @@ struct Player
 	int grounded = 0;
 
 	float hp = 0.0f; // player health
+	float maxHP = 0.0f;
 	float hitTextTimer = 0.0f;//got hit
 
 	//Weapon system (extendable)
@@ -81,8 +82,17 @@ struct Player
 	std::vector<PlayerBullet> bullets; // player gun
 
 	// buffs
-	float maxHP = hp;
 	bool shieldActive = false;
+	float shieldTimer = 0.0f;
+
+	bool dashEnabled = false;
+	bool isDashing = false;
+	float dashTimer = 0.0f;
+	float dashCooldown = 0.0f;
+	float dashSpeed = 800.0f;
+
+	static constexpr float DASH_DURATION = 0.2f;
+	static constexpr float DASH_COOLDOWN = 0.5f;
 
 	std::vector<Buff> buffs;
 

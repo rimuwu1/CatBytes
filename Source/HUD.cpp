@@ -18,6 +18,7 @@ Technology is prohibited.
 #include "MeshManager.h"
 #include "SpriteSheet.h"
 #include "Player.h"
+#include "Fonts.h"
 
 #include <rapidjson/document.h>
 
@@ -486,9 +487,9 @@ void HUD::InitInventoryFromConfig(const rapidjson::Value& uiJson)
 	{
 		inventory.fullHpTexture = TextureManager::Get().LoadTexture(inv["fullHpIcon"].GetString());
 	}
-	if (inv.HasMember("godModeIcon"))
+	if (inv.HasMember("dashIcon"))
 	{
-		inventory.godModeTexture = TextureManager::Get().LoadTexture(inv["godModeIcon"].GetString());
+		inventory.dashTexture = TextureManager::Get().LoadTexture(inv["dashIcon"].GetString());
 	}
 
 	inventory.ready = true;
@@ -763,8 +764,8 @@ void HUD::DrawInventory(float camX, float camY) const
 		case BuffType::FULL_HP:
 			buffIcon = inventory.fullHpTexture;
 			break;
-		case BuffType::GOD_MODE:
-			buffIcon = inventory.godModeTexture;
+		case BuffType::DASH:
+			buffIcon = inventory.dashTexture;
 			break;
 		default: break;
 		}
@@ -773,6 +774,25 @@ void HUD::DrawInventory(float camX, float camY) const
 		{
 			MeshManager::Get().DrawTexturedSquare(
 				buffIcon, slotX, y, iconSize, iconSize);
+		}
+
+		// Draw stack count at top-right corner of slot (only if more than 1)
+		if (inventory.counts[i] > 1)
+		{
+			char countStr[4];
+			snprintf(countStr, sizeof(countStr), "%d", inventory.counts[i]);
+
+			const float windowWidth = (float)AEGfxGetWindowWidth();
+			const float windowHeight = (float)AEGfxGetWindowHeight();
+
+			// Top-right corner of slot — HUD is camera-relative so subtract camX/camY
+			const float worldX = slotX + slotSize * 0.20f;
+			const float worldY = y + slotSize * 0.20f;
+
+			const float screenX = (worldX - camX) / (windowWidth * 0.5f);
+			const float screenY = (worldY - camY) / (windowHeight * 0.5f);
+
+			AEGfxPrint(g_FontSmall, countStr, screenX, screenY, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f);
 		}
 	}
 }
@@ -807,21 +827,66 @@ void HUD::AddBuffToInventory(BuffType buffType)
 {
 	for (int i = 0; i < (int)inventory.slots.size(); i++)
 	{
+		if (inventory.slots[i] == buffType)
+		{
+			inventory.counts[i]++;
+			return;
+		}
+	}
+
+	for (int i = 0; i < (int)inventory.slots.size(); i++)
+	{
 		if (inventory.slots[i] == BuffType::NONE)
 		{
 			inventory.slots[i] = buffType;
-			break;
+			inventory.counts[i] = 1;
+			return;
 		}
 	}
 }
 
 void HUD::UseBuffFromInventory(Player& player, int slot)
 {
-	if (slot < 0 || slot >= (int)inventory.slots.size()) return;
-	if (inventory.slots[slot] == BuffType::NONE) return;
+	if (slot < 0 || slot >= (int)inventory.slots.size()) 
+	{
+		return;
+	}
+	if (inventory.slots[slot] == BuffType::NONE) 
+	{
+		return;
+	}
 
 	Buff b(inventory.slots[slot], 0.0f, 0.0f, 0.0f, 0.0f); // temp buff
 	b.Activate(player);
 
-	inventory.slots[slot] = BuffType::NONE; // clear slot once used
+	inventory.counts[slot]--;
+
+	if (inventory.counts[slot] <= 0)
+	{
+		inventory.counts[slot] = 0;
+		inventory.slots[slot] = BuffType::NONE;
+
+		// shift remaining slots to the left when slot is empty
+		for (int i = slot; i < (int)inventory.slots.size() - 1; i++)
+		{
+			inventory.slots[i] = inventory.slots[(size_t)i + 1];
+			inventory.counts[i] = inventory.counts[(size_t)i + 1];
+		}
+
+		inventory.slots.back() = BuffType::NONE; // clear slot after shifting
+		inventory.counts.back() = 0;
+	}
+}
+
+int HUD::FindBuffSlot(BuffType buffType) const
+{
+	for (int i = 0; i < (int)inventory.slots.size(); i++)
+	{
+		if (inventory.slots[i] == buffType)
+		{
+			return i;
+		}
+	}
+
+	return -1;
 }

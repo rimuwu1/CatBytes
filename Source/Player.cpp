@@ -67,6 +67,7 @@ void Player_Init(Player& player, const rapidjson::Value& config)
 
 	//load player hp & dmg
 	player.hp = config["hp"].GetFloat();
+	player.maxHP = player.hp;
 	player.meleeDamage = config["melee_damage"].GetFloat();
 
 	// knockback
@@ -216,6 +217,12 @@ void Player_Init(Player& player, const rapidjson::Value& config)
 	// spike pogo
 	player.pogoJustPerformed = false;
 	player.pogoVelocity = config.HasMember("pogo_velocity") ? config["pogo_velocity"].GetFloat() : 600.0f;
+
+	// dash state
+	player.dashEnabled = false;
+	player.isDashing = false;
+	player.dashTimer = 0.0f;
+	player.dashCooldown = 0.0f;
 }
 
 void Player_Update(Player& player, float dt)
@@ -248,6 +255,30 @@ void Player_Update(Player& player, float dt)
 			player.isHurt = false;
 		}
 	}
+
+	// shield timer
+	if (player.shieldActive) {
+		player.shieldTimer -= dt;
+		if (player.shieldTimer <= 0.0f) {
+			player.shieldTimer = 0.0f;
+			player.shieldActive = false;
+		}
+	}
+
+	// dash timer
+	if (player.isDashing) {
+		player.dashTimer -= dt;
+		player.vel.x = (player.facingRight ? 1.0f : -1.0f) * player.dashSpeed;
+
+		if (player.dashTimer <= 0.0f) {
+			player.dashTimer = 0.0f;
+			player.isDashing = false;
+			player.dashCooldown = Player::DASH_COOLDOWN;
+			player.vel.x = 0.0f;
+		}
+	}
+
+	if (player.dashCooldown > 0.0f) player.dashCooldown -= dt;
 
 	// Euler-integrate velocity -> position
 	physics.Integrate(player.pos, player.vel, dt);
@@ -418,8 +449,14 @@ void Player_Update(Player& player, float dt)
 			}
 		}
 	}
+
+	// dash animation
+	if (player.isDashing && desiredClip.empty()) {
+		desiredClip = "dash";
+		forceRestart = !player.isDashing;
+	}
 	// hurt animation 
-	if (player.isHurt && desiredClip.empty()) {
+	else if (player.isHurt && desiredClip.empty()) {
 		desiredClip = "hurt";
 		if (!player.wasHurt) forceRestart = true;
 	}
@@ -636,7 +673,21 @@ void Player_Draw(const Player& player)
 		);
 	}
 
+	// Draw shield indicator
+	if (player.shieldActive)
+	{
+		const float margin = 8.0f; // between player & shield
 
+		const float left = player.pos.x - player.width * 0.5f - margin;
+		const float right = player.pos.x + player.width * 0.5f + margin;
+		const float bottom = player.pos.y - player.height * 0.5f - margin;
+		const float top = player.pos.y + player.height * 0.5f + margin;
+
+		MeshManager::Get().DrawLine(left, bottom, right, bottom, 3.0f, 50, 100, 255, 0.8f); // bottom
+		MeshManager::Get().DrawLine(left, top, right, top, 3.0f, 50, 100, 255, 0.8f);		// top
+		MeshManager::Get().DrawLine(left, bottom, left, top, 3.0f, 50, 100, 255, 0.8f);		// left
+		MeshManager::Get().DrawLine(right, bottom, right, top, 3.0f, 50, 100, 255, 0.8f);	// right
+	}
 
 	//melee weapon visual parameters
 // Draw slash effect if active
@@ -705,9 +756,10 @@ void Player_Draw(const Player& player)
 //Apply damage to the player
 void Player_ApplyDamage(Player& player, float damage)
 {
-	if (player.hp <= 0.0f)
-		return;
+	if (player.hp <= 0.0f) return;
 	if (player.isHurt) return; // i-frames active, ignore damage
+	if (player.shieldActive) return;
+	if (player.isDashing) return;
 	if (!DebugManager::Get().IsGodModeActive()) {
 		player.hp -= damage;
 

@@ -1066,8 +1066,12 @@ void Enemy_OnHit(Enemy& enemy, float damage, float knockbackDir)
 
 void Enemy_OnDeath(Enemy& enemy)
 {
+    //// for debugging (to be removed)
+    //ObjectManager::Get().SpawnBuff(BuffType::SHIELD, enemy.pos.x, enemy.pos.y);
+    //ObjectManager::Get().SpawnBuff(BuffType::FULL_HP, enemy.pos.x + 50.f, enemy.pos.y);
+    //ObjectManager::Get().SpawnBuff(BuffType::DASH , enemy.pos.x - 50.f, enemy.pos.y);
+
     BuffType droppedBuff = static_cast<BuffType>(rand() % 3 + 1); // random buff on drop
-    /*float buffDuration = 10.0f;*/ // TBC
     ObjectManager::Get().SpawnBuff(droppedBuff, enemy.pos.x, enemy.pos.y);
 }
 

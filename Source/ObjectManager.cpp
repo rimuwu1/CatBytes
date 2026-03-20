@@ -61,8 +61,8 @@ void ObjectManager::AddBuffFromJSON(const rapidjson::Value& buffData)
     else if (buffType == "full_hp") {
         type = BuffType::FULL_HP;
     }
-    else if (buffType == "god_mode") {
-        type = BuffType::GOD_MODE;
+    else if (buffType == "dash") {
+        type = BuffType::DASH;
     }
 
     SpawnBuff(type, buffData["x"].GetFloat(), buffData["y"].GetFloat());
@@ -319,7 +319,7 @@ void ObjectManager::Draw(float camX, float camY, float screenHalfW, float screen
     // --------------------------------------------------------------------
     // 4. Draw boss and HP bars (immediate, not batched)
     // --------------------------------------------------------------------
-    for (const auto& e : enemies) {
+    for (auto& e : enemies) {
         if (!e.isAlive) continue;
         if (e.type == EnemyType::Boss && InView(e.pos.x, e.pos.y, e.width * 0.5f, e.height * 0.5f)) {
             float scaleX;
@@ -337,6 +337,10 @@ void ObjectManager::Draw(float camX, float camY, float screenHalfW, float screen
             float hpBarHeight = 6.0f;
             float hpX = e.pos.x;
             float hpY = e.pos.y + e.height * 0.5f + 10.0f;
+
+            if (hpRatio <= 0.0f) {
+                e.isAlive = false;
+            }
 
             mm.DrawSquare(hpX, hpY, hpBarWidth + 6.0f, hpBarHeight + 6.0f, 0, 0, 0, 1.0f);
             mm.DrawSquare(hpX, hpY, hpBarWidth, hpBarHeight, 40, 40, 40, 1.0f);
@@ -397,7 +401,7 @@ void ObjectManager::RemoveInactiveBuffs()
 {
     buffs.erase(
         std::remove_if(buffs.begin(), buffs.end(),
-            [](const Buff& b) { return !b.active; }),
+            [](const Buff& buff) { return !buff.active; }),
         buffs.end());
 }
 
@@ -406,6 +410,7 @@ void ObjectManager::Clear()
 {
     enemies.clear();
     enemyBullets.clear();
+    buffs.clear();
 }
 
 void ObjectManager::RebuildSpatialGrid()

@@ -128,6 +128,24 @@ void Input_Handle() {
 
 			EnvironmentManager::Get().GetHUD().UseBuffFromInventory(player, slot);
 		}
+
+		// Dash buff
+		// right click to dash when buff is enabled
+		if (AEInputCheckTriggered(AEVK_RBUTTON))
+		{
+			if (player.dashEnabled && !player.isDashing && player.dashCooldown <= 0.0f)
+			{
+				player.isDashing = true;
+				player.dashTimer = Player::DASH_DURATION;
+				player.vel.x = (player.facingRight ? 1.0f : -1.0f) * player.dashSpeed;
+				player.vel.y = 0.0f;
+				player.dashEnabled = false;
+
+				HUD& hud = EnvironmentManager::Get().GetHUD();
+				int slot = hud.FindBuffSlot(BuffType::DASH);
+				if (slot != -1) hud.UseBuffFromInventory(player, slot);
+			}
+		}
 	}
 
 	std::cout << "Input:Handle" << std::endl;
