@@ -7,6 +7,35 @@
     "levels_completed": 0,
     "player_lives": 3
   },
+  "menus": {
+  "main_menu": {
+    "logo": {
+      "file": "Assets/Images/titleicon.png"
+    },
+    "logo_anim": {
+      "file": "Assets/Images/LogoMenuSpritesheet.png",
+      "rows": 1,
+      "cols": 5,
+      "delay": 4.5,
+      "clips": [
+        {
+          "name": "intro",
+          "start": 0,
+          "end": 4,
+          "duration": 0.1,
+          "loop": false
+        }
+      ]
+    },
+    "buttons": {
+      "file": "Assets/Images/MainMenuButtons.png",
+      "rows": 1,
+      "cols": 10,
+      "width": 300,
+      "height": 60
+    }
+  }
+},
   "environment": {
     "platform_left":   "Assets/Images/platform_left.png",
     "platform_mid":    "Assets/Images/platform_middle.png",

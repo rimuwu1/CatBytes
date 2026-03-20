@@ -2,7 +2,9 @@
 /*!
 \file SpriteSheet.h
 \author Joash ng, joash.ng, 2502780
+        Sim Hui Min, s.huimin, 2503506 (1 tiny variable setframe..)
 \par joash.ng@digipen.edu
+     s.huimin@digipen.edu
 \date 19/02/2026
 \brief Declares the SpriteSheet class for managing and animating spritesheets.
        Uses TextureManager to load textures and cycles through frames using
@@ -113,6 +115,7 @@ public:
     f32           GetSpriteUVWidth() const { return spriteUVWidth; }
     f32           GetSpriteUVHeight()const { return spriteUVHeight; }
     u32           GetCurrentFrame()  const { return currentFrame; }
+    void          SetFrame(u32 frame) { currentFrame = frame; RecalculateUV(); } // jump to frame without playing clip
     float         GetClipDuration(const std::string& name) const;          // duration per frame
     float         GetClipTotalDuration(const std::string& name) const;    // total time of clip
     std::string   GetCurrentClip()   const { return currentClip; }

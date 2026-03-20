@@ -62,7 +62,7 @@ void Credits_Draw()
         if (logoTexture)
         {
             // Draw logo using MeshManager
-            MeshManager::Get().DrawTexturedSquare(logoTexture, 0.0f, 0.0f, 200.0f, 200.0f, 1.0f);
+            MeshManager::Get().DrawTexturedSquare(logoTexture, 0.0f, 0.0f, 500.0f, 300.0f, 1.0f);
         }
     }
 
