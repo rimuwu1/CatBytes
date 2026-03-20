@@ -56,10 +56,6 @@ void Credits_Draw()
     AESysFrameStart();
     AEGfxSetBackgroundColor(0.9f, 0.9f, 0.9f); // light gray background
 
-    // get window dimensions
-    float centerX = 0.0f;
-    float centerY = 0.0f;
-
     // screen 1 logo
     if (totalElapsedTime <= 1.0f)
     {
@@ -108,7 +104,7 @@ void Credits_Draw()
         AEGfxPrint(g_FontSmall, "Prasanna Kumar GHALI  Mandy WONG  Johnny DEEK", -0.37f, -0.49f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f);
 
         AEGfxPrint(g_FontSmall, "All content (c) 2025 DigiPen Institute of Technology Singapore.", -0.43f, -0.80f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f);
-        AEGfxPrint(g_FontSmall, "All Rights Reserved.", -0.13f, -0.85, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+        AEGfxPrint(g_FontSmall, "All Rights Reserved.", -0.13f, -0.85f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f);
     }
     // screen 5: asset credits (4-5 seconds)
     else if (totalElapsedTime > 4.0f && totalElapsedTime <= 5.0f)

@@ -117,7 +117,7 @@ static constexpr struct { const char* key; float x; float y; } k_TpSpots[] =
     { "2",   0.f, 1810.f },  // first platform of level 2
     { "3",    0.f, 4600.f },  // first platform of level 3
     { "4",      520.f, 9660.f },  // start of level 4 (boss room i think)
-    { "boss",   0.f, 7500.f },  // boss arena (uhh i dont think this platform is supposed to be here but)
+    { "boss",   0.f, 12100.f },  // boss arena (uhh i dont think this platform is supposed to be here but) // 67
 };
 static constexpr int k_TpCount = (int)(sizeof(k_TpSpots) / sizeof(k_TpSpots[0]));
 

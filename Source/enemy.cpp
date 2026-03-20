@@ -603,7 +603,7 @@ void BossEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
             );
         }
 
-        enemy.spriteSheet->Play("patrol");
+        enemy.spriteSheet->Play("walk");
     }
 
     if (config.HasMember("idle_duration") && config["idle_duration"].IsFloat())
