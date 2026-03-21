@@ -28,7 +28,7 @@ void System_Initialize(HINSTANCE hInstance, int nCmdShow, bool createConsole)
 	AESysSetWindowTitle("Cat Climb!");
 	
 	AESysReset();
-	AESysSetWindowIcon("Assets/Images/icon.ico", 32, 32);
+	AESysSetWindowIcon("Assets/Images/titleicon.ico", 32, 32);
 	Fonts_Load();
 
 	std::cout << "System:Initialize" << std::endl;  // Log system initialization

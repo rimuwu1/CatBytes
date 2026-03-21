@@ -44,6 +44,9 @@ namespace CollisionManager
     // Laser collisions
     void HandlePlayerLaserCollisions(Player& player, const std::vector<PlatformLaser>& lasers);
 
+    // Boss laser collisions (boss is an enemy instance)
+    void HandleBossLaserCollisions(Player& player, Enemy& boss);
+
     // Toggle type for button/computer interactions
     enum class ToggleType {
         None,

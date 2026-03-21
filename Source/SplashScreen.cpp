@@ -34,7 +34,7 @@ static float totalElapsedTime{};
 void SplashScreen_Load()
 {
 	Digipen = TextureManager::Get().LoadTexture("Assets/Images/DigiPen_BLACK.png");
-	Logo = TextureManager::Get().LoadTexture("Assets/Images/Logo.png");
+	Logo = TextureManager::Get().LoadTexture("Assets/Images/titleicon.png");
 	std::cout << "Splash Screen: Load" << std::endl;
 }
 
@@ -96,13 +96,13 @@ void SplashScreen_Draw()
     else if (phase == 2) {
         /* Logo fade in */
         opacity = phaseProgress * MAX_OPACITY;
-        AEGfxSetBackgroundColor( 150.0f / 255.0f , 203.0f / 255.0f, 213.0f / 255.0f);
+        AEGfxSetBackgroundColor( 0.9f, 0.9f, 0.9f);
         MeshManager::Get().DrawTexturedSquare(Logo, x, y, LogoW, LogoH, opacity);
     }
     else {
         /* Logo fade out */
         opacity = (1.0f - phaseProgress) * MAX_OPACITY;
-        AEGfxSetBackgroundColor(150.0f / 255.0f, 203.0f / 255.0f, 213.0f / 255.0f);
+        AEGfxSetBackgroundColor(0.9f, 0.9f, 0.9f);
         MeshManager::Get().DrawTexturedSquare(Logo, x, y, LogoW, LogoH, opacity);
     }
     

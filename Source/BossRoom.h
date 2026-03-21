@@ -18,10 +18,21 @@ Technology is prohibited.
 class BossRoom
 {
 public:
-    static void Load();
-    static void Initialize();
-    static void Update(float dt);
-    static void Draw();
-    static void Free();
-    static void Unload();
+    static BossRoom& Get() {
+        static BossRoom instance;
+        return instance;
+    }
+
+    void Load();
+    void Initialize();
+    void Update(float dt);
+    void Draw();
+    void Free();
+    void Unload();
+private:
+    // prevent external construction/destruction
+    BossRoom() = default;
+    ~BossRoom() = default;
+    BossRoom(const BossRoom&) = delete;
+    BossRoom& operator=(const BossRoom&) = delete;
 };

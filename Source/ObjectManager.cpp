@@ -129,7 +129,7 @@ void ObjectManager::Update(float dt)
         switch (e.type) {
         case EnemyType::Easy: Enemy_Update(e, dt);     break;
         case EnemyType::Hard: HardEnemy_Update(e, dt); break;
-        case EnemyType::Boss: BossEnemy_Update(e, dt); break;
+        case EnemyType::Boss: BossEnemy_Update(e, player, dt); break;
         }
     }
 

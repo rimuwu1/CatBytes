@@ -168,6 +168,56 @@ namespace CollisionManager
         }
     }
 
+    void HandleBossLaserCollisions(Player& player, Enemy& boss)
+    {
+        for (const BossLaser& laser : boss.bossLasers)
+        {
+            if (!laser.active) continue;
+
+            float dx = laser.target.x - laser.origin.x;
+            float dy = laser.target.y - laser.origin.y;
+            float len = sqrtf(dx * dx + dy * dy);
+            if (len < 1e-6f) continue;
+
+            // Laser axes: forward (along beam) and right (perpendicular)
+            float fwdX = dx / len,  fwdY = dy / len;
+            float rgtX = -fwdY,     rgtY =  fwdX;
+
+            // Laser half-extents along each axis
+            float halfLen   = len * 0.5f;
+            float halfWidth = laser.width * 0.5f;
+
+            // Laser centre
+            float lcx = (laser.origin.x + laser.target.x) * 0.5f;
+            float lcy = (laser.origin.y + laser.target.y) * 0.5f;
+
+            // Vector from laser centre to player centre
+            float relX = player.pos.x - lcx;
+            float relY = player.pos.y - lcy;
+
+            // Player half-extents
+            float phw = player.width  * 0.5f;
+            float phh = player.height * 0.5f;
+
+            // SAT: project onto laser forward axis
+            float projFwd  = relX * fwdX + relY * fwdY;
+            float radiusFwd = halfLen
+                + fabsf(phw * fwdX) + fabsf(phh * fwdY);
+            if (fabsf(projFwd) > radiusFwd) continue;
+
+            // SAT: project onto laser perpendicular axis
+            float projRgt  = relX * rgtX + relY * rgtY;
+            float radiusRgt = halfWidth
+                + fabsf(phw * rgtX) + fabsf(phh * rgtY);
+            if (fabsf(projRgt) > radiusRgt) continue;
+
+            // Overlap on both axes — hit
+            Player_ApplyDamage(player, boss.laserDamage);
+            const float dir = (player.pos.x >= laser.origin.x) ? 1.0f : -1.0f;
+            player.vel.x = dir * boss.laserKnockback;
+        }
+    }
+
     // ------------------------------------------------------------------------
     // Buttons
     ButtonToggleResult HandleButtons(Player& player, const std::vector<PlatformButton>& buttons, const std::vector<Platform>& platforms, const std::vector<Platform>& toggleWalls)

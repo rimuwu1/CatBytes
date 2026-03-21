@@ -665,6 +665,7 @@ void EnvironmentManager::MarkStaticDirty()
 void EnvironmentManager::DrawWorld(float camX, float camY, PlayerWeapon weapon, const Player& player, float screenHalfH)
 {
     MeshManager& mm = MeshManager::Get();
+    UNREFERENCED_PARAMETER(weapon);
 
     const float CULL_MARGIN = 200.0f;
     const float cullHalf = screenHalfH + CULL_MARGIN;

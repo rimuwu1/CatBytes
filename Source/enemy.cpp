@@ -613,6 +613,36 @@ void BossEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
 
     enemy.state = EnemyState::Patrol;
     enemy.stateTimer = 0.0f;
+
+    // Load boss laser emitter origins from config
+    if (config.HasMember("boss_lasers") && config["boss_lasers"].IsArray()) {
+        for (const auto& l : config["boss_lasers"].GetArray()) {
+            BossLaser laser;
+            laser.origin.x   = l.HasMember("x") ? l["x"].GetFloat() : 0.0f;
+            laser.origin.y   = l.HasMember("y") ? l["y"].GetFloat() : 0.0f;
+            laser.width      = l.HasMember("width") ? l["width"].GetFloat() : 16.0f;
+            laser.state      = BossLaserState::Inactive;
+            laser.cooldownTimer = enemy.laserCooldown;
+            // Stagger lasers so they don't all fire at once:
+            // offset each laser's initial cooldown by its index * (laserCooldown / count)
+            enemy.bossLasers.push_back(laser);
+        }
+        // Apply stagger offsets after all lasers are added
+        const float count = static_cast<float>(enemy.bossLasers.size());
+        for (size_t i = 0; i < enemy.bossLasers.size(); ++i) {
+            enemy.bossLasers[i].cooldownTimer = enemy.laserCooldown * (static_cast<float>(i) / count);
+        }
+    }
+
+    // Load shared laser timing from config if present
+    if (config.HasMember("laser_cooldown"))      enemy.laserCooldown      = config["laser_cooldown"].GetFloat();
+    if (config.HasMember("laser_track"))         enemy.laserTrackDuration = config["laser_track"].GetFloat();
+    if (config.HasMember("laser_lockon"))        enemy.laserLockDuration  = config["laser_lockon"].GetFloat();
+    if (config.HasMember("laser_fire"))          enemy.laserFireDuration  = config["laser_fire"].GetFloat();
+    if (config.HasMember("laser_damage"))        enemy.laserDamage        = config["laser_damage"].GetFloat();
+    if (config.HasMember("laser_knockback"))     enemy.laserKnockback     = config["laser_knockback"].GetFloat();
+    // Load laser texture
+    enemy.laserTex = TextureManager::Get().LoadTexture("Assets/Images/laserObstacle.png");
 }
 
 // -----------------------------------------------------------------------------
@@ -877,14 +907,107 @@ void HardEnemy_Update(Enemy& enemy, float dt) {
     enemy.spriteSheet->Update(dt);
 }
 
+// Update each boss laser's internal state machine
+void BossLasers_Update(Enemy& enemy, const Player& player, float dt)
+{
+    // TODO: replace hardcoded range gate with proper boss phase / aggro system
+    const float dy = player.pos.y - enemy.pos.y;
+    if (fabsf(dy) > 300.0f) return;
+
+    for (BossLaser& laser : enemy.bossLasers)
+    {
+        switch (laser.state)
+        {
+        case BossLaserState::Inactive:
+            laser.active = false;
+            laser.cooldownTimer -= dt;
+            if (laser.cooldownTimer <= 0.0f) {
+                laser.state      = BossLaserState::Tracking;
+                laser.stateTimer = enemy.laserTrackDuration;
+            }
+            break;
+
+        case BossLaserState::Tracking:
+            laser.target     = player.pos;   // update every frame
+            laser.stateTimer -= dt;
+            if (laser.stateTimer <= 0.0f) {
+                // target is now frozen — do not update it again
+                laser.state      = BossLaserState::LockOn;
+                laser.stateTimer = enemy.laserLockDuration;
+            }
+            break;
+
+        case BossLaserState::LockOn:
+            // target stays frozen, just count down
+            laser.stateTimer -= dt;
+            if (laser.stateTimer <= 0.0f) {
+                laser.active     = true;
+                laser.state      = BossLaserState::Firing;
+                laser.stateTimer = enemy.laserFireDuration;
+            }
+            break;
+
+        case BossLaserState::Firing:
+            laser.stateTimer -= dt;
+            if (laser.stateTimer <= 0.0f) {
+                laser.active         = false;
+                laser.state          = BossLaserState::Inactive;
+                laser.cooldownTimer  = enemy.laserCooldown;
+            }
+            break;
+        }
+    }
+}
+
+void BossLasers_Draw(const Enemy& enemy)
+{
+    MeshManager& mm = MeshManager::Get();
+
+    for (const BossLaser& laser : enemy.bossLasers)
+    {
+        switch (laser.state)
+        {
+        case BossLaserState::Tracking:
+            // Thin yellow preview line
+            mm.DrawLine(laser.origin.x, laser.origin.y,
+                        laser.target.x, laser.target.y,
+                        4.0f, 255, 255, 0, 0.5f);
+            break;
+
+        case BossLaserState::LockOn:
+            // Thicker red telegraph line
+            mm.DrawLine(laser.origin.x, laser.origin.y,
+                        laser.target.x, laser.target.y,
+                        8.0f, 255, 50, 50, 0.85f);
+            break;
+
+        case BossLaserState::Firing:
+            // Full textured laser beam
+            mm.DrawTexturedLine(enemy.laserTex,
+                                laser.origin.x, laser.origin.y,
+                                laser.target.x, laser.target.y,
+                                laser.width,
+                                64.0f,   // tile length in world units
+                                1.0f);
+            break;
+
+        default:
+            break;
+        }
+    }
+}
+
 // -----------------------------------------------------------------------------
 // Update boss enemy each frame
 // Patrols left and right within a wider range than regular enemies
 // Freezes briefly on hit stun
 // -----------------------------------------------------------------------------
-void BossEnemy_Update(Enemy& enemy, float dt) {
+void BossEnemy_Update(Enemy& enemy, const Player& player, float dt) {
 
     enemy.justDied = false;
+
+    // Update boss lasers (tracking/lockon/firing state machines)
+    BossLasers_Update(enemy, player, dt);
 
     if (!enemy.spriteSheet) return;
 

@@ -1347,6 +1347,17 @@
         "patrol_min_x": -240.0,
         "patrol_max_x": 240.0,
         "knockback_velocity": 300.0,
+        "laser_cooldown": 4.0,
+        "laser_track": 1.5,
+        "laser_lockon": 0.8,
+        "laser_fire": 0.6,
+        "laser_damage": 10.0,
+        "laser_knockback": 400.0,
+        "boss_lasers": [
+            { "x": -200.0, "y": 12180.0, "width": 14.0 },
+            { "x":    0.0, "y": 12180.0, "width": 14.0 },
+            { "x":  200.0, "y": 12180.0, "width": 14.0 }
+        ],
         "animations": {
           "file": "Assets/Images/BossSpritesheet.png",
           "rows": 19,

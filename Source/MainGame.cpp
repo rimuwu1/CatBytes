@@ -45,6 +45,7 @@ Technology is prohibited.
 #include "UIManager.h"
 #include "DebugManager.h"
 #include "ParticleManager.h"
+#include "BossRoom.h"
 
 AEAudio g_GameMusic{};
 bool g_GameMusicPlaying = false;
@@ -205,6 +206,9 @@ void MainGame_Update()
         }
 
         ObjectManager::Get().Update(dt);
+
+        // Update the BossRoom singleton (handles boss laser collisions and logic)
+        BossRoom::Get().Update(dt);
 
         // Walking dust emitter — start when grounded and moving, stop otherwise
         bool isWalking = player.grounded && fabs(player.vel.x) > 10.0f;
@@ -448,6 +452,10 @@ void MainGame_Draw()
     EnvironmentManager::Get().DrawBackground();
     EnvironmentManager::Get().DrawWorld(globalCam.x, globalCam.y, player.weapon, player, 900.0f * 0.5f);
     ObjectManager::Get().Draw(globalCam.x, globalCam.y, 800.0f, 450.0f);
+
+    // Draw boss room overlays (lasers, telegraphs)
+    BossRoom::Get().Draw();
+
     ParticleManager_Draw();
     EnvironmentManager::Get().DrawHUD(globalCam.x, globalCam.y, player.weapon);
     GameSaveManager::Notify_Draw();
