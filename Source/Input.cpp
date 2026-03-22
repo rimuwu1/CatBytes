@@ -28,6 +28,7 @@ Technology is prohibited.
 #include "UIManager.h"
 #include "ObjectManager.h"
 #include "PhysicsManager.h"
+#include "Camera.h"
 
 // ----------------------------------------------------------------------------
 // Handles all user input processing for the current frame
@@ -60,6 +61,7 @@ void Input_Handle() {
 	// Process player movement input
 	{
 		Player& player = ObjectManager::Get().GetPlayer();
+		HUD& hud = EnvironmentManager::Get().GetHUD();
 		PhysicsManager& physics = PhysicsManager::Get();
 		const float MOVE_SPEED = PhysicsManager::Get().GetMoveSpeed();
 
@@ -117,6 +119,19 @@ void Input_Handle() {
 			player.isAttacking = false; // melee attack off
 		}
 
+		// Check for weapon slot clicks (alternative to keyboard)
+		PlayerWeapon clickedWeapon = hud.IsWeaponSlotClicked(globalCam.x, globalCam.y);
+		if (clickedWeapon != PlayerWeapon::NONE)
+		{
+			// Trigger press animation for the clicked slot
+			int slotIndex = (clickedWeapon == PlayerWeapon::MELEE) ? 0 : 1;
+			hud.TriggerWeaponSlotPress(slotIndex);
+
+			player.weapon = clickedWeapon;
+			player.weaponEquipped = true;
+			player.isAttacking = false;
+		}
+
 		// Inventory slots
 		// 4 = slot 1, 5 = slot 2, 6 = slot 3
 		if (AEInputCheckTriggered('4') || AEInputCheckTriggered('5') || AEInputCheckTriggered('6'))
@@ -127,6 +142,16 @@ void Input_Handle() {
 			else slot = 2;
 
 			EnvironmentManager::Get().GetHUD().UseBuffFromInventory(player, slot);
+		}
+
+		// Check for inventory slot clicks (alternative to keyboard)
+		int clickedSlot = hud.IsInventorySlotClicked(globalCam.x, globalCam.y);
+		if (clickedSlot >= 0)
+		{
+			// Trigger press animation for the clicked slot
+			hud.TriggerInventorySlotPress(clickedSlot);
+
+			hud.UseBuffFromInventory(player, clickedSlot);
 		}
 
 		// Dash buff

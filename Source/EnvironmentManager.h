@@ -43,6 +43,7 @@ public:
     void Initialize();
     void Update(float dt, const Player& player, float cameraY);
     void DrawBackground() const;
+    void DrawBackgroundOverlay(float camX, float camY) const;
     void DrawWorld(float camX, float camY, PlayerWeapon weapon, const Player& player, float screenHalfH);
     void DrawHUD(float camX, float camY, PlayerWeapon weapon);
 
@@ -108,6 +109,12 @@ public:
         int end = 0;
         float duration = 0.0f;
         bool loop = false;
+    };
+
+    // Parallax layer data structure
+    struct ParallaxLayer {
+        AEGfxTexture* texture = nullptr;
+        float speed = 1.0f;  // parallax speed multiplier
     };
 
 private:
@@ -220,6 +227,10 @@ private:
 
     // Spatial partitioning grid
     SpatialGrid m_spatialGrid;
+
+    // Parallax layers (back, middle, front)
+    ParallaxLayer m_parallaxLayers[3];
+    float m_parallaxY = 0.0f;  // track current parallax offset
 
     // Background constants
     static constexpr int BACKGROUND_SECTIONS = 4;

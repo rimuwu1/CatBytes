@@ -538,6 +538,9 @@ void HUD::Update(float dt, const Player& player, PlayerWeapon weapon)
 		return;
 	}
 
+	// Update button states (hover/click animations)
+	UpdateButtonStates(dt, globalCam.x, globalCam.y);
+
 	// Hearts
 	if (hearts.active && hearts.heartsSheet)
 	{
@@ -615,6 +618,171 @@ void HUD::UpdateBuffBar(const Player& player)
 
 }
 
+// ---- Update Button States ---- //
+void HUD::UpdateButtonStates(float dt, float camX, float camY)
+{
+	if (!hudActive)
+		return;
+
+	float mouseX, mouseY;
+	MousePosition(camX, camY, mouseX, mouseY);
+
+	// Update pause button state
+	if (pauseButton.active && pauseButton.ready)
+	{
+		const float cx = camX + pauseButton.offsetX;
+		const float cy = camY + pauseButton.offsetY;
+		const float halfW = pauseButton.width * 0.5f;
+		const float halfH = pauseButton.height * 0.5f;
+
+		bool hovered = (mouseX >= cx - halfW && mouseX <= cx + halfW &&
+						mouseY >= cy - halfH && mouseY <= cy + halfH);
+
+		pauseButtonState.isHovered = hovered;
+		if (hovered)
+			pauseButtonState.hoverAlpha = AEClamp(pauseButtonState.hoverAlpha + dt / 0.15f, 0.0f, 1.0f);
+		else
+			pauseButtonState.hoverAlpha = AEClamp(pauseButtonState.hoverAlpha - dt / 0.15f, 0.0f, 1.0f);
+	}
+
+	// Update inventory slot states
+	if (inventory.active && inventory.ready)
+	{
+		const float x = camX + inventory.offsetX;
+		const float y = camY + inventory.offsetY;
+		const float slotSize = inventory.slotSize;
+
+		for (int i = 0; i < 3; i++)
+		{
+			const float slotX = x + (i - 1) * (slotSize + 4.0f);
+			const float halfSize = slotSize * 0.5f;
+
+			bool hovered = (mouseX >= slotX - halfSize && mouseX <= slotX + halfSize &&
+							mouseY >= y - halfSize && mouseY <= y + halfSize);
+
+			// Only show hover if slot has a buff
+			inventorySlotStates[i].isHovered = (hovered && inventory.slots[i] != BuffType::NONE && inventory.counts[i] > 0);
+			if (inventorySlotStates[i].isHovered)
+				inventorySlotStates[i].hoverAlpha = AEClamp(inventorySlotStates[i].hoverAlpha + dt / 0.15f, 0.0f, 1.0f);
+			else
+				inventorySlotStates[i].hoverAlpha = AEClamp(inventorySlotStates[i].hoverAlpha - dt / 0.15f, 0.0f, 1.0f);
+		}
+	}
+
+	// Update weapon slot states
+	if (weaponSwitch.active && weaponSwitch.ready)
+	{
+		const float hx = camX + weaponSwitch.offsetX;
+		const float hy = camY + weaponSwitch.offsetY;
+		const float slotSize = weaponSwitch.slotSize;
+		const float halfSize = slotSize * 0.5f;
+
+		// Melee slot (left)
+		const float meleeX = hx - slotSize;
+		bool meleeHovered = (mouseX >= meleeX - halfSize && mouseX <= meleeX + halfSize &&
+							 mouseY >= hy - halfSize && mouseY <= hy + halfSize);
+
+		weaponSlotStates[0].isHovered = meleeHovered;
+		if (meleeHovered)
+			weaponSlotStates[0].hoverAlpha = AEClamp(weaponSlotStates[0].hoverAlpha + dt / 0.15f, 0.0f, 1.0f);
+		else
+			weaponSlotStates[0].hoverAlpha = AEClamp(weaponSlotStates[0].hoverAlpha - dt / 0.15f, 0.0f, 1.0f);
+
+		// Gun slot (right)
+		const float gunX = hx;
+		bool gunHovered = (mouseX >= gunX - halfSize && mouseX <= gunX + halfSize &&
+						  mouseY >= hy - halfSize && mouseY <= hy + halfSize);
+
+		weaponSlotStates[1].isHovered = gunHovered;
+		if (gunHovered)
+			weaponSlotStates[1].hoverAlpha = AEClamp(weaponSlotStates[1].hoverAlpha + dt / 0.15f, 0.0f, 1.0f);
+		else
+			weaponSlotStates[1].hoverAlpha = AEClamp(weaponSlotStates[1].hoverAlpha - dt / 0.15f, 0.0f, 1.0f);
+	}
+
+	// Decrement press timers
+	for (int i = 0; i < 3; i++)
+	{
+		if (inventorySlotStates[i].pressTimer > 0.0f)
+		{
+			inventorySlotStates[i].pressTimer -= dt;
+			if (inventorySlotStates[i].pressTimer < 0.0f)
+				inventorySlotStates[i].pressTimer = 0.0f;
+		}
+	}
+
+	for (int i = 0; i < 2; i++)
+	{
+		if (weaponSlotStates[i].pressTimer > 0.0f)
+		{
+			weaponSlotStates[i].pressTimer -= dt;
+			if (weaponSlotStates[i].pressTimer < 0.0f)
+				weaponSlotStates[i].pressTimer = 0.0f;
+		}
+	}
+
+	if (pauseButtonState.pressTimer > 0.0f)
+	{
+		pauseButtonState.pressTimer -= dt;
+		if (pauseButtonState.pressTimer < 0.0f)
+			pauseButtonState.pressTimer = 0.0f;
+	}
+}
+
+// ---- Update Press Timers (called during Draw to ensure animation plays even during pause) ---- //
+void HUD::UpdatePressTimers(float dt)
+{
+	for (int i = 0; i < 3; i++)
+	{
+		if (inventorySlotStates[i].pressTimer > 0.0f)
+		{
+			inventorySlotStates[i].pressTimer -= dt;
+			if (inventorySlotStates[i].pressTimer < 0.0f)
+				inventorySlotStates[i].pressTimer = 0.0f;
+		}
+	}
+
+	for (int i = 0; i < 2; i++)
+	{
+		if (weaponSlotStates[i].pressTimer > 0.0f)
+		{
+			weaponSlotStates[i].pressTimer -= dt;
+			if (weaponSlotStates[i].pressTimer < 0.0f)
+				weaponSlotStates[i].pressTimer = 0.0f;
+		}
+	}
+
+	if (pauseButtonState.pressTimer > 0.0f)
+	{
+		pauseButtonState.pressTimer -= dt;
+		if (pauseButtonState.pressTimer < 0.0f)
+			pauseButtonState.pressTimer = 0.0f;
+	}
+}
+
+void HUD::TriggerButtonPress(UIButtonState& state)
+{
+	state.isPressed = true;
+	state.pressTimer = 0.1f;  // 0.1 second press duration
+}
+
+void HUD::TriggerWeaponSlotPress(int slotIndex)
+{
+	if (slotIndex >= 0 && slotIndex < 2)
+		TriggerButtonPress(weaponSlotStates[slotIndex]);
+}
+
+void HUD::TriggerInventorySlotPress(int slotIndex)
+{
+	if (slotIndex >= 0 && slotIndex < 3)
+		TriggerButtonPress(inventorySlotStates[slotIndex]);
+}
+
+void HUD::TriggerPauseButtonPress()
+{
+	TriggerButtonPress(pauseButtonState);
+}
+
 // ------------------------------------------------------------------------
 // ---- Draw HUD ---- //
 void HUD::Draw(MeshManager& meshManager, float camX, float camY, PlayerWeapon weapon) const
@@ -679,14 +847,32 @@ void HUD::DrawWeaponSwitch(float camX, float camY, PlayerWeapon weapon) const
 		// Draw weapon slots
 		if (weaponSwitch.slotTexture)
 		{
-			MeshManager::Get().DrawTexturedSquare(
-				weaponSwitch.slotTexture,
-				meleeX, hy, slotSize, slotSize
-			);
+			// Melee slot (index 0)
+			float meleeScale = 1.0f;
+			if (weaponSlotStates[0].isPressed && weaponSlotStates[0].pressTimer > 0.0f)
+			{
+				float pressProgress = 1.0f - (weaponSlotStates[0].pressTimer / 0.1f);
+				meleeScale = 1.0f - (0.1f * AEClamp(pressProgress, 0.0f, 1.0f));
+			}
+			float scaledMeleeSize = slotSize * meleeScale;
 
 			MeshManager::Get().DrawTexturedSquare(
 				weaponSwitch.slotTexture,
-				gunX, hy, slotSize, slotSize
+				meleeX, hy, scaledMeleeSize, scaledMeleeSize
+			);
+
+			// Gun slot (index 1)
+			float gunScale = 1.0f;
+			if (weaponSlotStates[1].isPressed && weaponSlotStates[1].pressTimer > 0.0f)
+			{
+				float pressProgress = 1.0f - (weaponSlotStates[1].pressTimer / 0.1f);
+				gunScale = 1.0f - (0.1f * AEClamp(pressProgress, 0.0f, 1.0f));
+			}
+			float scaledGunSize = slotSize * gunScale;
+
+			MeshManager::Get().DrawTexturedSquare(
+				weaponSwitch.slotTexture,
+				gunX, hy, scaledGunSize, scaledGunSize
 			);
 		}
 
@@ -783,10 +969,28 @@ void HUD::DrawPauseButton(float camX, float camY) const
 	// ---- Pause Button ---- //
 	if (pauseButton.active && pauseButton.ready && pauseButton.texture)
 	{
+		float btnX = camX + pauseButton.offsetX;
+		float btnY = camY + pauseButton.offsetY;
+		float btnWidth = pauseButton.width;
+		float btnHeight = pauseButton.height;
+
+		// Apply press scale transformation
+		float scale = 1.0f;
+		if (pauseButtonState.isPressed && pauseButtonState.pressTimer > 0.0f)
+		{
+			// Scale decreases from 1.0 to 0.9 during press
+			float pressProgress = 1.0f - (pauseButtonState.pressTimer / 0.1f);
+			scale = 1.0f - (0.1f * AEClamp(pressProgress, 0.0f, 1.0f));
+		}
+
+		float scaledWidth = btnWidth * scale;
+		float scaledHeight = btnHeight * scale;
+
+		// Draw pause button with press scale
 		MeshManager::Get().DrawTexturedSquare(
 			pauseButton.texture,
-			camX + pauseButton.offsetX, camY + pauseButton.offsetY,
-			pauseButton.width, pauseButton.height, 1.0f
+			btnX, btnY,
+			scaledWidth, scaledHeight, 1.0f
 		);
 	}
 }
@@ -814,10 +1018,21 @@ void HUD::DrawInventory(float camX, float camY) const
 	{
 		const float slotX = x + (i - 1) * (slotSize + 4.0f); // -1 to center 3 slots around x
 
+		// Apply press scale transformation
+		float scale = 1.0f;
+		if (inventorySlotStates[i].isPressed && inventorySlotStates[i].pressTimer > 0.0f)
+		{
+			// Scale decreases from 1.0 to 0.9 during press
+			float pressProgress = 1.0f - (inventorySlotStates[i].pressTimer / 0.1f);
+			scale = 1.0f - (0.1f * AEClamp(pressProgress, 0.0f, 1.0f));
+		}
+
+		float scaledSlotSize = slotSize * scale;
+
 		if (inventory.slotTexture)
 		{
 			MeshManager::Get().DrawTexturedSquare(
-				inventory.slotTexture, slotX, y, slotSize, slotSize, 0.9f
+				inventory.slotTexture, slotX, y, scaledSlotSize, scaledSlotSize, 0.9f
 			);
 		}
 
@@ -1011,6 +1226,150 @@ bool HUD::IsPauseButtonClicked(float camX, float camY) const
 	const float top = cy + halfH;
 
 	return (mouseX >= left && mouseX <= right && mouseY >= bottom && mouseY <= top);
+}
+
+int HUD::IsInventorySlotClicked(float camX, float camY) const
+{
+	if (!hudActive || !inventory.active || !inventory.ready)
+		return -1;
+
+	if (!AEInputCheckTriggered(AEVK_LBUTTON))
+		return -1;
+
+	float mouseX, mouseY;
+	MousePosition(camX, camY, mouseX, mouseY);
+
+	const float x = camX + inventory.offsetX;
+	const float y = camY + inventory.offsetY;
+	const float slotSize = inventory.slotSize;
+
+	// Check each slot (3 slots centered around x)
+	for (int i = 0; i < 3; i++)
+	{
+		const float slotX = x + (i - 1) * (slotSize + 4.0f); // -1 to center 3 slots around x
+		const float halfSize = slotSize * 0.5f;
+
+		const float left = slotX - halfSize;
+		const float right = slotX + halfSize;
+		const float bottom = y - halfSize;
+		const float top = y + halfSize;
+
+		if (mouseX >= left && mouseX <= right && mouseY >= bottom && mouseY <= top)
+		{
+			// Only return slot if it has a buff
+			if (inventory.slots[i] != BuffType::NONE && inventory.counts[i] > 0)
+				return i;
+		}
+	}
+
+	return -1;
+}
+
+PlayerWeapon HUD::IsWeaponSlotClicked(float camX, float camY) const
+{
+	if (!hudActive || !weaponSwitch.active || !weaponSwitch.ready)
+		return PlayerWeapon::NONE;
+
+	if (!AEInputCheckTriggered(AEVK_LBUTTON))
+		return PlayerWeapon::NONE;
+
+	float mouseX, mouseY;
+	MousePosition(camX, camY, mouseX, mouseY);
+
+	const float hx = camX + weaponSwitch.offsetX;
+	const float hy = camY + weaponSwitch.offsetY;
+	const float slotSize = weaponSwitch.slotSize;
+
+	// Melee slot (left)
+	const float meleeX = hx - slotSize;
+	const float halfSize = slotSize * 0.5f;
+
+	float left = meleeX - halfSize;
+	float right = meleeX + halfSize;
+	float bottom = hy - halfSize;
+	float top = hy + halfSize;
+
+	if (mouseX >= left && mouseX <= right && mouseY >= bottom && mouseY <= top)
+		return PlayerWeapon::MELEE;
+
+	// Gun slot (right)
+	const float gunX = hx;
+
+	left = gunX - halfSize;
+	right = gunX + halfSize;
+	bottom = hy - halfSize;
+	top = hy + halfSize;
+
+	if (mouseX >= left && mouseX <= right && mouseY >= bottom && mouseY <= top)
+		return PlayerWeapon::GUN;
+
+	return PlayerWeapon::NONE;
+}
+
+bool HUD::IsAnyUIElementClicked(float camX, float camY) const
+{
+	if (!hudActive)
+		return false;
+
+	if (!AEInputCheckTriggered(AEVK_LBUTTON))
+		return false;
+
+	float mouseX, mouseY;
+	MousePosition(camX, camY, mouseX, mouseY);
+
+	// Check pause button
+	if (pauseButton.active && pauseButton.ready)
+	{
+		const float cx = camX + pauseButton.offsetX;
+		const float cy = camY + pauseButton.offsetY;
+		const float halfW = pauseButton.width * 0.5f;
+		const float halfH = pauseButton.height * 0.5f;
+
+		if (mouseX >= cx - halfW && mouseX <= cx + halfW &&
+			mouseY >= cy - halfH && mouseY <= cy + halfH)
+			return true;
+	}
+
+	// Check inventory slots
+	if (inventory.active && inventory.ready)
+	{
+		const float x = camX + inventory.offsetX;
+		const float y = camY + inventory.offsetY;
+		const float slotSize = inventory.slotSize;
+
+		for (int i = 0; i < 3; i++)
+		{
+			const float slotX = x + (i - 1) * (slotSize + 4.0f);
+			const float halfSize = slotSize * 0.5f;
+
+			if (mouseX >= slotX - halfSize && mouseX <= slotX + halfSize &&
+				mouseY >= y - halfSize && mouseY <= y + halfSize)
+				return true;
+		}
+	}
+
+	// Check weapon slots
+	if (weaponSwitch.active && weaponSwitch.ready)
+	{
+		const float hx = camX + weaponSwitch.offsetX;
+		const float hy = camY + weaponSwitch.offsetY;
+		const float slotSize = weaponSwitch.slotSize;
+		const float halfSize = slotSize * 0.5f;
+
+		// Melee slot (left)
+		const float meleeX = hx - slotSize;
+		if (mouseX >= meleeX - halfSize && mouseX <= meleeX + halfSize &&
+			mouseY >= hy - halfSize && mouseY <= hy + halfSize)
+			return true;
+
+		// Gun slot (right)
+		const float gunX = hx;
+		if (mouseX >= gunX - halfSize && mouseX <= gunX + halfSize &&
+			mouseY >= hy - halfSize && mouseY <= hy + halfSize)
+			return true;
+	}
+
+	return false;
 }
 
 void HUD::AddBuffToInventory(BuffType buffType)

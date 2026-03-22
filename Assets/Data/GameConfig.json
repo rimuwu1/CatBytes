@@ -64,6 +64,11 @@
       "cols":   10,
       "start":  0,
       "duration": 0.1
+    },
+    "parallax": {
+      "back":   "Assets/Images/back.png",
+      "middle": "Assets/Images/middle.png",
+      "front":  "Assets/Images/front.png"
     }
   },
     "audio": {

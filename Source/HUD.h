@@ -18,6 +18,7 @@ Technology is prohibited.
 #include "AEEngine.h"
 #include "Player.h"
 #include "Buff.h"
+#include "Camera.h"
 #include <memory>
 #include <rapidjson/document.h>
 
@@ -33,6 +34,9 @@ class HUD
 {
 public:
 	bool IsPauseButtonClicked(float camX, float camY) const;
+	int IsInventorySlotClicked(float camX, float camY) const;  // Returns 0-2 for slot index, -1 if no click
+	PlayerWeapon IsWeaponSlotClicked(float camX, float camY) const;  // Returns weapon clicked, or NONE
+	bool IsAnyUIElementClicked(float camX, float camY) const;  // Returns true if any UI element is clicked
 
 	void AddBuffToInventory(BuffType buffType);
 	void UseBuffFromInventory(Player& player, int slot);
@@ -47,8 +51,29 @@ public:
 
 	bool IsActive() const { return hudActive; }
 
+	void UpdateButtonStates(float dt, float camX, float camY);
+	void UpdatePressTimers(float dt);
+	void TriggerWeaponSlotPress(int slotIndex);
+	void TriggerInventorySlotPress(int slotIndex);
+	void TriggerPauseButtonPress();
+
 private:
 	bool hudActive = true;
+
+	// ---- Button State Tracking ---- //
+	struct UIButtonState
+	{
+		bool isHovered = false;
+		float hoverAlpha = 0.0f;      // 0.0 to 1.0 for fade-in/out
+		bool isPressed = false;
+		float pressTimer = 0.0f;      // counts down during press animation
+	};
+
+	void TriggerButtonPress(UIButtonState& state);
+
+	UIButtonState pauseButtonState;
+	UIButtonState inventorySlotStates[3];
+	UIButtonState weaponSlotStates[2];
 
 	// ---- Hearts UI ---- //
 	struct Hearts

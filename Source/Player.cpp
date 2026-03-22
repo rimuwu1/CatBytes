@@ -38,6 +38,7 @@ Technology is prohibited.
 #include "Winlose.h"
 #include "Camera.h"
 #include "ParticleManager.h"
+#include "EnvironmentManager.h"
 
 static AEAudio s_GunAttackSound{};
 static AEAudio s_MeleeAttackSound{};
@@ -311,11 +312,15 @@ void Player_Update(Player& player, float dt)
 	if (player.fireTimer > 0.0f)
 		player.fireTimer -= dt;
 
+	// Get HUD reference to check for UI clicks
+	HUD& hud = EnvironmentManager::Get().GetHUD();
+	bool uiClicked = hud.IsAnyUIElementClicked(globalCam.x, globalCam.y);
+
 	//changed tomake it GUN
 	// only fire if the player has the weapon equipped
 	if (player.weaponEquipped && player.weapon == PlayerWeapon::GUN)
 	{
-		if (AEInputCheckTriggered(AEVK_LBUTTON) && player.fireTimer <= 0.0f)
+		if (AEInputCheckTriggered(AEVK_LBUTTON) && player.fireTimer <= 0.0f && !uiClicked)
 		{
 			for (auto& b : player.bullets)
 			{
@@ -348,7 +353,7 @@ void Player_Update(Player& player, float dt)
 		if (player.meleeCooldownTimer > 0.0f)
 			player.meleeCooldownTimer -= dt;
 
-		if (AEInputCheckTriggered(AEVK_LBUTTON) && player.meleeCooldownTimer <= 0.0f)
+		if (AEInputCheckTriggered(AEVK_LBUTTON) && player.meleeCooldownTimer <= 0.0f && !uiClicked)
 		{
 			player.isAttacking = true;
 			player.meleeCooldownTimer = MELEE_COOLDOWN;   // start cooldown

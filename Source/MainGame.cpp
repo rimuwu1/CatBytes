@@ -430,6 +430,9 @@ void MainGame_Update()
     HUD& hud = EnvironmentManager::Get().GetHUD();
 
     if (hud.IsPauseButtonClicked(globalCam.x, globalCam.y)) {
+        // Trigger press animation for pause button
+        hud.TriggerPauseButtonPress();
+
         UIManager::Get().ShowPause();
         return;
     }
@@ -445,6 +448,7 @@ void MainGame_Draw()
 
     Player& player = ObjectManager::Get().GetPlayer();
     EnvironmentManager::Get().DrawBackground();
+    EnvironmentManager::Get().DrawBackgroundOverlay(globalCam.x, globalCam.y);
     EnvironmentManager::Get().DrawWorld(globalCam.x, globalCam.y, player.weapon, player, 900.0f * 0.5f);
     ObjectManager::Get().Draw(globalCam.x, globalCam.y, 800.0f, 450.0f);
 

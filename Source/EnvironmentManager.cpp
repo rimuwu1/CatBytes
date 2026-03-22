@@ -29,6 +29,7 @@ Technology is prohibited.
 #include "Fonts.h"
 #include "rapidjson/document.h"
 #include <algorithm>
+#include <cmath>
 
 // ------------------------------------------------------------------------
 // Helper: parse a platform array from a JSON value into a vector
@@ -599,6 +600,20 @@ void EnvironmentManager::LoadAssetsFromConfig(const rapidjson::Document& doc)
     m_wallMidTex   = loadTex("wall_mid");
     m_wallRightTex = loadTex("wall_right");
 
+    // Load parallax layers from config
+    if (env.HasMember("parallax") && env["parallax"].IsObject()) {
+        const auto& parallax = env["parallax"];
+        const char* layerNames[3] = {"back", "middle", "front"};
+        float speeds[3] = {0.3f, 0.6f, 1.0f};
+        
+        for (int i = 0; i < 3; i++) {
+            if (parallax.HasMember(layerNames[i]) && parallax[layerNames[i]].IsString()) {
+                m_parallaxLayers[i].texture = TextureManager::Get().LoadTexture(parallax[layerNames[i]].GetString());
+                m_parallaxLayers[i].speed = speeds[i];
+            }
+        }
+    }
+
     if (env.HasMember("hover_anim") && env["hover_anim"].IsObject()) {
         const auto& a = env["hover_anim"];
         m_hoverAnim = std::make_unique<SpriteSheet>(
@@ -654,6 +669,9 @@ void EnvironmentManager::Update(float dt, const Player& player, float cameraY)
     if (m_spikeAnim) m_spikeAnim->Update(dt);
 
     UpdateBackground(cameraY);
+    
+    // Update parallax offset based on camera Y
+    m_parallaxY = cameraY;
 
     int section = GetSectionFromY(cameraY);
     if (section != m_previousSelection) {
@@ -1293,6 +1311,10 @@ void EnvironmentManager::DrawWorld(float camX, float camY, PlayerWeapon weapon, 
 // ------------------------------------------------------------------------
 void EnvironmentManager::DrawHUD(float camX, float camY, PlayerWeapon weapon)
 {
+    // Update press timers during draw phase so animations play even during pause
+    float dt = (float)AEFrameRateControllerGetFrameTime();
+    m_HUD.UpdatePressTimers(dt);
+    
     m_HUD.Draw(MeshManager::Get(), camX, camY, weapon);
     LevelIndicator_Draw();
 }
@@ -1316,7 +1338,62 @@ void EnvironmentManager::UpdateBackground(float cameraY)
 
 void EnvironmentManager::DrawBackground() const
 {
+    // Set background color
     AEGfxSetBackgroundColor(m_currentColour.r, m_currentColour.g, m_currentColour.b);
+    
+    // Draw each parallax layer (layer 0 stretched, layers 1-2 tiled)
+    MeshManager& mm = MeshManager::Get();
+    const float maxWorldHeight = 10600.0f;  // highest section height
+    const float screenWidth = 1600.0f;
+    const float screenHeight = 900.0f;
+    const float groundY = -350.0f;  // Ground position
+    
+    for (int i = 0; i < 3; i++) {
+        if (m_parallaxLayers[i].texture) {
+            // Calculate parallax offset (negative for proper scrolling direction)
+            // Divide by 5 to reduce parallax strength
+            float offsetY = -m_parallaxY * m_parallaxLayers[i].speed / 10.0f;
+            
+            if (i == 0) {
+                // First layer (back) - stretch from ground to max world height
+                float layerHeight = maxWorldHeight - groundY;
+                float layerCenterY = groundY + layerHeight * 0.5f + offsetY;
+                mm.DrawTexturedSquare(
+                    m_parallaxLayers[i].texture,
+                    0.0f, layerCenterY,
+                    screenWidth, layerHeight
+                );
+            } else {
+                // Layers 1-2 (middle and front) - tile by repeating texture as we scroll
+                float tileHeight = screenHeight;  // Tile size
+                float startY = offsetY;
+                
+                // Calculate how many tiles we need based on world movement
+                int numTiles = static_cast<int>(maxWorldHeight / tileHeight) + 2;
+                
+                for (int t = 0; t < numTiles; t++) {
+                    float tileY = startY + (t * tileHeight);
+                    mm.DrawTexturedSquare(
+                        m_parallaxLayers[i].texture,
+                        0.0f, tileY,
+                        screenWidth, tileHeight
+                    );
+                }
+            }
+        }
+    }
+}
+
+// Draw dark overlay between parallax background and game objects
+void EnvironmentManager::DrawBackgroundOverlay(float camX, float camY) const
+{
+    MeshManager& mm = MeshManager::Get();
+    const float screenWidth = 1600.0f;
+    const float screenHeight = 900.0f;
+    
+    // Draw a dark semi-transparent rectangle covering the entire screen
+    // Dark gray with 40% opacity (60 out of 255)
+    mm.DrawSquare(camX, camY, screenWidth, screenHeight, 30, 30, 30, 0.3f);
 }
 
 // ------------------------------------------------------------------------
