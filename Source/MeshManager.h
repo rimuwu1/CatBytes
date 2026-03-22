@@ -90,8 +90,8 @@ private:
 
     // ----- Sprite batching -----
     struct Batch {
-        AEGfxTexture* texture;
-        float uvW, uvH;
+        AEGfxTexture* texture = nullptr;
+        float uvW = 0.0f, uvH = 0.0f;
         std::vector<SpriteBatchItem> items;
     };
     std::unordered_map<size_t, Batch> m_batches;

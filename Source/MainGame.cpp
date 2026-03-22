@@ -197,7 +197,7 @@ void MainGame_Update()
     float playerPrevY = player.pos.y;
 
     // ================== GAMEPLAY LOGIC (paused during camera sequence) ==================
-    if (!g_camSequenceActive) {
+    if (!g_camSequenceActive && !EnvironmentManager::Get().IsLiftActive()) {
         for (const auto& e : enemies) {
             if (e.justDied) {
                 Camera_AddTrauma(0.3f);
@@ -420,6 +420,20 @@ void MainGame_Update()
         else
             Camera_FollowPlayer(globalCam, player.pos.x, player.pos.y, dt);
     }
+
+    // boss lift sequence: override camera  
+    if (EnvironmentManager::Get().IsLiftActive())
+    {
+        EnvironmentManager::BossLiftSequence& seq = EnvironmentManager::Get().GetLiftSequence();
+        globalCam.x = 0.0f;
+        globalCam.y = seq.camY;
+
+        // player lock
+        player.vel.x = 0.0f;
+        player.vel.y = 0.0f;
+        player.grounded = 1;
+    }
+
     Camera_UpdateShake(globalCam, dt);
     Camera_Apply(globalCam);
 

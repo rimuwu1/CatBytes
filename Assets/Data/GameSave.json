@@ -1362,13 +1362,26 @@
             { "x1": -275.0, "x2": -275.0, "y1": 9000.0, "y2": 8550.0, "width": 10.0, "active": true, "toggeable" : true },
             { "x1":  -75.0, "x2":  -75.0, "y1": 9000.0, "y2": 8550.0, "width": 10.0, "active": true, "toggeable" : true }
         ],
-        "walls": [           
-            { "x": -450.0, "y": 8250.0, "width": 20.0, "height": 1800.0 },
-            { "x":  100.0, "y": 8250.0, "width": 20.0, "height": 1800.0 }
+        "walls": [     
+            { "x":  100.0, "y": 8270.0, "width": 20.0, "height": 1800.0 }
         ],
       "toggleable_walls": [
             { "x":  450.0, "y": 7125.0, "width": 10.0, "height": 1010.0 }
         ],
+        "boss_door": {
+            "x": -410.0,
+            "y": 7466.0,
+            "width": 20.0,
+            "height": 200.0,
+            "file": "Assets/Images/bossdoor.png",
+            "lift_file": "Assets/Images/bosslift.png",
+            "lift_rows": 1,
+            "lift_cols": 17,
+            "lift_x": -590.0,
+            "lift_y": 9163.0,
+            "prompt": "Press E to enter boss room",
+            "trigger_radius": 150.0
+        },
         "computers": [
             { "x":    0.0, "y": 7115.0, "width": 100.0, "height": 100.0, "direction": "horizontal", "beamX1": -550.0, "beamY1": 6350.0, "beamX2":  550.0, 
               "beamY2": 6350.0, "beamStartX": -500.0, "beamStartY": 6370.0, "beamEndX":  500.0, "beamEndY": 6370.0, "beamWidth":  5.0, "indWidth": 120.0, "indHeight": 120.0 },
@@ -1376,7 +1389,7 @@
               "beamY2": 9540.0, "beamStartX": 700.0, "beamStartY": 9490.0, "beamEndX":  700.0, "beamEndY": 7650.0, "beamWidth":  5.0, "indWidth": 150.0, "indHeight": 150.0 }
         ]
     },
-    "level_4": {
+    "boss_level": {
         "completed": false,
             "enemies": [
       {

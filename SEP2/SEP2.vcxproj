@@ -13,6 +13,7 @@
   <ItemGroup>
     <ClCompile Include="..\Source\AudioManager.cpp" />
     <ClCompile Include="..\Source\Background.cpp" />
+    <ClCompile Include="..\Source\BossAI.cpp" />
     <ClCompile Include="..\Source\BossRoom.cpp" />
     <ClCompile Include="..\Source\Buff.cpp" />
     <ClCompile Include="..\Source\Camera.cpp" />
@@ -52,6 +53,7 @@
   <ItemGroup>
     <ClInclude Include="..\Source\AudioManager.h" />
     <ClInclude Include="..\Source\Background.h" />
+    <ClInclude Include="..\Source\BossAI.h" />
     <ClInclude Include="..\Source\BossRoom.h" />
     <ClInclude Include="..\Source\Buff.h" />
     <ClInclude Include="..\Source\Camera.h" />

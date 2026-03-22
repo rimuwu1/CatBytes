@@ -2,7 +2,9 @@
 /*!
 \file GameStateList.h
 \author Joash ng, joash.ng, 2502780
+		Sim Hui Min, s.huimin, 2503506
 \par joash.ng@digipen.edu
+	 s.huimin@digipen.edu
 \date 21/01/2026
 \brief This file contains the enumeration list for different game states.
 
@@ -28,4 +30,5 @@ enum GS_STATES
 	GS_CREDITS,		// Credits
 	GS_QUIT,        // Quit state to exit the game
 	GS_RESTART,     // Restart state to reload current level 
+	GS_BOSSROOM     // bossss
 };

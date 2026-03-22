@@ -1,0 +1,163 @@
+{
+  "environment": {
+    "platform_left":  "Assets/Images/platform_left.png",
+    "platform_mid":   "Assets/Images/platform_middle.png",
+    "platform_right": "Assets/Images/platform_right.png",
+    "wall_left":      "Assets/Images/wall_left.png",
+    "wall_mid":       "Assets/Images/wall_mid.png",
+    "wall_right":     "Assets/Images/wall_right.png"
+  },
+  "audio": {
+  },
+  "player": {
+    "x": -500.0,
+    "y": -270.0,
+    "width": 50.0,
+    "height": 80.0,
+    "hp": 3.0,
+    "melee_damage": 10.0,
+    "knockback_velocity": 400.0,
+    "knockback_air_up": 300.0,
+    "pogo_velocity": 600.0,
+    "bullet": {
+      "speed": 1200.0,
+      "damage": 2.0,
+      "cooldown": 0.25,
+      "width": 30.0,
+      "height": 30.0,
+      "max_count": 20
+    },
+    "bullet_animations": {
+      "file": "Assets/Images/PlayerBulletSheet.png",
+      "rows": 1,
+      "cols": 4,
+      "clips": [
+        { "name": "fly", "start": 0, "end": 3, "duration": 0.05, "loop": false }
+      ]
+    },
+    "animations": {
+      "file": "Assets/Images/PlayerSheet.png",
+      "rows": 20,
+      "cols": 5,
+      "clips": [
+        { "name": "idle",           "start":  0, "end":  4, "duration": 0.1, "loop": true  },
+        { "name": "idle2",          "start":  5, "end":  9, "duration": 0.1, "loop": false },
+        { "name": "jumpFRONT",      "start": 10, "end": 12, "duration": 0.1, "loop": false },
+        { "name": "jumpSIDE",       "start": 15, "end": 17, "duration": 0.1, "loop": false },
+        { "name": "walk",           "start": 20, "end": 23, "duration": 0.1, "loop": true  },
+        { "name": "hurt",           "start": 25, "end": 27, "duration": 0.1, "loop": false },
+        { "name": "clawIdle",       "start": 30, "end": 34, "duration": 0.1, "loop": true  },
+        { "name": "clawAttack",     "start": 35, "end": 37, "duration": 0.1, "loop": false },
+        { "name": "clawAttackUP",   "start": 40, "end": 42, "duration": 0.1, "loop": false },
+        { "name": "clawAttackDOWN", "start": 45, "end": 47, "duration": 0.1, "loop": false },
+        { "name": "clawWalk",       "start": 50, "end": 53, "duration": 0.1, "loop": true  },
+        { "name": "gunIdle",        "start": 55, "end": 59, "duration": 0.1, "loop": true  },
+        { "name": "gunWalk",        "start": 60, "end": 63, "duration": 0.1, "loop": true  },
+        { "name": "gunShoot",       "start": 65, "end": 67, "duration": 0.1, "loop": false },
+        { "name": "normal2claw",    "start": 70, "end": 72, "duration": 0.1, "loop": false },
+        { "name": "normal2gun",     "start": 75, "end": 78, "duration": 0.1, "loop": false },
+        { "name": "claw2normal",    "start": 80, "end": 82, "duration": 0.1, "loop": false },
+        { "name": "claw2gun",       "start": 85, "end": 89, "duration": 0.1, "loop": false },
+        { "name": "gun2normal",     "start": 90, "end": 93, "duration": 0.1, "loop": false },
+        { "name": "gun2claw",       "start": 90, "end": 93, "duration": 0.1, "loop": false },
+        { "name": "dash",           "start": 20, "end": 22, "duration": 0.05,"loop": false }
+      ]
+    },
+    "slash": {
+      "file": "Assets/Images/SlashSheet.png",
+      "rows": 1,
+      "cols": 5,
+      "clips": [
+        { "name": "slash", "start": 0, "end": 4, "duration": 0.03, "loop": false }
+      ]
+    }
+  },
+  "ui": {
+    "hearts": {
+      "active": true,
+      "x": 680.0, "y": 410.0, "w": 128.0, "h": 128.0,
+      "animations": {
+        "file": "Assets/Images/HealthSheet.png",
+        "rows": 1, "cols": 4,
+        "clips": [
+          { "name": "hp3", "start": 0, "end": 0, "speed": 1.0, "loop": false },
+          { "name": "hp2", "start": 1, "end": 1, "speed": 1.0, "loop": false },
+          { "name": "hp1", "start": 2, "end": 2, "speed": 1.0, "loop": false },
+          { "name": "hp0", "start": 3, "end": 3, "speed": 1.0, "loop": false }
+        ]
+      }
+    },
+    "weaponSwitch": {
+      "active": true,
+      "x": 650, "y": -380, "slotSize": 80, "iconSize": 45,
+      "slotTexture": "Assets/Images/weaponSlot.png",
+      "meleeSelected": {
+        "file": "Assets/Images/N2CSheet.png", "rows": 1, "cols": 3,
+        "clips": [ { "name": "selected", "start": 0, "end": 2, "speed": 0.1, "loop": false } ]
+      },
+      "gunSelected": {
+        "file": "Assets/Images/N2GSheet.png", "rows": 1, "cols": 3,
+        "clips": [ { "name": "selected", "start": 0, "end": 2, "speed": 0.1, "loop": false } ]
+      }
+    },
+    "pauseButton": {
+      "active": true,
+      "x": -720, "y": 400, "w": 48, "h": 48,
+      "texture": "Assets/Images/pauseButton.png"
+    }
+  },
+  "boss_arena": {
+    "floor": { "x": 0.0, "y": -325.0, "width": 1520.0, "height": 40.0 },
+    "walls": [
+      { "x": -780.0, "y": 0.0, "width": 40.0, "height": 1000000000.0 },
+      { "x":  780.0, "y": 0.0, "width": 40.0, "height": 1000000000.0 }
+    ],
+    "platforms": [
+      { "x": -500.0, "y": 150.0, "width": 200.0, "height": 40.0, "active": true },
+      { "x":  500.0, "y": 150.0, "width": 200.0, "height": 40.0, "active": true },
+      { "x":    0.0, "y": 300.0, "width": 300.0, "height": 40.0, "active": true }
+    ]
+  },
+  "boss": {
+    "type": "boss",
+    "x": 0.0, "y": -260.0,
+    "width": 120.0, "height": 120.0,
+    "hp": 100.0, "speed": 120.0, "damage": 8.0,
+    "patrol_min_x": -240.0, "patrol_max_x": 240.0,
+    "knockback_velocity": 300.0,
+    "laser_cooldown": 4.0, "laser_track": 1.5,
+    "laser_lockon": 0.8, "laser_fire": 0.6,
+    "laser_damage": 10.0, "laser_knockback": 400.0,
+    "boss_lasers": [
+      { "x": -200.0, "y": -160.0, "width": 14.0 },
+      { "x":    0.0, "y": -160.0, "width": 14.0 },
+      { "x":  200.0, "y": -160.0, "width": 14.0 }
+    ],
+    "animations": {
+      "file": "Assets/Images/BossSpritesheet.png",
+      "rows": 19,
+      "cols": 5,
+      "clips": [
+        { "name": "attackpunch",      "start":  0, "end":  4, "duration": 0.1, "loop": false },
+        { "name": "teleportshow",     "start":  5, "end":  9, "duration": 0.1, "loop": false },
+        { "name": "teleportaway",     "start": 10, "end": 14, "duration": 0.1, "loop": false },
+        { "name": "slamimpact",       "start": 15, "end": 19, "duration": 0.1, "loop": false },
+        { "name": "slamdown",         "start": 20, "end": 24, "duration": 0.1, "loop": false },
+        { "name": "jump",             "start": 25, "end": 29, "duration": 0.1, "loop": false },
+        { "name": "block",            "start": 30, "end": 34, "duration": 0.1, "loop": false },
+        { "name": "hurt",             "start": 35, "end": 39, "duration": 0.1, "loop": false },
+        { "name": "hurtbetweenphase", "start": 40, "end": 44, "duration": 0.1, "loop": true  },
+        { "name": "usepc",            "start": 45, "end": 49, "duration": 0.1, "loop": true  },
+        { "name": "usewatch",         "start": 50, "end": 54, "duration": 0.1, "loop": true  },
+        { "name": "chargeslam",       "start": 55, "end": 59, "duration": 0.1, "loop": true  },
+        { "name": "walk",             "start": 60, "end": 64, "duration": 0.1, "loop": true  },
+        { "name": "attackidle",       "start": 65, "end": 69, "duration": 0.1, "loop": true  },
+        { "name": "backtofrontturn",  "start": 70, "end": 74, "duration": 0.1, "loop": false },
+        { "name": "b4fightidle",      "start": 75, "end": 79, "duration": 0.1, "loop": false },
+        { "name": "backidle",         "start": 80, "end": 84, "duration": 0.1, "loop": true  },
+        { "name": "fightoverdisappear","start": 85, "end": 89, "duration": 0.1, "loop": false },
+        { "name": "fightover",        "start": 90, "end": 94, "duration": 0.1, "loop": true  }
+      ]
+    }
+  }
+}

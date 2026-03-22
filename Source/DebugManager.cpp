@@ -2,7 +2,9 @@
 /*!
 \file DebugManager.cpp
 \author Joash ng, joash.ng, 2502780
+        Sim Hui Min, s.huimin, 2503506
 \par joash.ng@digipen.edu
+     s.huimin@digipen.edu
 \date 05/03/2026
 \brief Implements the debug overlay and in-game developer console.
 
@@ -117,7 +119,7 @@ static constexpr struct { const char* key; float x; float y; } k_TpSpots[] =
     { "2",   0.f, 1810.f },  // first platform of level 2
     { "3",    0.f, 4600.f },  // first platform of level 3
     { "4",      520.f, 9660.f },  // start of level 4 (boss room i think)
-    { "boss",   0.f, 12100.f },  // boss arena (uhh i dont think this platform is supposed to be here but) // 67
+    { "end",   -185.f, 7410.f },  // boss checkpoint (uhh i dont think this platform is supposed to be here but) // 67
 };
 static constexpr int k_TpCount = (int)(sizeof(k_TpSpots) / sizeof(k_TpSpots[0]));
 
@@ -425,12 +427,29 @@ void DebugManager::RegisterBuiltinCommands()
         });
 
     // ---- tp -----------------------------------------------------------------
-    RegisterCommand("tp", "tp <1|2|3|4|boss>", "Teleport to section start. Zeroes velocity.",
+    RegisterCommand("tp", "tp <1|2|3|4|end|boss|main>", "Teleport to section start. 'boss'=GS_BOSSROOM, 'main'=GS_MAINGAME.",
         [this](const std::vector<std::string>& args)
         {
-            if (args.size() < 2) { Log("Usage: tp <1|2|3|4|boss>"); return; }
+            if (args.size() < 2) { Log("Usage: tp <1|2|3|4|end|boss|main> 'boss'=GS_BOSSROOM, 'main'=GS_MAINGAME."); return; }
             Player& p = ObjectManager::Get().GetPlayer();
             const std::string& dest = args[1];
+
+            // 'boss' jumps directly to GS_BOSSROOM
+            if (dest == "boss" || dest == "b")
+            {
+                GameStateManager::Get().next = GS_BOSSROOM;
+                Log("Teleporting to GS_BOSSROOM...");
+                return;
+            }
+
+            // 'main' jumps back to GS_MAINGAME
+            if (dest == "main" || dest == "m")
+            {
+                GameStateManager::Get().next = GS_MAINGAME;
+                Log("Teleporting to GS_MAINGAME...");
+                return;
+            }
+
             for (int i = 0; i < k_TpCount; ++i)
             {
                 if (dest == k_TpSpots[i].key)
@@ -446,7 +465,7 @@ void DebugManager::RegisterBuiltinCommands()
                     return;
                 }
             }
-            Log("Unknown destination '" + dest + "'. Options: 1 2 3 4 boss");
+            Log("Unknown destination '" + dest + "'. Options: 1 2 3 4 end boss main");
         });
 
     // ---- tpxy ---------------------------------------------------------------

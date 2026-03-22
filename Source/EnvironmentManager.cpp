@@ -22,6 +22,7 @@ Technology is prohibited.
 #include "TextureManager.h"
 #include "LevelIndicator.h"
 #include "GameSaveManager.h"
+#include "GameStateManager.h"
 #include "Player.h"
 #include "enemy.h"
 #include "EnemyBullet.h"
@@ -558,6 +559,23 @@ void EnvironmentManager::LoadFromConfig(const rapidjson::Document& doc)
         }
     }
 
+    // ---- boss door ----
+    if (doc.HasMember("level_3") && doc["level_3"].HasMember("boss_door"))
+    {
+        const auto& bd = doc["level_3"]["boss_door"];
+        m_bossDoor.x             = bd["x"].GetFloat();
+        m_bossDoor.y             = bd["y"].GetFloat();
+        m_bossDoor.w             = bd["width"].GetFloat();
+        m_bossDoor.h             = bd["height"].GetFloat();
+        m_bossDoor.liftX         = bd["lift_x"].GetFloat();
+        m_bossDoor.liftY         = bd["lift_y"].GetFloat();
+        m_bossDoor.liftW         = bd.HasMember("lift_width")  ? bd["lift_width"].GetFloat()  : 340.0f;
+        m_bossDoor.liftH         = bd.HasMember("lift_height") ? bd["lift_height"].GetFloat() : 3600.0f;
+        m_bossDoor.triggerRadius = bd["trigger_radius"].GetFloat();
+        m_bossDoor.prompt        = bd["prompt"].GetString();
+        m_bossDoorLoaded         = true;
+    }
+
     // ---- Checkpoints ----
     if (doc.HasMember("checkpoints")) {
         m_checkpoints.clear();
@@ -646,6 +664,20 @@ void EnvironmentManager::LoadAssetsFromConfig(const rapidjson::Document& doc)
             static_cast<float>(a["duration"].GetDouble())
         );
     }
+
+    // boss door textures
+    if (m_bossDoorLoaded && doc.HasMember("level_3") && doc["level_3"].HasMember("boss_door"))
+    {
+        const auto& bd = doc["level_3"]["boss_door"];
+        m_bossDoor.doorTex = TextureManager::Get().LoadTexture(bd["file"].GetString());
+        m_bossDoor.liftAnim = std::make_unique<SpriteSheet>(
+            bd["lift_file"].GetString(),
+            bd["lift_rows"].GetInt(),
+            bd["lift_cols"].GetInt()
+        );
+        m_bossDoor.liftAnim->AddClip("rise", 0, 16, 0.08f, false);
+        m_bossDoor.liftAnim->SetFrame(0);
+    }
 }
 
 // ------------------------------------------------------------------------
@@ -660,7 +692,7 @@ void EnvironmentManager::Initialize()
 }
 
 // ------------------------------------------------------------------------
-void EnvironmentManager::Update(float dt, const Player& player, float cameraY)
+void EnvironmentManager::Update(float dt, Player& player, float cameraY)
 {
     m_HUD.Update(dt, player, player.weapon);
 
@@ -682,7 +714,7 @@ void EnvironmentManager::Update(float dt, const Player& player, float cameraY)
 
     // update spike timer
     auto updateObsTimer = [&](std::vector<PlatformObstacle>& obstacles)
-    {
+        {
             for (auto& o : obstacles)
             {
                 if (!o.isSpike) continue;
@@ -693,10 +725,63 @@ void EnvironmentManager::Update(float dt, const Player& player, float cameraY)
                     o.active = !o.active;
                 }
             }
-    };
+        };
     updateObsTimer(m_level1Obstacles);
     updateObsTimer(m_level2Obstacles);
     updateObsTimer(m_level3Obstacles);
+
+    // boss door proxmity check
+    if (m_bossDoorLoaded && !m_liftSeq.active)
+    {
+        float dx = player.pos.x - m_bossDoor.x;
+        float dy = player.pos.y - m_bossDoor.y;
+        float dist = sqrtf(dx * dx + dy * dy);
+        m_bossDoor.playerNear = (dist < m_bossDoor.triggerRadius);
+
+        if (m_bossDoor.playerNear && AEInputCheckTriggered('E') && !m_bossDoor.activated)
+        {
+            m_bossDoor.activated = true;
+            m_liftSeq.active = true;
+            m_liftSeq.liftPosY = m_bossDoor.liftY;
+            m_liftSeq.camY = BossLiftSequence::CAM_START_Y;
+            m_liftSeq.fadeAlpha = 0.0f;
+            m_liftSeq.fadingIn = false;
+            if (m_bossDoor.liftAnim)
+                m_bossDoor.liftAnim->Play("rise");
+
+            player.pos.x = -1000.0f; // hide player off screen
+            player.pos.y = 7400.0f;
+        }
+    }
+
+    // lift sequence tick
+    if (m_liftSeq.active)
+    {
+        m_liftSeq.camY += BossLiftSequence::LIFT_SPEED * dt;
+
+        if (m_bossDoor.liftAnim)
+            m_bossDoor.liftAnim->Update(dt);
+
+        if (m_liftSeq.camY >= BossLiftSequence::FADE_START)
+            m_liftSeq.fadingIn = true;
+
+        if (m_liftSeq.fadingIn)
+        {
+            m_liftSeq.fadeAlpha += BossLiftSequence::FADE_SPEED * dt;
+            if (m_liftSeq.fadeAlpha > 1.0f) m_liftSeq.fadeAlpha = 1.0f;
+        }
+
+        if (m_liftSeq.fadeAlpha >= 1.0f)
+        {
+            m_liftSeq.active = false;
+            m_bossDoor.activated = false;
+            m_liftSeq.fadeAlpha = 0.0f;
+            m_liftSeq.fadingIn = false;
+            if (m_bossDoor.liftAnim)
+                m_bossDoor.liftAnim->SetFrame(0);
+            GameStateManager::Get().next = GS_BOSSROOM;
+        }
+    }
 
     // update laser timer
     auto updateLaserTimer = [&](std::vector<PlatformLaser>& lasers)
@@ -713,6 +798,31 @@ void EnvironmentManager::Update(float dt, const Player& player, float cameraY)
         };
     updateLaserTimer(m_level2Lasers);
     updateLaserTimer(m_level3Lasers);
+}
+
+void EnvironmentManager::LoadBossArenaFromConfig(const rapidjson::Document& doc)
+{
+    if (!doc.HasMember("boss_arena")) return;
+    const auto& arena = doc["boss_arena"];
+
+    // walls
+    if (arena.HasMember("walls"))
+    {
+        m_wallPlatforms.clear();
+        for (const auto& w : arena["walls"].GetArray()) {
+            Platform wall{};
+            wall.x = w["x"].GetFloat(); wall.y = w["y"].GetFloat();
+            wall.w = w["width"].GetFloat(); wall.h = w["height"].GetFloat();
+            wall.active = true;
+            m_wallPlatforms.push_back(wall);
+        }
+    }
+
+    // platforms
+    if (arena.HasMember("platforms"))
+        ParsePlatforms(arena["platforms"], m_bossPlatforms);
+
+    MarkStaticDirty();
 }
 
 // ------------------------------------------------------------------------
@@ -910,7 +1020,7 @@ void EnvironmentManager::DrawWorld(float camX, float camY, PlayerWeapon weapon, 
             addHoverForLevel(m_level3Platforms);
             addHoverForLevel(m_bossPlatforms);
             addHoverForLevel(m_wallPlatforms);
-            addHoverForLevel(m_level3WallPlatforms);
+            /*addHoverForLevel(m_level3WallPlatforms);*/
         }
 
         // Checkpoint animations - always dynamic
@@ -1301,7 +1411,47 @@ void EnvironmentManager::DrawWorld(float camX, float camY, PlayerWeapon weapon, 
     drawBeams(m_level3Computers);
 
     // --------------------------------------------------------------------
-    // 5. Ground (single colored square)
+    // 5. Boss door 
+    // --------------------------------------------------------------------
+    if (m_bossDoorLoaded)
+    {
+        if (m_bossDoor.doorTex && inView(m_bossDoor.y, m_bossDoor.h * 0.5f))
+            mm.DrawTexturedSquare(m_bossDoor.doorTex,
+                m_bossDoor.x, m_bossDoor.y,
+                m_bossDoor.w, m_bossDoor.h, 1.0f);
+
+        if (m_bossDoor.liftAnim)
+        {
+            float drawY = m_bossDoor.liftY;
+            if (inView(drawY, m_bossDoor.liftH * 0.5f))
+                mm.DrawSpriteSheet(*m_bossDoor.liftAnim,
+                    m_bossDoor.liftX, drawY,
+                    m_bossDoor.liftW, m_bossDoor.liftH);
+        }
+
+        if (m_bossDoor.playerNear && !m_liftSeq.active)
+        {
+            float windowWidth  = (float)AEGfxGetWindowWidth();
+            float windowHeight = (float)AEGfxGetWindowHeight();
+            float screenX = (m_bossDoor.x - camX) / (windowWidth  * 0.5f);
+            float screenY = (m_bossDoor.y + m_bossDoor.h * 0.5f + 20.0f - camY) / (windowHeight * 0.5f);
+            if (screenX >  0.5f) screenX =  0.5f;
+            if (screenX < -0.9f) screenX = -0.9f;
+            AEGfxPrint(g_FontSmall, m_bossDoor.prompt.c_str(),
+                screenX, screenY, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f);
+        }
+    }
+
+    // fade overlay
+    if (m_liftSeq.fadeAlpha > 0.0f)
+    {
+        float w = (float)AEGfxGetWindowWidth();
+        float h = (float)AEGfxGetWindowHeight();
+        mm.DrawSquare(camX, camY, w, h, 0, 0, 0, m_liftSeq.fadeAlpha);
+    }
+
+    // --------------------------------------------------------------------
+    // 6. Ground (single colored square)
     // --------------------------------------------------------------------
     mm.DrawSquare(0.0f, -350.0f, 1600.0f, 50.0f, 0, 0, 0);
 }
@@ -1507,6 +1657,11 @@ void EnvironmentManager::Clear()
     m_level3Lasers.clear();
 
     m_level3Computers.clear();
+
+    m_bossDoor        = BossDoor{};
+    m_liftSeq         = BossLiftSequence{};
+    m_bossDoorLoaded  = false;
+    m_bossRoomMode = false;
     
     // Also clear static cache and mark dirty to avoid stale geometry after a restart/load
     m_staticCache.clear();

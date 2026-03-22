@@ -90,7 +90,7 @@ void ObjectManager::LoadFromConfig(const rapidjson::Document& doc)
 
     // Gather enemies and buffs from every level key present in the document
     // Load enemies from all levels
-    const char* levelKeys[] = { "level_1", "level_2", "level_3", "level_4" };
+    const char* levelKeys[] = { "level_1", "level_2", "level_3" };
 
     for (const char* key : levelKeys)
     {

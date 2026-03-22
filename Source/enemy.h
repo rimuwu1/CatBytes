@@ -117,6 +117,9 @@ struct Enemy
     float laserDamage        = 10.0f;           // damage per hit
     float laserKnockback     = 400.0f;          // knockback force on hit
     AEGfxTexture* laserTex = nullptr;
+
+    // bossAI
+    bool isInvincible = false;  // blocks damage during phase changes
 };
 
 // Initialisation functions take a config object

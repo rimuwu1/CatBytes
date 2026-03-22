@@ -14,6 +14,7 @@ Technology is prohibited.
 /* End Header **************************************************************************/
 
 #pragma once
+#include "rapidjson/document.h"
 
 class BossRoom
 {
@@ -22,17 +23,22 @@ public:
         static BossRoom instance;
         return instance;
     }
-
-    void Load();
-    void Initialize();
+    void Initialize(const rapidjson::Document& doc);
     void Update(float dt);
     void Draw();
     void Free();
     void Unload();
 private:
-    // prevent external construction/destruction
     BossRoom() = default;
     ~BossRoom() = default;
     BossRoom(const BossRoom&) = delete;
     BossRoom& operator=(const BossRoom&) = delete;
 };
+
+// Free functions for GSM
+void BossRoom_Load();
+void BossRoom_Initialize();
+void BossRoom_Update();
+void BossRoom_Draw();
+void BossRoom_Free();
+void BossRoom_Unload();

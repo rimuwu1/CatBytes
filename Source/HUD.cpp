@@ -16,6 +16,7 @@ Technology is prohibited.
 /* End Header **************************************************************************/
 #include "HUD.h"
 #include "MeshManager.h"
+#include "EnvironmentManager.h"
 #include "SpriteSheet.h"
 #include "Player.h"
 #include "Fonts.h"
@@ -792,12 +793,14 @@ void HUD::Draw(MeshManager& meshManager, float camX, float camY, PlayerWeapon we
 		return;
 	}
 
-	DrawHearts(camX, camY);
-	DrawWeaponSwitch(camX, camY, weapon);
-	DrawProgressBar(meshManager, camX, camY);
-	DrawPauseButton(camX, camY);
-	DrawInventory(camX, camY);
-	DrawBuffBar(camX, camY);
+	if (!EnvironmentManager::Get().IsBossRoomMode())
+	{
+		DrawHearts(camX, camY);
+		DrawWeaponSwitch(camX, camY, weapon);
+		DrawProgressBar(meshManager, camX, camY);
+		DrawPauseButton(camX, camY);
+		DrawInventory(camX, camY);
+	}
 }
 
 // ---- Draw Hearts ---- //

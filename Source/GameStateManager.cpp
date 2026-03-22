@@ -3,8 +3,10 @@
 \file GameStateManager.cpp
 \author Joash ng, joash.ng, 2502780
         Tse Xuan Qi Tristin, tse.x, 2503757
+        Sim Hui Min, s.huimin, 2503506
 \par joash.ng@digipen.edu
      tse.x@digipen.edu
+     s.huimin@digipen.edu
 \date 21/01/2026
 \brief  This file implements the GameStateManager singleton, responsible for managing
         the flow of different game states and their associated load/init/update/draw/
@@ -25,6 +27,7 @@ Technology is prohibited.
 #include "WinLose.h"
 #include "Controls.h"
 #include "Credits.h"
+#include "BossRoom.h"
 
 // ----------------------------------------------------------------------------
 // Initializes the Game State Manager with a starting state
@@ -97,6 +100,14 @@ void GameStateManager::Update()
         fpDraw = Credits_Draw;
         fpFree = Credits_Free;
         fpUnload = Credits_Unload;
+        break;
+    case GS_BOSSROOM:
+        fpLoad       = BossRoom_Load;
+        fpInitialize = BossRoom_Initialize;
+        fpUpdate     = BossRoom_Update;
+        fpDraw       = BossRoom_Draw;    
+        fpFree       = BossRoom_Free;
+        fpUnload     = BossRoom_Unload;
         break;
     case GS_QUIT:
         break;

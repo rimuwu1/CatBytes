@@ -4,9 +4,11 @@
 \author Tse Xuan Qi Tristin, tse.x, 2503757
         Joash ng, joash.ng, 2502780
         Kerwin Wong Jia Jie, kerwinjiajie.wong, 2502740
+        Sim Hui Min, s.huimin, 2503506
 \par    tse.x@digipen.edu
         joash.ng@digipen.edu
         kerwinjiajie.wong@digipen.edu
+        s.huimin@digipen.edu
 \date Junuary, 24, 2026
 \brief Implements a simple patrolling(?) enemy.
 The enemy moves automatically left and right between patrol bounds 
@@ -1004,119 +1006,130 @@ void BossLasers_Draw(const Enemy& enemy)
 // -----------------------------------------------------------------------------
 void BossEnemy_Update(Enemy& enemy, const Player& player, float dt) {
 
+    (void)player;
     enemy.justDied = false;
 
+    // drain hitStunTimer so hitJustStarted fires correctly on each new hit
+    if (enemy.hitStunTimer > 0.0f)
+    {
+        enemy.hitStunTimer -= dt;
+        if (enemy.hitStunTimer < 0.0f) enemy.hitStunTimer = 0.0f;
+    }
+
+    // BossAI_Update owns all animation ticking — do nothing here
+    
     // Update boss lasers (tracking/lockon/firing state machines)
-    BossLasers_Update(enemy, player, dt);
+    /*BossLasers_Update(enemy, player, dt);*/
 
-    if (!enemy.spriteSheet) return;
+    //if (!enemy.spriteSheet) return;
 
-    const std::string currentClip = enemy.spriteSheet->GetCurrentClip();
+    ///*const std::string currentClip = enemy.spriteSheet->GetCurrentClip();*/
 
-    if (!enemy.isAlive)
-    {
-        if (currentClip == "dead")
-        {
-            enemy.hitStunTimer -= dt;
-            enemy.spriteSheet->Update(dt);
+    //// dead animation
+    //if (!enemy.isAlive)
+    //{
+    //    if (enemy.spriteSheet && enemy.spriteSheet->GetCurrentClip() == "dead")
+    //    {
+    //        enemy.hitStunTimer -= dt;
+    //        enemy.spriteSheet->Update(dt);
 
-            if (enemy.hitStunTimer <= 0.0f)
-            {
-                enemy.hitStunTimer = 0.0f;
-                enemy.spriteSheet->Stop();
-            }
-        }
-        return;
-    }
+    //        if (enemy.hitStunTimer <= 0.0f)
+    //        {
+    //            enemy.hitStunTimer = 0.0f;
+    //            enemy.spriteSheet->Stop();
+    //        }
+    //    }
+    //}
 
-    if (enemy.hitStunTimer > 0.0f) {
-        // Apply knockback movement first
-        if (enemy.knockbackTimer > 0.0f)
-        {
-            enemy.knockbackTimer -= dt;
-            Enemy_MoveWithinPatrolBounds(enemy, enemy.knockbackVel.x * dt);
-            if (enemy.knockbackTimer <= 0.0f)
-            {
-                enemy.knockbackTimer = 0.0f;
-                enemy.knockbackVel = { 0.0f, 0.0f };
-            }
-        }
-        else
-        {
-            // Only decrement hitstun after knockback is done
-            enemy.hitStunTimer -= dt;
-        }
+    //if (enemy.hitStunTimer > 0.0f) {
+    //    // Apply knockback movement first
+    //    if (enemy.knockbackTimer > 0.0f)
+    //    {
+    //        enemy.knockbackTimer -= dt;
+    //        Enemy_MoveWithinPatrolBounds(enemy, enemy.knockbackVel.x * dt);
+    //        if (enemy.knockbackTimer <= 0.0f)
+    //        {
+    //            enemy.knockbackTimer = 0.0f;
+    //            enemy.knockbackVel = { 0.0f, 0.0f };
+    //        }
+    //    }
+    //    else
+    //    {
+    //        // Only decrement hitstun after knockback is done
+    //        enemy.hitStunTimer -= dt;
+    //    }
 
-        enemy.spriteSheet->Update(dt);
+    //    enemy.spriteSheet->Update(dt);
 
-        if (enemy.hitStunTimer <= 0.0f)
-        {
-            enemy.hitStunTimer = 0.0f;
-            Enemy_SetState(enemy, EnemyState::Patrol);
-        }
-        return;
-    }
+    //    if (enemy.hitStunTimer <= 0.0f)
+    //    {
+    //        enemy.hitStunTimer = 0.0f;
+    //        Enemy_SetState(enemy, EnemyState::Patrol);
+    //    }
+    //    return;
+    //}
 
-    switch (enemy.state)
-    {
-    case EnemyState::Idle:
-        enemy.stateTimer -= dt;
-        enemy.vel = { 0.0f, 0.0f };
+    //switch (enemy.state)
+    //{
+    //case EnemyState::Idle:
+    //    enemy.stateTimer -= dt;
+    //    enemy.vel = { 0.0f, 0.0f };
 
-        if (enemy.stateTimer <= 0.0f)
-            Enemy_SetState(enemy, EnemyState::Patrol);
-        break;
+    //    if (enemy.stateTimer <= 0.0f)
+    //        Enemy_SetState(enemy, EnemyState::Patrol);
+    //    break;
 
-    case EnemyState::Patrol:
-    {
-        if (enemy.returnToHomeOnly)
-        {
-            const float dxToHome = enemy.homeX - enemy.pos.x;
-            const float epsilon = 1.0f;
+    //case EnemyState::Patrol:
+    //{
+    //    if (enemy.returnToHomeOnly)
+    //    {
+    //        const float dxToHome = enemy.homeX - enemy.pos.x;
+    //        const float epsilon = 1.0f;
 
-            if (fabsf(dxToHome) <= epsilon)
-            {
-                enemy.pos.x = enemy.homeX;
-                enemy.direction = enemy.homeDirection;
-                enemy.vel = { 0.0f, 0.0f };
-                Enemy_SetState(enemy, EnemyState::Idle);
-            }
-            else
-            {
-                enemy.direction = (dxToHome > 0.0f) ? 1 : -1;
-                enemy.vel.x = enemy.direction * enemy.moveSpeed;
-                Enemy_MoveWithinPatrolBounds(enemy, enemy.vel.x * dt);
-            }
-        }
-        else
-        {
-            enemy.vel.x = enemy.direction * enemy.moveSpeed;
+    //        if (fabsf(dxToHome) <= epsilon)
+    //        {
+    //            enemy.pos.x = enemy.homeX;
+    //            enemy.direction = enemy.homeDirection;
+    //            enemy.vel = { 0.0f, 0.0f };
+    //            Enemy_SetState(enemy, EnemyState::Idle);
+    //        }
+    //        else
+    //        {
+    //            enemy.direction = (dxToHome > 0.0f) ? 1 : -1;
+    //            enemy.vel.x = enemy.direction * enemy.moveSpeed;
+    //            Enemy_MoveWithinPatrolBounds(enemy, enemy.vel.x * dt);
+    //        }
+    //    }
+    //    else
+    //    {
+    //        enemy.vel.x = enemy.direction * enemy.moveSpeed;
 
-            const bool hitBound = Enemy_MoveWithinPatrolBounds(enemy, enemy.vel.x * dt);
+    //        const bool hitBound = Enemy_MoveWithinPatrolBounds(enemy, enemy.vel.x * dt);
 
-            if (hitBound)
-            {
-                Enemy_SetState(enemy, EnemyState::Idle);
-            }
-        }
-        break;
-    }
+    //        if (hitBound)
+    //        {
+    //            Enemy_SetState(enemy, EnemyState::Idle);
+    //        }
+    //    }
+    //    break;
+    //}
 
-    case EnemyState::Attack:
-        enemy.stateTimer -= dt;
-        enemy.vel = { 0.0f, 0.0f };
+    //case EnemyState::Attack:
+    //    enemy.stateTimer -= dt;
+    //    enemy.vel = { 0.0f, 0.0f };
 
-        if (enemy.stateTimer <= 0.0f)
-        {
-            if (enemy.returnToHomeOnly)
-                Enemy_SetState(enemy, EnemyState::Idle);
-            else
-                Enemy_SetState(enemy, EnemyState::Patrol);
-        }
-        break;
-    }
+    //    if (enemy.stateTimer <= 0.0f)
+    //    {
+    //        if (enemy.returnToHomeOnly)
+    //            Enemy_SetState(enemy, EnemyState::Idle);
+    //        else
+    //            Enemy_SetState(enemy, EnemyState::Patrol);
+    //    }
+    //    break;
+    //}
 
-    enemy.spriteSheet->Update(dt);
+    // spritesheet ticks — BossAI owns all movement, state, and lasers
+    //enemy.spriteSheet->Update(dt);
 }
 
 // -----------------------------------------------------------------------------
@@ -1125,8 +1138,8 @@ void BossEnemy_Update(Enemy& enemy, const Player& player, float dt) {
 // -----------------------------------------------------------------------------
 void Enemy_OnHit(Enemy& enemy, float damage, float knockbackDir)
 {
-    if (!enemy.isAlive)
-        return;
+    if (!enemy.isAlive) return;
+    if (enemy.isInvincible) return;
 
     // Only block damage if already in dead animation (allow knockback to re-trigger)
     if (enemy.spriteSheet)
@@ -1135,11 +1148,21 @@ void Enemy_OnHit(Enemy& enemy, float damage, float knockbackDir)
         if (clip == "dead")
             return;
         
-        // If already in hit animation, extend hitstun and apply knockback
-        if (clip == "hit")
+        //// If already in hit animation, extend hitstun and apply knockback
+        //if (clip == "hit")
+        //{
+        //    // Extend hitstun timer
+        //    enemy.hitStunTimer = enemy.spriteSheet->GetClipTotalDuration("hit");
+        //    Enemy_ApplyKnockback(enemy, knockbackDir);
+        //    return;
+        //}
+
+        // boss uses "hurt", regular enemies use "hit"
+        const std::string hitClipName = (enemy.type == EnemyType::Boss) ? "hurt" : "hit";
+        if (clip == hitClipName)
         {
-            // Extend hitstun timer
-            enemy.hitStunTimer = enemy.spriteSheet->GetClipTotalDuration("hit");
+            enemy.hitStunTimer = enemy.spriteSheet->GetClipTotalDuration(hitClipName);
+            if (enemy.hitStunTimer <= 0.0f) enemy.hitStunTimer = 0.5f;
             Enemy_ApplyKnockback(enemy, knockbackDir);
             return;
         }
@@ -1152,15 +1175,20 @@ void Enemy_OnHit(Enemy& enemy, float damage, float knockbackDir)
     {
         enemy.hitPoints = 0.0f;
 
+        // boss death is handled by BossAI — don't set isAlive=false or play dead here
+        if (enemy.type == EnemyType::Boss)
+        {
+            enemy.hitStunTimer = 0.3f; // brief stun so BossAI detects the hit
+            return;
+        }
+
         if (enemy.spriteSheet)
         {
             enemy.spriteSheet->Play("dead", true);
             enemy.hitStunTimer = enemy.spriteSheet->GetClipTotalDuration("dead");
         }
-        else
-        {
-            enemy.hitStunTimer = 0.45f;
-        }
+        else enemy.hitStunTimer = 0.45f;
+        
 
         enemy.justDied = true;
         enemy.isAlive = false;
@@ -1173,8 +1201,10 @@ void Enemy_OnHit(Enemy& enemy, float damage, float knockbackDir)
         // hit
         if (enemy.spriteSheet)
         {
-            enemy.spriteSheet->Play("hit", true);
-            enemy.hitStunTimer = enemy.spriteSheet->GetClipTotalDuration("hit");
+            const char* hitClip = (enemy.type == EnemyType::Boss) ? "hurt" : "hit";
+            enemy.spriteSheet->Play(hitClip, true);
+            enemy.hitStunTimer = enemy.spriteSheet->GetClipTotalDuration(hitClip);
+            if (enemy.hitStunTimer <= 0.0f) enemy.hitStunTimer = 0.5f;
             enemy.stateTimer = 0.0f;
         }
         else
@@ -1193,7 +1223,7 @@ void Enemy_OnDeath(Enemy& enemy)
     //ObjectManager::Get().SpawnBuff(BuffType::SHIELD, enemy.pos.x, enemy.pos.y);
     //ObjectManager::Get().SpawnBuff(BuffType::FULL_HP, enemy.pos.x + 50.f, enemy.pos.y);
     //ObjectManager::Get().SpawnBuff(BuffType::DASH , enemy.pos.x - 50.f, enemy.pos.y);
-
+    if (enemy.type == EnemyType::Boss) return;
     BuffType droppedBuff = static_cast<BuffType>(rand() % 3 + 1); // random buff on drop
     ObjectManager::Get().SpawnBuff(droppedBuff, enemy.pos.x, enemy.pos.y);
 }

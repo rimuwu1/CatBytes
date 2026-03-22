@@ -41,7 +41,7 @@ public:
     void LoadFromConfig(const rapidjson::Document&);
     void LoadAssetsFromConfig(const rapidjson::Document& doc);
     void Initialize();
-    void Update(float dt, const Player& player, float cameraY);
+    void Update(float dt, Player& player, float cameraY);
     void DrawBackground() const;
     void DrawBackgroundOverlay(float camX, float camY) const;
     void DrawWorld(float camX, float camY, PlayerWeapon weapon, const Player& player, float screenHalfH);
@@ -110,6 +110,45 @@ public:
         float duration = 0.0f;
         bool loop = false;
     };
+    
+    // boss door
+    struct BossDoor {
+        float x = 0, y = 0, w = 30.0f, h = 100.0f;
+        float liftX = 0, liftY = 0;
+        float liftW = 60.0f, liftH = 200.0f;
+        float triggerRadius = 150.0f;
+        std::string prompt;
+        AEGfxTexture* doorTex = nullptr;
+        std::unique_ptr<SpriteSheet> liftAnim;
+        bool playerNear  = false;
+        bool activated   = false;
+    };
+
+    struct BossLiftSequence {
+        bool  active     = false;
+        float camY       = 0.0f;
+        float liftPosY   = 0.0f;
+        float fadeAlpha  = 0.0f;
+        bool  fadingIn   = false;
+        static constexpr float LIFT_SPEED = 400.0f;
+        static constexpr float FADE_START = 9100.0f;
+        static constexpr float FADE_SPEED = 1.5f;
+        static constexpr float LIFT_END   = 11000.0f;
+        static constexpr float CAM_START_Y = 7640.0f;
+    };
+
+    // getters  
+    BossDoor& GetBossDoor() { return m_bossDoor; }
+    BossLiftSequence& GetLiftSequence() { return m_liftSeq; }
+    bool               IsBossDoorLoaded() const { return m_bossDoorLoaded; }
+    bool               IsLiftActive()     const { return m_liftSeq.active; }
+
+   
+    void SetBossRoomMode(bool enabled) { m_bossRoomMode = enabled; }
+    bool IsBossRoomMode() const { return m_bossRoomMode; }
+
+    // boss room
+    void LoadBossArenaFromConfig(const rapidjson::Document& doc);
 
     // Parallax layer data structure
     struct ParallaxLayer {
@@ -246,4 +285,11 @@ private:
     Colour m_currentColour = m_backgroundColours[0];
 
     static Colour BlendColours(const Colour& a, const Colour& b, float t);
+
+    // boss door members
+    BossDoor         m_bossDoor{};
+    BossLiftSequence m_liftSeq{};
+    bool             m_bossDoorLoaded = false;
+
+    bool m_bossRoomMode = false;
 };
