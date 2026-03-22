@@ -127,6 +127,69 @@ void EnvironmentManager::LoadFromConfig(const rapidjson::Document& doc)
         };
     }
 
+    // ---- Laser Indicators configuration ----
+    if (doc.HasMember("laser_indicators") && doc["laser_indicators"].IsObject())
+    {
+        const auto& lsInd = doc["laser_indicators"];
+
+        // ---- Horizontal Indicators ----
+        if (lsInd.HasMember("hLeft") && lsInd["hLeft"].IsObject())
+        {
+            const auto& leftInd = lsInd["hLeft"];
+            m_leftIndicatorFilePath = leftInd["file"].GetString();
+            m_hIndicatorRows = leftInd["rows"].GetInt();
+            m_hIndicatorCols = leftInd["cols"].GetInt();
+            m_hIndicatorTotalFrames = leftInd["total_frames"].GetInt();
+            m_hIndicatorFrameDuration = leftInd["frame_duration"].GetFloat();
+
+            m_hIndicatorClips.clear();
+
+            for (const auto& clip : leftInd["clips"].GetArray())
+            {
+                ButtonClipConfig cfg;
+                cfg.name = clip["name"].GetString();
+                cfg.start = clip["start"].GetInt();
+                cfg.end = clip["end"].GetInt();
+                cfg.duration = clip["duration"].GetFloat();
+                cfg.loop = clip["loop"].GetBool();
+
+                m_hIndicatorClips.push_back(cfg);
+            }
+        }
+
+        if (lsInd.HasMember("hRight") && lsInd["hRight"].IsObject())
+        {
+            const auto& rightInd = lsInd["hRight"];
+            m_rightIndicatorFilePath = rightInd["file"].GetString();
+        }
+
+        if (lsInd.HasMember("vert") && lsInd["vert"].IsObject())
+        {
+            const auto& vertInd = lsInd["vert"];
+            m_verticalIndicatorFilePath = vertInd["file"].GetString();
+            m_vIndicatorRows = vertInd["rows"].GetInt();
+            m_vIndicatorCols = vertInd["cols"].GetInt();
+            m_vIndicatorTotalFrames = vertInd["total_frames"].GetInt();
+            m_vIndicatorFrameDuration = vertInd["frame_duration"].GetFloat();
+
+            m_vIndicatorClips.clear();
+
+            for (const auto& clip : vertInd["clips"].GetArray())
+            {
+                ButtonClipConfig cfg;
+                cfg.name = clip["name"].GetString();
+                cfg.start = clip["start"].GetInt();
+                cfg.end = clip["end"].GetInt();
+                cfg.duration = clip["duration"].GetFloat();
+                cfg.loop = clip["loop"].GetBool();
+
+                m_vIndicatorClips.push_back(cfg);
+            }
+
+        }
+
+    }
+
     // ---- Platforms per level ----
     const struct { const char* key; std::vector<Platform>* target; } platformMaps[] = {
         { "level_1", &m_level1Platforms },
@@ -401,6 +464,73 @@ void EnvironmentManager::LoadFromConfig(const rapidjson::Document& doc)
             }
             comp.computerSprite->Play("off");
 
+            // ---- direction + indicator sprites ----
+            bool isHorizontal = true;
+            if (c.HasMember("direction"))
+            {
+                isHorizontal = (std::string(c["direction"].GetString()) == "horizontal");
+            }
+
+            comp.direction = isHorizontal ? BeamDirection::Horizontal : BeamDirection::Vertical;
+            comp.beamX1 = c["beamX1"].GetFloat();
+            comp.beamX2 = c["beamX2"].GetFloat();
+            comp.beamY1 = c["beamY1"].GetFloat();
+            comp.beamY2 = c["beamY2"].GetFloat();
+            comp.beamStartX = c["beamStartX"].GetFloat();
+            comp.beamEndX = c["beamEndX"].GetFloat();
+            comp.beamStartY = c["beamStartY"].GetFloat();
+            comp.beamEndY = c["beamEndY"].GetFloat();
+            comp.beamW = c.HasMember("beamWidth") ? c["beamWidth"].GetFloat() : 50.0f;
+
+            comp.indW = c.HasMember("indWidth") ? c["indWidth"].GetFloat() : comp.w;
+            comp.indH = c.HasMember("indHeight") ? c["indHeight"].GetFloat() : comp.h;
+
+            if (isHorizontal)
+            {
+                comp.indicatorLeft = std::make_unique<SpriteSheet>(
+                    m_leftIndicatorFilePath.c_str(),
+                    m_hIndicatorRows, m_hIndicatorCols,
+                    m_hIndicatorTotalFrames, m_hIndicatorFrameDuration
+                );
+
+                for (const auto& clipCfg : m_hIndicatorClips)
+                {
+                    comp.indicatorLeft->AddClip(clipCfg.name.c_str(), clipCfg.start, clipCfg.end,
+                        clipCfg.duration, clipCfg.loop);
+                }
+                comp.indicatorLeft->Play("off");
+
+                comp.indicatorRight = std::make_unique<SpriteSheet>(
+                    m_rightIndicatorFilePath.c_str(),
+                    m_hIndicatorRows, m_hIndicatorCols,
+                    m_hIndicatorTotalFrames, m_hIndicatorFrameDuration
+                );
+
+                for (const auto& clipCfg : m_hIndicatorClips)
+                {
+                    comp.indicatorRight->AddClip(clipCfg.name.c_str(), clipCfg.start, clipCfg.end,
+                        clipCfg.duration, clipCfg.loop);
+                }
+                comp.indicatorRight->Play("off");
+            }
+            else 
+            {
+                comp.indicatorLeft = std::make_unique<SpriteSheet>(
+                    m_verticalIndicatorFilePath.c_str(),
+                    m_vIndicatorRows, m_vIndicatorCols,
+                    m_vIndicatorTotalFrames, m_vIndicatorFrameDuration
+                );
+
+                for (const auto& clipCfg : m_vIndicatorClips)
+                {
+                    comp.indicatorLeft->AddClip(clipCfg.name.c_str(), clipCfg.start, clipCfg.end,
+                        clipCfg.duration, clipCfg.loop);
+                }
+                comp.indicatorLeft->Play("off");
+
+                comp.indicatorRight = nullptr;
+            }
+
             if (c.HasMember("laserIndices") && c["laserIndices"].IsArray())
             {
                 for (const auto& index : c["laserIndices"].GetArray())
@@ -531,6 +661,40 @@ void EnvironmentManager::Update(float dt, const Player& player, float cameraY)
         m_previousSelection = section;
     }
     LevelIndicator_Update(dt);
+
+    // update spike timer
+    auto updateObsTimer = [&](std::vector<PlatformObstacle>& obstacles)
+    {
+            for (auto& o : obstacles)
+            {
+                if (!o.isSpike) continue;
+                o.timer += dt;
+                if (o.timer >= o.spikeInterval)
+                {
+                    o.timer = 0.0f;
+                    o.active = !o.active;
+                }
+            }
+    };
+    updateObsTimer(m_level1Obstacles);
+    updateObsTimer(m_level2Obstacles);
+    updateObsTimer(m_level3Obstacles);
+
+    // update laser timer
+    auto updateLaserTimer = [&](std::vector<PlatformLaser>& lasers)
+        {
+            for (auto& l : lasers)
+            {
+                l.timer += dt;
+                if (l.timer >= l.laserInterval)
+                {
+                    l.timer = 0.0f;
+                    l.laserActive = !l.laserActive;
+                }
+            }
+        };
+    updateLaserTimer(m_level2Lasers);
+    updateLaserTimer(m_level3Lasers);
 }
 
 // ------------------------------------------------------------------------
@@ -748,6 +912,7 @@ void EnvironmentManager::DrawWorld(float camX, float camY, PlayerWeapon weapon, 
         if (m_spikeAnim) {
             auto drawObstacles = [&](const std::vector<PlatformObstacle>& obstacles) {
                 for (const auto& o : obstacles) {
+                    if (!o.active) continue;
                     if (!inView(o.y, o.h * 0.5f)) continue;
                     addSpriteDyn(m_spikeAnim->GetTexture(),
                         m_spikeAnim->GetSpriteUVWidth(),
@@ -933,17 +1098,7 @@ void EnvironmentManager::DrawWorld(float camX, float camY, PlayerWeapon weapon, 
         {
             if (!comp.computerSprite) continue;
 
-            bool isActive = false;
-
-            if (!comp.laserIndices.empty())
-            {
-                int index = comp.laserIndices[0];
-
-                if (index >= 0 && index < (int)lasers.size())
-                {
-                    isActive = !lasers[index].laserActive;
-                }
-            }
+            bool isActive = comp.beamActive;            
 
             // initialize first draw
             if (!comp.spriteInitialized)
@@ -973,15 +1128,57 @@ void EnvironmentManager::DrawWorld(float camX, float camY, PlayerWeapon weapon, 
             if (comp.computerSprite->GetCurrentClip() == "transition" && !comp.computerSprite->IsPlaying())
             {
                 comp.computerSprite->Play("on");
+
+                if (comp.beamActive)
+                {
+                    comp.pendingCameraPan = true;
+                }
             }
 
-            // add to batch
+            // sync indicator w/ computer
+            auto syncIndicator = [&](SpriteSheet* ind)
+            {
+                    if (!ind) return;
+
+                    std::string currentClip = comp.computerSprite->GetCurrentClip();
+                    if (currentClip != ind->GetCurrentClip())
+                    {
+                        ind->Play(currentClip.c_str());
+                    }
+                    ind->Update(dt);
+            };
+
+            syncIndicator(comp.indicatorLeft.get());
+            syncIndicator(comp.indicatorRight.get());
+
+            // draw computer sprite
             addSprite(comp.computerSprite->GetTexture(),
                       comp.computerSprite->GetSpriteUVWidth(),
                       comp.computerSprite->GetSpriteUVHeight(),
                       comp.x, comp.y, comp.w, comp.h,
                       comp.computerSprite->GetUVOffsetX(),
                       comp.computerSprite->GetUVOffsetY());
+
+            // draw indicators
+            if (comp.indicatorLeft)
+            {
+                addSprite(comp.indicatorLeft->GetTexture(),
+                    comp.indicatorLeft->GetSpriteUVWidth(),
+                    comp.indicatorLeft->GetSpriteUVHeight(),
+                    comp.beamX1, comp.beamY1, comp.indW, comp.indH,
+                    comp.indicatorLeft->GetUVOffsetX(),
+                    comp.indicatorLeft->GetUVOffsetY());
+            }
+
+            if (comp.indicatorRight)
+            {
+                addSprite(comp.indicatorRight->GetTexture(),
+                    comp.indicatorRight->GetSpriteUVWidth(),
+                    comp.indicatorRight->GetSpriteUVHeight(),
+                    comp.beamX2, comp.beamY2, comp.indW, comp.indH,
+                    comp.indicatorRight->GetUVOffsetX(),
+                    comp.indicatorRight->GetUVOffsetY());
+            }
         }
     };
 
@@ -1069,6 +1266,21 @@ void EnvironmentManager::DrawWorld(float camX, float camY, PlayerWeapon weapon, 
 
     collectLasers(m_level2Lasers);
     collectLasers(m_level3Lasers);
+
+    auto drawBeams = [&](const std::vector<PlatformComputer>& computers) {
+        for (const auto& comp : computers) {
+            if (!comp.beamActive) continue;
+            float centerY = (comp.beamStartY + comp.beamEndY) * 0.5f;
+            float halfHeight = fabs(comp.beamStartY - comp.beamEndY) * 0.5f;
+            if (!inView(centerY, halfHeight)) continue;
+            mm.DrawTexturedLine(m_laserTex,
+                comp.beamStartX, comp.beamStartY,
+                comp.beamEndX, comp.beamEndY,
+                comp.beamW, 64.0f);
+        }
+    };
+
+    drawBeams(m_level3Computers);
 
     // --------------------------------------------------------------------
     // 5. Ground (single colored square)

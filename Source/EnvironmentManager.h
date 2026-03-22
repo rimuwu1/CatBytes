@@ -175,6 +175,23 @@ private:
     float m_computerFrameDuration = 0.1f;
     std::vector<ButtonClipConfig> m_computerClips;
 
+    // laser indicator config (horizontal)
+    std::string m_leftIndicatorFilePath = "Assets/Images/laserIndicatorLeft.png";
+    std::string m_rightIndicatorFilePath = "Assets/Images/laserIndicatorRight.png";
+    int m_hIndicatorRows = 1;
+    int m_hIndicatorCols = 12;
+    int m_hIndicatorTotalFrames = 12;
+    float m_hIndicatorFrameDuration = 0.1f;
+    std::vector<ButtonClipConfig> m_hIndicatorClips;
+
+    // laser indicator config (vertical)
+    std::string m_verticalIndicatorFilePath = "Assets/Images/laserIndicatorVerticle.png";
+    int m_vIndicatorRows = 1;
+    int m_vIndicatorCols = 12;
+    int m_vIndicatorTotalFrames = 12;
+    float m_vIndicatorFrameDuration = 0.1f;
+    std::vector<ButtonClipConfig> m_vIndicatorClips;
+
     // laser texture
     AEGfxTexture* m_laserTex = nullptr;
 

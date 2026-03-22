@@ -291,15 +291,9 @@ void MainGame_Update()
         }
 
         // ----- Camera pan sequence for computer toggles (lasers) -----
-        if (results.pendingComputer.triggered && !g_camSequenceActive && !g_pendingToggle) {
-            Camera_StartSequence(results.pendingComputer.targetY, globalCam.y);
-            g_pendingToggle      = true;
-            g_pendingToggleMidpt = g_camSequenceDuration + g_camHoldDuration * 0.5f;
-            g_pendingToggleTimer = 0.0f;
-            g_pendingToggleBtnX  = results.pendingComputer.buttonX;
-            g_pendingToggleBtnY  = results.pendingComputer.buttonY;
-            g_pendingToggleType  = results.pendingComputer.type;
-        }
+        if (results.pendingCameraPan) {
+            Camera_StartSequence(results.cameraPanTargetY, globalCam.y, 0.6f, 1.5f);
+       }
 
         // Lock player movement during camera sequence
         if (g_camSequenceActive) {

@@ -292,7 +292,44 @@
       { "name": "transition", "start": 0, "end": 3, "duration": 0.2, "loop":  false },
       { "name": "on", "start": 4, "end": 7, "duration": 0.2, "loop":  true }
     ]
-
+  },
+  "laser_indicators": {
+    "hLeft": {
+      "file": "Assets/Images/laserIndicatorLeft.png",
+      "rows": 1,
+      "cols": 12,
+      "total_frames": 12,
+      "frame_duration": 0.1,
+      "clips": [
+        { "name": "off", "start": 0, "end": 3, "duration": 0.1, "loop":  true },
+        { "name": "transition", "start": 4, "end": 7, "duration": 0.1, "loop":  false },
+        { "name": "on", "start": 8, "end": 11, "duration": 0.1, "loop":  true }
+      ]
+    },
+    "hRight": {
+      "file": "Assets/Images/laserIndicatorRight.png",
+      "rows": 1,
+      "cols": 12,
+      "total_frames": 12,
+      "frame_duration": 0.1,
+      "clips": [
+        { "name": "off", "start": 0, "end": 3, "duration": 0.1, "loop":  true },
+        { "name": "transition", "start": 4, "end": 7, "duration": 0.1, "loop":  false },
+        { "name": "on", "start": 8, "end": 11, "duration": 0.1, "loop":  true }
+      ]
+    },
+    "vert": {
+      "file": "Assets/Images/laserIndicatorVerticle.png",
+      "rows": 1,
+      "cols": 12,
+      "total_frames": 12,
+      "frame_duration": 0.1,
+      "clips": [
+        { "name": "off", "start": 0, "end": 3, "duration": 0.1, "loop":  true },
+        { "name": "transition", "start": 4, "end": 7, "duration": 0.1, "loop":  false },
+        { "name": "on", "start": 8, "end": 11, "duration": 0.1, "loop":  true }
+      ]
+    }
   },
     "checkpoints": [
         { "x": -350.0, "y": 1790.0, "width": 40.0, "height": 40.0 },
@@ -330,15 +367,15 @@
             { "x":    0.0,  "y":  590.0,  "width": 40.0, "height": 40.0, "platformIndices": [9, 10, 11, 12, 13] }
         ],
         "obstacles" : [
-            { "x":    0.0,  "y": 1340.0,  "width": 20.0, "height": 40.0, "rotation" : 0.0 },
-            { "x":   20.0,  "y": 1340.0,  "width": 20.0, "height": 40.0, "rotation" : 0.0 },
-            { "x":  -20.0,  "y": 1340.0,  "width": 20.0, "height": 40.0, "rotation" : 0.0 },
-            { "x": -500.0,  "y": 1640.0,  "width": 20.0, "height": 40.0, "rotation" : 0.0 },
-            { "x": -480.0,  "y": 1640.0,  "width": 20.0, "height": 40.0, "rotation" : 0.0 },
-            { "x": -520.0,  "y": 1640.0,  "width": 20.0, "height": 40.0, "rotation" : 0.0 },
-            { "x":  500.0,  "y": 1640.0,  "width": 20.0, "height": 40.0, "rotation" : 0.0 },
-            { "x":  520.0,  "y": 1640.0,  "width": 20.0, "height": 40.0, "rotation" : 0.0 },
-            { "x":  480.0,  "y": 1640.0,  "width": 20.0, "height": 40.0, "rotation" : 0.0 }
+            { "x":    0.0,  "y": 1340.0,  "width": 50.0, "height": 40.0, "rotation" : 0.0 },
+            { "x":   50.0,  "y": 1340.0,  "width": 50.0, "height": 40.0, "rotation" : 0.0 },
+            { "x":  -50.0,  "y": 1340.0,  "width": 50.0, "height": 40.0, "rotation" : 0.0 },
+            { "x": -500.0,  "y": 1640.0,  "width": 50.0, "height": 40.0, "rotation" : 0.0 },
+            { "x": -450.0,  "y": 1640.0,  "width": 50.0, "height": 40.0, "rotation" : 0.0 },
+            { "x": -550.0,  "y": 1640.0,  "width": 50.0, "height": 40.0, "rotation" : 0.0 },
+            { "x":  500.0,  "y": 1640.0,  "width": 50.0, "height": 40.0, "rotation" : 0.0 },
+            { "x":  550.0,  "y": 1640.0,  "width": 50.0, "height": 40.0, "rotation" : 0.0 },
+            { "x":  450.0,  "y": 1640.0,  "width": 50.0, "height": 40.0, "rotation" : 0.0 }
         ],
         "walls": [
             { "x": -780.0, "y": 0.0, "width": 40.0, "height": 1000000000.0 },
@@ -584,10 +621,7 @@
             { "x": -530.0, "y": 2680.0, "width": 30.0, "height": 20.0, "rotation" : 0.0},
             { "x": -250.0, "y": 2830.0, "width": 30.0, "height": 20.0, "rotation" : 0.0},
             { "x": -220.0, "y": 2830.0, "width": 30.0, "height": 20.0, "rotation" : 0.0},
-            { "x": -280.0, "y": 2830.0, "width": 30.0, "height": 20.0, "rotation" : 0.0},
-            { "x":  450.0, "y": 3180.0, "width": 30.0, "height": 20.0, "rotation" : 0.0},
-            { "x":  420.0, "y": 3180.0, "width": 30.0, "height": 20.0, "rotation" : 0.0},
-            { "x":  480.0, "y": 3180.0, "width": 30.0, "height": 20.0, "rotation" : 0.0}
+            { "x": -280.0, "y": 2830.0, "width": 30.0, "height": 20.0, "rotation" : 0.0}
         ],
       "lasers": [
             { "x1": -200.0, "x2": -200.0, "y1": 4500.0, "y2": 4100.0, "width": 10.0, "active": true, "toggeable" : false},
@@ -1235,9 +1269,9 @@
             { "x":  135.0, "y": 6000.0, "width":  70.0, "height": 40.0, "active":  true },
             { "x":  375.0, "y": 6000.0, "width": 370.0, "height": 40.0, "active":  true },
             { "x":  690.0, "y": 5850.0, "width":  50.0, "height": 40.0, "active":  true },
-            { "x":  690.0, "y": 6000.0, "width":  50.0, "height": 40.0, "active":  true },
+            { "x":  705.0, "y": 6000.0, "width":  50.0, "height": 40.0, "active":  true },
             { "x":  690.0, "y": 6150.0, "width":  50.0, "height": 40.0, "active":  true },
-            { "x":  690.0, "y": 6300.0, "width":  50.0, "height": 40.0, "active":  true },
+            { "x":  705.0, "y": 6300.0, "width":  50.0, "height": 40.0, "active":  true },
             { "x":    0.0, "y": 6300.0, "width": 800.0, "height": 40.0, "active":  true },
             { "x": -375.0, "y": 6450.0, "width": 100.0, "height": 40.0, "active":  true },
             { "x":  375.0, "y": 6450.0, "width": 100.0, "height": 40.0, "active":  true },
@@ -1245,8 +1279,8 @@
             { "x":  275.0, "y": 6600.0, "width":  75.0, "height": 40.0, "active":  true },
             { "x": -175.0, "y": 6750.0, "width":  50.0, "height": 40.0, "active":  true },
             { "x":  175.0, "y": 6750.0, "width":  50.0, "height": 40.0, "active":  true },
-            { "x":  -75.0, "y": 6900.0, "width":  25.0, "height": 40.0, "active":  true },
-            { "x":   75.0, "y": 6900.0, "width":  25.0, "height": 40.0, "active":  true },
+            { "x":  -95.0, "y": 6900.0, "width":  25.0, "height": 40.0, "active":  true },
+            { "x":   95.0, "y": 6900.0, "width":  25.0, "height": 40.0, "active":  true },
             { "x":    0.0, "y": 7050.0, "width": 200.0, "height": 40.0, "active":  true },
             { "x":  500.0, "y": 6600.0, "width": 150.0, "height": 40.0, "active":  true },
             { "x":  690.0, "y": 6750.0, "width": 140.0, "height": 40.0, "active":  true },
@@ -1328,8 +1362,10 @@
             { "x":  450.0, "y": 7125.0, "width": 10.0, "height": 1010.0 }
         ],
         "computers": [
-            { "x":    0.0, "y": 7115.0, "width": 100.0, "height": 100.0, "laserIndices": [0, 1, 2, 3] },
-            { "x":  700.0, "y": 9665.0, "width": 100.0, "height": 100.0, "laserIndices": [6, 7] }
+            { "x":    0.0, "y": 7115.0, "width": 100.0, "height": 100.0, "direction": "horizontal", "beamX1": -550.0, "beamY1": 6350.0, "beamX2":  550.0, 
+              "beamY2": 6350.0, "beamStartX": -500.0, "beamStartY": 6370.0, "beamEndX":  500.0, "beamEndY": 6370.0, "beamWidth":  5.0, "indWidth": 120.0, "indHeight": 120.0 },
+            { "x":  700.0, "y": 9665.0, "width": 100.0, "height": 100.0, "direction": "vertical", "beamX1": 700.0, "beamY1": 9540.0, "beamX2":  700.0, 
+              "beamY2": 9540.0, "beamStartX": 700.0, "beamStartY": 9490.0, "beamEndX":  700.0, "beamEndY": 7650.0, "beamWidth":  5.0, "indWidth": 150.0, "indHeight": 150.0 }
         ]
     },
     "level_4": {
@@ -1347,6 +1383,17 @@
         "patrol_min_x": -240.0,
         "patrol_max_x": 240.0,
         "knockback_velocity": 300.0,
+        "laser_cooldown": 4.0,
+        "laser_track": 1.5,
+        "laser_lockon": 0.8,
+        "laser_fire": 0.6,
+        "laser_damage": 10.0,
+        "laser_knockback": 400.0,
+        "boss_lasers": [
+            { "x": -200.0, "y": 12180.0, "width": 14.0 },
+            { "x":    0.0, "y": 12180.0, "width": 14.0 },
+            { "x":  200.0, "y": 12180.0, "width": 14.0 }
+        ],
         "animations": {
           "file": "Assets/Images/BossSpritesheet.png",
           "rows": 19,

@@ -41,7 +41,9 @@ struct PlatformButton {
 struct PlatformObstacle {
 	float x, y, w, h, r;
 	bool isSpike;
-	//bool active = true; //can toggle off if bullet collision for example
+	mutable bool active = true;
+	mutable float timer = 0.0f;
+	float spikeInterval = 5.0f;
 };
 
 struct PlatformLaser {
@@ -49,12 +51,15 @@ struct PlatformLaser {
 	float x1, x2, y1, y2, w;
 	mutable bool laserActive;
 	mutable bool laserToggle;
-
+	mutable float timer = 0.0f;
+	float laserInterval = 5.0f;
 };
 
 struct Checkpoint {
 	float x, y, w, h, r;
 };
+
+enum class BeamDirection { Horizontal, Vertical };
 
 struct PlatformComputer {
 	float x, y, w, h;
@@ -62,7 +67,19 @@ struct PlatformComputer {
 	mutable bool wasPressed = false;
 	mutable bool prevState = false;
 	mutable bool spriteInitialized = false;
+
+	mutable bool beamActive = false;
+	BeamDirection direction = BeamDirection::Horizontal;
+	float beamX1, beamX2, beamY1, beamY2, beamW = 50.0f;
+	float beamStartX, beamEndX, beamStartY, beamEndY;
+	float indW = 50.0f, indH = 50.0f;
+
+	mutable bool pendingCameraPan = false;
+	mutable float transitionTimer = 0.0f;
+
 	std::unique_ptr<SpriteSheet> computerSprite;
+	std::unique_ptr<SpriteSheet> indicatorLeft;
+	std::unique_ptr<SpriteSheet> indicatorRight;
 };
 
 

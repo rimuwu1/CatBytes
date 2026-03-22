@@ -266,7 +266,7 @@ namespace CollisionManager
 
     // ------------------------------------------------------------------------
     // Computers
-    ButtonToggleResult HandleComputers(Player& player, const std::vector<PlatformComputer>& computers, const std::vector<PlatformLaser>& lasers)
+    ButtonToggleResult HandleComputers(Player& player, const std::vector<PlatformComputer>& computers, std::vector<Enemy>& enemies)
     {
         for (auto& comp : computers)
         {
@@ -285,14 +285,38 @@ namespace CollisionManager
 
             if (overlapX && overlapY && AEInputCheckTriggered('E'))
             {
-                // Find first laser's Y position for camera target
-                float targetY = comp.y;
-                if (!comp.laserIndices.empty()) {
-                    int idx = comp.laserIndices[0];
-                    if (idx >= 0 && idx < (int)lasers.size())
-                        targetY = (lasers[idx].y1 + lasers[idx].y2) * 0.5f;
+                comp.beamActive = !comp.beamActive;
+
+                if (comp.beamActive)
+                {
+                    // kill all enemies within beam's range
+                    float beamLeft = std::min(comp.beamStartX, comp.beamEndX) - comp.beamW * 0.5f;
+                    float beamRight = std::max(comp.beamStartX, comp.beamEndX) - comp.beamW * 0.5f;
+                    float beamBot = std::min(comp.beamStartY, comp.beamEndY);
+                    float beamTop = std::max(comp.beamStartY, comp.beamEndY);
+
+                    for (auto& e : enemies)
+                    {
+                        if (!e.isAlive) continue;
+
+                        float enemyLeft = e.pos.x - e.width * 0.5f;
+                        float enemyRight = e.pos.x + e.width * 0.5f;
+                        float enemyBot = e.pos.y - e.height * 0.5f;
+                        float enemyTop = e.pos.y + e.height * 0.5f;
+
+                        bool inBeamX = (enemyRight >= beamLeft) && (enemyLeft <= beamRight);
+                        bool inBeamY = (enemyTop >= beamBot) && (enemyBot <= beamTop);
+
+                        if (inBeamX && inBeamY) {
+                            e.isAlive = false;
+                        }
+                    }
                 }
-                return { true, comp.x, comp.y, targetY, ToggleType::Laser };
+
+                // Find first laser's Y position for camera target
+                float targetY = (comp.beamStartY + comp.beamEndY) * 0.5f;
+                return { true, comp.x, comp.y, targetY, ToggleType::Laser }; 
+
             }
         }
         return { false, 0.0f, 0.0f, 0.0f, ToggleType::None };
@@ -393,6 +417,7 @@ namespace CollisionManager
 
         for (const PlatformObstacle* obs : nearby)
         {
+            if (!obs->active) continue;
             float obsLeft = obs->x - obs->w * 0.5f;
             float obsRight = obs->x + obs->w * 0.5f;
             float obsTop = obs->y + obs->h * 0.5f;
@@ -600,8 +625,16 @@ namespace CollisionManager
 
         // Computers - check for triggered computer and return first one
         if (!results.pendingComputer.triggered) {
-            auto r = HandleComputers(player, env.GetLevel3Computers(), env.GetLevel3Lasers());
+            auto r = HandleComputers(player, env.GetLevel3Computers(), enemies);
             if (r.triggered) results.pendingComputer = r;
+        }
+
+        for (auto& comp : env.GetLevel3Computers()) {
+            if (comp.pendingCameraPan) {
+                comp.pendingCameraPan = false;
+                results.pendingCameraPan = true;
+                results.cameraPanTargetY = (comp.beamStartY + comp.beamEndY) * 0.5f;
+            }
         }
 
         return results;

@@ -126,6 +126,10 @@ Technology is prohibited.
 bool CheckObstacleCollision(const Player& player, const std::vector<PlatformObstacle>& obstacle)
 {
 	for (int i = 0; i < obstacle.size(); i++) {
+		
+		// skip inactive spikes
+		if (!obstacle[i].active) continue;
+
 		float playerLeft = player.pos.x - player.width * 0.5f;
 		float playerRight = player.pos.x + player.width * 0.5f;
 		float playerTop = player.pos.y + player.height * 0.5f;

@@ -68,7 +68,7 @@ namespace CollisionManager
     ButtonToggleResult HandleButtons(Player& player, const std::vector<PlatformButton>& buttons, const std::vector<Platform>& platforms, const std::vector<Platform>& toggleWalls);
 
     // Computer collisions (toggle lasers) - returns result for camera pan
-    ButtonToggleResult HandleComputers(Player& player, const std::vector<PlatformComputer>& computers, const std::vector<PlatformLaser>& lasers);
+    ButtonToggleResult HandleComputers(Player& player, const std::vector<PlatformComputer>& computers, std::vector<Enemy>& enemies);
 
     // Player bullet collisions with enemies
     //void HandlePlayerBulletEnemyCollisions(Player& player, std::vector<Enemy>& enemies);
@@ -92,6 +92,8 @@ namespace CollisionManager
         bool checkpointHit    = false;
         ButtonToggleResult pendingToggle;   // for buttons (platforms/walls)
         ButtonToggleResult pendingComputer; // for computers (lasers)
+        bool pendingCameraPan = false;
+        float cameraPanTargetY = 0.0f;
     };
 
 
