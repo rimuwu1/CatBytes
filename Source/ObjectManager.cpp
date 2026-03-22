@@ -83,11 +83,12 @@ void ObjectManager::LoadFromConfig(const rapidjson::Document& doc)
 {
     enemies.clear();
     enemyBullets.clear();
+    buffs.clear();
 
     // Player comes from the top-level "player" block
     Player_Init(player, doc["player"]);
 
-    // Gather enemies from every level key present in the document
+    // Gather enemies and buffs from every level key present in the document
     // Load enemies from all levels
     const char* levelKeys[] = { "level_1", "level_2", "level_3", "level_4" };
 
@@ -98,12 +99,22 @@ void ObjectManager::LoadFromConfig(const rapidjson::Document& doc)
 
         const auto& level = doc[key];
 
-        if (!level.HasMember("enemies") || !level["enemies"].IsArray())
-            continue;
-
-        for (const auto& e : level["enemies"].GetArray())
+        // Load enemies
+        if (level.HasMember("enemies") && level["enemies"].IsArray())
         {
-            AddEnemyFromJSON(e);
+            for (const auto& e : level["enemies"].GetArray())
+            {
+                AddEnemyFromJSON(e);
+            }
+        }
+
+        // Load world buffs
+        if (level.HasMember("buffs") && level["buffs"].IsArray())
+        {
+            for (const auto& b : level["buffs"].GetArray())
+            {
+                AddBuffFromJSON(b);
+            }
         }
     }
 }

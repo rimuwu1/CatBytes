@@ -323,7 +323,8 @@ void MainGame_Update()
             float levelMinY = (currentSection == 0) ? -FLT_MAX : EnvironmentManager::Get().GetSectionHeight(currentSection - 1);
             float levelMaxY = EnvironmentManager::Get().GetSectionHeight(currentSection);
             
-            GameSaveManager::SaveGameAsync(meta, currentLevel, player, enemies, *currentPlatforms, levelMinY, levelMaxY);
+            const std::vector<Buff>& worldBuffs = ObjectManager::Get().GetAllBuffs();
+            GameSaveManager::SaveGameAsync(meta, currentLevel, player, enemies, *currentPlatforms, worldBuffs, levelMinY, levelMaxY);
             GameSaveManager::Notify_Show(GameSaveManager::NotifyType::SAVED);
             ParticleManager_Emit(player.pos.x, player.pos.y, 15, 200.f, 255, 255, 255);
         }

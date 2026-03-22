@@ -43,6 +43,7 @@ public:
     float GetPlayerHP() const { return player.hp; }
     const std::vector<Enemy>& GetAllEnemies() const { return enemies; }
     const std::vector<EnemyBullet>& GetAllEnemyBullets() const { return enemyBullets; }
+    const std::vector<Buff>& GetAllBuffs() const { return buffs; }
 
     // Setters
     std::vector<Enemy>& GetAllEnemies() { return enemies; }

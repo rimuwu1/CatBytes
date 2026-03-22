@@ -111,6 +111,7 @@ void GameSaveManager::SaveGameAsync(
     const Player& player,
     const std::vector<Enemy>& enemies,
     const std::vector<Platform>& platforms,
+    const std::vector<Buff>& worldBuffs,
     float levelMinY,
     float levelMaxY,
     const std::string& filepath)
@@ -121,11 +122,12 @@ void GameSaveManager::SaveGameAsync(
     // Extract only trivially copyable data
     PlayerSaveData              playerData = ExtractPlayerData(player);
     std::vector<EnemySaveData>  enemyData = ExtractEnemyData(enemies, levelMinY, levelMaxY);
+    std::vector<BuffSaveData>   buffData = ExtractBuffData(worldBuffs);
     std::vector<Platform>       platCopy = platforms;
 
     std::thread([=]() mutable {
         SaveGame_Internal(metadata, currentLevel,
-            playerData, enemyData, platCopy, filepath);
+            playerData, enemyData, platCopy, buffData, filepath);
         // set flag under lock then notify to avoid missed wakeups
         {
             std::lock_guard<std::mutex> lk(s_SaveMutex);
@@ -161,6 +163,7 @@ void GameSaveManager::SaveGame_Internal(
     const PlayerSaveData& player,
     const std::vector<EnemySaveData>& enemies,
     const std::vector<Platform>& platforms,
+    const std::vector<BuffSaveData>& worldBuffs,
     const std::string& filepath)
 {
     // 1. Load the static configuration (GameConfig.json) as the base document
@@ -276,6 +279,27 @@ void GameSaveManager::SaveGame_Internal(
                 }
             }
         }
+
+        // World buffs - save active buffs on the map
+        if (levelObj.HasMember("buffs"))
+            levelObj.RemoveMember("buffs");
+        rapidjson::Value buffsArr(rapidjson::kArrayType);
+        for (const auto& buff : worldBuffs) {
+            rapidjson::Value b(rapidjson::kObjectType);
+            // Convert type int back to string for JSON
+            const char* typeStr = "none";
+            switch (static_cast<BuffType>(buff.type)) {
+            case BuffType::SHIELD:  typeStr = "shield";  break;
+            case BuffType::FULL_HP: typeStr = "full_hp"; break;
+            case BuffType::DASH:    typeStr = "dash";    break;
+            default: break;
+            }
+            b.AddMember("type", rapidjson::Value(typeStr, doc.GetAllocator()), doc.GetAllocator());
+            b.AddMember("x", buff.x, doc.GetAllocator());
+            b.AddMember("y", buff.y, doc.GetAllocator());
+            buffsArr.PushBack(b, doc.GetAllocator());
+        }
+        levelObj.AddMember("buffs", buffsArr, doc.GetAllocator());
     }
 
     // 6. Write to file
@@ -306,6 +330,17 @@ std::vector<GameSaveManager::EnemySaveData> GameSaveManager::ExtractEnemyData(
     for (const auto& e : enemies) {
         if (e.pos.y >= levelMinY && e.pos.y <= levelMaxY)
             out.push_back({ e.pos.x, e.pos.y, e.hitPoints });
+    }
+    return out;
+}
+
+std::vector<GameSaveManager::BuffSaveData> GameSaveManager::ExtractBuffData(
+    const std::vector<Buff>& buffs)
+{
+    std::vector<BuffSaveData> out;
+    for (const auto& buff : buffs) {
+        if (buff.active)
+            out.push_back({ static_cast<int>(buff.type), buff.pos.x, buff.pos.y });
     }
     return out;
 }

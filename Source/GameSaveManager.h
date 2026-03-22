@@ -46,6 +46,11 @@ public:
         float hp;
     };
 
+    struct BuffSaveData {
+        int type;
+        float x, y;
+    };
+
     // ----- Notification control -------------------------------------------
     static void        Notify_Show(NotifyType type);   // call after SaveGame / ResetSave
     static void        Notify_Update(float dt);
@@ -64,6 +69,7 @@ public:
         const Player& player,
         const std::vector<Enemy>& enemies,
         const std::vector<Platform>& platforms,
+        const std::vector<Buff>& worldBuffs,
         float levelMinY = -FLT_MAX,
         float levelMaxY = FLT_MAX,
         const std::string& filepath = "Assets/Data/GameSave.json");
@@ -81,6 +87,7 @@ private:
         const PlayerSaveData& player,
         const std::vector<EnemySaveData>& enemies,
         const std::vector<Platform>& platforms,
+        const std::vector<BuffSaveData>& worldBuffs,
         const std::string& filepath);
 
     // Helper to extract minimal data for threading
@@ -89,6 +96,7 @@ private:
         const std::vector<Enemy>& enemies,
         float levelMinY = -FLT_MAX,
         float levelMaxY = FLT_MAX);
+    static std::vector<BuffSaveData> ExtractBuffData(const std::vector<Buff>& buffs);
 
     // ----- Static members -------------------------------------------------
     static std::atomic<bool>  s_SaveInProgress;

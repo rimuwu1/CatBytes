@@ -81,9 +81,10 @@ void Buff::Draw(float camX, float camY) const {
 }
 
 // Pickup: move buff into player inventory, mark world instance inactive
-// Does NOT activate — player uses it from inventory later
+// Does NOT activate - player uses it from inventory later
 void Player_PickupBuff(Player& player, Buff& buff) {
     if (!buff.active) return;
     buff.active = false;                        // Remove from world
     player.buffs.push_back(std::move(buff));    // Store in inventory
+    player.buffs.back().active = true;          // Mark as active in inventory (for saving)
 }
