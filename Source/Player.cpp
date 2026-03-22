@@ -218,11 +218,13 @@ void Player_Init(Player& player, const rapidjson::Value& config)
 	player.pogoJustPerformed = false;
 	player.pogoVelocity = config.HasMember("pogo_velocity") ? config["pogo_velocity"].GetFloat() : 600.0f;
 
-	// dash state
+	// buff states
+	player.shieldActive = false;
 	player.dashEnabled = false;
 	player.isDashing = false;
 	player.dashTimer = 0.0f;
 	player.dashCooldown = 0.0f;
+	player.dashCharges = 0;
 }
 
 void Player_Update(Player& player, float dt)

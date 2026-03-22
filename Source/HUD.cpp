@@ -136,6 +136,7 @@ void HUD::InitFromConfig(const rapidjson::Value& doc)
 	InitProgressBarFromConfig(uiJson);
 	InitPauseButtonFromConfig(uiJson);
 	InitInventoryFromConfig(uiJson);
+	InitBuffBarFromConfig(uiJson);
 }
 
 // ---- Hearts config ---- //
@@ -495,6 +496,39 @@ void HUD::InitInventoryFromConfig(const rapidjson::Value& uiJson)
 	inventory.ready = true;
 }
 
+// ---- BuffBar config ---- //
+void HUD::InitBuffBarFromConfig(const rapidjson::Value& uiJson)
+{
+	if (!uiJson.HasMember("buffBar")) return;
+	const rapidjson::Value& bar = uiJson["buffBar"];
+
+	if (bar.HasMember("active"))
+	{
+		buffBar.active = bar["active"].GetBool();
+	}
+	if (bar.HasMember("x"))
+	{
+		buffBar.x = bar["x"].GetFloat();
+	}
+	if (bar.HasMember("y"))
+	{
+		buffBar.y = bar["y"].GetFloat();
+	}
+	if (bar.HasMember("iconSize"))
+	{
+		buffBar.iconSize = bar["iconSize"].GetFloat();
+	}
+	if (bar.HasMember("gap"))
+	{
+		buffBar.gap = bar["gap"].GetFloat();
+	}
+	if (bar.HasMember("badgeTexture"))
+	{
+		buffBar.badgeTexture = TextureManager::Get().LoadTexture(bar["badgeTexture"].GetString());
+	}
+
+}
+
 // ------------------------------------------------------------------------
 // ---- Update HUD ---- //
 void HUD::Update(float dt, const Player& player, PlayerWeapon weapon)
@@ -549,6 +583,36 @@ void HUD::Update(float dt, const Player& player, PlayerWeapon weapon)
 	
 	// Progress bar
 	pbarPlayerY = player.pos.y;
+
+	UpdateBuffBar(player);
+}
+
+// ---- Update BuffBar ---- //
+void HUD::UpdateBuffBar(const Player& player)
+{
+	buffBar.slotCount = 0;
+
+	// Shield indicator
+	if (player.shieldActive)
+	{
+		BuffBarSlot& slot = buffBar.slots[buffBar.slotCount++];
+		slot.type = BuffType::SHIELD;
+		slot.timer = player.shieldTimer;
+		slot.duration = 10.0f;
+		slot.uses = 0;
+	}
+
+	// Dash indicator
+	int dashSlot = FindBuffSlot(BuffType::DASH);
+	if (player.dashEnabled)
+	{
+		BuffBarSlot& slot = buffBar.slots[buffBar.slotCount++];
+		slot.type = BuffType::DASH;
+		slot.timer = 0.0f;
+		slot.duration = 0.0f;
+		slot.uses = player.dashCharges;
+	}
+
 }
 
 // ------------------------------------------------------------------------
@@ -565,6 +629,7 @@ void HUD::Draw(MeshManager& meshManager, float camX, float camY, PlayerWeapon we
 	DrawProgressBar(meshManager, camX, camY);
 	DrawPauseButton(camX, camY);
 	DrawInventory(camX, camY);
+	DrawBuffBar(camX, camY);
 }
 
 // ---- Draw Hearts ---- //
@@ -726,6 +791,7 @@ void HUD::DrawPauseButton(float camX, float camY) const
 	}
 }
 
+// ---- Draw Inventory ---- //
 void HUD::DrawInventory(float camX, float camY) const
 {
 	if (!inventory.active || !inventory.ready) return;
@@ -776,7 +842,7 @@ void HUD::DrawInventory(float camX, float camY) const
 				buffIcon, slotX, y, iconSize, iconSize);
 		}
 
-		// Draw stack count at top-right corner of slot (only if more than 1)
+		// Draw stack count at bottom-right corner (if more than 1)
 		if (inventory.counts[i] > 1)
 		{
 			char countStr[4];
@@ -785,16 +851,140 @@ void HUD::DrawInventory(float camX, float camY) const
 			const float windowWidth = (float)AEGfxGetWindowWidth();
 			const float windowHeight = (float)AEGfxGetWindowHeight();
 
-			// Top-right corner of slot — HUD is camera-relative so subtract camX/camY
-			const float worldX = slotX + slotSize * 0.20f;
-			const float worldY = y + slotSize * 0.20f;
+			// Draw badge for text
+			const float badgeSize = slotSize * 0.45f;
+			const float badgeX = slotX + (slotSize * 0.5f) - (badgeSize * 0.5f);
+			const float badgeY = y - (slotSize * 0.5f) + (badgeSize * 0.5f);
 
-			const float screenX = (worldX - camX) / (windowWidth * 0.5f);
-			const float screenY = (worldY - camY) / (windowHeight * 0.5f);
+			if (buffBar.badgeTexture)
+			{
+				MeshManager::Get().DrawTexturedSquare(
+					buffBar.badgeTexture, badgeX, badgeY,
+					badgeSize, badgeSize, 0.9f
+				);
+			}
+			else
+			{
+				MeshManager::Get().DrawSquare(
+					badgeX, badgeY, badgeSize, badgeSize,
+					0, 0, 0, 0.9f
+				);
+			}
 
-			AEGfxPrint(g_FontSmall, countStr, screenX, screenY, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f);
+			const float screenX = (badgeX - camX) / (windowWidth * 0.5f) - 0.006f;
+			const float screenY = (badgeY - camY) / (windowHeight * 0.5f) - 0.012f;
+
+			AEGfxPrint(g_FontSmall, countStr, screenX, screenY, 0.6f, 1.0f, 0.95f, 0.2f, 1.0f);
 		}
 	}
+}
+
+// ---- Draw HUD ---- //
+void HUD::DrawBuffBar(float camX, float camY) const
+{
+	if (!buffBar.active || buffBar.slotCount == 0)
+	{
+		return;
+	}
+
+	const float iconSize = buffBar.iconSize;
+	const float gap = buffBar.gap;
+	const float windowWidth = (float)AEGfxGetWindowWidth();
+	const float windowHeight = (float)AEGfxGetWindowHeight();
+
+	const float totalWidth = buffBar.slotCount * iconSize + (buffBar.slotCount - 1) * gap;
+	const float startX = camX + buffBar.x - totalWidth * 0.5f + iconSize * 0.5f;
+	const float y = camY + buffBar.y;
+
+	for (int i = 0; i < buffBar.slotCount; i++)
+	{
+		const BuffBarSlot& slot = buffBar.slots[i];
+		const float x = startX + i * (iconSize + gap);
+
+		// Draw slot
+		if (inventory.slotTexture)
+		{
+			MeshManager::Get().DrawTexturedSquare(
+				inventory.slotTexture, x, y, 
+				iconSize + 5.0f, iconSize + 5.0f, 1.0f
+			);
+		}
+
+		// Draw buff icons
+		AEGfxTexture* icon = nullptr;
+		switch (slot.type)
+		{
+		case BuffType::SHIELD:
+			icon = inventory.shieldTexture;
+			break;
+		case BuffType::FULL_HP:
+			icon = inventory.fullHpTexture;
+			break;
+		case BuffType::DASH:
+			icon = inventory.dashTexture;
+			break;
+		default:
+			break;
+		}
+
+		if (icon)
+		{
+			MeshManager::Get().DrawTexturedSquare(icon, x, y, iconSize, iconSize);
+		}
+
+		// Draw vertical depletion overlay
+		if (slot.duration > 0.0f && slot.timer >= 0.0f)
+		{
+			float ratio = slot.timer / slot.duration;
+			float overlayHeight = iconSize * (1.0f - ratio);
+			float overlayY = (y + iconSize * 0.5f) - overlayHeight * 0.5f;
+
+			if (overlayHeight > 0.0f)
+			{
+				MeshManager::Get().DrawSquare(
+					x, overlayY, iconSize, overlayHeight, 0, 0, 0, 0.6f
+				);
+			}
+
+		}
+
+		// Draw timer or remaining buff uses
+		char label[8];
+		if (slot.duration > 0.0f)
+		{
+			snprintf(label, sizeof(label), "%d", (int)slot.timer + 1);
+		}
+		else
+		{
+			snprintf(label, sizeof(label), "%d", slot.uses);
+		}
+
+		// Draw badge for text
+		const float badgeSize = iconSize * 0.45f;
+		const float badgeX = x + (iconSize * 0.5f) - (badgeSize * 0.5f);
+		const float badgeY = y - (iconSize * 0.5f) + (badgeSize * 0.5f);
+
+		if (buffBar.badgeTexture)
+		{
+			MeshManager::Get().DrawTexturedSquare(
+				buffBar.badgeTexture, badgeX, badgeY,
+				badgeSize, badgeSize, 0.9f
+			);
+		}
+		else
+		{
+			MeshManager::Get().DrawSquare(
+				badgeX, badgeY, badgeSize, badgeSize,
+				0, 0, 0, 0.9f
+			);
+		}
+
+		const float screenX = (badgeX - camX) / (windowWidth * 0.5f) - 0.006f;
+		const float screenY = (badgeY - camY) / (windowHeight * 0.5f) - 0.012f;
+
+		AEGfxPrint(g_FontSmall, label, screenX, screenY, 0.6f, 1.0f, 0.95f, 0.2f, 1.0f);
+	}
+
 }
 
 bool HUD::IsPauseButtonClicked(float camX, float camY) const

@@ -264,9 +264,17 @@
       "iconSize": 40.0,
       "inventoryTexture": "Assets/Images/inventoryOverlay.png",
       "slotTexture": "Assets/Images/inventorySlot.png",
-      "shieldIcon": "Assets/Images/shield_buff.png",
-      "fullHpIcon": "Assets/Images/full_hp_buff.png",
-      "dashIcon": "Assets/Images/dash_buff.png"
+      "shieldIcon": "Assets/Images/buff_shield.png",
+      "fullHpIcon": "Assets/Images/buff_full_hp.png",
+      "dashIcon": "Assets/Images/buff_dash.png"
+    },
+    "buffBar": {
+      "active": true,
+      "x": 0.0,
+      "y": 390.0,
+      "iconSize": 48.0,
+      "gap": 8.0,
+      "badgeTexture": "Assets/Images/buffBadge.png"
     }
   },
     "button": {

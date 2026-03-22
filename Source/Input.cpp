@@ -139,11 +139,14 @@ void Input_Handle() {
 				player.dashTimer = Player::DASH_DURATION;
 				player.vel.x = (player.facingRight ? 1.0f : -1.0f) * player.dashSpeed;
 				player.vel.y = 0.0f;
-				player.dashEnabled = false;
 
-				HUD& hud = EnvironmentManager::Get().GetHUD();
-				int slot = hud.FindBuffSlot(BuffType::DASH);
-				if (slot != -1) hud.UseBuffFromInventory(player, slot);
+				// decrement dash charges
+				player.dashCharges--;
+				if (player.dashCharges <= 0)
+				{
+					player.dashCharges = 0;
+					player.dashEnabled = false;
+				}
 			}
 		}
 	}

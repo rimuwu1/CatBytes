@@ -90,6 +90,7 @@ struct Player
 	float dashTimer = 0.0f;
 	float dashCooldown = 0.0f;
 	float dashSpeed = 800.0f;
+	int dashCharges = 0;
 
 	static constexpr float DASH_DURATION = 0.2f;
 	static constexpr float DASH_COOLDOWN = 0.5f;

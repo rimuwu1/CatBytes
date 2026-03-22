@@ -33,9 +33,13 @@ class HUD
 {
 public:
 	bool IsPauseButtonClicked(float camX, float camY) const;
+
 	void AddBuffToInventory(BuffType buffType);
 	void UseBuffFromInventory(Player& player, int slot);
 	int FindBuffSlot(BuffType buffType) const;
+
+	void UpdateBuffBar(const Player& player);
+	void DrawBuffBar(float camX, float camY) const;
 
 	void InitFromConfig(const rapidjson::Value& doc);
 	void Update(float dt, const Player& player, PlayerWeapon weapon);
@@ -162,6 +166,32 @@ private:
 
 	Inventory inventory;
 
+	// ---- Buff Bar UI ---- //
+	struct BuffBarSlot
+	{
+		BuffType type = BuffType::NONE;
+		float duration = 0.0f;
+		float timer = 0.0f;
+		int uses = 0;
+	};
+
+	struct BuffBar
+	{
+		bool active = true;
+		float x = -200.0f;
+		float y = 400.0f;
+		float iconSize = 48.0f;
+		float gap = 8.0f;
+
+		static constexpr int MAX_SLOTS = 3;
+		std::array<BuffBarSlot, MAX_SLOTS> slots{};
+		int slotCount = 0;
+
+		AEGfxTexture* badgeTexture = nullptr;
+	};
+
+	BuffBar buffBar;
+
 private:
 	static int ClampHeartsStateFromPlayer(const Player& player);
 	void ApplyHeartsState(int state);
@@ -174,6 +204,7 @@ private:
 	void InitProgressBarFromConfig(const rapidjson::Value& uiJson);
 	void InitPauseButtonFromConfig(const rapidjson::Value& uiJson);
 	void InitInventoryFromConfig(const rapidjson::Value& uiJson);
+	void InitBuffBarFromConfig(const rapidjson::Value& uiJson);
 
 	void DrawHearts(float camX, float camY) const;
 	void DrawWeaponSwitch(float camX, float camY, PlayerWeapon weapon) const;

@@ -22,13 +22,13 @@ Buff::Buff(BuffType type, float x, float y, float width, float height)
 {
     switch (type) {
     case BuffType::SHIELD:
-        texture = TextureManager::Get().LoadTexture("Assets/Images/shield_buff.png");
+        texture = TextureManager::Get().LoadTexture("Assets/Images/buff_shield.png");
         break;
     case BuffType::FULL_HP:
-        texture = TextureManager::Get().LoadTexture("Assets/Images/full_hp_buff.png");
+        texture = TextureManager::Get().LoadTexture("Assets/Images/buff_full_hp.png");
         break;
     case BuffType::DASH:
-        texture = TextureManager::Get().LoadTexture("Assets/Images/dash_buff.png");
+        texture = TextureManager::Get().LoadTexture("Assets/Images/buff_dash.png");
         break;
     default:
         break;
@@ -45,8 +45,8 @@ void Buff::Activate(Player& player) {
         player.hp = player.maxHP;
         break;
     case BuffType::DASH:
-        // activate godmode (TBA)
         player.dashEnabled = true;
+        player.dashCharges++;
         break;
     default:
         break;
