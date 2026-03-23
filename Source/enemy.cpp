@@ -71,7 +71,7 @@ static void Enemy_SetState(Enemy& enemy, EnemyState newState)
     {
     case EnemyState::Idle:
         enemy.stateTimer = enemy.idleDuration;
-        enemy.vel = { 0.0f, 0.0f };
+        enemy.vel.x = 0.0f;
 
         if (enemy.spriteSheet && enemy.spriteSheet->GetCurrentClip() != "idle")
             enemy.spriteSheet->Play("idle");
@@ -85,7 +85,7 @@ static void Enemy_SetState(Enemy& enemy, EnemyState newState)
         break;
 
     case EnemyState::Attack:
-        enemy.vel = { 0.0f, 0.0f };
+        enemy.vel.x = 0.0f;
 
         if (enemy.spriteSheet && enemy.spriteSheet->GetCurrentClip() != "attack")
             enemy.spriteSheet->Play("attack", true);
@@ -145,6 +145,12 @@ static bool Enemy_MoveWithinPatrolBounds(Enemy& enemy, float dx)
     }
 }
 
+static float Enemy_GetSpawnYFromPlatform(float platformCenterY, float platformHeight, float enemyHeight)
+{
+    constexpr float ENEMY_VISUAL_Y_OFFSET = 1.0f; 
+    return platformCenterY + (platformHeight * 0.5f) + (enemyHeight * 0.5f) + ENEMY_VISUAL_Y_OFFSET;
+}
+
 // -----------------------------------------------------------------------------
 // initialize easy enemy
 // sets position, size, direction, alive status, loads speed and textures
@@ -154,18 +160,11 @@ void Enemy_Init(Enemy& enemy, const rapidjson::Value& config) {
 
     s_EasyEnemyAttackSound = AudioManager::Get().GetAudio("easy_enemy_attack");
 
-    // Position (required, but provide fallback)
     if (config.HasMember("x") && config["x"].IsFloat())
         enemy.pos.x = config["x"].GetFloat();
     else {
         enemy.pos.x = 0.0f;
         printf("Warning: Enemy missing 'x', defaulting to 0\n");
-    }
-    if (config.HasMember("y") && config["y"].IsFloat())
-        enemy.pos.y = config["y"].GetFloat();
-    else {
-        enemy.pos.y = 0.0f;
-        printf("Warning: Enemy missing 'y', defaulting to 0\n");
     }
 
     // Size
@@ -181,6 +180,25 @@ void Enemy_Init(Enemy& enemy, const rapidjson::Value& config) {
         enemy.height = 80.0f;
         printf("Warning: Enemy missing 'height', defaulting to 80\n");
     }
+
+    // Position (required, but provide fallback)
+    if (config.HasMember("platform_y") && config["platform_y"].IsFloat())
+    {
+        enemy.platformY = config["platform_y"].GetFloat();
+        enemy.pos.y = Enemy_GetSpawnYFromPlatform(enemy.platformY, 40.0f, enemy.height);
+    }
+    else if (config.HasMember("y") && config["y"].IsFloat())
+    {
+        enemy.pos.y = config["y"].GetFloat();
+        enemy.platformY = enemy.pos.y - (40.0f * 0.5f) - (enemy.height * 0.5f);
+    }
+    else
+    {
+        enemy.platformY = 0.0f;
+        enemy.pos.y = Enemy_GetSpawnYFromPlatform(enemy.platformY, 40.0f, enemy.height);
+        printf("Warning: Enemy missing 'platform_y'/'y', defaulting to 0\n");
+    }
+
 
     // Movement speed
     if (config.HasMember("speed") && config["speed"].IsFloat())
@@ -232,7 +250,7 @@ void Enemy_Init(Enemy& enemy, const rapidjson::Value& config) {
         enemy.bulletHeight = 30.0f;
 
     enemy.shootTimer = enemy.shootCooldown;
-    enemy.vel = { 0.0f, 0.0f };
+    enemy.vel.x = 0.0f;
 
     if (config.HasMember("start_direction") && config["start_direction"].IsInt())
         enemy.direction = (config["start_direction"].GetInt() < 0) ? -1 : 1;
@@ -338,18 +356,11 @@ void HardEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
 
     s_HardEnemyAttackSound = AudioManager::Get().GetAudio("hard_enemy_attack");
 
-    // Position
     if (config.HasMember("x") && config["x"].IsFloat())
         enemy.pos.x = config["x"].GetFloat();
     else {
         enemy.pos.x = 0.0f;
-        printf("Warning: HardEnemy missing 'x', defaulting to 0\n");
-    }
-    if (config.HasMember("y") && config["y"].IsFloat())
-        enemy.pos.y = config["y"].GetFloat();
-    else {
-        enemy.pos.y = 0.0f;
-        printf("Warning: HardEnemy missing 'y', defaulting to 0\n");
+        printf("Warning: Enemy missing 'x', defaulting to 0\n");
     }
 
     // Size
@@ -365,6 +376,25 @@ void HardEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
         enemy.height = 80.0f;
         printf("Warning: HardEnemy missing 'height', defaulting to 80\n");
     }
+
+    // Position
+    if (config.HasMember("platform_y") && config["platform_y"].IsFloat())
+    {
+        enemy.platformY = config["platform_y"].GetFloat();
+        enemy.pos.y = Enemy_GetSpawnYFromPlatform(enemy.platformY, 40.0f, enemy.height);
+    }
+    else if (config.HasMember("y") && config["y"].IsFloat())
+    {
+        enemy.pos.y = config["y"].GetFloat();
+        enemy.platformY = enemy.pos.y - (40.0f * 0.5f) - (enemy.height * 0.5f);
+    }
+    else
+    {
+        enemy.platformY = 0.0f;
+        enemy.pos.y = Enemy_GetSpawnYFromPlatform(enemy.platformY, 40.0f, enemy.height);
+        printf("Warning: HardEnemy missing 'platform_y'/'y', defaulting to 0\n");
+    }
+
 
     // Movement speed
     if (config.HasMember("speed") && config["speed"].IsFloat())
@@ -393,7 +423,7 @@ void HardEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
     }
 
     enemy.shootCooldown = 0.0f; // no shooting
-    enemy.vel = { 0.0f, 0.0f };
+    enemy.vel.x = 0.0f;
 
     if (config.HasMember("start_direction") && config["start_direction"].IsInt())
         enemy.direction = (config["start_direction"].GetInt() < 0) ? -1 : 1;
@@ -536,7 +566,7 @@ void BossEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
     }
 
     enemy.shootCooldown = 0.0f;
-    enemy.vel = { 0.0f, 0.0f };
+    enemy.vel.x = 0.0f;
 
     if (config.HasMember("start_direction") && config["start_direction"].IsInt())
         enemy.direction = (config["start_direction"].GetInt() < 0) ? -1 : 1;
@@ -654,6 +684,14 @@ void Enemy_Update(Enemy& enemy, float dt) {
 
     enemy.justDied = false;
 
+    PhysicsManager& physics = PhysicsManager::Get();
+
+    // Apply gravity
+    physics.ApplyGravity(enemy.vel.y, enemy.isGrounded, dt);
+
+    // Clamp fall speed
+    physics.ClampFallSpeed(enemy.vel.y);
+
     if (!enemy.spriteSheet) return;
 
     const std::string currentClip = enemy.spriteSheet->GetCurrentClip();
@@ -678,11 +716,10 @@ void Enemy_Update(Enemy& enemy, float dt) {
     // Attack/hit state
     if (enemy.hitStunTimer > 0.0f)
     {
-        // Apply knockback movement first
         if (enemy.knockbackTimer > 0.0f)
         {
             enemy.knockbackTimer -= dt;
-            Enemy_MoveWithinPatrolBounds(enemy, enemy.knockbackVel.x * dt);
+            enemy.vel.x = enemy.knockbackVel.x;
             if (enemy.knockbackTimer <= 0.0f)
             {
                 enemy.knockbackTimer = 0.0f;
@@ -691,8 +728,53 @@ void Enemy_Update(Enemy& enemy, float dt) {
         }
         else
         {
-            // Only decrement hitstun after knockback is done
             enemy.hitStunTimer -= dt;
+            enemy.vel.x = 0.0f;
+        }
+
+        // Integrate Y normally
+        enemy.pos.y += enemy.vel.y * dt;
+
+        // Integrate X, but clamp to patrol/platform bounds
+        const float halfWidth = enemy.width * 0.5f;
+        const float minCenterX = enemy.patrolMinX + halfWidth;
+        const float maxCenterX = enemy.patrolMaxX - halfWidth;
+
+        float nextX = enemy.pos.x + enemy.vel.x * dt;
+
+        if (nextX <= minCenterX)
+        {
+            enemy.pos.x = minCenterX;
+            enemy.direction = 1;
+            enemy.vel.x = 0.0f;
+            enemy.knockbackVel = { 0.0f, 0.0f };
+            enemy.knockbackTimer = 0.0f;
+        }
+        else if (nextX >= maxCenterX)
+        {
+            enemy.pos.x = maxCenterX;
+            enemy.direction = -1;
+            enemy.vel.x = 0.0f;
+            enemy.knockbackVel = { 0.0f, 0.0f };
+            enemy.knockbackTimer = 0.0f;
+        }
+        else
+        {
+            enemy.pos.x = nextX;
+        }
+
+        // Ground collision
+        float groundY = enemy.platformY + (40.0f * 0.5f) + (enemy.height * 0.5f);
+
+        if (enemy.pos.y <= groundY)
+        {
+            enemy.pos.y = groundY;
+            enemy.vel.y = 0.0f;
+            enemy.isGrounded = true;
+        }
+        else
+        {
+            enemy.isGrounded = false;
         }
 
         enemy.spriteSheet->Update(dt);
@@ -734,7 +816,7 @@ void Enemy_Update(Enemy& enemy, float dt) {
     {
     case EnemyState::Idle:
         enemy.stateTimer -= dt;
-        enemy.vel = { 0.0f, 0.0f };
+        enemy.vel.x = 0.0f;
 
         if (enemy.stateTimer <= 0.0f)
             Enemy_SetState(enemy, EnemyState::Patrol);
@@ -751,24 +833,41 @@ void Enemy_Update(Enemy& enemy, float dt) {
             {
                 enemy.pos.x = enemy.homeX;
                 enemy.direction = enemy.homeDirection;
-                enemy.vel = { 0.0f, 0.0f };
+                enemy.vel = { 0.0f, enemy.vel.y };
                 Enemy_SetState(enemy, EnemyState::Idle);
             }
             else
             {
                 enemy.direction = (dxToHome > 0.0f) ? 1 : -1;
                 enemy.vel.x = enemy.direction * enemy.moveSpeed;
-                Enemy_MoveWithinPatrolBounds(enemy, enemy.vel.x * dt);
             }
         }
         else
         {
             enemy.vel.x = enemy.direction * enemy.moveSpeed;
 
-            const bool hitBound = Enemy_MoveWithinPatrolBounds(enemy, enemy.vel.x * dt);
+            const float halfWidth = enemy.width * 0.5f;
+            const float minCenterX = enemy.patrolMinX + halfWidth;
+            const float maxCenterX = enemy.patrolMaxX - halfWidth;
 
-            if (hitBound)
+            const float nextX = enemy.pos.x + enemy.vel.x * dt;
+
+            if (nextX <= minCenterX)
             {
+                enemy.pos.x = minCenterX;
+                enemy.direction = 1;
+                enemy.vel.x = 0.0f;
+                enemy.knockbackVel = { 0.0f, 0.0f };
+                enemy.knockbackTimer = 0.0f;
+                Enemy_SetState(enemy, EnemyState::Idle);
+            }
+            else if (nextX >= maxCenterX)
+            {
+                enemy.pos.x = maxCenterX;
+                enemy.direction = -1;
+                enemy.vel.x = 0.0f;
+                enemy.knockbackVel = { 0.0f, 0.0f };
+                enemy.knockbackTimer = 0.0f;
                 Enemy_SetState(enemy, EnemyState::Idle);
             }
         }
@@ -777,7 +876,7 @@ void Enemy_Update(Enemy& enemy, float dt) {
 
     case EnemyState::Attack:
         enemy.stateTimer -= dt;
-        enemy.vel = { 0.0f, 0.0f };
+        enemy.vel.x = 0.0f;
 
         if (enemy.stateTimer <= 0.0f)
         {
@@ -789,12 +888,37 @@ void Enemy_Update(Enemy& enemy, float dt) {
         break;
     }
 
+    if (enemy.knockbackTimer <= 0.0f && enemy.state != EnemyState::Patrol)
+        enemy.vel.x = 0.0f;
+
+    // Apply movement (X + Y)
+    physics.Integrate(enemy.pos, enemy.vel, dt);
+
+    // Ground collision (platform)
+    float groundY = enemy.platformY + (40.0f * 0.5f) + (enemy.height * 0.5f);
+
+    if (enemy.pos.y <= groundY)
+    {
+        enemy.pos.y = groundY;
+        enemy.vel.y = 0.0f;
+        enemy.isGrounded = true;
+    }
+    else
+    {
+        enemy.isGrounded = false;
+    }
+
     enemy.spriteSheet->Update(dt);
 }
 
 void HardEnemy_Update(Enemy& enemy, float dt) {
     enemy.justDied = false;
     
+    PhysicsManager& physics = PhysicsManager::Get();
+
+    physics.ApplyGravity(enemy.vel.y, enemy.isGrounded, dt);
+    physics.ClampFallSpeed(enemy.vel.y);
+
     if (!enemy.spriteSheet)
         return;
 
@@ -820,11 +944,10 @@ void HardEnemy_Update(Enemy& enemy, float dt) {
     // attack/hit state
     if (enemy.hitStunTimer > 0.0f)
     {
-        // Apply knockback movement first
         if (enemy.knockbackTimer > 0.0f)
         {
             enemy.knockbackTimer -= dt;
-            Enemy_MoveWithinPatrolBounds(enemy, enemy.knockbackVel.x * dt);
+            enemy.vel.x = enemy.knockbackVel.x;
             if (enemy.knockbackTimer <= 0.0f)
             {
                 enemy.knockbackTimer = 0.0f;
@@ -833,8 +956,51 @@ void HardEnemy_Update(Enemy& enemy, float dt) {
         }
         else
         {
-            // Only decrement hitstun after knockback is done
             enemy.hitStunTimer -= dt;
+            enemy.vel.x = 0.0f;
+        }
+
+        // Integrate Y normally
+        enemy.pos.y += enemy.vel.y * dt;
+
+        // Integrate X, but clamp to patrol/platform bounds
+        const float halfWidth = enemy.width * 0.5f;
+        const float minCenterX = enemy.patrolMinX + halfWidth;
+        const float maxCenterX = enemy.patrolMaxX - halfWidth;
+
+        float nextX = enemy.pos.x + enemy.vel.x * dt;
+
+        if (nextX <= minCenterX)
+        {
+            enemy.pos.x = minCenterX;
+            enemy.vel.x = 0.0f;
+            enemy.knockbackVel = { 0.0f, 0.0f };
+            enemy.knockbackTimer = 0.0f;
+        }
+        else if (nextX >= maxCenterX)
+        {
+            enemy.pos.x = maxCenterX;
+            enemy.vel.x = 0.0f;
+            enemy.knockbackVel = { 0.0f, 0.0f };
+            enemy.knockbackTimer = 0.0f;
+        }
+        else
+        {
+            enemy.pos.x = nextX;
+        }
+
+        // Ground collision
+        float groundY = enemy.platformY + (40.0f * 0.5f) + (enemy.height * 0.5f);
+
+        if (enemy.pos.y <= groundY)
+        {
+            enemy.pos.y = groundY;
+            enemy.vel.y = 0.0f;
+            enemy.isGrounded = true;
+        }
+        else
+        {
+            enemy.isGrounded = false;
         }
 
         enemy.spriteSheet->Update(dt);
@@ -851,7 +1017,7 @@ void HardEnemy_Update(Enemy& enemy, float dt) {
     {
     case EnemyState::Idle:
         enemy.stateTimer -= dt;
-        enemy.vel = { 0.0f, 0.0f };
+        enemy.vel.x = 0.0f;
 
         if (enemy.stateTimer <= 0.0f)
             Enemy_SetState(enemy, EnemyState::Patrol);
@@ -868,24 +1034,41 @@ void HardEnemy_Update(Enemy& enemy, float dt) {
             {
                 enemy.pos.x = enemy.homeX;
                 enemy.direction = enemy.homeDirection;
-                enemy.vel = { 0.0f, 0.0f };
+                enemy.vel = { 0.0f, enemy.vel.y };
                 Enemy_SetState(enemy, EnemyState::Idle);
             }
             else
             {
                 enemy.direction = (dxToHome > 0.0f) ? 1 : -1;
                 enemy.vel.x = enemy.direction * enemy.moveSpeed;
-                Enemy_MoveWithinPatrolBounds(enemy, enemy.vel.x * dt);
             }
         }
         else
         {
             enemy.vel.x = enemy.direction * enemy.moveSpeed;
 
-            const bool hitBound = Enemy_MoveWithinPatrolBounds(enemy, enemy.vel.x * dt);
+            const float halfWidth = enemy.width * 0.5f;
+            const float minCenterX = enemy.patrolMinX + halfWidth;
+            const float maxCenterX = enemy.patrolMaxX - halfWidth;
 
-            if (hitBound)
+            const float nextX = enemy.pos.x + enemy.vel.x * dt;
+
+            if (nextX <= minCenterX)
             {
+                enemy.pos.x = minCenterX;
+                enemy.direction = 1;
+                enemy.vel.x = 0.0f;
+                enemy.knockbackVel = { 0.0f, 0.0f };
+                enemy.knockbackTimer = 0.0f;
+                Enemy_SetState(enemy, EnemyState::Idle);
+            }
+            else if (nextX >= maxCenterX)
+            {
+                enemy.pos.x = maxCenterX;
+                enemy.direction = -1;
+                enemy.vel.x = 0.0f;
+                enemy.knockbackVel = { 0.0f, 0.0f };
+                enemy.knockbackTimer = 0.0f;
                 Enemy_SetState(enemy, EnemyState::Idle);
             }
         }
@@ -894,7 +1077,7 @@ void HardEnemy_Update(Enemy& enemy, float dt) {
 
     case EnemyState::Attack:
         enemy.stateTimer -= dt;
-        enemy.vel = { 0.0f, 0.0f };
+        enemy.vel.x = 0.0f;
 
         if (enemy.stateTimer <= 0.0f)
         {
@@ -906,6 +1089,51 @@ void HardEnemy_Update(Enemy& enemy, float dt) {
         break;
     }
 
+    if (enemy.knockbackTimer <= 0.0f && enemy.state != EnemyState::Patrol)
+        enemy.vel.x = 0.0f;
+
+    // Integrate Y normally
+    enemy.pos.y += enemy.vel.y * dt;
+
+    // Integrate X, but clamp to patrol/platform bounds
+    const float halfWidth = enemy.width * 0.5f;
+    const float minCenterX = enemy.patrolMinX + halfWidth;
+    const float maxCenterX = enemy.patrolMaxX - halfWidth;
+
+    float nextX = enemy.pos.x + enemy.vel.x * dt;
+
+    if (nextX <= minCenterX)
+    {
+        enemy.pos.x = minCenterX;
+        enemy.vel.x = 0.0f;
+        enemy.knockbackVel = { 0.0f, 0.0f };
+        enemy.knockbackTimer = 0.0f;
+    }
+    else if (nextX >= maxCenterX)
+    {
+        enemy.pos.x = maxCenterX;
+        enemy.vel.x = 0.0f;
+        enemy.knockbackVel = { 0.0f, 0.0f };
+        enemy.knockbackTimer = 0.0f;
+    }
+    else
+    {
+        enemy.pos.x = nextX;
+    }
+
+    // Ground collision
+    float groundY = enemy.platformY + (40.0f * 0.5f) + (enemy.height * 0.5f);
+
+    if (enemy.pos.y <= groundY)
+    {
+        enemy.pos.y = groundY;
+        enemy.vel.y = 0.0f;
+        enemy.isGrounded = true;
+    }
+    else
+    {
+        enemy.isGrounded = false;
+    }
     enemy.spriteSheet->Update(dt);
 }
 
@@ -1017,7 +1245,7 @@ void BossEnemy_Update(Enemy& enemy, const Player& player, float dt) {
     }
 
     // BossAI_Update owns all animation ticking — do nothing here
-    
+
     // Update boss lasers (tracking/lockon/firing state machines)
     /*BossLasers_Update(enemy, player, dt);*/
 
@@ -1147,7 +1375,7 @@ void Enemy_OnHit(Enemy& enemy, float damage, float knockbackDir)
         const std::string clip = enemy.spriteSheet->GetCurrentClip();
         if (clip == "dead")
             return;
-        
+
         //// If already in hit animation, extend hitstun and apply knockback
         //if (clip == "hit")
         //{
@@ -1188,7 +1416,7 @@ void Enemy_OnHit(Enemy& enemy, float damage, float knockbackDir)
             enemy.hitStunTimer = enemy.spriteSheet->GetClipTotalDuration("dead");
         }
         else enemy.hitStunTimer = 0.45f;
-        
+
 
         enemy.justDied = true;
         enemy.isAlive = false;

@@ -90,6 +90,8 @@ struct Enemy
     bool returnToHomeOnly = false;
     float homeX = 0.0f;
 
+    float platformY = 0.0f;
+
     // Shooting (for enemies that shoot)
     float shootCooldown = 0.0f;
     float shootTimer = 0.0f;
@@ -100,7 +102,8 @@ struct Enemy
     float bulletHeight = 30.0f;
     std::unique_ptr<SpriteSheet> bulletSprite;
 
-    // HardEnemy only
+    bool isGrounded = false;
+
     float damage = 0.0f;
 
     // knockback state
