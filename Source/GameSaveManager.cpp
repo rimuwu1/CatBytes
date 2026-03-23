@@ -254,12 +254,33 @@ void GameSaveManager::SaveGame_Internal(
         if (levelObj.HasMember("enemies") && levelObj["enemies"].IsArray())
         {
             rapidjson::Value& enemiesArr = levelObj["enemies"];
+            auto& alloc = doc.GetAllocator();
             for (rapidjson::SizeType i = 0; i < enemiesArr.Size(); ++i)
             {
                 if (i >= static_cast<rapidjson::SizeType>(enemies.size())) break;
-                enemiesArr[i]["x"] = enemies[i].x;
-                enemiesArr[i]["y"] = enemies[i].y;
-                enemiesArr[i]["hp"] = enemies[i].hp;
+                if (!enemiesArr[i].IsObject()) continue;
+                
+                // Safely update or add x, platform_y, hp fields
+                if (enemiesArr[i].HasMember("x"))
+                    enemiesArr[i]["x"] = enemies[i].x;
+                else
+                    enemiesArr[i].AddMember("x", enemies[i].x, alloc);
+                
+                // Always use platform_y for consistency
+                if (enemiesArr[i].HasMember("platform_y"))
+                    enemiesArr[i]["platform_y"] = enemies[i].platformY;
+                else if (enemiesArr[i].HasMember("y")) {
+                    // Convert old "y" to "platform_y"
+                    enemiesArr[i].RemoveMember("y");
+                    enemiesArr[i].AddMember("platform_y", enemies[i].platformY, alloc);
+                }
+                else
+                    enemiesArr[i].AddMember("platform_y", enemies[i].platformY, alloc);
+                
+                if (enemiesArr[i].HasMember("hp"))
+                    enemiesArr[i]["hp"] = enemies[i].hp;
+                else
+                    enemiesArr[i].AddMember("hp", enemies[i].hp, alloc);
             }
         }
 
@@ -329,7 +350,7 @@ std::vector<GameSaveManager::EnemySaveData> GameSaveManager::ExtractEnemyData(
     std::vector<EnemySaveData> out;
     for (const auto& e : enemies) {
         if (e.pos.y >= levelMinY && e.pos.y <= levelMaxY)
-            out.push_back({ e.pos.x, e.pos.y, e.hitPoints });
+            out.push_back({ e.pos.x, e.platformY, e.hitPoints });
     }
     return out;
 }

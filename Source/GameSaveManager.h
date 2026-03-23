@@ -42,7 +42,7 @@ public:
     };
 
     struct EnemySaveData {
-        float x, y;
+        float x, platformY;
         float hp;
     };
 

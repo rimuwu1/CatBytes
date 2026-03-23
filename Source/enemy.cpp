@@ -250,7 +250,7 @@ void Enemy_Init(Enemy& enemy, const rapidjson::Value& config) {
         enemy.bulletHeight = 30.0f;
 
     enemy.shootTimer = enemy.shootCooldown;
-    enemy.vel.x = 0.0f;
+    enemy.vel = { 0.0f, 0.0f };
 
     if (config.HasMember("start_direction") && config["start_direction"].IsInt())
         enemy.direction = (config["start_direction"].GetInt() < 0) ? -1 : 1;
@@ -423,7 +423,7 @@ void HardEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
     }
 
     enemy.shootCooldown = 0.0f; // no shooting
-    enemy.vel.x = 0.0f;
+    enemy.vel = { 0.0f, 0.0f };
 
     if (config.HasMember("start_direction") && config["start_direction"].IsInt())
         enemy.direction = (config["start_direction"].GetInt() < 0) ? -1 : 1;
@@ -566,7 +566,7 @@ void BossEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
     }
 
     enemy.shootCooldown = 0.0f;
-    enemy.vel.x = 0.0f;
+    enemy.vel = { 0.0f, 0.0f };
 
     if (config.HasMember("start_direction") && config["start_direction"].IsInt())
         enemy.direction = (config["start_direction"].GetInt() < 0) ? -1 : 1;
@@ -577,6 +577,7 @@ void BossEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
 
     if (enemy.hitPoints <= 0.0f) {
         enemy.hitPoints = 0.0f;
+        enemy.justDied = true;
         enemy.isAlive = false;
     }
     else {

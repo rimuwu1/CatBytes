@@ -800,6 +800,7 @@ void HUD::Draw(MeshManager& meshManager, float camX, float camY, PlayerWeapon we
 		DrawProgressBar(meshManager, camX, camY);
 		DrawPauseButton(camX, camY);
 		DrawInventory(camX, camY);
+		DrawBuffBar(camX, camY);
 	}
 }
 
