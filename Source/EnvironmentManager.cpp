@@ -740,6 +740,10 @@ void EnvironmentManager::Update(float dt, Player& player, float cameraY)
 
         if (m_bossDoor.playerNear && AEInputCheckTriggered('E') && !m_bossDoor.activated)
         {
+            // Store original position for save, then hide player for animation
+            m_bossDoor.savedPlayerX = player.pos.x;
+            m_bossDoor.savedPlayerY = player.pos.y;
+            
             m_bossDoor.activated = true;
             m_liftSeq.active = true;
             m_liftSeq.liftPosY = m_bossDoor.liftY;
@@ -749,8 +753,12 @@ void EnvironmentManager::Update(float dt, Player& player, float cameraY)
             if (m_bossDoor.liftAnim)
                 m_bossDoor.liftAnim->Play("rise");
 
-            player.pos.x = -1000.0f; // hide player off screen
+            // Hide player off screen during lift sequence
+            player.pos.x = -1000.0f;
             player.pos.y = 7400.0f;
+            
+            // Trigger save AFTER storing position but while lift is active
+            RequestSave();
         }
     }
 

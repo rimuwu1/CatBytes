@@ -199,6 +199,48 @@ void MainGame_Update()
 
     float playerPrevY = player.pos.y;
 
+    // ----- Boss door auto-save (happens even during lift sequence) -----
+    if (EnvironmentManager::Get().isSaveRequested())
+    {
+        // If boss door was activated, restore original position for save (player is hidden off-screen)
+        bool bossDoorTriggered = EnvironmentManager::Get().IsBossDoorLoaded() && 
+                                 EnvironmentManager::Get().GetBossDoor().activated;
+        float originalX = player.pos.x;
+        float originalY = player.pos.y;
+        
+        if (bossDoorTriggered) {
+            player.pos.x = EnvironmentManager::Get().GetBossDoor().savedPlayerX;
+            player.pos.y = EnvironmentManager::Get().GetBossDoor().savedPlayerY;
+        }
+        
+        int currentSection = EnvironmentManager::Get().GetCurrentSection();
+        int currentLevel = currentSection + 1;
+        const std::vector<Platform>* currentPlatforms = nullptr;
+        switch (currentLevel) {
+        case 1:  currentPlatforms = &EnvironmentManager::Get().GetLevel1Platforms(); break;
+        case 2:  currentPlatforms = &EnvironmentManager::Get().GetLevel2Platforms(); break;
+        case 3:  currentPlatforms = &EnvironmentManager::Get().GetLevel3Platforms(); break;
+        case 4:  currentPlatforms = &EnvironmentManager::Get().GetBossPlatforms();   break;
+        default: currentPlatforms = &EnvironmentManager::Get().GetLevel1Platforms(); break;
+        }
+
+        GameSaveManager::Metadata meta{ "", currentLevel, currentSection, static_cast<int>(ObjectManager::Get().GetPlayerHP()) };
+        
+        float levelMinY = (currentSection == 0) ? -FLT_MAX : EnvironmentManager::Get().GetSectionHeight(currentSection - 1);
+        float levelMaxY = EnvironmentManager::Get().GetSectionHeight(currentSection);
+        
+        const std::vector<Buff>& worldBuffs = ObjectManager::Get().GetAllBuffs();
+        GameSaveManager::SaveGameAsync(meta, currentLevel, player, enemies, *currentPlatforms, worldBuffs, levelMinY, levelMaxY);
+        GameSaveManager::Notify_Show(GameSaveManager::NotifyType::SAVED);
+        ParticleManager_Emit(player.pos.x, player.pos.y, 15, 200.f, 255, 255, 255);
+        
+        // Restore hidden position after save
+        if (bossDoorTriggered) {
+            player.pos.x = originalX;
+            player.pos.y = originalY;
+        }
+    }
+
     // ================== GAMEPLAY LOGIC (paused during camera sequence) ==================
     if (!g_camSequenceActive && !EnvironmentManager::Get().IsLiftActive()) {
         for (const auto& e : enemies) {
@@ -305,10 +347,10 @@ void MainGame_Update()
             player.vel.y = (player.grounded ? 0.0f : player.vel.y);
         }
 
-        // ----- Checkpoint & save -----
+        // ----- Checkpoint save (only manual checkpoint trigger, not boss door) -----
         EnvironmentManager::Get().SetCheckpointInRange(results.checkpointInRange);
 
-        if (results.checkpointInRange && AEInputCheckTriggered('E') || EnvironmentManager::Get().isSaveRequested())
+        if (results.checkpointInRange && AEInputCheckTriggered('E'))
         {
             int currentSection = EnvironmentManager::Get().GetCurrentSection();
             int currentLevel = currentSection + 1;

@@ -122,6 +122,9 @@ public:
         std::unique_ptr<SpriteSheet> liftAnim;
         bool playerNear  = false;
         bool activated   = false;
+        // Store original player position before hiding for lift sequence (for save)
+        float savedPlayerX = 0.0f;
+        float savedPlayerY = 0.0f;
     };
 
     struct BossLiftSequence {
