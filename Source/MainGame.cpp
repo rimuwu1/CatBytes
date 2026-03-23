@@ -110,9 +110,12 @@ static void ApplyConfigToManagers()
     EnvironmentManager::Get().LoadAssetsFromConfig(GetConfigDoc());
     ObjectManager::Get().LoadFromConfig(GetConfigDoc());
 
+    // Clear HUD inventory before syncing from save to prevent old buffs from persisting
+    HUD& hud = EnvironmentManager::Get().GetHUD();
+    hud.ClearInventory();
+    
     // Sync HUD inventory from restored player buffs
     Player& player = ObjectManager::Get().GetPlayer();
-    HUD& hud = EnvironmentManager::Get().GetHUD();
     for (const auto& buff : player.buffs) {
         if (buff.active)
             hud.AddBuffToInventory(buff.type);

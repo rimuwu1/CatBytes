@@ -244,11 +244,12 @@ void Player_Update(Player& player, float dt)
             10, 120.f, 200, 200, 200);
     }
 
-	// Apply gravity (skipped while grounded so velocity does not accumulate)
-	physics.ApplyGravity(player.vel.y, static_cast<bool>(player.grounded), dt);
-
-	// Cap fall speed to terminal velocity
-	physics.ClampFallSpeed(player.vel.y);
+	// Apply gravity (skipped while grounded or dashing so velocity does not accumulate)
+	if (!player.isDashing) {
+		physics.ApplyGravity(player.vel.y, static_cast<bool>(player.grounded), dt);
+		// Cap fall speed to terminal velocity
+		physics.ClampFallSpeed(player.vel.y);
+	}
 
 	// hurt state
 	if (player.isHurt) {
@@ -272,6 +273,7 @@ void Player_Update(Player& player, float dt)
 	if (player.isDashing) {
 		player.dashTimer -= dt;
 		player.vel.x = (player.facingRight ? 1.0f : -1.0f) * player.dashSpeed;
+		player.vel.y = 0.0f;  // maintain horizontal dash, no vertical movement
 
 		if (player.dashTimer <= 0.0f) {
 			player.dashTimer = 0.0f;

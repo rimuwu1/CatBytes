@@ -1376,6 +1376,15 @@ bool HUD::IsAnyUIElementClicked(float camX, float camY) const
 	return false;
 }
 
+void HUD::ClearInventory()
+{
+	for (int i = 0; i < (int)inventory.slots.size(); i++)
+	{
+		inventory.slots[i] = BuffType::NONE;
+		inventory.counts[i] = 0;
+	}
+}
+
 void HUD::AddBuffToInventory(BuffType buffType)
 {
 	for (int i = 0; i < (int)inventory.slots.size(); i++)

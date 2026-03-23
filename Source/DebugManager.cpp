@@ -51,6 +51,7 @@
   |  tp <1|2|3|4|boss>    Teleport to section start            |
   |  tpxy <x> <y>         Teleport to exact world coords       |
   |  hp <value>           Set player HP (float)                 |
+  |  buff <shield|fullhp|dash> Add buff to inventory           |
   |  section              Print current section/level           |
   |  pos                  Print player position                 |
   |  enemies              List alive enemy count by type        |
@@ -85,6 +86,8 @@ Technology is prohibited.
 #include "Player.h"
 #include "PlayerBullet.h"
 #include "enemy.h"
+#include "Buff.h"
+#include "HUD.h"
 #include <sstream>
 #include <algorithm>
 #include <cctype>
@@ -512,6 +515,46 @@ void DebugManager::RegisterBuiltinCommands()
                 Log("Player HP = " + args[1]);
             }
             catch (...) { Log("Invalid value."); }
+        });
+
+    // ---- buff ---------------------------------------------------------------
+    RegisterCommand("buff", "buff <shield|fullhp|dash>", "Add a buff to player inventory.",
+        [this](const std::vector<std::string>& args)
+        {
+            if (args.size() < 2) { 
+                Log("Usage: buff <shield|fullhp|dash>");
+                return;
+            }
+            
+            std::string buffName = ToLower(args[1]);
+            BuffType buffType = BuffType::NONE;
+            
+            if (buffName == "shield") {
+                buffType = BuffType::SHIELD;
+            }
+            else if (buffName == "fullhp" || buffName == "full_hp" || buffName == "hp") {
+                buffType = BuffType::FULL_HP;
+            }
+            else if (buffName == "dash") {
+                buffType = BuffType::DASH;
+            }
+            else {
+                Log("Unknown buff type. Options: shield, fullhp, dash");
+                return;
+            }
+            
+            Player& player = ObjectManager::Get().GetPlayer();
+            HUD& hud = EnvironmentManager::Get().GetHUD();
+            
+            // Create buff and add to player inventory
+            Buff buff(buffType, 0.0f, 0.0f, 50.0f, 50.0f);
+            buff.active = true;
+            player.buffs.push_back(buff);
+            
+            // Sync to HUD inventory
+            hud.AddBuffToInventory(buffType);
+            
+            Log("Added " + buffName + " buff to inventory.");
         });
 
     // ---- section ------------------------------------------------------------

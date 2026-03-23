@@ -38,6 +38,7 @@ public:
 	PlayerWeapon IsWeaponSlotClicked(float camX, float camY) const;  // Returns weapon clicked, or NONE
 	bool IsAnyUIElementClicked(float camX, float camY) const;  // Returns true if any UI element is clicked
 
+	void ClearInventory();
 	void AddBuffToInventory(BuffType buffType);
 	void UseBuffFromInventory(Player& player, int slot);
 	int FindBuffSlot(BuffType buffType) const;
