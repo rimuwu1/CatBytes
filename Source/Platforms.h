@@ -80,6 +80,15 @@ struct PlatformComputer {
 	mutable bool pendingCameraPan = false;
 	mutable float transitionTimer = 0.0f;
 
+	mutable bool indicatorsVisible = false;
+	mutable bool beamVisible = false;
+	mutable bool nowShowBeam = false;
+	mutable bool pendingActivate = false;
+	mutable float preActivateDelay = 0.0f;
+	mutable float delayBeamActivate = 0.0f;
+	mutable bool beamKilled = false;
+	mutable float beamDuration = 0.0f;
+
 	std::unique_ptr<SpriteSheet> computerSprite;
 	std::unique_ptr<SpriteSheet> indicatorLeft;
 	std::unique_ptr<SpriteSheet> indicatorRight;

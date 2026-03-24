@@ -1434,7 +1434,7 @@
         },
         "computers": [
             { "x":    0.0, "y": 7115.0, "width": 100.0, "height": 100.0, "direction": "horizontal", "beamX1": -550.0, "beamY1": 6350.0, "beamX2":  550.0, 
-              "beamY2": 6350.0, "beamStartX": -500.0, "beamStartY": 6370.0, "beamEndX":  500.0, "beamEndY": 6370.0, "beamWidth":  5.0, "indWidth": 120.0, "indHeight": 120.0 },
+              "beamY2": 6350.0, "beamStartX": -500.0, "beamStartY": 6350.0, "beamEndX":  500.0, "beamEndY": 6350.0, "beamWidth":  10.0, "indWidth": 120.0, "indHeight": 120.0 },
             { "x":  700.0, "y": 9665.0, "width": 100.0, "height": 100.0, "direction": "vertical", "beamX1": 700.0, "beamY1": 9540.0, "beamX2":  700.0, 
               "beamY2": 9540.0, "beamStartX": 700.0, "beamStartY": 9490.0, "beamEndX":  700.0, "beamEndY": 7650.0, "beamWidth":  5.0, "indWidth": 150.0, "indHeight": 150.0 }
         ]

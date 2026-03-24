@@ -337,7 +337,10 @@ void MainGame_Update()
 
         // ----- Camera pan sequence for computer toggles (lasers) -----
         if (results.pendingCameraPan) {
-            Camera_StartSequence(results.cameraPanTargetY, globalCam.y, 0.6f, 1.5f);
+            float indicatorTime = 1.5f;
+            float beamVisible = 1.0f;
+            float camHoldTime = indicatorTime + beamVisible;
+            Camera_StartSequence(results.cameraPanTargetY, globalCam.y, 0.6f, camHoldTime);
        }
 
         // Lock player movement during camera sequence
@@ -465,6 +468,59 @@ void MainGame_Update()
         else
             Camera_FollowPlayer(globalCam, player.pos.x, player.pos.y, dt);
     }
+
+    for (auto& comp : EnvironmentManager::Get().GetLevel3Computers())
+    {
+        if (comp.nowShowBeam)
+        {
+            if (!comp.beamKilled)
+            {
+                comp.beamKilled = true;
+                Camera_AddTrauma(0.6f);
+
+                // kill all enemies within beam's range
+                float beamLeft = std::min(comp.beamStartX, comp.beamEndX) - comp.beamW * 0.5f;
+                float beamRight = std::max(comp.beamStartX, comp.beamEndX) + comp.beamW * 0.5f;
+                float beamBot = std::min(comp.beamStartY, comp.beamEndY);
+                float beamTop = std::max(comp.beamStartY, comp.beamEndY);
+
+                for (auto& e : enemies)
+                {
+                    if (!e.isAlive) continue;
+
+                    float enemyLeft = e.pos.x - e.width * 0.5f;
+                    float enemyRight = e.pos.x + e.width * 0.5f;
+                    float enemyBot = e.pos.y - e.height * 0.5f;
+                    float enemyTop = e.pos.y + e.height * 0.5f;
+
+                    bool inBeamX = (enemyRight >= beamLeft) && (enemyLeft <= beamRight);
+                    bool inBeamY = (enemyTop >= beamBot) && (enemyBot <= beamTop);
+
+                    if (inBeamX && inBeamY) {
+                        e.isAlive = false;
+                        ParticleManager_Emit(e.pos.x, e.pos.y, 20, 300.0f, 191, 64, 255);
+                    }
+                }
+
+            }
+            
+            comp.beamDuration -= dt;
+
+            // hide beam and indicators after kill
+            if (comp.beamDuration <= 0.0f)
+            {
+                comp.beamActive = false;
+                comp.beamVisible = false;
+                comp.indicatorsVisible = false;
+                comp.nowShowBeam = false;
+                comp.beamKilled = false;
+                comp.beamDuration = 0.0f;
+            }
+
+        }
+        
+    }
+
 
     // boss lift sequence: override camera  
     if (EnvironmentManager::Get().IsLiftActive())

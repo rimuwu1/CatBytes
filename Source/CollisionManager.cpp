@@ -285,32 +285,20 @@ namespace CollisionManager
 
             if (overlapX && overlapY && AEInputCheckTriggered('E'))
             {
-                comp.beamActive = !comp.beamActive;
-
-                if (comp.beamActive)
+                if (!comp.beamActive && !comp.pendingActivate)
                 {
-                    // kill all enemies within beam's range
-                    float beamLeft = std::min(comp.beamStartX, comp.beamEndX) - comp.beamW * 0.5f;
-                    float beamRight = std::max(comp.beamStartX, comp.beamEndX) - comp.beamW * 0.5f;
-                    float beamBot = std::min(comp.beamStartY, comp.beamEndY);
-                    float beamTop = std::max(comp.beamStartY, comp.beamEndY);
+                    comp.pendingActivate = true;
+                    comp.preActivateDelay = 0.0f;
+                    comp.indicatorsVisible = false;
+                    comp.beamVisible = false;
+                }
+                else if (comp.beamActive)
+                {
 
-                    for (auto& e : enemies)
-                    {
-                        if (!e.isAlive) continue;
+                    comp.beamActive = false;
+                    comp.beamVisible = false;
+                    comp.indicatorsVisible = false;
 
-                        float enemyLeft = e.pos.x - e.width * 0.5f;
-                        float enemyRight = e.pos.x + e.width * 0.5f;
-                        float enemyBot = e.pos.y - e.height * 0.5f;
-                        float enemyTop = e.pos.y + e.height * 0.5f;
-
-                        bool inBeamX = (enemyRight >= beamLeft) && (enemyLeft <= beamRight);
-                        bool inBeamY = (enemyTop >= beamBot) && (enemyBot <= beamTop);
-
-                        if (inBeamX && inBeamY) {
-                            e.isAlive = false;
-                        }
-                    }
                 }
 
                 // Find first laser's Y position for camera target

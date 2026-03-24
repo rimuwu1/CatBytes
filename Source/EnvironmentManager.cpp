@@ -986,6 +986,46 @@ void EnvironmentManager::Update(float dt, Player& player, float cameraY)
         };
     updateLaserTimer(m_level2Lasers);
     updateLaserTimer(m_level3Lasers);
+
+    // laser beam delay
+    for (auto& comp : m_level3Computers)
+    {
+        // pre-activation delay
+        if (comp.pendingActivate)
+        {
+            comp.preActivateDelay -= dt;
+            if (comp.preActivateDelay <= 0.0f)
+            {
+                comp.pendingActivate = false;
+                comp.beamActive = true;
+                comp.delayBeamActivate = 1.5f;
+                comp.indicatorsVisible = true;
+                comp.beamVisible = false;
+            }
+        }
+
+        // delay beam visibility
+        if (comp.beamActive && !comp.beamVisible && comp.delayBeamActivate > 0.0f)
+        {
+            comp.delayBeamActivate -= dt;
+            if (comp.delayBeamActivate <= 0.0f)
+            {
+                comp.beamVisible = true;
+                comp.nowShowBeam = true;
+                comp.beamKilled = false;
+                comp.beamDuration = 1.0f;
+            }
+        }
+
+        // reset when turned off
+        if (!comp.beamActive && !comp.pendingActivate)
+        {
+            comp.beamVisible = false;
+            comp.indicatorsVisible = false;
+            comp.delayBeamActivate = 0.0f;
+            comp.nowShowBeam = false;
+        }
+    }
 }
 
 void EnvironmentManager::LoadBossArenaFromConfig(const rapidjson::Document& doc)
@@ -1486,8 +1526,8 @@ void EnvironmentManager::DrawWorld(float camX, float camY, PlayerWeapon weapon, 
                       comp.computerSprite->GetUVOffsetX(),
                       comp.computerSprite->GetUVOffsetY());
 
-            // draw indicators
-            if (comp.indicatorLeft)
+            // draw indicators when visible
+            if (comp.indicatorLeft && comp.indicatorsVisible)
             {
                 addSprite(comp.indicatorLeft->GetTexture(),
                     comp.indicatorLeft->GetSpriteUVWidth(),
@@ -1497,7 +1537,7 @@ void EnvironmentManager::DrawWorld(float camX, float camY, PlayerWeapon weapon, 
                     comp.indicatorLeft->GetUVOffsetY());
             }
 
-            if (comp.indicatorRight)
+            if (comp.indicatorRight && comp.indicatorsVisible)
             {
                 addSprite(comp.indicatorRight->GetTexture(),
                     comp.indicatorRight->GetSpriteUVWidth(),
@@ -1596,7 +1636,7 @@ void EnvironmentManager::DrawWorld(float camX, float camY, PlayerWeapon weapon, 
 
     auto drawBeams = [&](const std::vector<PlatformComputer>& computers) {
         for (const auto& comp : computers) {
-            if (!comp.beamActive) continue;
+            if (!comp.beamVisible) continue;
             float centerY = (comp.beamStartY + comp.beamEndY) * 0.5f;
             float halfHeight = fabs(comp.beamStartY - comp.beamEndY) * 0.5f;
             if (!inView(centerY, halfHeight)) continue;
