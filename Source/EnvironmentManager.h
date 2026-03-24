@@ -178,7 +178,6 @@ private:
     // Platform textures
     std::unique_ptr<SpriteSheet> m_hoverAnim;
     std::unique_ptr<SpriteSheet> m_checkpointAnim;
-    std::unique_ptr<SpriteSheet> m_spikeAnim;
     AEGfxTexture* m_leftTex = nullptr;
     AEGfxTexture* m_midTex = nullptr;
     AEGfxTexture* m_rightTex = nullptr;
@@ -248,6 +247,18 @@ private:
     AEGfxTexture* m_wallLeftTex = nullptr;
     AEGfxTexture* m_wallMidTex = nullptr;
     AEGfxTexture* m_wallRightTex = nullptr;
+
+    // spike obstacle config
+    std::string m_spikeFilePath = "Assets/Images/spikeObstacle.png";
+    int m_spikeRows = 1;
+    int m_spikeCols = 10;
+    int m_spikeTotalFrames = 10;
+    float m_spikeFrameDuration = 0.05f;
+    std::vector<ButtonClipConfig> m_spikeClips = {
+        {"on", 9, 9, 0.05f, true},
+        {"toggle", 1, 8, 0.05f, false},
+        {"off", 0, 0, 0.05f, true}
+    };
 
     int m_previousSelection = -1;   // for level indicator
     int m_currentSection = 0;

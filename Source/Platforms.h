@@ -44,6 +44,9 @@ struct PlatformObstacle {
 	mutable bool active = true;
 	mutable float timer = 0.0f;
 	float spikeInterval = 5.0f;
+	std::unique_ptr<SpriteSheet> sprite;
+	mutable bool spriteInitialized = false;
+	mutable bool prevActive = true;
 };
 
 struct PlatformLaser {

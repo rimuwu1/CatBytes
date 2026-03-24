@@ -36,21 +36,26 @@
     }
   }
 },
-  "environment": {
-    "platform_left":   "Assets/Images/platform_left.png",
-    "platform_mid":    "Assets/Images/platform_middle.png",
-    "platform_right":  "Assets/Images/platform_right.png",
-    "spike_anim": {
-      "file": "Assets/Images/spikeObstacle.png",
-      "rows": 1,
-      "cols": 8,
-      "start": 0,
-      "duration": 0.05
-    },
-    "laser":           "Assets/Images/laserObstacle.png",
-    "wall_left":       "Assets/Images/wall_left.png",
-    "wall_mid":        "Assets/Images/wall_mid.png",
-    "wall_right":      "Assets/Images/wall_right.png",
+    "environment": {
+      "platform_left":   "Assets/Images/platform_left.png",
+      "platform_mid":    "Assets/Images/platform_middle.png",
+      "platform_right":  "Assets/Images/platform_right.png",
+      "spike_anim": {
+        "file": "Assets/Images/spikeObstacle.png",
+        "rows": 1,
+        "cols": 10,
+        "total_frames": 10,
+        "frame_duration": 0.05,
+        "clips": [
+          { "name": "on",     "start": 9, "end": 9,  "duration": 0.05, "loop": true },
+          { "name": "toggle", "start": 1, "end": 8,  "duration": 0.05, "loop": false },
+          { "name": "off",    "start": 0, "end": 0,  "duration": 0.05, "loop": true }
+        ]
+      },
+      "laser":           "Assets/Images/laserObstacle.png",
+      "wall_left":       "Assets/Images/wall_left.png",
+      "wall_mid":        "Assets/Images/wall_mid.png",
+      "wall_right":      "Assets/Images/wall_right.png",
     "hover_anim": {
       "file":   "Assets/Images/HoverSheet.png",
       "rows":   1,

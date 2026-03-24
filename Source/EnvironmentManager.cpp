@@ -271,7 +271,34 @@ void EnvironmentManager::LoadFromConfig(const rapidjson::Document& doc)
             obs.h = o["height"].GetFloat();
             obs.r = o.HasMember("rotation") ? o["rotation"].GetFloat() : 0.0f;
             obs.isSpike = o.HasMember("is_spike") ? o["is_spike"].GetBool() : true;
-            m_level1Obstacles.push_back(obs);
+            
+             // If this is a spike obstacle, instantiate per-obstacle SpriteSheet
+             if (obs.isSpike) {
+                 obs.sprite = std::make_unique<SpriteSheet>(
+                     m_spikeFilePath.c_str(),
+                     m_spikeRows,
+                     m_spikeCols,
+                     m_spikeTotalFrames,
+                     m_spikeFrameDuration
+                 );
+                 
+                 for (const auto& clipCfg : m_spikeClips) {
+                     obs.sprite->AddClip(
+                         clipCfg.name.c_str(),
+                         clipCfg.start,
+                         clipCfg.end,
+                         clipCfg.duration,
+                         clipCfg.loop
+                     );
+                 }
+                 
+                 obs.sprite->Play("on");
+                 obs.active = true;
+                 obs.prevActive = true;
+                 obs.spriteInitialized = true;
+             }
+             
+             m_level1Obstacles.push_back(std::move(obs));
         }
     }
 
@@ -327,8 +354,35 @@ void EnvironmentManager::LoadFromConfig(const rapidjson::Document& doc)
             obs.w = o["width"].GetFloat();
             obs.h = o["height"].GetFloat();
             obs.r = o.HasMember("rotation") ? o["rotation"].GetFloat() : 0.0f;
-            obs.isSpike = o.HasMember("is_spike") ? o["is_spike"].GetBool() : true; 
-            m_level2Obstacles.push_back(obs);
+            obs.isSpike = o.HasMember("is_spike") ? o["is_spike"].GetBool() : true;
+            
+             // If this is a spike obstacle, instantiate per-obstacle SpriteSheet
+             if (obs.isSpike) {
+                 obs.sprite = std::make_unique<SpriteSheet>(
+                     m_spikeFilePath.c_str(),
+                     m_spikeRows,
+                     m_spikeCols,
+                     m_spikeTotalFrames,
+                     m_spikeFrameDuration
+                 );
+                 
+                 for (const auto& clipCfg : m_spikeClips) {
+                     obs.sprite->AddClip(
+                         clipCfg.name.c_str(),
+                         clipCfg.start,
+                         clipCfg.end,
+                         clipCfg.duration,
+                         clipCfg.loop
+                     );
+                 }
+                 
+                 obs.sprite->Play("on");
+                 obs.active = true;
+                 obs.prevActive = true;
+                 obs.spriteInitialized = true;
+             }
+             
+             m_level2Obstacles.push_back(std::move(obs));
         }
     }
  
@@ -420,8 +474,35 @@ void EnvironmentManager::LoadFromConfig(const rapidjson::Document& doc)
             obs.w = o["width"].GetFloat();
             obs.h = o["height"].GetFloat();
             obs.r = o.HasMember("rotation") ? o["rotation"].GetFloat() : 0.0f;
-            obs.isSpike = o.HasMember("is_spike") ? o["is_spike"].GetBool() : true; 
-            m_level3Obstacles.push_back(obs);
+            obs.isSpike = o.HasMember("is_spike") ? o["is_spike"].GetBool() : true;
+            
+             // If this is a spike obstacle, instantiate per-obstacle SpriteSheet
+             if (obs.isSpike) {
+                 obs.sprite = std::make_unique<SpriteSheet>(
+                     m_spikeFilePath.c_str(),
+                     m_spikeRows,
+                     m_spikeCols,
+                     m_spikeTotalFrames,
+                     m_spikeFrameDuration
+                 );
+                 
+                 for (const auto& clipCfg : m_spikeClips) {
+                     obs.sprite->AddClip(
+                         clipCfg.name.c_str(),
+                         clipCfg.start,
+                         clipCfg.end,
+                         clipCfg.duration,
+                         clipCfg.loop
+                     );
+                 }
+                 
+                 obs.sprite->Play("on");
+                 obs.active = true;
+                 obs.prevActive = true;
+                 obs.spriteInitialized = true;
+             }
+             
+             m_level3Obstacles.push_back(std::move(obs));
         }
     }
 
@@ -654,15 +735,72 @@ void EnvironmentManager::LoadAssetsFromConfig(const rapidjson::Document& doc)
         );
     }
 
+    // ---- Spike obstacle configuration ----
     if (env.HasMember("spike_anim") && env["spike_anim"].IsObject()) {
-        const auto& a = env["spike_anim"];
-        m_spikeAnim = std::make_unique<SpriteSheet>(
-            a["file"].GetString(),
-            a["rows"].GetInt(),
-            a["cols"].GetInt(),
-            a["start"].GetInt(),
-            static_cast<float>(a["duration"].GetDouble())
-        );
+        const auto& spikeConfig = env["spike_anim"];
+        
+        // Read sprite sheet metadata
+        m_spikeFilePath = spikeConfig.HasMember("file") ? spikeConfig["file"].GetString() : "Assets/Images/spikeObstacle.png";
+        m_spikeRows = spikeConfig.HasMember("rows") ? spikeConfig["rows"].GetInt() : 1;
+        m_spikeCols = spikeConfig.HasMember("cols") ? spikeConfig["cols"].GetInt() : 10;
+        m_spikeTotalFrames = spikeConfig.HasMember("total_frames") ? spikeConfig["total_frames"].GetInt() : 10;
+        m_spikeFrameDuration = spikeConfig.HasMember("frame_duration") ? spikeConfig["frame_duration"].GetFloat() : 0.05f;
+
+        // Create sprite sheet with loaded metadata
+         // No shared spike animation; each obstacle owns its own sprite
+
+        // Parse clip configs if present; apply defaults per field for robustness
+        if (spikeConfig.HasMember("clips") && spikeConfig["clips"].IsArray()) {
+            std::vector<ButtonClipConfig> tempClips;
+            for (const auto& clip : spikeConfig["clips"].GetArray()) {
+                ButtonClipConfig cfg;
+                
+                // name: required, but guard with HasMember and isString
+                if (clip.HasMember("name") && clip["name"].IsString()) {
+                    cfg.name = clip["name"].GetString();
+                } else {
+                    // Skip clips without a name (or apply a default name if desired)
+                    continue;
+                }
+                
+                // start: int, default 0
+                cfg.start = (clip.HasMember("start") && clip["start"].IsInt()) ? clip["start"].GetInt() : 0;
+                
+                // end: int, default 0
+                cfg.end = (clip.HasMember("end") && clip["end"].IsInt()) ? clip["end"].GetInt() : 0;
+                
+                // duration: float, default m_spikeFrameDuration
+                cfg.duration = (clip.HasMember("duration") && clip["duration"].IsNumber()) ? 
+                    static_cast<float>(clip["duration"].GetDouble()) : m_spikeFrameDuration;
+                
+                // loop: bool, default false
+                cfg.loop = (clip.HasMember("loop") && clip["loop"].IsBool()) ? clip["loop"].GetBool() : false;
+                
+                tempClips.push_back(cfg);
+            }
+            // Only replace m_spikeClips if at least one valid clip was parsed
+            if (!tempClips.empty()) {
+                m_spikeClips = std::move(tempClips);
+            }
+            // Else: clips array was present but empty or all entries were skipped (invalid).
+            // m_spikeClips retains its default from header initialization.
+        }
+        // If clips array is absent, m_spikeClips retains its default from header initialization
+    }
+    else {
+        // Fallback defaults if spike_anim section missing entirely
+        m_spikeFilePath = "Assets/Images/spikeObstacle.png";
+        m_spikeRows = 1;
+        m_spikeCols = 10;
+        m_spikeTotalFrames = 10;
+        m_spikeFrameDuration = 0.05f;
+        m_spikeClips = {
+            { "on", 9, 9, 0.05f, true },
+            { "toggle", 1, 8, 0.05f, false },
+            { "off", 0, 0, 0.05f, true }
+        };
+
+        // No shared spike animation; each obstacle owns its own sprite
     }
 
     // boss door textures
@@ -698,7 +836,6 @@ void EnvironmentManager::Update(float dt, Player& player, float cameraY)
 
     if (m_hoverAnim) m_hoverAnim->Update(dt);
     if (m_checkpointAnim) m_checkpointAnim->Update(dt);
-    if (m_spikeAnim) m_spikeAnim->Update(dt);
 
     UpdateBackground(cameraY);
     
@@ -712,23 +849,66 @@ void EnvironmentManager::Update(float dt, Player& player, float cameraY)
     }
     LevelIndicator_Update(dt);
 
-    // update spike timer
-    auto updateObsTimer = [&](std::vector<PlatformObstacle>& obstacles)
-        {
-            for (auto& o : obstacles)
-            {
-                if (!o.isSpike) continue;
-                o.timer += dt;
-                if (o.timer >= o.spikeInterval)
-                {
-                    o.timer = 0.0f;
-                    o.active = !o.active;
-                }
-            }
-        };
-    updateObsTimer(m_level1Obstacles);
-    updateObsTimer(m_level2Obstacles);
-    updateObsTimer(m_level3Obstacles);
+     // update spike timer
+     auto updateObsTimer = [&](std::vector<PlatformObstacle>& obstacles)
+         {
+             for (auto& o : obstacles)
+             {
+                 if (!o.isSpike) continue;
+                 o.timer += dt;
+                 if (o.timer >= o.spikeInterval)
+                 {
+                     o.timer = 0.0f;
+                     o.active = !o.active;
+                 }
+             }
+         };
+     updateObsTimer(m_level1Obstacles);
+     updateObsTimer(m_level2Obstacles);
+     updateObsTimer(m_level3Obstacles);
+
+      // Per-obstacle spike animation state machine
+       auto updateSpikeAnimations = [&](std::vector<PlatformObstacle>& obstacles)
+           {
+               for (auto& o : obstacles)
+               {
+                   if (!o.isSpike || !o.sprite) continue;
+
+                   // Initialize sprite if not yet done
+                   if (!o.spriteInitialized) {
+                       o.sprite->Play("on");
+                       o.prevActive = true;
+                       o.spriteInitialized = true;
+                   }
+
+                   // Detect state changes and trigger transitions
+                   // Off -> On: play toggle animation then switch to "on"
+                   // On -> Off: immediately play "off" (no toggle)
+                   if (o.prevActive != o.active) {
+                       if (o.active) {
+                           // Transitioning OFF -> ON: play toggle
+                           o.sprite->Play("toggle");
+                       } else {
+                           // Transitioning ON -> OFF: immediately show off
+                           o.sprite->Play("off");
+                       }
+                   }
+
+                   // Update sprite animation
+                   o.sprite->Update(dt);
+
+                   // If toggle animation finished, switch to "on" clip
+                   if (o.sprite->GetCurrentClip() == "toggle" && !o.sprite->IsPlaying()) {
+                       o.sprite->Play("on");
+                   }
+
+                   // Update previous state
+                   o.prevActive = o.active;
+              }
+          };
+     updateSpikeAnimations(m_level1Obstacles);
+     updateSpikeAnimations(m_level2Obstacles);
+     updateSpikeAnimations(m_level3Obstacles);
 
     // boss door proxmity check
     if (m_bossDoorLoaded && !m_liftSeq.active)
@@ -986,7 +1166,19 @@ void EnvironmentManager::DrawWorld(float camX, float camY, PlayerWeapon weapon, 
     // 1.b Dynamic animated sprites (hover animation & checkpoints)
     // These use per-frame UV offsets so they must be submitted each frame.
     // --------------------------------------------------------------------
-    if (m_hoverAnim || m_checkpointAnim || m_spikeAnim) {
+    // Check if there are any dynamic sprites to draw (hover, checkpoint, or spike obstacles)
+    auto hasObstaclesWithSprites = [](const std::vector<PlatformObstacle>& obs) {
+        for (const auto& o : obs) {
+            if (o.isSpike && o.sprite) return true;
+        }
+        return false;
+    };
+    bool hasSprites = m_hoverAnim || m_checkpointAnim ||
+        hasObstaclesWithSprites(m_level1Obstacles) ||
+        hasObstaclesWithSprites(m_level2Obstacles) ||
+        hasObstaclesWithSprites(m_level3Obstacles);
+
+    if (hasSprites) {
         // Build a temporary batch for animated sprites
         m_spriteBatch.clear();
 
@@ -1044,24 +1236,23 @@ void EnvironmentManager::DrawWorld(float camX, float camY, PlayerWeapon weapon, 
             }
         }
 
-        // Spike obstacles (animated) - drawn per-frame
-        if (m_spikeAnim) {
-            auto drawObstacles = [&](const std::vector<PlatformObstacle>& obstacles) {
-                for (const auto& o : obstacles) {
-                    if (!o.active) continue;
-                    if (!inView(o.y, o.h * 0.5f)) continue;
-                    addSpriteDyn(m_spikeAnim->GetTexture(),
-                        m_spikeAnim->GetSpriteUVWidth(),
-                        m_spikeAnim->GetSpriteUVHeight(),
-                        o.x, o.y, o.w, o.h,
-                        m_spikeAnim->GetUVOffsetX(),
-                        m_spikeAnim->GetUVOffsetY());
-                }
-            };
-            drawObstacles(m_level1Obstacles);
-            drawObstacles(m_level2Obstacles);
-            drawObstacles(m_level3Obstacles);
-        }
+        // Spike obstacles (animated) - drawn per-frame with per-obstacle sprites
+        // Draw regardless of active flag (inactive spikes show as "off" state)
+        auto drawObstacles = [&](const std::vector<PlatformObstacle>& obstacles) {
+            for (const auto& o : obstacles) {
+                if (!o.isSpike || !o.sprite) continue;
+                if (!inView(o.y, o.h * 0.5f)) continue;
+                addSpriteDyn(o.sprite->GetTexture(),
+                    o.sprite->GetSpriteUVWidth(),
+                    o.sprite->GetSpriteUVHeight(),
+                    o.x, o.y, o.w, o.h,
+                    o.sprite->GetUVOffsetX(),
+                    o.sprite->GetUVOffsetY());
+            }
+        };
+        drawObstacles(m_level1Obstacles);
+        drawObstacles(m_level2Obstacles);
+        drawObstacles(m_level3Obstacles);
 
         // Flush the dynamic sprite batch (sort & submit)
         if (!m_spriteBatch.empty()) {
@@ -1675,6 +1866,4 @@ void EnvironmentManager::Clear()
     m_staticCache.clear();
     m_staticBatchDirty = true;
 
-    // Destroy animated spike sprite if present
-    m_spikeAnim.reset();
 }
