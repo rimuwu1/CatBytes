@@ -122,6 +122,37 @@ void BossRoom_Initialize()
     camTrauma = 0.0f;
     camShakeTime = 0.0f;
 
+    if (DebugManager::Get().m_SkipToMidPhase)
+    {
+        DebugManager::Get().m_SkipToMidPhase = false;
+
+        // skip cutscene
+        g_cutsceneDone  = true;
+        g_cutscenePhase = CutscenePhase::Done;
+
+        // move player to arena center
+        player.pos.x = -400.0f;
+        player.pos.y = -300.0f;
+        player.vel.x = 0.0f;
+        player.vel.y = 0.0f;
+
+        // force boss into phase transition state
+        g_bossAI.phase             = BossPhase::PhaseTransition;
+        g_bossAI.attackState       = BossAttackState::HurtBetweenPhase;
+        g_bossAI.stateTimer        = 0.0f;
+        g_bossAI.lasersEnabled     = false;
+        g_bossAI.phaseTransitionDone = false;
+
+        // set boss HP to just below 50% so phase transition is already triggered
+        auto& enemies = ObjectManager::Get().GetAllEnemies();
+        for (auto& e : enemies)
+            if (e.type == EnemyType::Boss)
+            {
+                e.hitPoints = e.maxHitPoints * 0.49f;
+                if (e.spriteSheet) e.spriteSheet->Play("hurtbetweenphase");
+            }
+    }
+
     UIManager::Get().Reset();
     LevelIndicator_Show(3);
     std::cout << "BossRoom:Initialize" << std::endl;
@@ -338,6 +369,9 @@ void BossRoom_Update()
         if (!hitJustStarted) continue;
         if (BossAI_IsInvincible(g_bossAI)) continue;
 
+        //
+        if (e.hitPoints <= 0.1f) continue;
+
         bool wasInUsePC = (g_bossAI.attackState == BossAttackState::UsePC);
 
         float roll = (float)rand() / (float)RAND_MAX;
@@ -483,9 +517,27 @@ void BossRoom::Update(float dt)
             continue;
         }
 
+        // force defeat state if HP is zero before AI update overwrites it
+        if (e.hitPoints <= 0.0f && !g_bossAI.defeatStarted)
+        {
+            g_bossAI.defeatStarted = true;
+            g_bossAI.phase         = BossPhase::Defeated;
+            g_bossAI.attackState   = BossAttackState::FightOver;
+            g_bossAI.stateTimer    = 0.0f;
+            g_bossAI.lasersEnabled = false;
+            e.vel.x = 0.0f;
+            e.vel.y = 0.0f;
+            e.hitPoints = 0.1f;
+            if (e.spriteSheet) e.spriteSheet->Play("fightover");
+        }
+
         BossAI_Update(g_bossAI, e, player, dt);
 
         bool lasersOn = BossAI_LasersActive(g_bossAI);
+        std::cout << "[LASER] lasersOn=" << lasersOn 
+            << " attackState=" << (int)g_bossAI.attackState 
+            << " lasersEnabled=" << g_bossAI.lasersEnabled
+            << " laserCount=" << e.bossLasers.size() << "\n"; // debug
         if (lasersOn)
         {
             BossLasers_Update(e, player, dt);

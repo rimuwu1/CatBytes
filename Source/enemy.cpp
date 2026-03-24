@@ -40,7 +40,7 @@ Technology is prohibited.
 
 static AEAudio s_EasyEnemyAttackSound{};
 static AEAudio s_HardEnemyAttackSound{};
-static AEAudio s_BossAttackSound{};
+//static AEAudio s_BossAttackSound{};
 
 static bool Enemy_IsInCamera(const Enemy& enemy)
 {
@@ -112,38 +112,38 @@ static void Enemy_SetState(Enemy& enemy, EnemyState newState)
     }
 }
 
-static bool Enemy_MoveWithinPatrolBounds(Enemy& enemy, float dx)
-{
-    const float halfWidth = enemy.width * 0.5f;
-
-    // patrolMinX/patrolMaxX are platform edges
-    const float minCenterX = enemy.patrolMinX + halfWidth;
-    const float maxCenterX = enemy.patrolMaxX - halfWidth;
-
-    const float nextX = enemy.pos.x + dx;
-
-    if (nextX <= minCenterX)
-    {
-        enemy.pos.x = minCenterX;
-        enemy.direction = 1;
-        enemy.knockbackVel = { 0.0f, 0.0f };
-        enemy.knockbackTimer = 0.0f;
-        return true;
-    }
-    else if (nextX >= maxCenterX)
-    {
-        enemy.pos.x = maxCenterX;
-        enemy.direction = -1;
-        enemy.knockbackVel = { 0.0f, 0.0f };
-        enemy.knockbackTimer = 0.0f;
-        return true;
-    }
-    else
-    {
-        enemy.pos.x = nextX;
-        return false;
-    }
-}
+//static bool Enemy_MoveWithinPatrolBounds(Enemy& enemy, float dx)
+//{
+//    const float halfWidth = enemy.width * 0.5f;
+//
+//    // patrolMinX/patrolMaxX are platform edges
+//    const float minCenterX = enemy.patrolMinX + halfWidth;
+//    const float maxCenterX = enemy.patrolMaxX - halfWidth;
+//
+//    const float nextX = enemy.pos.x + dx;
+//
+//    if (nextX <= minCenterX)
+//    {
+//        enemy.pos.x = minCenterX;
+//        enemy.direction = 1;
+//        enemy.knockbackVel = { 0.0f, 0.0f };
+//        enemy.knockbackTimer = 0.0f;
+//        return true;
+//    }
+//    else if (nextX >= maxCenterX)
+//    {
+//        enemy.pos.x = maxCenterX;
+//        enemy.direction = -1;
+//        enemy.knockbackVel = { 0.0f, 0.0f };
+//        enemy.knockbackTimer = 0.0f;
+//        return true;
+//    }
+//    else
+//    {
+//        enemy.pos.x = nextX;
+//        return false;
+//    }
+//}
 
 static float Enemy_GetSpawnYFromPlatform(float platformCenterY, float platformHeight, float enemyHeight)
 {
@@ -507,7 +507,8 @@ void HardEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
 
 void BossEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
 
-    enemy.facesLeft = true;
+    enemy.facesLeft = false;
+
     // Position
     if (config.HasMember("x") && config["x"].IsFloat())
         enemy.pos.x = config["x"].GetFloat();
@@ -647,6 +648,16 @@ void BossEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
     enemy.state = EnemyState::Patrol;
     enemy.stateTimer = 0.0f;
 
+    // Load shared laser timing from config if present
+    if (config.HasMember("laser_cooldown"))      enemy.laserCooldown      = config["laser_cooldown"].GetFloat();
+    if (config.HasMember("laser_track"))         enemy.laserTrackDuration = config["laser_track"].GetFloat();
+    if (config.HasMember("laser_lockon"))        enemy.laserLockDuration  = config["laser_lockon"].GetFloat();
+    if (config.HasMember("laser_fire"))          enemy.laserFireDuration  = config["laser_fire"].GetFloat();
+    if (config.HasMember("laser_damage"))        enemy.laserDamage        = config["laser_damage"].GetFloat();
+    if (config.HasMember("laser_knockback"))     enemy.laserKnockback     = config["laser_knockback"].GetFloat();
+    // Load laser texture
+    enemy.laserTex = TextureManager::Get().LoadTexture("Assets/Images/laserObstacle.png");
+
     // Load boss laser emitter origins from config
     if (config.HasMember("boss_lasers") && config["boss_lasers"].IsArray()) {
         for (const auto& l : config["boss_lasers"].GetArray()) {
@@ -656,6 +667,7 @@ void BossEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
             laser.width      = l.HasMember("width") ? l["width"].GetFloat() : 16.0f;
             laser.state      = BossLaserState::Inactive;
             laser.cooldownTimer = enemy.laserCooldown;
+
             // Stagger lasers so they don't all fire at once:
             // offset each laser's initial cooldown by its index * (laserCooldown / count)
             enemy.bossLasers.push_back(laser);
@@ -666,16 +678,6 @@ void BossEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
             enemy.bossLasers[i].cooldownTimer = enemy.laserCooldown * (static_cast<float>(i) / count);
         }
     }
-
-    // Load shared laser timing from config if present
-    if (config.HasMember("laser_cooldown"))      enemy.laserCooldown      = config["laser_cooldown"].GetFloat();
-    if (config.HasMember("laser_track"))         enemy.laserTrackDuration = config["laser_track"].GetFloat();
-    if (config.HasMember("laser_lockon"))        enemy.laserLockDuration  = config["laser_lockon"].GetFloat();
-    if (config.HasMember("laser_fire"))          enemy.laserFireDuration  = config["laser_fire"].GetFloat();
-    if (config.HasMember("laser_damage"))        enemy.laserDamage        = config["laser_damage"].GetFloat();
-    if (config.HasMember("laser_knockback"))     enemy.laserKnockback     = config["laser_knockback"].GetFloat();
-    // Load laser texture
-    enemy.laserTex = TextureManager::Get().LoadTexture("Assets/Images/laserObstacle.png");
 }
 
 // -----------------------------------------------------------------------------
@@ -1142,8 +1144,17 @@ void HardEnemy_Update(Enemy& enemy, float dt) {
 void BossLasers_Update(Enemy& enemy, const Player& player, float dt)
 {
     // TODO: replace hardcoded range gate with proper boss phase / aggro system
-    const float dy = player.pos.y - enemy.pos.y;
-    if (fabsf(dy) > 300.0f) return;
+    /*const float dy = player.pos.y - enemy.pos.y;
+    for (int i = 0; i < (int)enemy.bossLasers.size(); ++i)
+    {
+        std::cout << "[LASER " << i << "] state=" << (int)enemy.bossLasers[i].state 
+            << " cooldown=" << enemy.bossLasers[i].cooldownTimer << "\n";
+    }
+    if (fabsf(dy) > 300.0f) 
+    {
+        std::cout << "[LASER] BLOCKED by range gate, dy=" << dy << "\n";
+        return;
+    }*/
 
     for (BossLaser& laser : enemy.bossLasers)
     {
@@ -1365,10 +1376,27 @@ void BossEnemy_Update(Enemy& enemy, const Player& player, float dt) {
 // called when player collides with enemy
 // reduces hitPoints and sets hit stun
 // -----------------------------------------------------------------------------
-void Enemy_OnHit(Enemy& enemy, float damage, float knockbackDir)
+void Enemy_OnHit(Enemy& enemy, float damage, float knockbackDir, Player* attacker)
 {
     if (!enemy.isAlive) return;
-    if (enemy.isInvincible) return;
+
+    if (enemy.type == EnemyType::Boss && enemy.spriteSheet
+        && enemy.spriteSheet->GetCurrentClip() == "block")
+    {
+        if (attacker)
+        {
+            float blockDir = (attacker->pos.x < enemy.pos.x) ? -1.0f : 1.0f;
+            attacker->vel.x = blockDir * 1400.0f;
+            attacker->vel.y = 200.0f;           
+            attacker->knockbackTimer = 0.8f;
+            attacker->isHurt = true;
+            attacker->hurtTimer = 0.8f;
+        }
+        return;
+    }
+
+    bool killingBlow = (enemy.type == EnemyType::Boss && enemy.hitPoints - damage <= 0.0f);
+    if (enemy.isInvincible && !killingBlow) return;
 
     // Only block damage if already in dead animation (allow knockback to re-trigger)
     if (enemy.spriteSheet)
@@ -1377,22 +1405,15 @@ void Enemy_OnHit(Enemy& enemy, float damage, float knockbackDir)
         if (clip == "dead")
             return;
 
-        //// If already in hit animation, extend hitstun and apply knockback
-        //if (clip == "hit")
-        //{
-        //    // Extend hitstun timer
-        //    enemy.hitStunTimer = enemy.spriteSheet->GetClipTotalDuration("hit");
-        //    Enemy_ApplyKnockback(enemy, knockbackDir);
-        //    return;
-        //}
-
         // boss uses "hurt", regular enemies use "hit"
         const std::string hitClipName = (enemy.type == EnemyType::Boss) ? "hurt" : "hit";
         if (clip == hitClipName)
         {
             enemy.hitStunTimer = enemy.spriteSheet->GetClipTotalDuration(hitClipName);
             if (enemy.hitStunTimer <= 0.0f) enemy.hitStunTimer = 0.5f;
-            Enemy_ApplyKnockback(enemy, knockbackDir);
+            // boss does not receive knockback from player hits
+            if (enemy.type != EnemyType::Boss)
+                Enemy_ApplyKnockback(enemy, knockbackDir);
             return;
         }
     }
@@ -1418,7 +1439,6 @@ void Enemy_OnHit(Enemy& enemy, float damage, float knockbackDir)
         }
         else enemy.hitStunTimer = 0.45f;
 
-
         enemy.justDied = true;
         enemy.isAlive = false;
         enemy.state = EnemyState::Idle;
@@ -1442,8 +1462,9 @@ void Enemy_OnHit(Enemy& enemy, float damage, float knockbackDir)
         }
     }
 
-    // Apply knockback
-    Enemy_ApplyKnockback(enemy, knockbackDir);
+    // boss does not receive knockback from player hits
+    if (enemy.type != EnemyType::Boss)
+        Enemy_ApplyKnockback(enemy, knockbackDir);
 }
 
 void Enemy_OnDeath(Enemy& enemy)
@@ -1459,30 +1480,76 @@ void Enemy_OnDeath(Enemy& enemy)
 
 void HardEnemy_OnCollision(Enemy& enemy, Player& player)
 {
-    if (!enemy.isAlive)
-        return;
+    if (!enemy.isAlive) return;
+    if (!enemy.spriteSheet) return;
 
-    if (!enemy.spriteSheet)
-        return;
-
-    // don't restart attack if already in attack/hit/dead
     const std::string clip = enemy.spriteSheet->GetCurrentClip();
-    if (enemy.state == EnemyState::Attack || clip == "hit" || clip == "dead")
+
+    if (enemy.type != EnemyType::Boss)
+    {
+        if (enemy.state == EnemyState::Attack || clip == "hit" || clip == "dead")
+            return;
+    }
+
+    // physically push player out of boss overlap every frame
+    if (enemy.type == EnemyType::Boss)
+    {
+        float overlapDir = (player.pos.x >= enemy.pos.x) ? 1.0f : -1.0f;
+        float combinedHalfW = (player.width + enemy.width) * 0.5f;
+        float dist = fabsf(player.pos.x - enemy.pos.x);
+        if (dist < combinedHalfW)
+        {
+            player.pos.x = enemy.pos.x + overlapDir * (combinedHalfW + 2.0f);
+        }
+    }
+
+    // boss block check
+    if (enemy.type == EnemyType::Boss && clip == "block")
+    {
+        if (!player.isHurt)
+        {
+            float blockDir = (player.pos.x < enemy.pos.x) ? -1.0f : 1.0f;
+            player.vel.x = blockDir * 1400.0f;
+            player.vel.y = 200.0f;
+            player.knockbackTimer = 0.8f;
+            player.isHurt = true;
+            player.hurtTimer = 0.8f;
+        }
         return;
+    }
 
-    // apply damage
-    Player_ApplyDamage(player, enemy.damage);
+    // damage + knockback
+    if (!player.isHurt && !player.shieldActive && !player.isDashing)
+    {
+        Player_ApplyDamage(player, enemy.damage);
 
-    // apply knockback to player (away from enemy)
-    Player_ApplyKnockback(player, enemy.pos.x, enemy.pos.y);
-    Camera_AddTrauma(0.5f);
-    // switch to attack animation
-    Enemy_SetState(enemy, EnemyState::Attack);
-    AudioManager::Get().PlayAudio(s_HardEnemyAttackSound, false);
+        float knockDir = (player.pos.x >= enemy.pos.x) ? 1.0f : -1.0f;
+        float knockSpeed = 500.0f;
+        if (enemy.type == EnemyType::Boss)
+        {
+            if (clip == "slamimpact" || clip == "slamdown") knockSpeed = 900.0f;
+            else if (clip == "attackpunch")                  knockSpeed = 700.0f;
+        }
+        player.vel.x = knockDir * knockSpeed;
+        player.knockbackTimer = player.hurtTimer > 0.0f ? player.hurtTimer : 0.6f;
+        Camera_AddTrauma(0.5f);
+    }
+
+    if (enemy.type != EnemyType::Boss)
+    {
+        Enemy_SetState(enemy, EnemyState::Attack);
+        AudioManager::Get().PlayAudio(s_HardEnemyAttackSound, false);
+    }
+
+    // clamp player to arena bounds — prevent knockback sending them offscreen
+    const float ARENA_MIN_X = -750.0f;
+    const float ARENA_MAX_X =  750.0f;
+    if (player.pos.x < ARENA_MIN_X) player.pos.x = ARENA_MIN_X;
+    if (player.pos.x > ARENA_MAX_X) player.pos.x = ARENA_MAX_X;
 }
 
 // -----------------------------------------------------------------------------
-// Free static resources (mesh and texture) remove after spritesheet
+// Free static resources (mesh and texture) remove after spritesheetd
 // -----------------------------------------------------------------------------
 
 void Enemy_ApplyKnockback(Enemy& enemy, float knockbackDir)
@@ -1493,5 +1560,5 @@ void Enemy_ApplyKnockback(Enemy& enemy, float knockbackDir)
 
     enemy.knockbackVel.x = knockbackDir * enemy.knockbackVelocity;
     enemy.knockbackVel.y = 0.0f;
-    enemy.knockbackTimer = enemy.hitStunTimer;
+    enemy.knockbackTimer = 0.3f;
 }

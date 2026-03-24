@@ -231,7 +231,6 @@ void Player_Init(Player& player, const rapidjson::Value& config)
 void Player_Update(Player& player, float dt)
 {
     PhysicsManager& physics = PhysicsManager::Get();
-
     static int s_prevGrounded = 1;
 
     if (AEInputCheckTriggered(AEVK_SPACE))
@@ -258,6 +257,31 @@ void Player_Update(Player& player, float dt)
 			player.hurtTimer = 0.0f;
 			player.isHurt = false;
 		}
+	}
+
+	// knockback — owns the update loop for its duration, skips all input
+	if (player.knockbackTimer > 0.0f)
+	{
+		player.knockbackTimer -= dt;
+		if (player.knockbackTimer < 0.0f) player.knockbackTimer = 0.0f;
+
+		if (!player.isDashing) {
+			physics.ApplyGravity(player.vel.y, static_cast<bool>(player.grounded), dt);
+			physics.ClampFallSpeed(player.vel.y);
+		}
+		physics.Integrate(player.pos, player.vel, dt);
+
+		if (player.spriteSheet) {
+			if (player.spriteSheet->GetCurrentClip() != "hurt")
+				player.spriteSheet->Play("hurt", true);
+			player.spriteSheet->Update(dt);
+		}
+		if (player.slashSprite) player.slashSprite->Update(dt);
+		for (auto& b : player.bullets) PlayerBullet_Update(b, dt);
+
+		player.wasHurt = player.isHurt;
+		s_prevGrounded = player.grounded;
+		return;
 	}
 
 	// shield timer
@@ -775,6 +799,7 @@ void Player_ApplyDamage(Player& player, float damage)
 		// trigger hurt animation
 		player.isHurt = true;
 		player.hurtTimer = player.spriteSheet->GetClipTotalDuration("hurt");
+		if (player.hurtTimer < 0.6f) player.hurtTimer = 0.6f;
 
 		Camera_AddTrauma(0.6f);
 		ParticleManager_Emit(player.pos.x, player.pos.y, 12, 250.f, 255, 50, 50);
@@ -840,12 +865,23 @@ void Player_CheckBulletCollisions(Player& player, Enemy& enemy)
 
 		if (overlapX && overlapY)
 		{
-			enemy.hitPoints -= b.damage;
 			b.active = false;
-
-			// Knockback direction: same as bullet velocity
+			// during block, bullet is absorbed but no damage — don't re-trigger hitStun
+			if (enemy.type == EnemyType::Boss
+				&& enemy.spriteSheet
+				&& enemy.spriteSheet->GetCurrentClip() == "block")
+			{
+				// push player back, no damage, no hitStun
+				float blockDir = (player.pos.x < enemy.pos.x) ? -1.0f : 1.0f;
+				player.vel.x = blockDir * 1400.0f;
+				player.vel.y = 200.0f;
+				player.knockbackTimer = 0.8f;
+				player.isHurt = true;
+				player.hurtTimer = 0.8f;
+				continue;
+			}
 			float knockbackDir = (b.vel.x > 0.0f) ? 1.0f : -1.0f;
-			Enemy_OnHit(enemy, b.damage, knockbackDir);
+			Enemy_OnHit(enemy, b.damage, knockbackDir, &player);
 		}
 	}
 }

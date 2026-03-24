@@ -139,7 +139,7 @@ void BossEnemy_Update(Enemy& enemy, const Player& player, float dt); // TODO: up
 void BossLasers_Update(Enemy& enemy, const Player& player, float dt);
 void BossLasers_Draw(const Enemy& enemy);
 
-void Enemy_OnHit(Enemy& enemy, float damage, float knockbackDir = 0.0f);
+void Enemy_OnHit(Enemy& enemy, float damage, float knockbackDir, Player* attacker = nullptr);
 void Enemy_OnDeath(Enemy& enemy);
 void HardEnemy_OnCollision(Enemy& enemy, Player& player);
 void Enemy_ApplyKnockback(Enemy& enemy, float knockbackDir);

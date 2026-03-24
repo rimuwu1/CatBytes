@@ -72,13 +72,17 @@ bool BossAI_IsInvincible(const BossAIData& ai) // states where boss can;t be dam
     return ai.attackState == BossAttackState::HurtBetweenPhase
         || ai.attackState == BossAttackState::UseWatch
         || ai.attackState == BossAttackState::Hurt
-        || ai.attackState == BossAttackState::Blocking;
+        || ai.attackState == BossAttackState::Blocking
+        || ai.attackState == BossAttackState::ChargeSlam
+        || ai.attackState == BossAttackState::Jump
+        || ai.attackState == BossAttackState::SlamDown;
 }
 
 bool BossAI_LasersActive(const BossAIData& ai)
 {
     return ai.lasersEnabled
-        && ai.attackState == BossAttackState::UsePC;
+        && (ai.attackState == BossAttackState::UsePC
+            || ai.attackState == BossAttackState::UseWatch);
 }
 
 bool BossAI_IsFightOver(const BossAIData& ai)
@@ -111,6 +115,26 @@ static BossAttackState PickNextAttack(const BossAIData& ai, const Enemy& boss, c
         return (RandFloat() < 0.7f) ? BossAttackState::DashWindup : BossAttackState::ChargeSlam;
     else
         return (RandFloat() < 0.4f) ? BossAttackState::DashWindup : BossAttackState::ChargeSlam;
+}
+
+bool BossAI_TryBlock(BossAIData& ai, Enemy& boss, Player& player)
+{
+    if (ai.attackState != BossAttackState::Blocking)
+        return false;
+
+    // block only absorbs hits from the direction the boss is facing
+    bool playerOnLeft   = (player.pos.x < boss.pos.x);
+    bool facingToward   = (boss.facesLeft == playerOnLeft);
+    if (!facingToward)
+        return false;
+
+    // block succeeded — apply enhanced knockback (no damage)
+    Player_ApplyKnockback(player, boss.pos.x, boss.pos.y);
+    player.vel.x *= 2.5f;   
+    player.vel.y  = 400.0f;  
+    player.knockbackTimer *= 1.5f; 
+
+    return true;
 }
 
 // -----------------------------------------------------------------------
@@ -361,10 +385,12 @@ void BossAI_Update(BossAIData& ai, Enemy& boss, Player& player, float dt)
     // ----------------------------------------------------------------
     case BossAttackState::Blocking:
     {
+        // store actual facing toward player before any sprite flip
+        ai.blockFacingLeft = (player.pos.x < boss.pos.x);
+        // flip facesLeft for sprite correction only
+        boss.facesLeft = !ai.blockFacingLeft;
         PlayIfDifferent(boss, "block");
         boss.vel.x = 0.0f;
-
-        // block ends after animation (~5 frames * 0.1s)
         if (!boss.spriteSheet->IsPlaying())
         {
             ai.attackState = BossAttackState::Idle;
@@ -428,6 +454,10 @@ void BossAI_Update(BossAIData& ai, Enemy& boss, Player& player, float dt)
             ai.attackState = BossAttackState::UsePC;
             ai.stateTimer  = 0.0f;
             PlayIfDifferent(boss, "usepc");
+
+            // stagger laser cooldowns so they fire one-by-one, first fires immediately
+            for (int i = 0; i < (int)boss.bossLasers.size(); ++i)
+                boss.bossLasers[i].cooldownTimer = i * (boss.laserCooldown / (float)boss.bossLasers.size());
         }
         break;
     }
@@ -436,6 +466,15 @@ void BossAI_Update(BossAIData& ai, Enemy& boss, Player& player, float dt)
     {
         PlayIfDifferent(boss, "usepc");
         boss.vel.x     = 0.0f;
+
+        // apply stagger once on entry (stateTimer just reset to 0)
+        if (ai.stateTimer == 0.0f || ai.stateTimer < 0.02f)
+        {
+            const float count = (float)boss.bossLasers.size();
+            for (int i = 0; i < (int)boss.bossLasers.size(); ++i)
+                boss.bossLasers[i].cooldownTimer = boss.laserCooldown * ((float)i / count);
+        }
+
         ai.lasersEnabled = true;
 
         if (ai.stateTimer >= USEPC_TIME)
@@ -463,8 +502,7 @@ void BossAI_Update(BossAIData& ai, Enemy& boss, Player& player, float dt)
         {
             ai.attackState = BossAttackState::FightOverDisappear;
             ai.stateTimer  = 0.0f;
-            PlayIfDifferent(boss, "fightoverdisappear");
-        }
+            boss.spriteSheet->Play("fightoverdisappear", true);        }
         break;
     }
 
@@ -481,6 +519,18 @@ void BossAI_Update(BossAIData& ai, Enemy& boss, Player& player, float dt)
     default: break;
     } // end switch
 
+      // apply knockback displacement if boss was just hit
+    if (boss.knockbackTimer > 0.0f)
+    {
+        boss.knockbackTimer -= dt;
+        boss.pos.x += boss.knockbackVel.x * dt;
+        if (boss.knockbackTimer <= 0.0f)
+        {
+            boss.knockbackTimer = 0.0f;
+            boss.knockbackVel = { 0.0f, 0.0f };
+        }
+    }
+
       // apply velocity to position — BossEnemy_Update no longer does this
     boss.pos.x += boss.vel.x * dt;
     boss.pos.y += boss.vel.y * dt;
@@ -492,6 +542,12 @@ void BossAI_Update(BossAIData& ai, Enemy& boss, Player& player, float dt)
         boss.pos.y = floorY;
         boss.vel.y = 0.0f;
     }
+
+    // clamp boss to arena bounds
+    const float ARENA_MIN_X = -750.0f;
+    const float ARENA_MAX_X =  750.0f;
+    if (boss.pos.x < ARENA_MIN_X) { boss.pos.x = ARENA_MIN_X; boss.vel.x = 0.0f; boss.knockbackVel.x = 0.0f; }
+    if (boss.pos.x > ARENA_MAX_X) { boss.pos.x = ARENA_MAX_X; boss.vel.x = 0.0f; boss.knockbackVel.x = 0.0f; }
 
     // tick spritesheet animation
     if (boss.spriteSheet)

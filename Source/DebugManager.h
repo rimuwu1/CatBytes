@@ -76,6 +76,7 @@ public:
         const std::string& description,
         std::function<void(const std::vector<std::string>&)> handler);
 
+    bool m_SkipToMidPhase = false;
 private:
     DebugManager() = default;
     ~DebugManager() = default;

@@ -57,6 +57,8 @@ struct BossAIData {
     float consecutiveHits = 0;    // how many hits player has landed recently
     float consecutiveHitTimer = 0.0f; // resets after a window
 
+    bool blockFacingLeft = false;
+
     // dash/slam lock-on
     float lockedTargetX  = 0.0f;
     float lockedTargetY  = 0.0f;
@@ -82,3 +84,4 @@ bool BossAI_IsInvincible (const BossAIData& ai);
 bool BossAI_LasersActive (const BossAIData& ai);
 bool BossAI_IsFightOver  (const BossAIData& ai);
 bool BossAI_IsFrozen     (const BossAIData& ai); 
+bool BossAI_TryBlock(BossAIData& ai, Enemy& boss, Player& player); // block

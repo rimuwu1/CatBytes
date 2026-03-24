@@ -104,7 +104,7 @@ void PlayerMelee_Update(Player& player, Enemy& enemy)
             knockbackDir = 0.0f;
         }
         
-        Enemy_OnHit(enemy, player.meleeDamage, knockbackDir);
+        Enemy_OnHit(enemy, player.meleeDamage, knockbackDir, &player);
     }
 }
 
@@ -129,6 +129,9 @@ void PlayerMelee_CheckCollisions(Player& player, std::vector<Enemy*>& enemies)
         if (AABBOverlap(slashX, slashY, slashHW, slashHH,
             enemy->pos.x, enemy->pos.y, enemyHW, enemyHH))
         {
+            // only hit once per swing — skip if enemy is already in hit/hurt stun from this swing
+            if (enemy->hitStunTimer > 0.0f && enemy->type == EnemyType::Boss) continue;
+
             // Knockback direction: same as player facing direction
             float knockbackDir = player.facingRight ? 1.0f : -
                 1.0f;
@@ -139,7 +142,7 @@ void PlayerMelee_CheckCollisions(Player& player, std::vector<Enemy*>& enemies)
                 knockbackDir = 0.0f;
             }
             
-            Enemy_OnHit(*enemy, player.meleeDamage, knockbackDir);
+            Enemy_OnHit(*enemy, player.meleeDamage, knockbackDir, &player);
 
             // Downslash jump: only once per swing
             if (player.slashDirection == SlashDirection::DOWN && !player.downSlashJumped)

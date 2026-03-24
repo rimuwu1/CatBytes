@@ -437,6 +437,17 @@ void DebugManager::RegisterBuiltinCommands()
             Player& p = ObjectManager::Get().GetPlayer();
             const std::string& dest = args[1];
 
+            // bossroom teleport but skipping cutscene and str to midphase
+            if (dest == "midphase" || dest == "mp")
+            {
+                // teleport to boss room first
+                GameStateManager::Get().next = GS_BOSSROOM;
+                Log("Teleporting to GS_BOSSROOM in mid-phase...");
+                // set a flag so BossRoom_Initialize picks it up
+                DebugManager::Get().m_SkipToMidPhase = true;
+                return;
+            }
+
             // 'boss' jumps directly to GS_BOSSROOM
             if (dest == "boss" || dest == "b")
             {
