@@ -129,6 +129,25 @@ void EnvironmentManager::LoadFromConfig(const rapidjson::Document& doc)
         };
     }
 
+    // ---- Normal Laser Indicators ----
+    if (doc.HasMember("normal_laser_ind") && doc["normal_laser_ind"].IsObject())
+    {
+        const auto& normalInd = doc["normal_laser_ind"];
+
+        m_normalLaserIndWidth = normalInd.HasMember("width") ? normalInd["width"].GetFloat() : 60.0f;
+        m_normalLaserIndHeight = normalInd.HasMember("height") ? normalInd["height"].GetFloat() : 60.0f;
+        
+        m_normalLaserIndTex = std::make_unique<SpriteSheet>(
+            normalInd["file"].GetString(),
+            normalInd["rows"].GetInt(),
+            normalInd["cols"].GetInt(),
+            normalInd["total_frames"].GetInt(),
+            normalInd["frame_duration"].GetFloat()
+        );
+
+        m_normalLaserIndTex->SetFrame(0);
+    }
+
     // ---- Laser Indicators configuration ----
     if (doc.HasMember("laser_indicators") && doc["laser_indicators"].IsObject())
     {
@@ -1620,14 +1639,34 @@ void EnvironmentManager::DrawWorld(float camX, float camY, PlayerWeapon weapon, 
     // --------------------------------------------------------------------
     auto collectLasers = [&](const std::vector<PlatformLaser>& lasers) {
         for (const auto& ls : lasers) {
-            if (!ls.laserActive) continue;
             float laserHeight = ls.y1 - ls.y2;
             float laserCenter = (ls.y1 + ls.y2) * 0.5f;
             if (!inView(laserCenter, laserHeight * 0.5f)) continue;
-            mm.DrawTexturedLine(m_laserTex,
-                ls.x1, ls.y1,
-                ls.x2, ls.y2,
-                ls.w, 64.0f);
+
+            // draw laser
+            if (ls.laserActive)
+            {
+                mm.DrawTexturedLine(m_laserTex,
+                    ls.x1, ls.y1,
+                    ls.x2, ls.y2,
+                    ls.w, 64.0f);
+            }
+
+           // draw indicator
+            if (m_normalLaserIndTex)
+            {
+                m_normalLaserIndTex->SetFrame(ls.laserActive ? 1 : 0);
+
+                mm.DrawSpriteSheet(*m_normalLaserIndTex,
+                    ls.x1, ls.y1,
+                    m_normalLaserIndWidth, m_normalLaserIndHeight,
+                    64.0f);
+
+                mm.DrawSpriteSheet(*m_normalLaserIndTex,
+                    ls.x2, ls.y2,
+                    m_normalLaserIndWidth, m_normalLaserIndHeight,
+                    64.0f);
+            }
         }
     };
 

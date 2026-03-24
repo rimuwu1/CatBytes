@@ -243,6 +243,11 @@ private:
     // laser texture
     AEGfxTexture* m_laserTex = nullptr;
 
+    // laser indicator config
+    std::unique_ptr<SpriteSheet>m_normalLaserIndTex;
+    float m_normalLaserIndWidth = 60.0f;
+    float m_normalLaserIndHeight = 60.0f;
+
     // wall texture
     AEGfxTexture* m_wallLeftTex = nullptr;
     AEGfxTexture* m_wallMidTex = nullptr;
