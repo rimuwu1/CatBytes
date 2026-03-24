@@ -78,7 +78,8 @@ public:
         float x1, float y1, float x2, float y2,
         float thickness,
         float tileLength,
-        float opacity = 1.0f);
+        float opacity = 1.0f,
+        int tintR = 255, int tintG = 255, int tintB = 255);
 
     //cleanup functions
     void UnloadAll();

@@ -330,7 +330,8 @@ void MeshManager::DrawTexturedLine(AEGfxTexture* texture,
     float x1, float y1, float x2, float y2,
     float thickness,
     float tileLength,
-    float opacity) {
+    float opacity,
+    int tintR, int tintG, int tintB) {
     if (!texture || tileLength <= 0.0f) return;
 
     float dx = x2 - x1;
@@ -347,9 +348,9 @@ void MeshManager::DrawTexturedLine(AEGfxTexture* texture,
     int fullTiles = (int)(totalLength / tileLength);
     float remainder = totalLength - fullTiles * tileLength;
 
-    // Set common rendering states
+    // Set common rendering states and apply tint
     AEGfxSetRenderMode(AE_GFX_RM_TEXTURE);
-    AEGfxSetColorToMultiply(1, 1, 1, 1);
+    AEGfxSetColorToMultiply(tintR / 255.0f, tintG / 255.0f, tintB / 255.0f, 1.0f);
     AEGfxSetColorToAdd(0, 0, 0, 0);
     AEGfxSetBlendMode(AE_GFX_BM_BLEND);
     AEGfxSetTransparency(opacity);

@@ -1297,14 +1297,25 @@ void EnvironmentManager::DrawWorld(float camX, float camY, PlayerWeapon weapon, 
 
         // Spike obstacles (animated) - drawn per-frame with per-obstacle sprites
         // Draw regardless of active flag (inactive spikes show as "off" state)
+        // Add a slight horizontal wobble in the last 1s before they toggle
+        const float SPIKE_WOBBLE_WINDOW = 1.0f;
+        const float SPIKE_WOBBLE_AMPLITUDE = 3.0f; // pixels left/right
+        const float SPIKE_WOBBLE_FREQUENCY = 8.0f; // oscillations per second
         auto drawObstacles = [&](const std::vector<PlatformObstacle>& obstacles) {
             for (const auto& o : obstacles) {
                 if (!o.isSpike || !o.sprite) continue;
                 if (!inView(o.y, o.h * 0.5f)) continue;
+
+                float drawX = o.x;
+                // wobble in last SPIKE_WOBBLE_WINDOW seconds before toggle
+                if (o.timer >= (o.spikeInterval - SPIKE_WOBBLE_WINDOW)) {
+                    drawX = o.x + sinf(o.timer * SPIKE_WOBBLE_FREQUENCY * 2.0f * 3.1415926f) * SPIKE_WOBBLE_AMPLITUDE;
+                }
+
                 addSpriteDyn(o.sprite->GetTexture(),
                     o.sprite->GetSpriteUVWidth(),
                     o.sprite->GetSpriteUVHeight(),
-                    o.x, o.y, o.w, o.h,
+                    drawX, o.y, o.w, o.h,
                     o.sprite->GetUVOffsetX(),
                     o.sprite->GetUVOffsetY());
             }
@@ -1637,22 +1648,61 @@ void EnvironmentManager::DrawWorld(float camX, float camY, PlayerWeapon weapon, 
     // --------------------------------------------------------------------
     // 4. Lasers
     // --------------------------------------------------------------------
+    // Draw lasers with pre-toggle indicators and pre-off flashing
     auto collectLasers = [&](const std::vector<PlatformLaser>& lasers) {
+        const float PRE_WINDOW = 1.0f; // seconds before toggle to start indicator
+        const int FLASH_COUNT = 8;     // number of flashes during PRE_WINDOW
+        const float FLASH_HIGH = 1.0f;
+        const float FLASH_LOW = 0.2f;
+        const float PREON_OPACITY = 0.25f;
+        const int PREON_R = 255, PREON_G = 210, PREON_B = 0;
+
         for (const auto& ls : lasers) {
             float laserHeight = ls.y1 - ls.y2;
             float laserCenter = (ls.y1 + ls.y2) * 0.5f;
-            if (!inView(laserCenter, laserHeight * 0.5f)) continue;
 
-            // draw laser
-            if (ls.laserActive)
-            {
+            if (!inView(laserCenter, fabs(laserHeight) * 0.5f)) continue;
+
+            float timeRemaining = ls.laserInterval - ls.timer; // time until next toggle
+            if (timeRemaining < 0.0f) timeRemaining = 0.0f;
+
+            bool draw = false;
+            float opacity = 1.0f;
+            int tintR = 255, tintG = 255, tintB = 255;
+
+            if (timeRemaining <= PRE_WINDOW) {
+                if (ls.laserActive) {
+                    // Pre-off discrete flashing
+                    float elapsed = PRE_WINDOW - timeRemaining; // 0..PRE_WINDOW
+                    float period = PRE_WINDOW / (float)FLASH_COUNT; // e.g., 0.125s
+                    int idx = (int)floor(elapsed / period);
+                    bool high = ((idx % 2) == 0);
+                    opacity = high ? FLASH_HIGH : FLASH_LOW;
+                    draw = true;
+                } else {
+                    // Pre-on indicator (yellow low-opacity)
+                    opacity = PREON_OPACITY;
+                    tintR = PREON_R; tintG = PREON_G; tintB = PREON_B;
+                    draw = true;
+                }
+            } else {
+                // Outside pre-window: draw only if active
+                if (ls.laserActive) {
+                    draw = true;
+                    opacity = 1.0f;
+                }
+            }
+
+            if (draw) {
                 mm.DrawTexturedLine(m_laserTex,
                     ls.x1, ls.y1,
                     ls.x2, ls.y2,
-                    ls.w, 64.0f);
+                    ls.w, 64.0f,
+                    opacity,
+                    tintR, tintG, tintB);
             }
 
-           // draw indicator
+            // draw endpoint indicators
             if (m_normalLaserIndTex)
             {
                 m_normalLaserIndTex->SetFrame(ls.laserActive ? 1 : 0);
@@ -1667,6 +1717,7 @@ void EnvironmentManager::DrawWorld(float camX, float camY, PlayerWeapon weapon, 
                     m_normalLaserIndWidth, m_normalLaserIndHeight,
                     64.0f);
             }
+
         }
     };
 
