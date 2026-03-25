@@ -405,7 +405,8 @@
     "checkpoints": [
         { "x": -350.0, "y": 1790.0, "width": 40.0, "height": 40.0 },
         { "x": -400.0, "y": 2990.0, "width": 40.0, "height": 40.0 },
-        { "x": 300.0, "y": 3840.0, "width": 40.0, "height": 40.0 }
+        { "x":  500.0, "y": 3990.0, "width": 40.0, "height": 40.0 },
+        { "x":  560.0, "y": 6640.0, "width": 40.0, "height": 40.0 }
     ],
     "level_1": {
         "completed": false,
