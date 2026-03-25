@@ -49,9 +49,9 @@ int HUD::ClampHeartsStateFromPlayer(const Player& player)
 	{
 		hpInt = 0;
 	}
-	if (hpInt > 3)
+	if (hpInt > 5)
 	{
-		hpInt = 3;
+		hpInt = 5;
 	}
 
 	return hpInt;
@@ -73,6 +73,10 @@ void HUD::ApplyHeartsState(int state)
 
 	switch (state)
 	{
+	case 5: hearts.heartsSheet->Play("hp5", true);
+		break;
+	case 4: hearts.heartsSheet->Play("hp4", true);
+		break;
 	case 3: hearts.heartsSheet->Play("hp3", true);
 		break;
 	case 2: hearts.heartsSheet->Play("hp2", true);
@@ -200,9 +204,9 @@ void HUD::InitHeartsFromConfig(const rapidjson::Value& uiJson)
 				}
 			}
 
-			hearts.heartsSheet->Play("hp3", true);
+			hearts.heartsSheet->Play("hp5", true);
 			hearts.heartsSheet->Stop();
-			hearts.lastHeartsState = 3;
+			hearts.lastHeartsState = 5;
 		}
 	}
 

@@ -139,7 +139,7 @@
             "y": -300.0,
             "width": 50.0,
             "height": 80.0,
-            "hp": 3.0,
+            "hp": 5.0,
             "melee_damage": 10.0,
             "knockback_velocity": 400.0,
             "knockback_air_up": 300.0,
@@ -200,40 +200,54 @@
   "ui": {
     "hearts": {
       "active": true,
-      "x": 680.0,
+      "x": 640.0,
       "y": 410.0,
-      "w": 128.0,
-      "h": 128.0,
+      "w": 210.0,
+      "h": 210.0,
       "animations": {
         "file": "Assets/Images/HealthSheet.png",
         "rows": 1,
-        "cols": 4,
+        "cols": 6,
         "clips": [
           {
-            "name": "hp3",
+            "name": "hp5",
             "start": 0,
             "end": 0,
             "speed": 1.0,
             "loop": false
           },
           {
-            "name": "hp2",
+            "name": "hp4",
             "start": 1,
             "end": 1,
             "speed": 1.0,
             "loop": false
           },
           {
-            "name": "hp1",
+            "name": "hp3",
             "start": 2,
             "end": 2,
             "speed": 1.0,
             "loop": false
           },
           {
-            "name": "hp0",
+            "name": "hp2",
             "start": 3,
             "end": 3,
+            "speed": 1.0,
+            "loop": false
+          },
+          {
+            "name": "hp1",
+            "start": 4,
+            "end": 4,
+            "speed": 1.0,
+            "loop": false
+          },
+          {
+            "name": "hp0",
+            "start": 5,
+            "end": 5,
             "speed": 1.0,
             "loop": false
           }
