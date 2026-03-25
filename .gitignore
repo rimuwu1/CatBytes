@@ -31,7 +31,6 @@ obj/
 # IDE-specific files (e.g., for VS Code, Visual Studio, Eclipse, CLion)
 .vscode/
 .vs/
-.vs\
 .idea/
 .project
 .cproject

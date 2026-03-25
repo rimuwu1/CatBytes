@@ -230,7 +230,8 @@ void MainGame_Update()
         float levelMaxY = EnvironmentManager::Get().GetSectionHeight(currentSection);
         
         const std::vector<Buff>& worldBuffs = ObjectManager::Get().GetAllBuffs();
-        GameSaveManager::SaveGameAsync(meta, currentLevel, player, enemies, *currentPlatforms, worldBuffs, levelMinY, levelMaxY);
+        const auto& toggleWalls = EnvironmentManager::Get().GetLevel3ToggleWalls();
+        GameSaveManager::SaveGameAsync(meta, currentLevel, player, enemies, *currentPlatforms, worldBuffs, toggleWalls, levelMinY, levelMaxY);
         GameSaveManager::Notify_Show(GameSaveManager::NotifyType::SAVED);
         ParticleManager_Emit(player.pos.x, player.pos.y, 15, 200.f, 255, 255, 255);
         
@@ -372,7 +373,8 @@ void MainGame_Update()
             float levelMaxY = EnvironmentManager::Get().GetSectionHeight(currentSection);
             
             const std::vector<Buff>& worldBuffs = ObjectManager::Get().GetAllBuffs();
-            GameSaveManager::SaveGameAsync(meta, currentLevel, player, enemies, *currentPlatforms, worldBuffs, levelMinY, levelMaxY);
+            const auto& toggleWalls = EnvironmentManager::Get().GetLevel3ToggleWalls();
+            GameSaveManager::SaveGameAsync(meta, currentLevel, player, enemies, *currentPlatforms, worldBuffs, toggleWalls, levelMinY, levelMaxY);
             GameSaveManager::Notify_Show(GameSaveManager::NotifyType::SAVED);
             ParticleManager_Emit(player.pos.x, player.pos.y, 15, 200.f, 255, 255, 255);
         }

@@ -112,6 +112,7 @@ void GameSaveManager::SaveGameAsync(
     const std::vector<Enemy>& enemies,
     const std::vector<Platform>& platforms,
     const std::vector<Buff>& worldBuffs,
+    const std::vector<Platform>& toggleWalls,
     float levelMinY,
     float levelMaxY,
     const std::string& filepath)
@@ -124,10 +125,11 @@ void GameSaveManager::SaveGameAsync(
     std::vector<EnemySaveData>  enemyData = ExtractEnemyData(enemies, levelMinY, levelMaxY);
     std::vector<BuffSaveData>   buffData = ExtractBuffData(worldBuffs);
     std::vector<Platform>       platCopy = platforms;
+    std::vector<Platform>       toggleWallCopy = toggleWalls;
 
     std::thread([=]() mutable {
         SaveGame_Internal(metadata, currentLevel,
-            playerData, enemyData, platCopy, buffData, filepath);
+            playerData, enemyData, platCopy, toggleWallCopy, buffData, filepath);
         // set flag under lock then notify to avoid missed wakeups
         {
             std::lock_guard<std::mutex> lk(s_SaveMutex);
@@ -163,6 +165,7 @@ void GameSaveManager::SaveGame_Internal(
     const PlayerSaveData& player,
     const std::vector<EnemySaveData>& enemies,
     const std::vector<Platform>& platforms,
+    const std::vector<Platform>& toggleWalls,
     const std::vector<BuffSaveData>& worldBuffs,
     const std::string& filepath)
 {
@@ -297,6 +300,23 @@ void GameSaveManager::SaveGame_Internal(
                         platformsArr[i].AddMember("active", platforms[i].active, doc.GetAllocator());
                     else
                         platformsArr[i]["active"] = platforms[i].active;
+                }
+            }
+        }
+
+        // Toggleable walls – active state (level 3 only currently)
+        if (levelObj.HasMember("toggleable_walls") && levelObj["toggleable_walls"].IsArray())
+        {
+            rapidjson::Value& wallsArr = levelObj["toggleable_walls"];
+            if (wallsArr.Size() == static_cast<rapidjson::SizeType>(toggleWalls.size()))
+            {
+                for (rapidjson::SizeType i = 0; i < wallsArr.Size(); ++i)
+                {
+                    if (!wallsArr[i].IsObject()) continue;
+                    if (!wallsArr[i].HasMember("active"))
+                        wallsArr[i].AddMember("active", toggleWalls[i].active, doc.GetAllocator());
+                    else
+                        wallsArr[i]["active"] = toggleWalls[i].active;
                 }
             }
         }

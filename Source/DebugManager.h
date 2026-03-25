@@ -157,5 +157,8 @@ public:
         const std::string&,
         std::function<void(const std::vector<std::string>&)>) {
     }
+
+    // Stub flag so release builds compile when debug-only fields are referenced
+    bool m_SkipToMidPhase = false;
 };
 #endif // ENABLE_DEBUG_MANAGER

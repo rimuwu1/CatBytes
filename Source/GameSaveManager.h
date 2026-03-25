@@ -18,6 +18,8 @@ Technology is prohibited.
 #include "Player.h"
 #include "enemy.h"
 #include "Platforms.h"
+#include "Buff.h"
+#include <cfloat>
 #include <vector>
 #include <string>
 #include <atomic>
@@ -70,6 +72,7 @@ public:
         const std::vector<Enemy>& enemies,
         const std::vector<Platform>& platforms,
         const std::vector<Buff>& worldBuffs,
+        const std::vector<Platform>& toggleWalls = {},
         float levelMinY = -FLT_MAX,
         float levelMaxY = FLT_MAX,
         const std::string& filepath = "Assets/Data/GameSave.json");
@@ -87,6 +90,7 @@ private:
         const PlayerSaveData& player,
         const std::vector<EnemySaveData>& enemies,
         const std::vector<Platform>& platforms,
+        const std::vector<Platform>& toggleWalls,
         const std::vector<BuffSaveData>& worldBuffs,
         const std::string& filepath);
 
