@@ -1,6 +1,6 @@
 /* Start Header ************************************************************************/
 /*!
-\file Credits.h
+\file Credits.cpp
 \author Tse Xuan Qi Tristin, tse.x, 2503757
         Sim Hui Min, s.huimin, 2503506
 \par tse.x@digipen.edu
