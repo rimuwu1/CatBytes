@@ -56,7 +56,7 @@ struct Player
 	int grounded = 0;
 
 	float hp = 0.0f; // player health
-	float maxHP = 0.0f;
+	float maxHP = 5.0f;
 	float hitTextTimer = 0.0f;//got hit
 
 	//Weapon system (extendable)

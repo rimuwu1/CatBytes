@@ -68,7 +68,7 @@ void Player_Init(Player& player, const rapidjson::Value& config)
 
 	//load player hp & dmg
 	player.hp = config["hp"].GetFloat();
-	player.maxHP = player.hp;
+	/*player.maxHP = player.hp;*/
 	player.meleeDamage = config["melee_damage"].GetFloat();
 
 	// knockback
