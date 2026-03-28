@@ -34,7 +34,7 @@ static const char* levelIndicator[backgroundSections]{
 static float textTimer = 0.0f;
 static bool showText = false;
 static int currentSection = Background_CurrentSection();
-static int previousSection = -1;
+static int levelPreviousSection = -1;
 
 
 void LevelIndicator_Initialize() {
@@ -47,7 +47,7 @@ void LevelIndicator_Initialize() {
 void LevelIndicator_Show(int sectionIndex) {
 
 	currentSection = sectionIndex;
-	previousSection = sectionIndex;
+	levelPreviousSection = sectionIndex;
 	showText = true;
 	textTimer = 0.0f;
 
@@ -80,7 +80,7 @@ void LevelIndicator_Update(float dt) {
 void LevelIndicator_Draw() {
 
 	// draw text + text fade in/out
-	if (showText && g_FontMedium != -1 && previousSection >= 0) {
+	if (showText && g_FontMedium != -1 && levelPreviousSection >= 0) {
 
 		float totalTime = 2.0f;
 		float fadeTime = 0.5f;
@@ -100,7 +100,7 @@ void LevelIndicator_Draw() {
 
 		}
 
-		FontManager::Get().PrintCentered(FontManager::Get().GetMediumFont(), levelIndicator[previousSection], 0.0f, 0.65f, 1.0f, 1.0f, 1.0f, 1.0f, a);
+		FontManager::Get().PrintCentered(FontManager::Get().GetMediumFont(), levelIndicator[levelPreviousSection], 0.0f, 0.65f, 1.0f, 1.0f, 1.0f, 1.0f, a);
 
 	}
 

@@ -145,7 +145,6 @@ void BossRoom_Initialize()
         g_bossAI.phaseTransitionDone = false;
 
         // set boss HP to just below 50% so phase transition is already triggered
-        auto& enemies = ObjectManager::Get().GetAllEnemies();
         for (auto& e : enemies)
             if (e.type == EnemyType::Boss)
             {

@@ -1178,7 +1178,7 @@ void EnvironmentManager::FlushStaticCache(float camY, float cullHalf)
         mm.BeginBatch(first.texture, first.uvW, first.uvH);
         do {
             const QueuedSprite& s = m_staticCache[i];
-            SpriteBatchItem item;
+            SpriteBatchItem item{};
             item.x = s.x;
             item.y = s.y;
             item.width = s.w;
@@ -1344,7 +1344,7 @@ void EnvironmentManager::DrawWorld(float camX, float camY, PlayerWeapon weapon, 
                 const QueuedSprite& first = m_spriteBatch[idx];
                 mmLocal.BeginBatch(first.texture, first.uvW, first.uvH);
                 do {
-                    SpriteBatchItem item;
+                    SpriteBatchItem item{};
                     item.x = m_spriteBatch[idx].x;
                     item.y = m_spriteBatch[idx].y;
                     item.width = m_spriteBatch[idx].w;
@@ -1425,7 +1425,7 @@ void EnvironmentManager::DrawWorld(float camX, float camY, PlayerWeapon weapon, 
             const QueuedSprite& first = m_spriteBatch[i];
             mm.BeginBatch(first.texture, first.uvW, first.uvH);
             do {
-                SpriteBatchItem item;
+                SpriteBatchItem item{};
                 item.x = m_spriteBatch[i].x;
                 item.y = m_spriteBatch[i].y;
                 item.width = m_spriteBatch[i].w;

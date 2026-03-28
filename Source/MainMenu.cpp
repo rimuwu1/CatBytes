@@ -566,7 +566,6 @@ void MainMenu_Draw()
                 // Convert NDC coordinates to pixel coordinates for DrawSquare
                 // Text spans from 0.15f down to -0.17f NDC (4 lines × 0.08f)
                 // Box needs to cover: ~0.17f to ~-0.19f (with padding)
-                float halfW = AEGfxGetWindowWidth() / 2.0f;
                 
                 const float BOX_CENTER_Y_NDC = 0.05f; // Slightly up
                 const float BOX_HEIGHT_NDC = 0.36f; // Covers 4 lines + padding

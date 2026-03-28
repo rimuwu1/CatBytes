@@ -266,7 +266,7 @@ namespace CollisionManager
 
     // ------------------------------------------------------------------------
     // Computers
-    ButtonToggleResult HandleComputers(Player& player, const std::vector<PlatformComputer>& computers, std::vector<Enemy>& enemies)
+    static ButtonToggleResult HandleComputers(Player& player, const std::vector<PlatformComputer>& computers)
     {
         for (auto& comp : computers)
         {
@@ -312,7 +312,7 @@ namespace CollisionManager
 
     // ------------------------------------------------------------------------
     // Player bullets vs Enemies
-    void HandlePlayerBulletEnemyCollisions(Player& player, std::vector<Enemy>& enemies)
+    static void HandlePlayerBulletEnemyCollisions(Player& player, std::vector<Enemy>& enemies)
     {
         for (auto& enemy : enemies)
         {
@@ -370,7 +370,7 @@ namespace CollisionManager
             if (!overlapX) continue;
 
             // check if player is standing on platform
-            float tolerance = 0.1f;
+            float tolerance = 0.5f;
             if (fabs(playerCurrBottom - pfTop) <= tolerance && overlapX)
             {
                 player.grounded = 1;
@@ -613,7 +613,7 @@ namespace CollisionManager
 
         // Computers - check for triggered computer and return first one
         if (!results.pendingComputer.triggered) {
-            auto r = HandleComputers(player, env.GetLevel3Computers(), enemies);
+            auto r = HandleComputers(player, env.GetLevel3Computers());
             if (r.triggered) results.pendingComputer = r;
         }
 

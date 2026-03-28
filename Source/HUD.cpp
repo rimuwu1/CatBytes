@@ -613,7 +613,6 @@ void HUD::UpdateBuffBar(const Player& player)
 	}
 
 	// Dash indicator
-	int dashSlot = FindBuffSlot(BuffType::DASH);
 	if (player.dashEnabled)
 	{
 		BuffBarSlot& slot = buffBar.slots[buffBar.slotCount++];
