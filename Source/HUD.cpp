@@ -2,7 +2,9 @@
 /*!
 \file	HUD.cpp
 \author Kerwin Wong Jia Jie, kerwinjiajie.wong, 2502740
+        Joash ng, joash.ng, 2502780
 \par	kerwinjiajie.wong@digipen.edu
+        joash.ng@digipen.edu
 \date	February, 19, 2026
 \brief	This file contains the function definitions for the in-game HUD, handling UI
 		initialisation from the config and rendering on-screen elements based on
