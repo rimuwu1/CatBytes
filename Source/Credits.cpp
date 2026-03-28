@@ -36,7 +36,7 @@ void Credits_Initialize()
     totalElapsedTime = 0.0f;
 
     // logo texture
-    logoTexture = TextureManager::Get().LoadTexture("Assets/Images/titleicon.png"); // TODO
+    logoTexture = TextureManager::Get().LoadTexture("Assets/Images/titleicon.png");  
 }
 
 void Credits_Update()

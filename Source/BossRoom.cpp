@@ -452,7 +452,7 @@ void BossRoom_Draw()
 {
     AESysFrameStart();
     Player& player = ObjectManager::Get().GetPlayer();
-    EnvironmentManager::Get().DrawBackground();
+    EnvironmentManager::Get().DrawBackground(globalCam.x, globalCam.y);
     EnvironmentManager::Get().DrawWorld(globalCam.x, globalCam.y, player.weapon, player, 900.0f * 0.5f);
     ObjectManager::Get().Draw(globalCam.x, globalCam.y, 800.0f, 450.0f);
     BossRoom::Get().Draw();

@@ -82,9 +82,9 @@ s8 FontManager::LoadFont(const std::string& name, const std::string& filepath, i
 }
 
 void FontManager::LoadDefaultFonts() {
-    m_FontLarge = LoadFont("Large", "Assets/Fonts/Lora-Bold.ttf", 72);
-    m_FontMedium = LoadFont("Medium", "Assets/Fonts/Lora-Medium.ttf", 48);
-    m_FontSmall = LoadFont("Small", "Assets/Fonts/WalterTurncoat-Regular.ttf", 24);
+    m_FontLarge = LoadFont("Large", "Assets/Fonts/KarenFat.ttf", 75);
+    m_FontMedium = LoadFont("Medium", "Assets/Fonts/AtariGames.ttf", 60);
+    m_FontSmall = LoadFont("Small", "Assets/Fonts/TinyUnicode.ttf", 50);
 
     // Also set legacy globals for backward compatibility during migration
     g_FontLarge = m_FontLarge;

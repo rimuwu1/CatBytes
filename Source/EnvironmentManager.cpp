@@ -704,11 +704,32 @@ void EnvironmentManager::LoadAssetsFromConfig(const rapidjson::Document& doc)
     if (!doc.HasMember("environment") || !doc["environment"].IsObject()) return;
     const auto& env = doc["environment"];
 
+    // always reset boss room bg
+    m_bossRoomBg = nullptr;
+
+    // Boss room background
+    if (env.HasMember("boss_background") && env["boss_background"].IsObject()) {
+        const auto& bb = env["boss_background"];
+        m_bossRoomBg = std::make_unique<SpriteSheet>(
+            bb["file"].GetString(),
+            bb["rows"].GetInt(),
+            bb["cols"].GetInt(),
+            bb["cols"].GetInt(),
+            0.12f
+        );
+        m_bossRoomBg->AddClip("idle", 0, bb["cols"].GetInt() - 1, 0.12f, true);
+        m_bossRoomBg->Play("idle");
+    }
+
+    // clear parallax layers
+    for (int i = 0; i < 10; i++)
+        m_parallaxLayers[i].texture = nullptr;
+
     auto loadTex = [&](const char* key) -> AEGfxTexture* {
         if (env.HasMember(key) && env[key].IsString())
             return TextureManager::Get().LoadTexture(env[key].GetString());
         return nullptr;
-    };
+        };
 
     m_leftTex   = loadTex("platform_left");
     m_midTex    = loadTex("platform_mid");
@@ -721,10 +742,24 @@ void EnvironmentManager::LoadAssetsFromConfig(const rapidjson::Document& doc)
     // Load parallax layers from config
     if (env.HasMember("parallax") && env["parallax"].IsObject()) {
         const auto& parallax = env["parallax"];
-        const char* layerNames[3] = {"back", "middle", "front"};
+        /*const char* layerNames[3] = {"back", "middle", "front"};
         float speeds[3] = {0.3f, 0.6f, 1.0f};
         
         for (int i = 0; i < 3; i++) {
+            if (parallax.HasMember(layerNames[i]) && parallax[layerNames[i]].IsString()) {
+                m_parallaxLayers[i].texture = TextureManager::Get().LoadTexture(parallax[layerNames[i]].GetString());
+                m_parallaxLayers[i].speed = speeds[i];
+            }
+        }*/
+
+        const char* layerNames[10] = {
+            "colorgradient", "starback", "starfront", "crescent",
+            "buildingback", "buildingmiddle", "buildingfront",
+            "cloudtall", "cloudshort", "front"
+        };
+        float speeds[10] = { 0.0f, 0.05f, 0.1f, 0.15f, 0.2f, 0.35f, 0.5f, 0.4f, 0.45f, 0.0f };
+
+        for (int i = 0; i < 10; i++) {
             if (parallax.HasMember(layerNames[i]) && parallax[layerNames[i]].IsString()) {
                 m_parallaxLayers[i].texture = TextureManager::Get().LoadTexture(parallax[layerNames[i]].GetString());
                 m_parallaxLayers[i].speed = speeds[i];
@@ -851,6 +886,8 @@ void EnvironmentManager::Initialize()
 // ------------------------------------------------------------------------
 void EnvironmentManager::Update(float dt, Player& player, float cameraY)
 {
+    if (m_bossRoomBg) m_bossRoomBg->Update(dt);
+
     m_HUD.Update(dt, player, player.weapon);
 
     if (m_hoverAnim) m_hoverAnim->Update(dt);
@@ -1824,7 +1861,7 @@ void EnvironmentManager::UpdateBackground(float cameraY)
         : m_backgroundColours[index];
 }
 
-void EnvironmentManager::DrawBackground() const
+void EnvironmentManager::DrawBackground(float camX, float camY) const
 {
     // Set background color
     AEGfxSetBackgroundColor(m_currentColour.r, m_currentColour.g, m_currentColour.b);
@@ -1835,39 +1872,55 @@ void EnvironmentManager::DrawBackground() const
     const float screenWidth = 1600.0f;
     const float screenHeight = 900.0f;
     const float groundY = -350.0f;  // Ground position
+
+    // environment for bossroom
+    if (m_bossRoomBg) {
+        mm.DrawSpriteSheet(*m_bossRoomBg,
+            camX, camY,
+            screenWidth, screenHeight);
+        return;
+    }
     
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 10; i++) {
         if (m_parallaxLayers[i].texture) {
             // Calculate parallax offset (negative for proper scrolling direction)
             // Divide by 5 to reduce parallax strength
             float offsetY = -m_parallaxY * m_parallaxLayers[i].speed / 10.0f;
             
-            if (i == 0) {
-                // First layer (back) - stretch from ground to max world height
-                float layerHeight = maxWorldHeight - groundY;
-                float layerCenterY = groundY + layerHeight * 0.5f + offsetY;
-                mm.DrawTexturedSquare(
-                    m_parallaxLayers[i].texture,
-                    0.0f, layerCenterY,
-                    screenWidth, layerHeight
-                );
-            } else {
-                // Layers 1-2 (middle and front) - tile by repeating texture as we scroll
-                float tileHeight = screenHeight;  // Tile size
-                float startY = offsetY;
-                
-                // Calculate how many tiles we need based on world movement
-                int numTiles = static_cast<int>(maxWorldHeight / tileHeight) + 2;
-                
-                for (int t = 0; t < numTiles; t++) {
-                    float tileY = startY + (t * tileHeight);
-                    mm.DrawTexturedSquare(
-                        m_parallaxLayers[i].texture,
-                        0.0f, tileY,
-                        screenWidth, tileHeight
-                    );
-                }
-            }
+            //if (i == 0 || i == 2) {
+            //    // First layer (back) - stretch from ground to max world height
+            //    float layerHeight = maxWorldHeight - groundY;
+            //    float layerCenterY = groundY + layerHeight * 0.5f + offsetY;
+            //    mm.DrawTexturedSquare(
+            //        m_parallaxLayers[i].texture,
+            //        0.0f, layerCenterY,
+            //        screenWidth, layerHeight
+            //    );
+            //} else {
+            //    // Layer 1 (middle) - tile by repeating texture as we scroll
+            //    float tileHeight = screenHeight;  // Tile size
+            //    float startY = offsetY;
+            //    
+            //    // Calculate how many tiles we need based on world movement
+            //    int numTiles = static_cast<int>(maxWorldHeight / tileHeight) + 2;
+            //    
+            //    for (int t = 0; t < numTiles; t++) {
+            //        float tileY = startY + (t * tileHeight);
+            //        mm.DrawTexturedSquare(
+            //            m_parallaxLayers[i].texture,
+            //            0.0f, tileY,
+            //            screenWidth, tileHeight
+            //        );
+            //    }
+            //}
+
+            float layerHeight = maxWorldHeight - groundY;
+            float layerCenterY = groundY + layerHeight * 0.5f + offsetY;
+            mm.DrawTexturedSquare(
+                m_parallaxLayers[i].texture,
+                0.0f, layerCenterY,
+                screenWidth, layerHeight
+            );
         }
     }
 }

@@ -42,7 +42,7 @@ public:
     void LoadAssetsFromConfig(const rapidjson::Document& doc);
     void Initialize();
     void Update(float dt, Player& player, float cameraY);
-    void DrawBackground() const;
+    void DrawBackground(float camX = 0.0f, float camY = 0.0f) const;
     void DrawBackgroundOverlay(float camX, float camY) const;
     void DrawWorld(float camX, float camY, PlayerWeapon weapon, const Player& player, float screenHalfH);
     void DrawHUD(float camX, float camY, PlayerWeapon weapon);
@@ -287,7 +287,7 @@ private:
     SpatialGrid m_spatialGrid;
 
     // Parallax layers (back, middle, front)
-    ParallaxLayer m_parallaxLayers[3];
+    ParallaxLayer m_parallaxLayers[10];
     float m_parallaxY = 0.0f;  // track current parallax offset
 
     // Background constants
@@ -311,4 +311,5 @@ private:
     bool             m_bossDoorLoaded = false;
 
     bool m_bossRoomMode = false;
+    std::unique_ptr<SpriteSheet> m_bossRoomBg;
 };

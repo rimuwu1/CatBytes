@@ -71,9 +71,16 @@
       "duration": 0.1
     },
     "parallax": {
-      "back":   "Assets/Images/back.png",
-      "middle": "Assets/Images/middle.png",
-      "front":  "Assets/Images/front.png"
+      "colorgradient":  "Assets/Images/MGcolorgradient.png",
+      "starback":       "Assets/Images/MGstarback.png",
+      "starfront":      "Assets/Images/MGstarfront.png",
+      "crescent":       "Assets/Images/MGcrescent.png",
+      "buildingback":   "Assets/Images/MGbuildingback.png",
+      "buildingmiddle": "Assets/Images/MGbuildingmiddle.png",
+      "buildingfront":  "Assets/Images/MGbuildingfront.png",
+      "cloudtall":      "Assets/Images/MGcloudtall.png",
+      "cloudshort":     "Assets/Images/MGcloudshort.png",
+      "front":          "Assets/Images/front.png"
     }
   },
   "audio": {

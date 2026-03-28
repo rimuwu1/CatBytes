@@ -1,5 +1,10 @@
 {
   "environment": {
+    "boss_background": {
+    "file": "Assets/Images/BossRoomBackground.png",
+    "rows": 1,
+    "cols": 9
+    },
     "platform_left":  "Assets/Images/platform_left.png",
     "platform_mid":   "Assets/Images/platform_middle.png",
     "platform_right": "Assets/Images/platform_right.png",
