@@ -797,14 +797,17 @@ void HUD::Draw(MeshManager& meshManager, float camX, float camY, PlayerWeapon we
 		return;
 	}
 
+	// Draw core HUD elements in all modes
+	DrawHearts(camX, camY);
+	DrawPauseButton(camX, camY);
+	DrawWeaponSwitch(camX, camY, weapon);
+	DrawInventory(camX, camY);
+	DrawBuffBar(camX, camY);
+
+	// Progress bar only in main game (not boss room)
 	if (!EnvironmentManager::Get().IsBossRoomMode())
 	{
-		DrawHearts(camX, camY);
-		DrawWeaponSwitch(camX, camY, weapon);
 		DrawProgressBar(meshManager, camX, camY);
-		DrawPauseButton(camX, camY);
-		DrawInventory(camX, camY);
-		DrawBuffBar(camX, camY);
 	}
 }
 
@@ -1094,12 +1097,12 @@ void HUD::DrawInventory(float camX, float camY) const
 				);
 			}
 
-			const float screenX = (badgeX - camX) / (windowWidth * 0.5f) - 0.006f;
-			const float screenY = (badgeY - camY) / (windowHeight * 0.5f) - 0.012f;
+		const float screenX = (badgeX - camX) / (windowWidth * 0.5f) - 0.006f;
+		const float screenY = (badgeY - camY) / (windowHeight * 0.5f) - 0.012f;
 
-			AEGfxPrint(g_FontSmall, countStr, screenX, screenY, 0.6f, 1.0f, 0.95f, 0.2f, 1.0f);
-		}
+		FontManager::Get().Print(FontManager::Get().GetSmallFont(), countStr, screenX, screenY, 0.6f, 1.0f, 0.95f, 0.2f, 1.0f);
 	}
+}
 }
 
 // ---- Draw HUD ---- //
@@ -1202,11 +1205,11 @@ void HUD::DrawBuffBar(float camX, float camY) const
 			);
 		}
 
-		const float screenX = (badgeX - camX) / (windowWidth * 0.5f) - 0.006f;
-		const float screenY = (badgeY - camY) / (windowHeight * 0.5f) - 0.012f;
+	const float screenX = (badgeX - camX) / (windowWidth * 0.5f) - 0.006f;
+	const float screenY = (badgeY - camY) / (windowHeight * 0.5f) - 0.012f;
 
-		AEGfxPrint(g_FontSmall, label, screenX, screenY, 0.6f, 1.0f, 0.95f, 0.2f, 1.0f);
-	}
+	FontManager::Get().Print(FontManager::Get().GetSmallFont(), label, screenX, screenY, 0.6f, 1.0f, 0.95f, 0.2f, 1.0f);
+}
 
 }
 

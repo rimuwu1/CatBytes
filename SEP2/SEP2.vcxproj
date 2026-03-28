@@ -25,6 +25,7 @@
     <ClCompile Include="..\Source\EnemyBullet.cpp" />
     <ClCompile Include="..\Source\EnvironmentManager.cpp" />
     <ClCompile Include="..\Source\GameSaveManager.cpp" />
+    <ClCompile Include="..\Source\FontManager.cpp" />
     <ClCompile Include="..\Source\Fonts.cpp" />
     <ClCompile Include="..\Source\GameStateManager.cpp" />
     <ClCompile Include="..\Source\HUD.cpp" />
@@ -65,6 +66,7 @@
     <ClInclude Include="..\Source\EnemyBullet.h" />
     <ClInclude Include="..\Source\EnvironmentManager.h" />
     <ClInclude Include="..\Source\GameSaveManager.h" />
+    <ClInclude Include="..\Source\FontManager.h" />
     <ClInclude Include="..\Source\Fonts.h" />
     <ClInclude Include="..\Source\GameStateList.h" />
     <ClInclude Include="..\Source\GameStateManager.h" />

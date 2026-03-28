@@ -101,7 +101,7 @@ void GameSaveManager::Notify_Draw()
     else if (s_NotifyTimer > NOTIFY_DURATION - NOTIFY_FADE)
         a = AEClamp((NOTIFY_DURATION - s_NotifyTimer) / NOTIFY_FADE, 0.0f, 1.0f);
 
-    AEGfxPrint(g_FontMedium, text, 0.0f, 0.50f, 0.8f, 1.0f, 1.0f, 1.0f, a);
+    FontManager::Get().PrintAligned(FontManager::Get().GetMediumFont(), text, 0.0f, 0.50f, 0.8f, TextAlignment::Center, 1.0f, 0.84f, 0.0f, a); // Gold with fade
 }
 
 // ----- Save game implementation ------------------------------------------------

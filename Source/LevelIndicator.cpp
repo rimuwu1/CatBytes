@@ -100,7 +100,7 @@ void LevelIndicator_Draw() {
 
 		}
 
-		AEGfxPrint(g_FontMedium, levelIndicator[previousSection], 0.0f, 0.65f, 1.0f, 1.0f, 1.0f, 1.0f, a);
+		FontManager::Get().PrintCentered(FontManager::Get().GetMediumFont(), levelIndicator[previousSection], 0.0f, 0.65f, 1.0f, 1.0f, 1.0f, 1.0f, a);
 
 	}
 

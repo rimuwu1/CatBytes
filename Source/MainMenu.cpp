@@ -101,8 +101,8 @@ const float CREDITS_Y_NO_CONTINUE = -0.20f;
 const float EXIT_Y_NO_CONTINUE = -0.35f;
 
 // Info panel position (right side)
-const float INFO_X = -0.40f; //0.4 if show last saved
-const float INFO_START_Y = 0.25f;
+const float INFO_X = -0.50f; // Shifted left
+const float INFO_START_Y = 0.15f; // Shifted down
 const float INFO_LINE_SPACING = 0.08f;
 
 // Button indices
@@ -563,18 +563,39 @@ void MainMenu_Draw()
             // hover info panel (keep this as text)
             if (g_hoveredButton == BTN_CONTINUE)
             {
+                // Convert NDC coordinates to pixel coordinates for DrawSquare
+                // Text spans from 0.15f down to -0.17f NDC (4 lines × 0.08f)
+                // Box needs to cover: ~0.17f to ~-0.19f (with padding)
+                float halfW = AEGfxGetWindowWidth() / 2.0f;
+                
+                const float BOX_CENTER_Y_NDC = 0.05f; // Slightly up
+                const float BOX_HEIGHT_NDC = 0.36f; // Covers 4 lines + padding
+                const float BOX_WIDTH_PX = 360.0f; // Pixel width
+                const float BOX_HEIGHT_PX = BOX_HEIGHT_NDC * halfH; // Convert NDC to pixels
+                const float BOX_X_PX = 0.0f; // Center with text
+                const float BOX_Y_PX = BOX_CENTER_Y_NDC * halfH; // Center box on text
+                
+                // Draw translucent dark background box
                 AEGfxSetBlendMode(AE_GFX_BM_BLEND);
-                s8 font = (g_FontSmall != -1) ? g_FontSmall : g_FontMedium;
-                float scale = (g_FontSmall != -1) ? 1.0f : 0.6f;
+                AEGfxSetRenderMode(AE_GFX_RM_COLOR);
+                MeshManager::Get().DrawSquare(BOX_X_PX, BOX_Y_PX, BOX_WIDTH_PX, BOX_HEIGHT_PX, 0, 0, 0, 0.8f);
+                
+                // Reset render mode for text
+                AEGfxSetRenderMode(AE_GFX_RM_TEXTURE);
+                
+                s8 font = FontManager::Get().GetSmallFont();
+                float scale = 1.0f;
                 float y = INFO_START_Y;
+                float x = 0.0f; // Center
+                
                 std::string line1 = "Level " + std::to_string(g_CurrentLevel) + " / " + std::to_string(g_TotalLevels);
-                AEGfxPrint(font, line1.c_str(), INFO_X, y, scale, 1.0f, 1.0f, 1.0f, 1.0f); y -= INFO_LINE_SPACING;
+                FontManager::Get().PrintThemeAligned(font, line1.c_str(), x, y, scale, TextAlignment::Center, FontTheme::Gold); y -= INFO_LINE_SPACING;
                 std::string line2 = "Completed: " + std::to_string(g_LevelsCompleted);
-                AEGfxPrint(font, line2.c_str(), INFO_X, y, scale, 1.0f, 1.0f, 1.0f, 1.0f); y -= INFO_LINE_SPACING;
+                FontManager::Get().PrintThemeAligned(font, line2.c_str(), x, y, scale, TextAlignment::Center, FontTheme::White); y -= INFO_LINE_SPACING;
                 std::string line3 = "Lives: " + std::to_string(g_PlayerLives) + "/3";
-                AEGfxPrint(font, line3.c_str(), INFO_X, y, scale, 1.0f, 1.0f, 1.0f, 1.0f); y -= INFO_LINE_SPACING;
+                FontManager::Get().PrintThemeAligned(font, line3.c_str(), x, y, scale, TextAlignment::Center, FontTheme::White); y -= INFO_LINE_SPACING;
                 std::string line4 = "Saved: " + g_LastSavedDate;
-                AEGfxPrint(font, line4.c_str(), INFO_X, y, scale, 1.0f, 1.0f, 1.0f, 1.0f);
+                FontManager::Get().PrintThemeAligned(font, line4.c_str(), x, y, scale, TextAlignment::Center, FontTheme::Dim);
             }
         }
         else

@@ -16,15 +16,24 @@ Technology is prohibited.
 #ifndef FONTS_H
 #define FONTS_H
 
-#include "AEEngine.h"
+// Include the new FontManager for full functionality
+#include "FontManager.h"
 
-// global font IDs
-extern s8 g_FontLarge;   
-extern s8 g_FontMedium; 
-extern s8 g_FontSmall;  
+// ========================================================================
+// Backward Compatibility Layer
+// ========================================================================
+// These are now forwarded to FontManager for gradual migration
+// Use FontManager::Get() for new code
 
-void Fonts_Load(); // initialize 
+// Legacy global font IDs - now pointing to FontManager
+// Usage: FontManager::Get().g_FontLarge, etc.
+// Or use: FontManager::Get().GetLargeFont(), GetMediumFont(), GetSmallFont()
+#define g_FontLarge FontManager::Get().g_FontLarge
+#define g_FontMedium FontManager::Get().g_FontMedium
+#define g_FontSmall FontManager::Get().g_FontSmall
 
-void Fonts_Unload(); // destroy
+// Legacy function names - now forwarded to FontManager
+inline void Fonts_Load() { FontManager::Get().LoadDefaultFonts(); }
+inline void Fonts_Unload() { FontManager::Get().UnloadAll(); }
 
 #endif

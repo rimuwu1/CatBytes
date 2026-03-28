@@ -233,7 +233,7 @@ void Player_Update(Player& player, float dt)
     PhysicsManager& physics = PhysicsManager::Get();
     static int s_prevGrounded = 1;
 
-    if (AEInputCheckTriggered(AEVK_SPACE))
+    if (AEInputCheckTriggered(AEVK_SPACE) && player.grounded)
     {
         // play jump sound
         AudioManager::Get().PlayAudio(s_JumpSound, false);

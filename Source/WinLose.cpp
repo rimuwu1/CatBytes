@@ -73,17 +73,17 @@ void WinLose_Draw()
     AEGfxSetColorToAdd(0, 0, 0, 0);
 
     // main text 
-    AEGfxPrint(g_FontLarge,
+    FontManager::Get().PrintCentered(FontManager::Get().GetLargeFont(),
         textScreenMessage,
-        -0.2f, // center
+        0.0f,
         0.0f,
         1.0f,
         1.0f, 1.0f, 1.0f, 1.0f);
 
     // sub text
-    AEGfxPrint(g_FontMedium,
+    FontManager::Get().PrintCentered(FontManager::Get().GetMediumFont(),
         "Press Space to return",
-        -0.16f,
+        0.0f,
         -0.3f,
         0.5f,
         0.5f, 0.5f, 0.5f, 0.5f);

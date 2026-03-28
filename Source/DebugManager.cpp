@@ -48,7 +48,7 @@
   |  camera [on|off]      Toggle debug camera mode             |
   |  save                  Trigger manual game save             |
   |  reset                 Reset save file                      |
-  |  tp <1|2|3|4|boss>    Teleport to section start            |
+  |  tp <1|2|3|4|end|boss|main>    Teleport to section start    |
   |  tpxy <x> <y>         Teleport to exact world coords       |
   |  hp <value>           Set player HP (float)                 |
   |  buff <shield|fullhp|dash> Add buff to inventory           |
@@ -901,7 +901,7 @@ void DebugManager::UpdateConsoleInput()
     if (AEInputCheckTriggered(AEVK_UP) && !m_History.empty())
     {
         m_HistoryIdx = std::min((int)m_History.size() - 1, m_HistoryIdx + 1);
-        m_InputBuffer = m_History[(int)m_History.size() - 1 - m_HistoryIdx];
+        m_InputBuffer = m_History[static_cast<size_t>(static_cast<int>(m_History.size()) - 1 - m_HistoryIdx)];
         RefreshAutoHint();
         return;
     }
@@ -1061,11 +1061,11 @@ void DebugManager::DrawOverlay(float camX, float camY) const
     {
         char buf[64];
         snprintf(buf, sizeof(buf), "DEBUG  FPS: %.0f", (double)m_FpsCached);
-        AEGfxPrint(g_FontMedium, buf, OVL_TEXT_X, y, OVL_SCALE, 0.2f, 1.f, 0.3f, 1.f);
+        FontManager::Get().Print(FontManager::Get().GetMediumFont(), buf, OVL_TEXT_X, y, OVL_SCALE, 0.2f, 1.f, 0.3f, 1.f);
         y -= OVL_LINE_H;
     }
 
-    AEGfxPrint(g_FontMedium, "------------------------", OVL_TEXT_X, y,
+    FontManager::Get().Print(FontManager::Get().GetMediumFont(), "------------------------", OVL_TEXT_X, y,
         OVL_SCALE, 0.3f, 0.3f, 0.3f, 1.f);
     y -= OVL_LINE_H;
 
@@ -1073,11 +1073,11 @@ void DebugManager::DrawOverlay(float camX, float camY) const
     {
         char buf[80];
         snprintf(buf, sizeof(buf), "Pos  (%.0f, %.0f)", (double)player.pos.x, (double)player.pos.y);
-        AEGfxPrint(g_FontMedium, buf, OVL_TEXT_X, y, OVL_SCALE, 1, 1, 1, 1);
+        FontManager::Get().Print(FontManager::Get().GetMediumFont(), buf, OVL_TEXT_X, y, OVL_SCALE, 1, 1, 1, 1);
         y -= OVL_LINE_H;
 
         snprintf(buf, sizeof(buf), "Vel  (%.0f, %.0f)", (double)player.vel.x, (double)player.vel.y);
-        AEGfxPrint(g_FontMedium, buf, OVL_TEXT_X, y, OVL_SCALE, 1, 1, 1, 1);
+        FontManager::Get().Print(FontManager::Get().GetMediumFont(), buf, OVL_TEXT_X, y, OVL_SCALE, 1, 1, 1, 1);
         y -= OVL_LINE_H;
 
         const char* wpn = "NONE";
@@ -1086,7 +1086,7 @@ void DebugManager::DrawOverlay(float camX, float camY) const
 
         snprintf(buf, sizeof(buf), "HP: %.0f  Gnd: %s  Wpn: %s",
             (double)player.hp, player.grounded ? "Y" : "N", wpn);
-        AEGfxPrint(g_FontMedium, buf, OVL_TEXT_X, y, OVL_SCALE, 1, 1, 1, 1);
+        FontManager::Get().Print(FontManager::Get().GetMediumFont(), buf, OVL_TEXT_X, y, OVL_SCALE, 1, 1, 1, 1);
         y -= OVL_LINE_H;
     }
 
@@ -1095,12 +1095,12 @@ void DebugManager::DrawOverlay(float camX, float camY) const
         char buf[80];
         snprintf(buf, sizeof(buf), "Cam  (%.0f, %.0f)  DbgCam: %s",
             (double)globalCam.x, (double)globalCam.y, globalCam.debugCam ? "ON" : "OFF");
-        AEGfxPrint(g_FontMedium, buf, OVL_TEXT_X, y, OVL_SCALE, 1, 1, 1, 1);
+        FontManager::Get().Print(FontManager::Get().GetMediumFont(), buf, OVL_TEXT_X, y, OVL_SCALE, 1, 1, 1, 1);
         y -= OVL_LINE_H;
 
         int sec = EnvironmentManager::Get().GetCurrentSection();
         snprintf(buf, sizeof(buf), "Section: %d  (Level %d)", sec, sec + 1);
-        AEGfxPrint(g_FontMedium, buf, OVL_TEXT_X, y, OVL_SCALE, 1, 1, 1, 1);
+        FontManager::Get().Print(FontManager::Get().GetMediumFont(), buf, OVL_TEXT_X, y, OVL_SCALE, 1, 1, 1, 1);
         y -= OVL_LINE_H;
     }
 
@@ -1111,12 +1111,12 @@ void DebugManager::DrawOverlay(float camX, float camY) const
         char buf[64];
         snprintf(buf, sizeof(buf), "GodMode: %s  Hitbox: %s",
             m_GodMode ? "ON" : "OFF", m_HitboxOn ? "ON" : "OFF");
-        AEGfxPrint(g_FontMedium, buf, OVL_TEXT_X, y, OVL_SCALE, cr, cg, 0.1f, 1.f);
+        FontManager::Get().Print(FontManager::Get().GetMediumFont(), buf, OVL_TEXT_X, y, OVL_SCALE, cr, cg, 0.1f, 1.f);
         y -= OVL_LINE_H;
     }
 
     // Physics -- live readout; tweaked values shown in amber
-    AEGfxPrint(g_FontMedium, "-- Physics --", OVL_TEXT_X, y,
+    FontManager::Get().Print(FontManager::Get().GetMediumFont(), "-- Physics --", OVL_TEXT_X, y,
         OVL_SCALE, 0.3f, 0.3f, 0.3f, 1.f);
     y -= OVL_LINE_H;
 
@@ -1127,7 +1127,7 @@ void DebugManager::DrawOverlay(float camX, float camY) const
         bool lineAGrv = Tweaked(pm.GetGravity(), DEF_GRAVITY);
         snprintf(buf, sizeof(buf), "spd=%.0f  grav=%.0f",
             (double)pm.GetMoveSpeed(), (double)pm.GetGravity());
-        AEGfxPrint(g_FontMedium, buf, OVL_TEXT_X, y, OVL_SCALE,
+        FontManager::Get().Print(FontManager::Get().GetMediumFont(), buf, OVL_TEXT_X, y, OVL_SCALE,
             (lineASpd || lineAGrv) ? 1.f : 0.8f,
             (lineASpd || lineAGrv) ? 0.65f : 0.8f,
             0.15f, 1.f);
@@ -1137,7 +1137,7 @@ void DebugManager::DrawOverlay(float camX, float camY) const
         bool lineBTrm = Tweaked(pm.GetTerminalVel(), DEF_TERM);
         snprintf(buf, sizeof(buf), "jump=%.0f  term=%.0f",
             (double)pm.GetJumpForce(), (double)pm.GetTerminalVel());
-        AEGfxPrint(g_FontMedium, buf, OVL_TEXT_X, y, OVL_SCALE,
+        FontManager::Get().Print(FontManager::Get().GetMediumFont(), buf, OVL_TEXT_X, y, OVL_SCALE,
             (lineBJmp || lineBTrm) ? 1.f : 0.8f,
             (lineBJmp || lineBTrm) ? 0.65f : 0.8f,
             0.15f, 1.f);
@@ -1145,11 +1145,11 @@ void DebugManager::DrawOverlay(float camX, float camY) const
     }
 
     // Footer (2 lines)
-    AEGfxPrint(g_FontMedium,
+    FontManager::Get().Print(FontManager::Get().GetMediumFont(),
         "F1=overlay  F2=console  F3=kill",
         OVL_TEXT_X, y, OVL_SCALE * 0.75f, 0.38f, 0.38f, 0.38f, 1.f);
     y -= OVL_LINE_H * 0.8f;
-    AEGfxPrint(g_FontMedium,
+    FontManager::Get().Print(FontManager::Get().GetMediumFont(),
         "F4=win  F5=lose  F6=hitbox",
         OVL_TEXT_X, y, OVL_SCALE * 0.75f, 0.38f, 0.38f, 0.38f, 1.f);
 }
@@ -1170,7 +1170,7 @@ void DebugManager::DrawConsole(float camX, float camY)
     if (g_FontMedium == -1) return;
 
     const float titleY = (-winH * 0.5f + CON_PANEL_H - 20.f) / (winH * 0.5f);
-    AEGfxPrint(g_FontMedium,
+    FontManager::Get().Print(FontManager::Get().GetMediumFont(),
         "DEVELOPER CONSOLE   Esc=close  Tab=complete  Up/Dn=history",
         CON_TEXT_X, titleY, CON_SCALE * 0.70f, 0.25f, 0.85f, 0.38f, 1.f);
 
@@ -1185,7 +1185,7 @@ void DebugManager::DrawConsole(float camX, float camY)
             {
                 r = 0.35f; g2 = 1.f; b = 0.45f;
             }
-            AEGfxPrint(g_FontMedium, m_Log[i].c_str(), CON_TEXT_X, ly, CON_SCALE, r, g2, b, 1.f);
+            FontManager::Get().Print(FontManager::Get().GetMediumFont(), m_Log[i].c_str(), CON_TEXT_X, ly, CON_SCALE, r, g2, b, 1.f);
             ly -= CON_LINE_H;
         }
     }
@@ -1195,7 +1195,7 @@ void DebugManager::DrawConsole(float camX, float camY)
 
     {
         std::string display = "> " + m_InputBuffer + (m_CursorBlink ? "|" : " ");
-        AEGfxPrint(g_FontMedium, display.c_str(), CON_TEXT_X, CON_INPUT_Y, CON_SCALE, 0.2f, 1.f, 0.35f, 1.f);
+        FontManager::Get().Print(FontManager::Get().GetMediumFont(), display.c_str(), CON_TEXT_X, CON_INPUT_Y, CON_SCALE, 0.2f, 1.f, 0.35f, 1.f);
     }
 
     if (!m_AutoHint.empty() && m_AutoHint.size() > m_InputBuffer.size())
@@ -1203,7 +1203,7 @@ void DebugManager::DrawConsole(float camX, float camY)
         static constexpr float k_CharW = 0.030f;
         float hintX = CON_TEXT_X + 2.f * k_CharW + (float)m_InputBuffer.size() * k_CharW - 0.03f;
         std::string suffix = m_AutoHint.substr(m_InputBuffer.size());
-        AEGfxPrint(g_FontMedium, suffix.c_str(), hintX, CON_INPUT_Y, CON_SCALE,
+        FontManager::Get().Print(FontManager::Get().GetMediumFont(), suffix.c_str(), hintX, CON_INPUT_Y, CON_SCALE,
             CON_HINT_ALPHA, CON_HINT_ALPHA, CON_HINT_ALPHA, 0.7f);
     }
 }
@@ -1255,7 +1255,7 @@ static void DrawEntityLabel(float worldX, float worldY, float entityH,
     float ndcX = (worldX - camX) / (winW * 0.5f);
     float ndcY = ((worldY + entityH * 0.5f + 10.f) - camY) / (winH * 0.5f);
     if (ndcX < -1.f || ndcX > 0.85f || ndcY < -0.98f || ndcY > 0.98f) return;
-    AEGfxPrint(g_FontMedium, text, ndcX, ndcY, 0.40f, r, g, b, 1.f);
+    FontManager::Get().Print(FontManager::Get().GetMediumFont(), text, ndcX, ndcY, 0.40f, r, g, b, 1.f);
 }
 
 void DebugManager::DrawWorldOverlays(float camX, float camY) const

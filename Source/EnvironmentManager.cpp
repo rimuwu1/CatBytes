@@ -861,12 +861,17 @@ void EnvironmentManager::Update(float dt, Player& player, float cameraY)
     // Update parallax offset based on camera Y
     m_parallaxY = cameraY;
 
-    int section = GetSectionFromY(cameraY);
-    if (section != m_previousSelection) {
-        LevelIndicator_Show(section);
-        m_previousSelection = section;
+    // Don't update level indicator in boss room mode - it has its own indicator
+    if (!m_bossRoomMode) {
+        int section = GetSectionFromY(cameraY);
+        // Cap at section 2 (Level 3) - section 3 (BOSS) is only shown in BossRoom state
+        if (section > 2) section = 2;
+        if (section != m_previousSelection) {
+            LevelIndicator_Show(section);
+            m_previousSelection = section;
+        }
+        LevelIndicator_Update(dt);
     }
-    LevelIndicator_Update(dt);
 
      // update spike timer
      auto updateObsTimer = [&](std::vector<PlatformObstacle>& obstacles)
@@ -1385,7 +1390,7 @@ void EnvironmentManager::DrawWorld(float camX, float camY, PlayerWeapon weapon, 
             if (screenX >  0.5f) screenX =  0.5f;
             if (screenX < -0.9f) screenX = -0.9f;
 
-            AEGfxPrint(g_FontSmall, "Press E to save game", screenX, screenY, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f);
+            FontManager::Get().PrintThemeAligned(FontManager::Get().GetSmallFont(), "Press E to save game", screenX, screenY, 1.0f, TextAlignment::Center, FontTheme::Gold);
             break; // only show for nearest checkpoint
         }
     }
@@ -1489,7 +1494,7 @@ void EnvironmentManager::DrawWorld(float camX, float camY, PlayerWeapon weapon, 
     // --------------------------------------------------------------------
     // 3. Computers
     // --------------------------------------------------------------------
-    auto collectComputers = [&](std::vector<PlatformComputer>& computers, const std::vector<PlatformLaser>& lasers)
+    auto collectComputers = [&](std::vector<PlatformComputer>& computers, const std::vector<PlatformLaser>& /*lasers*/)
     {
         for (auto& comp : computers)
         {
@@ -1605,7 +1610,7 @@ void EnvironmentManager::DrawWorld(float camX, float camY, PlayerWeapon weapon, 
                 float screenY = (btn.y + btn.h + 20.0f - camY) / (windowHeight * 0.5f);
                 if (screenX > 0.5f)  screenX = 0.5f;
                 if (screenX < -0.9f) screenX = -0.9f;
-                AEGfxPrint(g_FontSmall, btn.btnPrompt.c_str(), screenX, screenY, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f);
+                FontManager::Get().PrintThemeAligned(FontManager::Get().GetSmallFont(), btn.btnPrompt.c_str(), screenX, screenY, 1.0f, TextAlignment::Center, FontTheme::Cyan);
             }
         }
     };
@@ -1636,9 +1641,13 @@ void EnvironmentManager::DrawWorld(float camX, float camY, PlayerWeapon weapon, 
                 float windowHeight = (float)AEGfxGetWindowHeight();
                 float screenX = (comp.x - camX) / (windowWidth * 0.5f);
                 float screenY = (comp.y + comp.h + 20.0f - camY) / (windowHeight * 0.5f);
-                if (screenX > 0.5f)  screenX = 0.5f;
-                if (screenX < -0.9f) screenX = -0.9f;
-                AEGfxPrint(g_FontSmall, "Press E to toggle lasers", screenX, screenY, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f);
+                
+                // Center above computer, then apply small left offset if needed for screen bounds
+                if (screenX > 0.3f) {
+                    screenX -= 0.15f; // Small left offset when near right edge
+                }
+                
+                FontManager::Get().PrintThemeAligned(FontManager::Get().GetSmallFont(), "Press E to toggle lasers", screenX, screenY, 1.0f, TextAlignment::Center, FontTheme::Magenta);
             }
         }
     };
@@ -1766,7 +1775,7 @@ void EnvironmentManager::DrawWorld(float camX, float camY, PlayerWeapon weapon, 
             float screenY = (m_bossDoor.y + m_bossDoor.h * 0.5f + 20.0f - camY) / (windowHeight * 0.5f);
             if (screenX >  0.5f) screenX =  0.5f;
             if (screenX < -0.9f) screenX = -0.9f;
-            AEGfxPrint(g_FontSmall, m_bossDoor.prompt.c_str(),
+            FontManager::Get().Print(FontManager::Get().GetSmallFont(), m_bossDoor.prompt.c_str(),
                 screenX, screenY, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f);
         }
     }

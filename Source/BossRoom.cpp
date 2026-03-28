@@ -68,8 +68,6 @@ void BossRoom_Initialize()
     BossAI_Init(g_bossAI);
     std::cout << "BossAI:Initialize" << std::endl;
 
-    EnvironmentManager::Get().SetBossRoomMode(true);
-
     g_bossRoomFadeAlpha = 1.0f;
     g_bossRoomFadingIn  = true;
     g_cutscenePhase     = CutscenePhase::WalkIn;
@@ -79,6 +77,9 @@ void BossRoom_Initialize()
     // clear previous state
     ObjectManager::Get().Clear();
     EnvironmentManager::Get().Clear();
+    
+    // Set boss room mode AFTER Clear() since Clear() resets it
+    EnvironmentManager::Get().SetBossRoomMode(true);
 
     // load full config
     rapidjson::Document doc;
@@ -194,7 +195,7 @@ void BossRoom_Update()
             for (auto& e : en)
                 if (e.type == EnemyType::Boss && e.spriteSheet)
                     e.spriteSheet->Play("attackidle");
-            // don't return — fall through to normal gameplay
+            // don't return ï¿½ fall through to normal gameplay
         }
         else {
             g_cutsceneTimer += dt;
@@ -403,7 +404,7 @@ void BossRoom_Update()
         }
     }
 
-    // camera — debug or follow
+    // camera ï¿½ debug or follow
     if (DebugManager::Get().IsDebugCameraEnabled())
         Camera_Debug(globalCam, dt);
     else
@@ -414,6 +415,9 @@ void BossRoom_Update()
 
     float backgroundY = DebugManager::Get().IsDebugCameraEnabled() ? globalCam.y : player.pos.y;
     EnvironmentManager::Get().Update(dt, player, backgroundY);
+    
+    // Update level indicator manually since EnvironmentManager skips it in boss room mode
+    LevelIndicator_Update(dt);
 
     HUD& hud = EnvironmentManager::Get().GetHUD();
     if (hud.IsPauseButtonClicked(globalCam.x, globalCam.y))

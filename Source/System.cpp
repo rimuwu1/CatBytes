@@ -29,7 +29,7 @@ void System_Initialize(HINSTANCE hInstance, int nCmdShow, bool createConsole)
 	
 	AESysReset();
 	AESysSetWindowIcon("Assets/Images/titleicon.ico", 32, 32);
-	Fonts_Load();
+	FontManager::Get().LoadDefaultFonts();
 
 	std::cout << "System:Initialize" << std::endl;  // Log system initialization
 }
@@ -40,7 +40,7 @@ void System_Initialize(HINSTANCE hInstance, int nCmdShow, bool createConsole)
 // ----------------------------------------------------------------------------
 void System_Exit()
 {
-	Fonts_Unload();
+	FontManager::Get().UnloadAll();
 	TextureManager::Get().UnloadAll();
 	MeshManager::Get().UnloadAll();
 	AESysExit();

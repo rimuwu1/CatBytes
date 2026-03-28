@@ -16,21 +16,6 @@ Technology is prohibited.
 #include "pch.h"
 #include "Fonts.h"
 
-// global font vairables
-s8 g_FontLarge = -1;
-s8 g_FontMedium = -1;
-s8 g_FontSmall = -1;
-
-void Fonts_Load()
-{
-    g_FontLarge = AEGfxCreateFont("Assets/Fonts/Lora-Bold.ttf", 72);
-    g_FontMedium = AEGfxCreateFont("Assets/Fonts/Lora-Medium.ttf", 48);
-    g_FontSmall = AEGfxCreateFont("Assets/Fonts/WalterTurncoat-Regular.ttf", 24);
-}
-
-void Fonts_Unload()
-{
-    if (g_FontLarge != -1) AEGfxDestroyFont(g_FontLarge);
-    if (g_FontMedium != -1) AEGfxDestroyFont(g_FontMedium);
-    if (g_FontSmall != -1) AEGfxDestroyFont(g_FontSmall);
-}
+// Note: All functionality is now in FontManager singleton
+// Fonts.h provides backward compatibility wrappers
+// This file is kept for compilation compatibility

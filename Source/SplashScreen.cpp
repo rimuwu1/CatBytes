@@ -78,21 +78,21 @@ void SplashScreen_Draw()
         2 - Logo fade in
         3 - Logo fade out
     */
-    if (phase == 0) {
-        /* Digipen fade in */
-        opacity = phaseProgress * MAX_OPACITY;
-        AEGfxSetBackgroundColor(0.0f, 0.0f, 0.0f);
-        MeshManager::Get().DrawTexturedSquare(Digipen, x, y, DigipenW, DigipenH, opacity);
-        AEGfxPrint(g_FontLarge, "All content (c) 2026 DigiPen Institute of Technology Singapore. All Rights Reserved. ", -0.4f, -0.7f, 0.25f, 1.0f, 1.0f, 1.0f, opacity);
-      
-    }
-    else if (phase == 1) {
-        /* Digipen fade out */
-        opacity = (1.0f - phaseProgress) * MAX_OPACITY;
-        AEGfxSetBackgroundColor(0.0f, 0.0f, 0.0f);
-        MeshManager::Get().DrawTexturedSquare(Digipen, x, y, DigipenW, DigipenH, opacity);
-        AEGfxPrint(g_FontLarge, "All content (c) 2026 DigiPen Institute of Technology Singapore. All Rights Reserved. ", -0.4f, -0.7f, 0.25f, 1.0f, 1.0f, 1.0f, opacity);
-    }
+     if (phase == 0) {
+         /* Digipen fade in */
+         opacity = phaseProgress * MAX_OPACITY;
+         AEGfxSetBackgroundColor(0.0f, 0.0f, 0.0f);
+         MeshManager::Get().DrawTexturedSquare(Digipen, x, y, DigipenW, DigipenH, opacity);
+          FontManager::Get().PrintCentered(FontManager::Get().GetLargeFont(), "All content (c) 2026 DigiPen Institute of Technology Singapore. All Rights Reserved. ", 0.0f, -0.7f, 0.25f, 1.0f, 1.0f, 1.0f, opacity);
+        
+      }
+      else if (phase == 1) {
+          /* Digipen fade out */
+          opacity = (1.0f - phaseProgress) * MAX_OPACITY;
+          AEGfxSetBackgroundColor(0.0f, 0.0f, 0.0f);
+          MeshManager::Get().DrawTexturedSquare(Digipen, x, y, DigipenW, DigipenH, opacity);
+          FontManager::Get().PrintCentered(FontManager::Get().GetLargeFont(), "All content (c) 2026 DigiPen Institute of Technology Singapore. All Rights Reserved. ", 0.0f, -0.7f, 0.25f, 1.0f, 1.0f, 1.0f, opacity);
+     }
     else if (phase == 2) {
         /* Logo fade in */
         opacity = phaseProgress * MAX_OPACITY;

@@ -167,13 +167,13 @@ void UIManager::DrawConfirmation(float camX, float camY)
     MeshManager::Get().DrawSquare(camX + PANEL_CX, camY + PANEL_CY, PANEL_W, PANEL_H, 30, 30, 30);
 
     if (g_FontLarge != -1)
-        AEGfxPrint(g_FontLarge, m_Popup.title.c_str(),
-            PxToNdcX(TEXT_LEFT_PX, winW), PxToNdcY(TITLE_Y_PX, winH),
+        FontManager::Get().PrintCentered(FontManager::Get().GetLargeFont(), m_Popup.title.c_str(),
+            camX, PxToNdcY(TITLE_Y_PX, winH),
             0.6f, 1, 1, 1, 1);
 
     if (g_FontMedium != -1)
-        AEGfxPrint(g_FontMedium, m_Popup.message.c_str(),
-            PxToNdcX(TEXT_LEFT_PX, winW), PxToNdcY(MSG_Y_PX, winH),
+        FontManager::Get().PrintCentered(FontManager::Get().GetMediumFont(), m_Popup.message.c_str(),
+            camX, PxToNdcY(MSG_Y_PX, winH),
             0.5f, 1, 1, 1, 1);
 
     float btnWNdc = BTN_W / (winW * 0.5f);
@@ -189,7 +189,7 @@ void UIManager::DrawConfirmation(float camX, float camY)
         MeshManager::Get().DrawSquare(camX + BTN_YES_X_PX, camY + BTN_Y_PX, BTN_W, BTN_H, s, s, s);
         if (g_FontMedium != -1) {
             float hw = 3.f * 0.04f * 0.5f * 0.5f;
-            AEGfxPrint(g_FontMedium, "YES", btnYesX - hw, btnYNdc + textOffY, 0.5f, 1, 1, 1, 1);
+            FontManager::Get().Print(FontManager::Get().GetMediumFont(), "YES", btnYesX - hw, btnYNdc + textOffY, 0.5f, 1, 1, 1, 1);
         }
     }
     { // NO
@@ -198,7 +198,7 @@ void UIManager::DrawConfirmation(float camX, float camY)
         MeshManager::Get().DrawSquare(camX + BTN_NO_X_PX, camY + BTN_Y_PX, BTN_W, BTN_H, s, s, s);
         if (g_FontMedium != -1) {
             float hw = 2.f * 0.04f * 0.5f * 0.5f;
-            AEGfxPrint(g_FontMedium, "NO", btnNoX - hw, btnYNdc + textOffY, 0.5f, 1, 1, 1, 1);
+            FontManager::Get().Print(FontManager::Get().GetMediumFont(), "NO", btnNoX - hw, btnYNdc + textOffY, 0.5f, 1, 1, 1, 1);
         }
     }
 }
@@ -281,13 +281,13 @@ void UIManager::DrawPause(float camX, float camY)
 
     if (g_FontLarge == -1 || g_FontMedium == -1) return;
 
-    // Title -- left-aligned at same X as buttons, sits above first button
-    AEGfxPrint(g_FontLarge, "PAUSED", PAUSE_BTN_X, PauseBtnY(0) + 0.10f, 0.8f, 1, 1, 1, 1);
+    // Title -- centered
+    FontManager::Get().PrintCentered(FontManager::Get().GetLargeFont(), "PAUSED", camX, PauseBtnY(0) + 0.10f, 0.8f, 1, 1, 1, 1);
 
     const char* labels[] = { "", "RESUME GAME", "RESTART", "EXIT TO MAIN MENU", "QUIT GAME" };
     for (int i = 1; i <= 4; ++i) {
         float bright = (m_PauseHovered == i) ? 1.0f : 0.6f;
-        AEGfxPrint(g_FontMedium, labels[i], PAUSE_BTN_X, PauseBtnY(i), 1.0f, bright, bright, bright, 1.0f);
+        FontManager::Get().Print(FontManager::Get().GetMediumFont(), labels[i], PAUSE_BTN_X, PauseBtnY(i), 1.0f, bright, bright, bright, 1.0f);
     }
 }
 

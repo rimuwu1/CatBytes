@@ -142,12 +142,12 @@ void DrawKeysPage()
 
     auto Print = [&](const char* text)
         {
-            AEGfxPrint(g_FontSmall, text, startX, y, 1.0f, 1, 1, 1, 1);
+            FontManager::Get().Print(FontManager::Get().GetSmallFont(), text, startX, y, 1.0f, 1, 1, 1, 1);
             y -= spacing;
         };
 
     // Navigation
-    AEGfxPrint(g_FontMedium, "NAVIGATION", startX, y, 1.2f, 1, 1, 1, 1);
+    FontManager::Get().Print(FontManager::Get().GetMediumFont(), "NAVIGATION", startX, y, 1.2f, 1, 1, 1, 1);
     y -= spacing;
 
     Print("WASD - Move");
@@ -158,7 +158,7 @@ void DrawKeysPage()
     y -= spacing;
 
     // Abilities
-    AEGfxPrint(g_FontMedium, "ABILITIES", startX, y, 1.2f, 1, 1, 1, 1);
+    FontManager::Get().Print(FontManager::Get().GetMediumFont(), "ABILITIES", startX, y, 1.2f, 1, 1, 1, 1);
     y -= spacing;
 
     Print("Space - Jump");
