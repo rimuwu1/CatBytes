@@ -1885,7 +1885,7 @@ void EnvironmentManager::DrawBackground(float camX, float camY) const
         if (m_parallaxLayers[i].texture) {
             // Calculate parallax offset (negative for proper scrolling direction)
             // Divide by 5 to reduce parallax strength
-            float offsetY = -m_parallaxY * m_parallaxLayers[i].speed / 10.0f;
+            float offsetY = -m_parallaxY * m_parallaxLayers[i].speed / 3.0f ;
             
             //if (i == 0 || i == 2) {
             //    // First layer (back) - stretch from ground to max world height
