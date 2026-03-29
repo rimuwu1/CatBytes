@@ -332,7 +332,7 @@
       "w": 200.0,
       "h": 78.0,
       "slotSize": 60.0,
-      "iconSize": 40.0,
+      "iconSize": 38.0,
       "inventoryTexture": "Assets/Images/inventoryOverlay.png",
       "slotTexture": "Assets/Images/inventorySlot.png",
       "shieldIcon": "Assets/Images/buff_shield.png",
@@ -343,8 +343,10 @@
       "active": true,
       "x": 0.0,
       "y": 390.0,
-      "iconSize": 48.0,
+      "slotSize": 48.0,
+      "iconSize": 40.0,
       "gap": 8.0,
+      "slotTexture": "Assets/Images/buffBarSlot.png",
       "badgeTexture": "Assets/Images/buffBadge.png"
     }
   },

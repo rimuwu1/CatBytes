@@ -100,23 +100,37 @@ void Input_Handle() {
 
 		//Weapon equip / unequip toggle
 		//weapon switch: 1 = none, 2 = melee, 3 = gun
-		if (AEInputCheckTriggered('1'))
+		//if (AEInputCheckTriggered('1'))
+		//{
+		//	player.weapon = PlayerWeapon::NONE;
+		//	player.weaponEquipped = false;
+		//	player.isAttacking = false;
+		//}
+		//if (AEInputCheckTriggered('2'))
+		//{
+		//	player.weapon = PlayerWeapon::MELEE;
+		//	player.weaponEquipped = true;
+		//	player.isAttacking = false; // reset attack state
+		//}
+		//if (AEInputCheckTriggered('3'))
+		//{
+		//	player.weapon = PlayerWeapon::GUN;
+		//	player.weaponEquipped = true;
+		//	player.isAttacking = false; // melee attack off
+		//}
+		if (AEInputCheckTriggered('F'))
 		{
-			player.weapon = PlayerWeapon::NONE;
-			player.weaponEquipped = false;
-			player.isAttacking = false;
-		}
-		if (AEInputCheckTriggered('2'))
-		{
-			player.weapon = PlayerWeapon::MELEE;
+			if (player.weapon == PlayerWeapon::MELEE)
+			{
+				player.weapon = PlayerWeapon::GUN;
+			}
+			else
+			{
+				player.weapon = PlayerWeapon::MELEE;
+			}
+
 			player.weaponEquipped = true;
 			player.isAttacking = false; // reset attack state
-		}
-		if (AEInputCheckTriggered('3'))
-		{
-			player.weapon = PlayerWeapon::GUN;
-			player.weaponEquipped = true;
-			player.isAttacking = false; // melee attack off
 		}
 
 		// Check for weapon slot clicks (alternative to keyboard)
@@ -133,12 +147,12 @@ void Input_Handle() {
 		}
 
 		// Inventory slots
-		// 4 = slot 1, 5 = slot 2, 6 = slot 3
-		if (AEInputCheckTriggered('4') || AEInputCheckTriggered('5') || AEInputCheckTriggered('6'))
+		// 1 = slot 1, 2 = slot 2, 3 = slot 3
+		if (AEInputCheckTriggered('1') || AEInputCheckTriggered('2') || AEInputCheckTriggered('3'))
 		{
 			int slot;
-			if (AEInputCheckTriggered('4')) slot = 0;
-			else if (AEInputCheckTriggered('5')) slot = 1;
+			if (AEInputCheckTriggered('1')) slot = 0;
+			else if (AEInputCheckTriggered('2')) slot = 1;
 			else slot = 2;
 
 			EnvironmentManager::Get().GetHUD().UseBuffFromInventory(player, slot);

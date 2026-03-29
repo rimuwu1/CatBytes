@@ -101,7 +101,7 @@ static InstructionCard g_InteractionCards[] =
 static InstructionCard g_BuffCards[] =
 {
     { &g_ImgHpRecovery, "HP Recovery", "Restores full health" },
-    { &g_ImgShield, "Shield", "Blocks damage for 10 seconds" },
+    { &g_ImgShield, "Shield", "Blocks damage for 10s" },
     { &g_ImgDash, "Dash", "Gain dash uses" }
 };
 
@@ -293,7 +293,7 @@ void DrawKeysPage()
     Print("WASD - Move");
     Print("ESC - Pause");
     Print("Q - Quit");
-    Print("E - interaction with platform/computer");
+    Print("E - Interaction with mechanisms");
 
     y -= spacing;
 
@@ -302,9 +302,9 @@ void DrawKeysPage()
     y -= spacing;
 
     Print("Space - Jump");
-    Print("1/2/3 - Weapon Switch");
-    Print("4/5/6 - Inventory");
-    Print("Right Click - Dash");
+    Print("F - Weapon Switch");
+    Print("1/2/3 - Inventory");
+    Print("Right Click - Dash (when enabled)");
 }
 
 // draw instructions page

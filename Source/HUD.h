@@ -206,13 +206,15 @@ private:
 		bool active = true;
 		float x = -200.0f;
 		float y = 400.0f;
-		float iconSize = 48.0f;
+		float slotSize = 60.0f;
+		float iconSize = 44.0f;
 		float gap = 8.0f;
 
 		static constexpr int MAX_SLOTS = 3;
 		std::array<BuffBarSlot, MAX_SLOTS> slots{};
 		int slotCount = 0;
 
+		AEGfxTexture* slotTexture = nullptr;
 		AEGfxTexture* badgeTexture = nullptr;
 	};
 

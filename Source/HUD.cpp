@@ -521,6 +521,10 @@ void HUD::InitBuffBarFromConfig(const rapidjson::Value& uiJson)
 	{
 		buffBar.y = bar["y"].GetFloat();
 	}
+	if (bar.HasMember("slotSize"))
+	{
+		buffBar.slotSize = bar["slotSize"].GetFloat();
+	}
 	if (bar.HasMember("iconSize"))
 	{
 		buffBar.iconSize = bar["iconSize"].GetFloat();
@@ -528,6 +532,10 @@ void HUD::InitBuffBarFromConfig(const rapidjson::Value& uiJson)
 	if (bar.HasMember("gap"))
 	{
 		buffBar.gap = bar["gap"].GetFloat();
+	}
+	if (bar.HasMember("slotTexture"))
+	{
+		buffBar.slotTexture = TextureManager::Get().LoadTexture(bar["slotTexture"].GetString());
 	}
 	if (bar.HasMember("badgeTexture"))
 	{
@@ -838,24 +846,6 @@ void HUD::DrawWeaponSwitch(float camX, float camY, PlayerWeapon weapon) const
 		const float meleeX = hx - slotSize;
 		const float gunX = hx;
 
-		// Highlight selected weapon
-		if (weapon == PlayerWeapon::MELEE)
-		{
-			MeshManager::Get().DrawCircle(
-				meleeX, hy,
-				slotSize,
-				230, 206, 154
-			);
-		}
-		if (weapon == PlayerWeapon::GUN)
-		{
-			MeshManager::Get().DrawCircle(
-				gunX, hy,
-				slotSize,
-				230, 206, 154
-			);
-		}
-
 		// Draw weapon slots
 		if (weaponSwitch.slotTexture)
 		{
@@ -888,7 +878,25 @@ void HUD::DrawWeaponSwitch(float camX, float camY, PlayerWeapon weapon) const
 			);
 		}
 
-		// Melee selected
+		// Highlight selected weapon
+		if (weapon == PlayerWeapon::MELEE)
+		{
+			MeshManager::Get().DrawCircle(
+				meleeX, hy,
+				slotSize,
+				6, 130, 150, 0.8f
+			);
+		}
+		if (weapon == PlayerWeapon::GUN)
+		{
+			MeshManager::Get().DrawCircle(
+				gunX, hy,
+				slotSize,
+				6, 130, 150, 0.8f
+			);
+		}
+
+		// Draw melee sheet
 		if (weaponSwitch.meleeSheet)
 		{
 			MeshManager::Get().DrawSpriteSheet(
@@ -896,7 +904,7 @@ void HUD::DrawWeaponSwitch(float camX, float camY, PlayerWeapon weapon) const
 				meleeX, hy, iconSize, iconSize, 1.0f
 			);
 		}
-		// Gun selected
+		// Draw gun sheet
 		if (weaponSwitch.gunSheet)
 		{
 			MeshManager::Get().DrawSpriteSheet(
@@ -1114,26 +1122,27 @@ void HUD::DrawBuffBar(float camX, float camY) const
 		return;
 	}
 
+	const float slotSize = buffBar.slotSize;
 	const float iconSize = buffBar.iconSize;
 	const float gap = buffBar.gap;
 	const float windowWidth = (float)AEGfxGetWindowWidth();
 	const float windowHeight = (float)AEGfxGetWindowHeight();
 
 	const float totalWidth = buffBar.slotCount * iconSize + (buffBar.slotCount - 1) * gap;
-	const float startX = camX + buffBar.x - totalWidth * 0.5f + iconSize * 0.5f;
+	const float startX = camX + buffBar.x - totalWidth * 0.5f + slotSize * 0.5f;
 	const float y = camY + buffBar.y;
 
 	for (int i = 0; i < buffBar.slotCount; i++)
 	{
 		const BuffBarSlot& slot = buffBar.slots[i];
-		const float x = startX + i * (iconSize + gap);
+		const float x = startX + i * (slotSize + gap);
 
 		// Draw slot
-		if (inventory.slotTexture)
+		if (buffBar.slotTexture)
 		{
 			MeshManager::Get().DrawTexturedSquare(
-				inventory.slotTexture, x, y, 
-				iconSize + 5.0f, iconSize + 5.0f, 1.0f
+				buffBar.slotTexture, x, y, 
+				slotSize, slotSize, 1.0f
 			);
 		}
 
@@ -1163,13 +1172,13 @@ void HUD::DrawBuffBar(float camX, float camY) const
 		if (slot.duration > 0.0f && slot.timer >= 0.0f)
 		{
 			float ratio = slot.timer / slot.duration;
-			float overlayHeight = iconSize * (1.0f - ratio);
-			float overlayY = (y + iconSize * 0.5f) - overlayHeight * 0.5f;
+			float overlayHeight = slotSize * (1.0f - ratio);
+			float overlayY = (y + slotSize * 0.5f) - overlayHeight * 0.5f;
 
 			if (overlayHeight > 0.0f)
 			{
 				MeshManager::Get().DrawSquare(
-					x, overlayY, iconSize, overlayHeight, 0, 0, 0, 0.6f
+					x, overlayY, slotSize, overlayHeight, 8, 160, 185, 0.6f
 				);
 			}
 
@@ -1187,9 +1196,9 @@ void HUD::DrawBuffBar(float camX, float camY) const
 		}
 
 		// Draw badge for text
-		const float badgeSize = iconSize * 0.45f;
-		const float badgeX = x + (iconSize * 0.5f) - (badgeSize * 0.5f);
-		const float badgeY = y - (iconSize * 0.5f) + (badgeSize * 0.5f);
+		const float badgeSize = slotSize * 0.45f;
+		const float badgeX = x + (slotSize * 0.5f) - (badgeSize * 0.5f);
+		const float badgeY = y - (slotSize * 0.5f) + (badgeSize * 0.5f);
 
 		if (buffBar.badgeTexture)
 		{
