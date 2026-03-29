@@ -141,69 +141,221 @@
 
     "computer": "Assets/Audio/SCI-FI-POWER-UP_GEN-HDF-20769.wav"
   },
-    "player": {
-            "x": 0.0,
-            "y": -300.0,
-            "width": 50.0,
-            "height": 80.0,
-            "hp": 5.0,
-            "melee_damage": 10.0,
-            "knockback_velocity": 400.0,
-            "knockback_air_up": 300.0,
-            "pogo_velocity": 600.0,
-            "bullet": {
-                "speed": 1200.0,
-                "damage": 2.0,
-                "cooldown": 0.25,
-                "width": 30.0,
-                "height": 30.0,
-                "max_count": 20
-            },  
-            "bullet_animations": {
-                "file": "Assets/Images/PlayerBulletSheet.png",
-                "rows": 1,
-                "cols": 4,
-                "clips": [
-                    { "name": "fly", "start": 0, "end": 3, "duration": 0.05, "loop": false }
-                ]
-            },
-            "animations": {
-        "file": "Assets/Images/PlayerSheet.png",
-        "rows": 20,
-        "cols": 5,
-        "clips": [
-            { "name": "idle", "start": 0, "end": 4, "duration": 0.1, "loop": true },
-            { "name": "idle2", "start": 5, "end": 9, "duration": 0.1, "loop": false },
-            { "name": "jumpFRONT", "start": 10, "end": 12, "duration": 0.1, "loop": false },
-            { "name": "jumpSIDE", "start": 15, "end": 17, "duration": 0.1, "loop": false },
-            { "name": "walk", "start": 20, "end": 23, "duration": 0.1, "loop": true },
-            { "name": "hurt", "start": 25, "end": 27, "duration": 0.1, "loop": false },
-            { "name": "clawIdle", "start": 30, "end": 34, "duration": 0.1, "loop": true },
-            { "name": "clawAttack", "start": 35, "end": 37, "duration": 0.1, "loop": false },
-            { "name": "clawAttackUP", "start": 40, "end": 42, "duration": 0.1, "loop": false },
-            { "name": "clawAttackDOWN", "start": 45, "end": 47, "duration": 0.1, "loop": false },
-            { "name": "clawWalk", "start": 50, "end": 53, "duration": 0.1, "loop": true },
-            { "name": "gunIdle", "start": 55, "end": 59, "duration": 0.1, "loop": true },
-            { "name": "gunWalk", "start": 60, "end": 63, "duration": 0.1, "loop": true },
-            { "name": "gunShoot", "start": 65, "end": 67, "duration": 0.1, "loop": false },
-            { "name": "normal2claw", "start": 70, "end": 72, "duration": 0.1, "loop": false },
-            { "name": "normal2gun", "start": 75, "end": 78, "duration": 0.1, "loop": false },
-            { "name": "claw2normal", "start": 80, "end": 82, "duration": 0.1, "loop": false },
-            { "name": "claw2gun", "start": 85, "end": 89, "duration": 0.1, "loop": false },
-            { "name": "gun2normal", "start": 90, "end": 93, "duration": 0.1, "loop": false },
-            { "name": "gun2claw", "start": 90, "end": 93, "duration": 0.1, "loop": false },
-            { "name": "dash", "start": 20, "end": 22, "duration": 0.05, "loop": false }
-        ]
-            },
-            "slash": {
-        "file": "Assets/Images/SlashSheet.png",
-        "rows": 1,
-        "cols": 5,
-        "clips": [
-            { "name": "slash", "start": 0, "end": 4, "duration": 0.03, "loop": false }
-        ]
-    }
+  "player": {
+    "x": 0.0,
+    "y": -300.0,
+    "width": 50.0,
+    "height": 80.0,
+    "hp": 5.0,
+    "melee_damage": 10.0,
+    "knockback_velocity": 400.0,
+    "knockback_air_up": 300.0,
+    "pogo_velocity": 600.0,
+    "bullet": {
+      "speed": 1200.0,
+      "damage": 2.0,
+      "cooldown": 0.25,
+      "width": 30.0,
+      "height": 30.0,
+      "max_count": 20
+    },
+    "bullet_animations": {
+      "file": "Assets/Images/PlayerBulletSheet.png",
+      "rows": 1,
+      "cols": 4,
+      "clips": [
+        {
+          "name": "fly",
+          "start": 0,
+          "end": 3,
+          "duration": 0.05,
+          "loop": false
+        }
+      ]
+    },
+    "animations": {
+      "file": "Assets/Images/PlayerSheet.png",
+      "rows": 20,
+      "cols": 5,
+      "clips": [
+        {
+          "name": "idle",
+          "start": 0,
+          "end": 4,
+          "duration": 0.1,
+          "loop": true
         },
+        {
+          "name": "idle2",
+          "start": 5,
+          "end": 9,
+          "duration": 0.1,
+          "loop": false
+        },
+        {
+          "name": "jumpFRONT",
+          "start": 10,
+          "end": 12,
+          "duration": 0.1,
+          "loop": false
+        },
+        {
+          "name": "jumpSIDE",
+          "start": 15,
+          "end": 17,
+          "duration": 0.1,
+          "loop": false
+        },
+        {
+          "name": "walk",
+          "start": 20,
+          "end": 23,
+          "duration": 0.1,
+          "loop": true
+        },
+        {
+          "name": "hurt",
+          "start": 25,
+          "end": 27,
+          "duration": 0.1,
+          "loop": false
+        },
+        {
+          "name": "clawIdle",
+          "start": 30,
+          "end": 34,
+          "duration": 0.1,
+          "loop": true
+        },
+        {
+          "name": "clawAttack",
+          "start": 35,
+          "end": 37,
+          "duration": 0.1,
+          "loop": false
+        },
+        {
+          "name": "clawAttackUP",
+          "start": 40,
+          "end": 42,
+          "duration": 0.1,
+          "loop": false
+        },
+        {
+          "name": "clawAttackDOWN",
+          "start": 45,
+          "end": 47,
+          "duration": 0.1,
+          "loop": false
+        },
+        {
+          "name": "clawWalk",
+          "start": 50,
+          "end": 53,
+          "duration": 0.1,
+          "loop": true
+        },
+        {
+          "name": "gunIdle",
+          "start": 55,
+          "end": 59,
+          "duration": 0.1,
+          "loop": true
+        },
+        {
+          "name": "gunWalk",
+          "start": 60,
+          "end": 63,
+          "duration": 0.1,
+          "loop": true
+        },
+        {
+          "name": "gunShoot",
+          "start": 65,
+          "end": 67,
+          "duration": 0.1,
+          "loop": false
+        },
+        {
+          "name": "normal2claw",
+          "start": 70,
+          "end": 72,
+          "duration": 0.1,
+          "loop": false
+        },
+        {
+          "name": "normal2gun",
+          "start": 75,
+          "end": 78,
+          "duration": 0.1,
+          "loop": false
+        },
+        {
+          "name": "claw2normal",
+          "start": 80,
+          "end": 82,
+          "duration": 0.1,
+          "loop": false
+        },
+        {
+          "name": "claw2gun",
+          "start": 85,
+          "end": 89,
+          "duration": 0.1,
+          "loop": false
+        },
+        {
+          "name": "gun2normal",
+          "start": 90,
+          "end": 93,
+          "duration": 0.1,
+          "loop": false
+        },
+        {
+          "name": "gun2claw",
+          "start": 90,
+          "end": 93,
+          "duration": 0.1,
+          "loop": false
+        },
+        {
+          "name": "dash",
+          "start": 20,
+          "end": 22,
+          "duration": 0.05,
+          "loop": false
+        }
+      ]
+    },
+    "slash": {
+      "file": "Assets/Images/SlashSheet.png",
+      "rows": 1,
+      "cols": 5,
+      "clips": [
+        {
+          "name": "slash",
+          "start": 0,
+          "end": 4,
+          "duration": 0.03,
+          "loop": false
+        }
+      ]
+    },
+    "shield_animations": {
+      "file": "Assets/Images/ShieldSheet.png",
+      "rows": 1,
+      "cols": 3,
+      "clips": [
+        {
+          "name": "loop",
+          "start": 0,
+          "end": 2,
+          "duration": 0.1,
+          "loop": true
+        }
+      ]
+    }
+  },
   "ui": {
     "hearts": {
       "active": true,

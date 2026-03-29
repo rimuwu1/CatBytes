@@ -195,6 +195,30 @@ void Player_Init(Player& player, const rapidjson::Value& config)
 		b.bulletSprite->Play("fly", true);
 	}
 
+	// shield sheet
+	if (playerJson.HasMember("shield_animations")) {
+		const auto& anims = playerJson["shield_animations"];
+		player.shieldSprite = std::make_unique<SpriteSheet>(
+			anims["file"].GetString(),
+			anims["rows"].GetInt(),
+			anims["cols"].GetInt()
+		);
+
+		const auto& clips = anims["clips"];
+		for (rapidjson::SizeType i = 0; i < clips.Size(); i++) {
+			const auto& c = clips[i];
+			player.shieldSprite->AddClip(
+				c["name"].GetString(),
+				c["start"].GetInt(),
+				c["end"].GetInt(),
+				c["duration"].GetFloat(),
+				c["loop"].GetBool()
+			);
+		}
+		// looping animation
+		player.shieldSprite->Play("loop", true);
+	}
+
 	// restore buffs from save
 	player.buffs.clear();
 	if (config.HasMember("buffs") && config["buffs"].IsArray()) {
@@ -226,6 +250,11 @@ void Player_Init(Player& player, const rapidjson::Value& config)
 	player.dashTimer = 0.0f;
 	player.dashCooldown = 0.0f;
 	player.dashCharges = 0;
+
+	// shield particles
+	for (int i = 0; i < 4; ++i) {
+		player.shieldEmitters[i] = INVALID_EMITTER;
+	}
 }
 
 void Player_Update(Player& player, float dt)
@@ -284,12 +313,71 @@ void Player_Update(Player& player, float dt)
 		return;
 	}
 
-	// shield timer
+	// active shield
 	if (player.shieldActive) {
+
+		// timer
 		player.shieldTimer -= dt;
 		if (player.shieldTimer <= 0.0f) {
 			player.shieldTimer = 0.0f;
 			player.shieldActive = false;
+		}
+
+		// animation
+		if (player.shieldActive && player.shieldSprite) {
+			if (player.shieldSprite->GetCurrentClip() != "loop")
+				player.shieldSprite->Play("loop", true);
+
+			player.shieldSprite->Update(dt);
+		}
+
+		// particles
+		const float margin = 8.0f;
+		const float offset = 4.0f;
+		
+		const float left = player.pos.x - player.width * 0.5f - margin;
+		const float right = player.pos.x + player.width * 0.5f + margin;
+		const float bottom = player.pos.y - player.height * 0.5f - margin;
+		const float top = player.pos.y + player.height * 0.5f + margin;
+
+		// random particle spawn along shield edges
+		float topX = left + ((float)rand() / RAND_MAX) * (right - left);
+		float bottomX = left + ((float)rand() / RAND_MAX) * (right - left);
+		float leftY = bottom + ((float)rand() / RAND_MAX) * (top - bottom);
+		float rightY = bottom + ((float)rand() / RAND_MAX) * (top - bottom);
+
+		const float positions[4][2] = {
+			{ topX, top - offset },			// top
+			{ bottomX, bottom + offset },	// bottom
+			{ left + offset, leftY },		// left
+			{ right - offset, rightY }		// right
+		};
+
+		for (int i = 0; i < 4; ++i) {
+			if (player.shieldEmitters[i] == INVALID_EMITTER) {
+				player.shieldEmitters[i] = ParticleManager_EmitterStart(
+					positions[i][0], positions[i][1],
+					20,
+					18.0f,
+					80, 160, 255,
+					0.18f, 0.28f,
+					2.0f, 4.0f
+				);
+			}
+			else {
+				ParticleManager_EmitterMove(
+					player.shieldEmitters[i],
+					positions[i][0], positions[i][1]
+				);
+			}
+		}
+	}
+	else {
+		for (int i = 0; i < 4; ++i) {
+			if (player.shieldEmitters[i] != INVALID_EMITTER) {
+				ParticleManager_EmitterStop(player.shieldEmitters[i]);
+				player.shieldEmitters[i] = INVALID_EMITTER;
+			}
 		}
 	}
 
@@ -677,7 +765,22 @@ void Player_Update(Player& player, float dt)
 
 void Player_Draw(const Player& player)
 {
-	
+	// Draw shield sprite
+	if (player.shieldActive && player.shieldSprite) {
+
+		float shieldWidth = player.width + 35.0f;
+		float shieldHeight = player.height + 45.0f;
+
+		MeshManager::Get().DrawSpriteSheet(
+			*player.shieldSprite,
+			player.pos.x,
+			player.pos.y,
+			shieldWidth,
+			shieldHeight,
+			0.9f
+		);
+	}
+
 	// drawing player bullets (moved to obj manager)
 	/*for (const auto& b : player.bullets)
 		PlayerBullet_Draw(b);*/
@@ -704,22 +807,6 @@ void Player_Draw(const Player& player)
 			player.height,
 			1.0f
 		);
-	}
-
-	// Draw shield indicator
-	if (player.shieldActive)
-	{
-		const float margin = 8.0f; // between player & shield
-
-		const float left = player.pos.x - player.width * 0.5f - margin;
-		const float right = player.pos.x + player.width * 0.5f + margin;
-		const float bottom = player.pos.y - player.height * 0.5f - margin;
-		const float top = player.pos.y + player.height * 0.5f + margin;
-
-		MeshManager::Get().DrawLine(left, bottom, right, bottom, 3.0f, 50, 100, 255, 0.8f); // bottom
-		MeshManager::Get().DrawLine(left, top, right, top, 3.0f, 50, 100, 255, 0.8f);		// top
-		MeshManager::Get().DrawLine(left, bottom, left, top, 3.0f, 50, 100, 255, 0.8f);		// left
-		MeshManager::Get().DrawLine(right, bottom, right, top, 3.0f, 50, 100, 255, 0.8f);	// right
 	}
 
 	//melee weapon visual parameters
@@ -894,6 +981,14 @@ void Player_CheckBulletCollisions(Player& player, Enemy& enemy)
 void Player_Free(Player& player)
 {
 	//only for gameplay related memory
+	// free shield particles
+	for (int i = 0; i < 4; ++i){
+		if (player.shieldEmitters[i] != INVALID_EMITTER) {
+			ParticleManager_EmitterStop(player.shieldEmitters[i]);
+			player.shieldEmitters[i] = INVALID_EMITTER;
+		}
+	}
+	
 	// free bullets
 
 	//free bullet internal resources (if any)

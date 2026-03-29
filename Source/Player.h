@@ -24,6 +24,7 @@ Technology is prohibited.
 #include "PlayerBullet.h"
 #include "Buff.h"
 #include "SpriteSheet.h"
+#include "ParticleManager.h"
 #include "rapidjson/document.h"
 #include <vector>
 #include <memory>
@@ -85,6 +86,10 @@ struct Player
 	bool shieldActive = false;
 	float shieldTimer = 0.0f;
 
+	EmitterHandle shieldEmitters[4]{
+		INVALID_EMITTER, INVALID_EMITTER, INVALID_EMITTER, INVALID_EMITTER
+	};
+
 	bool dashEnabled = false;
 	bool isDashing = false;
 	float dashTimer = 0.0f;
@@ -101,6 +106,7 @@ struct Player
 	std::unique_ptr<SpriteSheet> spriteSheet;
 	std::unique_ptr<SpriteSheet> slashSprite;
 	std::unique_ptr<SpriteSheet> bulletSprite;
+	std::unique_ptr<SpriteSheet> shieldSprite;
 
 	// State tracking for animation logic
 	bool wasAttacking = false;
