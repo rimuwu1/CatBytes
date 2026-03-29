@@ -77,6 +77,46 @@
       ]
     }
   },
+  "monitors": {
+  "spritesheet": {
+    "file": "Assets/Images/MonitorsSpriteSheet.png",
+    "rows": 12,
+    "cols": 8,
+    "clips": [
+      { "name": "Monitor1",        "start":  0, "end":  7, "duration": 0.5, "loop": true  },
+      { "name": "Monitor2",        "start":  8, "end": 15, "duration": 0.5, "loop": true  },
+      { "name": "Monitor3",        "start": 16, "end": 23, "duration": 0.5, "loop": true  },
+      { "name": "Monitor4",        "start": 24, "end": 31, "duration": 0.5, "loop": true  },
+      { "name": "Monitor5",        "start": 32, "end": 39, "duration": 0.5, "loop": true  },
+      { "name": "Monitor6",        "start": 40, "end": 47, "duration": 0.5, "loop": true  },
+      { "name": "Monitor7",        "start": 48, "end": 55, "duration": 0.5, "loop": true  },
+      { "name": "Monitor8",        "start": 56, "end": 63, "duration": 0.5, "loop": true  },
+      { "name": "LasersActivated", "start": 64, "end": 68, "duration": 0.1, "loop": false },
+      { "name": "LasersIdle",      "start": 72, "end": 76, "duration": 0.1, "loop": true  },
+      { "name": "MonitorHacking",  "start": 80, "end": 84, "duration": 0.1, "loop": true  },
+      { "name": "LasersOff",       "start": 88, "end": 92, "duration": 0.1, "loop": false }
+    ]
+  },
+  "monitors": [
+    { "col": -1, "row":  1, "clip": "Monitor3" },
+    { "col":  0, "row":  1, "clip": "Monitor1" },
+    { "col":  1, "row":  1, "clip": "Monitor5" },
+    { "col": -1, "row":  0, "clip": "Monitor7", "isCenter": false },
+    { "col":  0, "row":  0, "clip": "Monitor2", "isCenter": true  },
+    { "col":  1, "row":  0, "clip": "Monitor4", "isCenter": false },
+    { "col": -1, "row": -1, "clip": "Monitor6" },
+    { "col":  0, "row": -1, "clip": "Monitor8" },
+    { "col":  1, "row": -1, "clip": "Monitor3" }
+  ],
+  "center_x": 0.0,
+  "center_y": 200.0,
+  "col_spacing": 400.0,
+  "row_spacing": 250.0,
+  "width": 400.0,
+  "height": 250.0,
+  "laser_fire_interval": 0.5,
+  "laser_width": 20.0
+},
   "ui": {
     "hearts": {
       "active": true,
@@ -152,13 +192,19 @@
   "boss_arena": {
     "floor": { "x": 0.0, "y": -325.0, "width": 1520.0, "height": 40.0 },
     "walls": [
-      { "x": -780.0, "y": 0.0, "width": 40.0, "height": 1000000000.0 },
-      { "x":  780.0, "y": 0.0, "width": 40.0, "height": 1000000000.0 }
+      { "x": -780.0, "y": 0.0, "width": 40.0, "height": 10000.0 },
+      { "x":  780.0, "y": 0.0, "width": 40.0, "height": 10000.0 }
     ],
     "platforms": [
-      { "x": -500.0, "y": 150.0, "width": 200.0, "height": 40.0, "active": true },
-      { "x":  500.0, "y": 150.0, "width": 200.0, "height": 40.0, "active": true },
-      { "x":    0.0, "y": 300.0, "width": 300.0, "height": 40.0, "active": true }
+      { "x":    380.0, "y": 40.0, "width": 80.0, "height": 40.0, "active": true },
+      { "x":    -380.0, "y": 40.0, "width": 80.0, "height": 40.0, "active": true },
+      { "x":    -600.0, "y": -180.0, "width": 80.0, "height": 40.0, "active": true },
+      { "x":    600.0, "y": -180.0, "width": 80.0, "height": 40.0, "active": true },
+      { "x":    -700.0, "y": -50.0, "width": 80.0, "height": 40.0, "active": true },
+      { "x":    700.0, "y": -50.0, "width": 80.0, "height": 40.0, "active": true },
+      { "x":    0.0, "y": 100.0, "width": 100.0, "height": 40.0, "active": true }
+
+      
     ]
   },
   "boss": {
@@ -169,10 +215,10 @@
     "patrol_min_x": -240.0, "patrol_max_x": 240.0,
     "knockback_velocity": 300.0,
     "laser_cooldown": 20.0,
-        "laser_track": 1.5,
-        "laser_lockon": 0.8,
-        "laser_fire": 0.6,
-        "laser_damage": 10.0,
+        "laser_track": 0.8,
+        "laser_lockon": 0.5,
+        "laser_fire": 0.5,
+        "laser_damage": 1.0,
         "laser_knockback": 400.0,
         "boss_lasers": [
             { "x": -200.0, "y": 600.0, "width": 14.0 },

@@ -32,7 +32,10 @@ Technology is prohibited.
 #include "enemy.h"
 #include "WinLose.h"
 #include "LevelIndicator.h"
+#include "TextureManager.h"
 #include <fstream>
+#include <algorithm>
+#include <numeric>
 #include "rapidjson/document.h"
 #include "rapidjson/istreamwrapper.h"
 
@@ -60,6 +63,184 @@ static float g_playerWalkTarget = -500.0f; // static gets overwritten below
 
 static BossAIData g_bossAI;
 
+// ============================================================
+// monitor state
+// ============================================================
+static constexpr int MONITOR_COUNT      = 9;
+static constexpr int CENTER_MONITOR_IDX = 4;
+
+static Monitor                   g_monitors[MONITOR_COUNT];
+static std::string g_monitorTexturePath;
+static int                       g_monSheetRows      = 11;
+static int                       g_monSheetCols      = 8;
+static std::vector<MonitorClipDef> g_monClipDefs;
+static AEGfxTexture* g_laserTexture = nullptr;
+
+// teleport sequence before UsePC
+enum class BossTeleportState { none, teleporting_away, teleporting_show, done };
+static BossTeleportState g_teleportState  = BossTeleportState::none;
+static float             g_teleportTimer  = 0.f;
+
+// laser timing (read from boss section of JSON)
+static float g_laserTrackTime     = 1.5f;
+static float g_laserLockonTime    = 0.8f;
+static float g_laserFireTime      = 0.6f;
+static float g_laserDamage        = 10.f;
+static float g_laserKnockback     = 400.f;
+static float g_laserWidth         = 14.f;
+
+// random firing queue
+static std::vector<int> g_laserQueue;
+static float            g_laserFireInterval  = 2.5f;
+static float            g_laserIntervalTimer = 0.f;
+static int              g_activeLaserIdx     = -1;
+
+static bool  g_monitorsActivated     = false;
+static bool  g_lasersActivatedPlayed = false;
+static bool  g_bossAtMonitor         = false;
+static float g_bossPlatformX         = 0.f;
+static float g_bossPlatformY         = 0.f;
+static float g_laserTrackedY = -325.f;
+
+// ============================================================
+// monitor helpers
+// ============================================================
+static SpriteSheet* MakeMonitorSprite()
+{
+    if (g_monitorTexturePath.empty()) return nullptr;
+    SpriteSheet* ss = new SpriteSheet(g_monitorTexturePath, g_monSheetRows, g_monSheetCols, 93);
+    for (const auto& c : g_monClipDefs)
+        ss->AddClip(c.name, c.start, c.end, c.duration, c.loop);
+    return ss;
+}
+
+static void BuildLaserQueue()
+{
+    g_laserQueue.clear();
+    for (int i = 0; i < MONITOR_COUNT; ++i)
+        if (!g_monitors[i].isCenter)
+            g_laserQueue.push_back(i);
+    for (int i = (int)g_laserQueue.size() - 1; i > 0; --i)
+        std::swap(g_laserQueue[i], g_laserQueue[rand() % (i + 1)]);
+}
+
+static int PopLaserQueue()
+{
+    if (g_laserQueue.empty()) BuildLaserQueue();
+    int idx = g_laserQueue.back();
+    g_laserQueue.pop_back();
+    return idx;
+}
+
+static void TurnMonitorsOff()
+{
+    for (int i = 0; i < MONITOR_COUNT; ++i)
+    {
+        if (g_monitors[i].sprite)
+            g_monitors[i].sprite->Play("LasersOff");
+        g_monitors[i].laserState  = MonitorLaserState::Idle;
+        g_monitors[i].laserTimer  = 0.f;
+        g_monitors[i].laserLength = 0.f;
+    }
+    g_monitorsActivated     = false;
+    g_lasersActivatedPlayed = false;
+    g_activeLaserIdx        = -1;
+    g_laserIntervalTimer    = 0.f;
+}
+
+static void LoadMonitors(const rapidjson::Document& doc)
+{
+    if (!doc.HasMember("monitors")) return;
+    const auto& monRoot = doc["monitors"];
+
+    g_laserFireInterval = monRoot.HasMember("laser_fire_interval")
+        ? (float)monRoot["laser_fire_interval"].GetDouble() : 2.5f;
+    g_laserWidth = monRoot.HasMember("laser_width")
+        ? (float)monRoot["laser_width"].GetDouble() : 14.f;
+
+    if (doc.HasMember("boss"))
+    {
+        const auto& b = doc["boss"];
+        if (b.HasMember("laser_track"))     g_laserTrackTime  = (float)b["laser_track"].GetDouble();
+        if (b.HasMember("laser_lockon"))    g_laserLockonTime = (float)b["laser_lockon"].GetDouble();
+        if (b.HasMember("laser_fire"))      g_laserFireTime   = (float)b["laser_fire"].GetDouble();
+        if (b.HasMember("laser_damage"))    g_laserDamage     = (float)b["laser_damage"].GetDouble();
+        if (b.HasMember("laser_knockback")) g_laserKnockback  = (float)b["laser_knockback"].GetDouble();
+    }
+
+    // load spritesheet clips
+    g_monClipDefs.clear();
+    const auto& ss = monRoot["spritesheet"];
+    g_monSheetRows      = ss["rows"].GetInt();
+    g_monSheetCols      = ss["cols"].GetInt();
+    g_monitorTexturePath = ss["file"].GetString();
+    for (const auto& clip : ss["clips"].GetArray())
+    {
+        MonitorClipDef cd;
+        cd.name     = clip["name"].GetString();
+        cd.start    = clip["start"].GetInt();
+        cd.end      = clip["end"].GetInt();
+        cd.duration = (float)clip["duration"].GetDouble();
+        cd.loop     = clip["loop"].GetBool();
+        g_monClipDefs.push_back(cd);
+    }
+
+    // 3x3 grid layout - fallback values, edit in json file
+    float centerX   = monRoot.HasMember("center_x")    ? (float)monRoot["center_x"].GetDouble()    : 0.f;
+    float centerY   = monRoot.HasMember("center_y")    ? (float)monRoot["center_y"].GetDouble()    : 200.0f;
+    float colSpacing = monRoot.HasMember("col_spacing") ? (float)monRoot["col_spacing"].GetDouble() : 400.f;
+    float rowSpacing = monRoot.HasMember("row_spacing") ? (float)monRoot["row_spacing"].GetDouble() : 250.f;
+    float monW      = monRoot.HasMember("width")        ? (float)monRoot["width"].GetDouble()       : 400.f;
+    float monH      = monRoot.HasMember("height")       ? (float)monRoot["height"].GetDouble()      : 250.f;
+
+    const auto& monArray = monRoot["monitors"];
+    int count = (int)monArray.Size();
+    if (count > MONITOR_COUNT) count = MONITOR_COUNT;
+
+    for (int i = 0; i < count; ++i)
+    {
+        const auto& entry = monArray[i];
+        Monitor& m = g_monitors[i];
+
+        float col = entry.HasMember("col") ? (float)entry["col"].GetDouble() : 0.f;
+        float row = entry.HasMember("row") ? (float)entry["row"].GetDouble() : 0.f;
+
+        m.x        = centerX + col * colSpacing;
+        m.y        = centerY + row * rowSpacing;
+        m.width    = monW;
+        m.height   = monH;
+        m.isCenter = entry.HasMember("isCenter") && entry["isCenter"].GetBool();
+        m.laserState  = MonitorLaserState::Idle;
+        m.laserTimer  = 0.f;
+        m.laserLength = 0.f;
+        m.idleClipName = entry.HasMember("clip") ? entry["clip"].GetString() : "Monitor1";
+
+        delete m.sprite;
+        m.sprite = MakeMonitorSprite();
+        if (m.sprite) m.sprite->Play(m.idleClipName.c_str());
+    }
+
+    // boss teleports behind the center monitor (isCenter == true)
+    for (int i = 0; i < count; ++i)
+    {
+        if (g_monitors[i].isCenter)
+        {
+            g_bossPlatformX = g_monitors[i].x;
+            g_bossPlatformY = 120.f;
+            break;
+        }
+    }
+
+    g_monitorsActivated     = false;
+    g_lasersActivatedPlayed = false;
+    g_laserTexture = TextureManager::Get().LoadTexture("Assets/Images/laserObstacle.png");
+    g_activeLaserIdx        = -1;
+    g_laserIntervalTimer    = 0.f;
+    BuildLaserQueue();
+}
+
+// ============================================================
+
 void BossRoom_Load() {}
 
 void BossRoom_Initialize()
@@ -74,10 +255,16 @@ void BossRoom_Initialize()
     g_cutsceneTimer     = 0.0f;
     g_cutsceneDone      = false;
 
+    // reset monitor state
+    g_bossAtMonitor         = false;
+    g_monitorsActivated     = false;
+    g_lasersActivatedPlayed = false;
+    g_activeLaserIdx        = -1;
+
     // clear previous state
     ObjectManager::Get().Clear();
     EnvironmentManager::Get().Clear();
-    
+
     // Set boss room mode AFTER Clear() since Clear() resets it
     EnvironmentManager::Get().SetBossRoomMode(true);
 
@@ -103,6 +290,9 @@ void BossRoom_Initialize()
     // HUD init
     if (doc.HasMember("ui"))
         EnvironmentManager::Get().GetHUD().InitFromConfig(doc);
+
+    // load monitors
+    LoadMonitors(doc);
 
     // set boss to backidle
     auto& enemies = ObjectManager::Get().GetAllEnemies();
@@ -194,7 +384,7 @@ void BossRoom_Update()
             for (auto& e : en)
                 if (e.type == EnemyType::Boss && e.spriteSheet)
                     e.spriteSheet->Play("attackidle");
-            // don't return � fall through to normal gameplay
+            // don't return — fall through to normal gameplay
         }
         else {
             g_cutsceneTimer += dt;
@@ -326,6 +516,10 @@ void BossRoom_Update()
                         laser.cooldownTimer = e.laserCooldown; // keep resetting so it never fires
                     }
 
+            // tick monitor sprites during cutscene so they animate
+            for (int i = 0; i < MONITOR_COUNT; ++i)
+                if (g_monitors[i].sprite) g_monitors[i].sprite->Update(dt);
+
             // during cutscene: tick animations + camera, no gameplay
             ObjectManager::Get().Update(dt);
             Camera_FollowPlayer(globalCam, player.pos.x, player.pos.y, dt);
@@ -343,12 +537,13 @@ void BossRoom_Update()
         if (AEInputCheckCurr(AEVK_W)) player.pos.y += 400.f * dt;
         if (AEInputCheckCurr(AEVK_S)) player.pos.y -= 400.f * dt;
     }
+    
+    float playerPrevY = player.pos.y;
 
     ObjectManager::Get().Update(dt);
     BossRoom::Get().Update(dt);
     ObjectManager::Get().RebuildSpatialGrid();
 
-    float playerPrevY = player.pos.y;
     CollisionManager::HandleAllCollisionsSpatial(
         player, playerPrevY,
         EnvironmentManager::Get(),
@@ -394,6 +589,14 @@ void BossRoom_Update()
                 g_bossAI.stateTimer          = 0.0f;
                 if (e.spriteSheet)
                     e.spriteSheet->Play("hurtbetweenphase");
+
+                // boss was knocked out of UsePC — snap back to floor, turn monitors off
+                g_bossAtMonitor = false;
+                e.pos.x = 0.f;
+                e.pos.y = -325.f + e.height * 0.5f;
+                e.vel   = { 0.f, 0.f };
+                TurnMonitorsOff();
+                g_teleportState = BossTeleportState::none;
             }
             else
             {
@@ -403,7 +606,7 @@ void BossRoom_Update()
         }
     }
 
-    // camera � debug or follow
+    // camera — debug or follow
     if (DebugManager::Get().IsDebugCameraEnabled())
         Camera_Debug(globalCam, dt);
     else
@@ -414,7 +617,7 @@ void BossRoom_Update()
 
     float backgroundY = DebugManager::Get().IsDebugCameraEnabled() ? globalCam.y : player.pos.y;
     EnvironmentManager::Get().Update(dt, player, backgroundY);
-    
+
     // Update level indicator manually since EnvironmentManager skips it in boss room mode
     LevelIndicator_Update(dt);
 
@@ -453,9 +656,9 @@ void BossRoom_Draw()
     AESysFrameStart();
     Player& player = ObjectManager::Get().GetPlayer();
     EnvironmentManager::Get().DrawBackground(globalCam.x, globalCam.y);
+    BossRoom::Get().Draw();
     EnvironmentManager::Get().DrawWorld(globalCam.x, globalCam.y, player.weapon, player, 900.0f * 0.5f);
     ObjectManager::Get().Draw(globalCam.x, globalCam.y, 800.0f, 450.0f);
-    BossRoom::Get().Draw();
     EnvironmentManager::Get().DrawHUD(globalCam.x, globalCam.y, player.weapon);
     DebugManager::Get().DrawWorldOverlays(globalCam.x, globalCam.y);    
     DebugManager::Get().Draw(globalCam.x, globalCam.y);               
@@ -532,11 +735,228 @@ void BossRoom::Update(float dt)
             e.vel.y = 0.0f;
             e.hitPoints = 0.1f;
             if (e.spriteSheet) e.spriteSheet->Play("fightover");
+
+            // turn monitors off on defeat
+            g_bossAtMonitor = false;
+            TurnMonitorsOff();
+            g_teleportState = BossTeleportState::none;
+            g_teleportTimer = 0.f;
         }
 
-        BossAI_Update(g_bossAI, e, player, dt);
+        // capture state BEFORE AI update so we can detect transitions
+        bool wasInUsePC = (g_bossAI.attackState == BossAttackState::UsePC);
 
-        bool lasersOn = BossAI_LasersActive(g_bossAI);
+        // skip AI update during teleport sequence — it would overwrite our anim
+        bool teleportInProgress = (g_teleportState == BossTeleportState::teleporting_away ||
+            g_teleportState == BossTeleportState::teleporting_show);
+        if (!teleportInProgress)
+            BossAI_Update(g_bossAI, e, player, dt);
+
+        bool nowInUsePC = (g_bossAI.attackState == BossAttackState::UsePC);
+        if (teleportInProgress && e.spriteSheet)
+            e.spriteSheet->Update(dt);
+
+        if (!wasInUsePC && nowInUsePC && g_teleportState == BossTeleportState::none)
+        {
+            g_teleportState = BossTeleportState::teleporting_away;
+            g_teleportTimer = 0.f;
+            e.vel = { 0.f, 0.f };
+            if (e.spriteSheet) e.spriteSheet->Play("teleportaway");
+        }
+
+        // ── teleport sequence state machine ──────────────────────
+        if (nowInUsePC && g_teleportState != BossTeleportState::none && g_teleportState != BossTeleportState::done)
+        {
+            g_teleportTimer += dt;
+            e.vel = { 0.f, 0.f };
+
+            if (g_teleportState == BossTeleportState::teleporting_away)
+            {
+                // wait for teleportaway anim to finish
+                bool animDone = e.spriteSheet && !e.spriteSheet->IsPlaying();
+                if (animDone)
+                {
+                    // snap to center monitor position
+                    e.pos.x = g_bossPlatformX;
+                    e.pos.y = 120.0f + e.height * 0.5f;
+                    e.vel   = { 0.f, 0.f };
+                    g_bossAtMonitor = true;
+                    g_teleportState = BossTeleportState::teleporting_show;
+                    g_teleportTimer = 0.f;
+                    if (e.spriteSheet) e.spriteSheet->Play("teleportshow");
+                }
+            }
+            else if (g_teleportState == BossTeleportState::teleporting_show)
+            {
+                // keep boss pinned at monitor during show anim
+                e.pos.x = g_bossPlatformX;
+                e.pos.y = 120.0f + e.height * 0.5f;
+
+                bool animDone = e.spriteSheet && !e.spriteSheet->IsPlaying();
+                if (animDone)
+                {
+                    // now start usepc anim and activate monitors
+                    if (e.spriteSheet) e.spriteSheet->Play("usepc");
+                    g_teleportState = BossTeleportState::done;
+
+                    // center monitor = hacking, all others = LasersActivated
+                    if (g_monitors[CENTER_MONITOR_IDX].sprite)
+                        g_monitors[CENTER_MONITOR_IDX].sprite->Play("MonitorHacking");
+                    for (int i = 0; i < MONITOR_COUNT; ++i)
+                        if (!g_monitors[i].isCenter && g_monitors[i].sprite)
+                            g_monitors[i].sprite->Play("LasersActivated");
+
+                    g_monitorsActivated     = true;
+                    g_lasersActivatedPlayed = true;
+                    g_activeLaserIdx        = -1;
+                    g_laserIntervalTimer    = 0.f;
+                    BuildLaserQueue();
+                }
+            }
+        }
+
+        // ── left UsePC naturally (timed out) ─────────────────────
+        if (wasInUsePC && !nowInUsePC && g_monitorsActivated)
+        {
+            g_bossAtMonitor = false;
+            e.pos.x = 0.f;
+            e.pos.y = -325.f + e.height * 0.5f;
+            e.vel   = { 0.f, 0.f };
+            TurnMonitorsOff();
+            g_teleportState = BossTeleportState::none;
+        }
+
+        // ── keep boss pinned at monitor while UsePC is active ─────
+        if (g_bossAtMonitor && nowInUsePC)
+        {
+            e.pos.x = g_bossPlatformX;
+            e.pos.y = 120.0f + e.height * 0.5f;
+            e.vel   = { 0.f, 0.f };
+        }
+
+        // ── tick monitor sprites ──────────────────────────────────
+        for (int i = 0; i < MONITOR_COUNT; ++i)
+            if (g_monitors[i].sprite) g_monitors[i].sprite->Update(dt);
+
+        // ── monitor laser logic (only while monitors are active) ──
+        if (g_monitorsActivated)
+        {
+            // transition LasersActivated -> LasersIdle when the one-shot finishes
+            for (int i = 0; i < MONITOR_COUNT; ++i)
+            {
+                Monitor& m = g_monitors[i];
+                if (!m.sprite || m.isCenter) continue;
+                if (m.sprite->GetCurrentClip() == "LasersActivated" && !m.sprite->IsPlaying())
+                    m.sprite->Play("LasersIdle");
+            }
+
+            g_laserIntervalTimer += dt;
+
+            // tick the currently active laser monitor's state machine
+            if (g_activeLaserIdx >= 0)
+            {
+                Monitor& active = g_monitors[g_activeLaserIdx];
+                active.laserTimer += dt;
+
+                switch (active.laserState)
+                {
+                case MonitorLaserState::Tracking:
+                    // track player X live
+                    active.laserTrackedX = player.pos.x;
+                    active.laserTrackedY = player.pos.y;
+                    if (active.laserTimer >= g_laserTrackTime)
+                    {
+                        active.laserState = MonitorLaserState::LockedOn;
+                        active.laserTimer = 0.f;
+                    }
+                    break;
+
+                case MonitorLaserState::LockedOn:
+                    // X is locked; flash telegraph
+                    if (active.laserTimer >= g_laserLockonTime)
+                    {
+                        active.laserState = MonitorLaserState::Firing;
+                        active.laserTimer = 0.f;
+                    }
+                    break;
+
+                case MonitorLaserState::Firing:
+                {
+                    float monBottomY   = active.y;
+                    active.laserLength = monBottomY - (-325.f);
+
+                    // check distance from player to the beam line segment (monitor center to floor at locked X)
+                    // beam goes from (active.x, active.y) to (active.laserTrackedX, -325.f)
+                    float beamDx  = active.laserTrackedX - active.x;
+                    float beamDy  = active.laserTrackedY - active.y;
+                    float beamLen2 = beamDx * beamDx + beamDy * beamDy;
+                    float beamHalfW = g_laserWidth * 0.5f;
+
+                    bool inBeam = false;
+                    if (beamLen2 > 0.001f)
+                    {
+                        // project player position onto beam direction
+                        float px = player.pos.x - active.x;
+                        float py = player.pos.y - active.y;
+                        float t  = (px * beamDx + py * beamDy) / beamLen2;
+                        t = (t < 0.f) ? 0.f : (t > 1.f) ? 1.f : t;  // clamp to segment
+                        float closestX = active.x + t * beamDx;
+                        float closestY = active.y + t * beamDy;
+                        float distX    = player.pos.x - closestX;
+                        float distY    = player.pos.y - closestY;
+                        float dist2    = distX * distX + distY * distY;
+                        inBeam = (dist2 <= beamHalfW * beamHalfW);
+                    }
+                    if (inBeam)
+                    {
+                        player.vel.x = (player.pos.x < active.laserTrackedX ? -1.f : 1.f) * g_laserKnockback;
+                        player.vel.y = g_laserKnockback * 0.5f;
+                        Player_ApplyDamage(player, g_laserDamage);
+                    }
+
+                    if (active.laserTimer >= g_laserFireTime)
+                    {
+                        active.laserLength = 0.f;
+                        active.laserState  = MonitorLaserState::Idle;
+                        active.laserTimer  = 0.f;
+                        g_activeLaserIdx   = -1;
+                        g_laserIntervalTimer = 0.f;
+                    }
+                    break;
+                }
+
+                default: break;
+                }
+            }
+
+            // pick the next monitor to fire once the interval elapses
+            if (g_activeLaserIdx == -1 && g_laserIntervalTimer >= g_laserFireInterval)
+            {
+                // don't start firing until LasersActivated has finished on all monitors
+                bool allReady = true;
+                for (int i = 0; i < MONITOR_COUNT; ++i)
+                    if (!g_monitors[i].isCenter && g_monitors[i].sprite &&
+                        g_monitors[i].sprite->GetCurrentClip() == "LasersActivated" &&
+                        g_monitors[i].sprite->IsPlaying())
+                        allReady = false;
+
+                if (allReady)
+                {
+                    // skip center monitor — it stays on hacking anim
+                    int nextIdx = PopLaserQueue();
+                    if (g_monitors[nextIdx].isCenter)
+                        nextIdx = PopLaserQueue();
+                    g_activeLaserIdx = nextIdx;
+                    g_monitors[g_activeLaserIdx].laserState = MonitorLaserState::Tracking;
+                    g_monitors[g_activeLaserIdx].laserTimer = 0.f;
+                    g_laserIntervalTimer = 0.f;
+                }
+            }
+        }
+
+        // ── original entity laser system ──────────────────────────
+        // suppress during UsePC — monitors handle it instead
+        bool lasersOn = BossAI_LasersActive(g_bossAI) && !nowInUsePC;
         std::cout << "[LASER] lasersOn=" << lasersOn 
             << " attackState=" << (int)g_bossAI.attackState 
             << " lasersEnabled=" << g_bossAI.lasersEnabled
@@ -562,10 +982,97 @@ void BossRoom::Update(float dt)
 void BossRoom::Draw()
 {
     auto& enemies = ObjectManager::Get().GetAllEnemies();
+
+    // draw all 9 monitors
+    for (int i = 0; i < MONITOR_COUNT; ++i)
+    {
+        const Monitor& m = g_monitors[i];
+        if (!m.sprite) continue;
+
+        MeshManager::Get().DrawSpriteSheet(
+            *m.sprite,
+            m.x, m.y,
+            m.width, m.height,
+            1.f, 0.f);
+
+        // draw laser beam / telegraph when this monitor is active
+        if (m.laserState == MonitorLaserState::Tracking ||
+            m.laserState == MonitorLaserState::LockedOn ||
+            m.laserState == MonitorLaserState::Firing)
+        {
+            float monBottomY = m.y;
+            float beamLen = (m.laserState == MonitorLaserState::Firing)
+                ? m.laserLength
+                : (monBottomY - (-325.f));
+            float beamW = (m.laserState == MonitorLaserState::Firing) ? g_laserWidth : 3.f;
+            float opacity = (m.laserState == MonitorLaserState::LockedOn) ? 0.7f : 1.f;
+            int   gg = (m.laserState == MonitorLaserState::Firing) ? 50 : 200;
+
+            float targetX = m.laserTrackedX;  // live during tracking, frozen during lockedon/firing
+            float targetY = m.laserTrackedY;
+
+            float lineW;
+            float tileLen;
+            int tintR, tintG, tintB;
+
+            if (m.laserState == MonitorLaserState::Tracking)
+            {
+                lineW = 2.f;
+                tileLen = 40.f;
+            }
+            else if (m.laserState == MonitorLaserState::LockedOn)
+            {
+                lineW = 5.f;
+                tileLen = 40.f;
+            }
+            else  // firing
+            {
+                lineW = g_laserWidth;
+                tileLen = 40.f;
+            }
+            tintR = 255; tintG = 255; tintB = 255;
+
+            if (g_laserTexture)
+            {
+                MeshManager::Get().DrawTexturedLine(
+                    g_laserTexture,
+                    m.x, monBottomY,
+                    targetX, targetY,
+                    lineW,
+                    tileLen,
+                    opacity,
+                    tintR, tintG, tintB);
+            }
+            else
+            {
+                // fallback to solid color if texture not loaded
+                MeshManager::Get().DrawLine(
+                    m.x, monBottomY,
+                    targetX, targetY,
+                    lineW,
+                    tintR, tintG, tintB,
+                    opacity);
+            }
+        }
+    }
+
+    // draw original entity-based boss lasers (UseWatch state)
     for (const auto& e : enemies)
         if (e.type == EnemyType::Boss)
             BossLasers_Draw(e);
 }
 
-void BossRoom::Free() {}
+void BossRoom::Free()
+{
+    // clean up monitor spritesheets
+    for (int i = 0; i < MONITOR_COUNT; ++i)
+    {
+        delete g_monitors[i].sprite;
+        g_monitors[i].sprite = nullptr;
+    }
+    g_monClipDefs.clear();
+    g_monitorTexturePath.clear();
+    g_laserTexture = nullptr;
+}
+
 void BossRoom::Unload() {}
