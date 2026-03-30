@@ -1422,10 +1422,10 @@
         "buttons": [
             { "x": -600.0, "y": 4990.0, "width": 40.0, "height": 40.0, "platformIndices": [10, 11, 12, 13, 14, 15, 16, 17, 18] },
             { "x":  300.0, "y": 6040.0, "width": 40.0, "height": 40.0, "wallIndices": [0], "prompt": "Press E to toggle wall" },
-            { "x":  700.0, "y": 8590.0, "width": 40.0, "height": 40.0, "platformIndices": [54, 55, 56, 58] },
-            { "x": -350.0, "y": 9040.0, "width": 40.0, "height": 40.0, "platformIndices": [63] },
-            { "x":   -5.0, "y": 8590.0, "width": 40.0, "height": 40.0, "platformIndices": [64] },
-            { "x":  -60.0, "y": 8140.0, "width": 40.0, "height": 40.0, "platformIndices": [67] }
+            { "x":  700.0, "y": 8590.0, "width": 40.0, "height": 40.0, "platformIndices": [48, 49, 50, 52] },
+            { "x": -350.0, "y": 9040.0, "width": 40.0, "height": 40.0, "platformIndices": [57] },
+            { "x":   -5.0, "y": 8590.0, "width": 40.0, "height": 40.0, "platformIndices": [58] },
+            { "x":  -60.0, "y": 8140.0, "width": 40.0, "height": 40.0, "platformIndices": [61] }
         ],
         "obstacles" : [
             { "x": -200.0, "y": 4840.0, "width": 50.0, "height": 40.0, "rotation" : 0.0, "alwaysStatic":  true },
