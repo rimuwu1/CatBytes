@@ -1052,7 +1052,7 @@
          {
         "type": "hard",
         "x": 0.0,
-        "platform_y": 6300.0,
+        "platform_y": 6600.0,
         "width": 90.0,
         "height": 100.0,
         "hp": 20.0,
@@ -1078,7 +1078,7 @@
         {
         "type": "easy",
         "x": -340.0,
-        "platform_y": 6300.0,
+        "platform_y": 6600.0,
         "width": 40.0,
         "height": 40.0,
         "hp": 20.0,
@@ -1118,7 +1118,7 @@
         {
           "type": "easy",
           "x": 340.0,
-          "platform_y": 6300.0,
+          "platform_y": 6600.0,
           "width": 40.0,
           "height": 40.0,
           "hp": 20.0,
@@ -1373,6 +1373,9 @@
             { "x": -730.0, "y": 6000.0, "width":  50.0, "height": 40.0, "active":  false },
             { "x": -450.0, "y": 6000.0, "width":  50.0, "height": 40.0, "active":  false },
             { "x": -600.0, "y": 6150.0, "width": 100.0, "height": 40.0, "active":  false },
+            { "x": -730.0, "y": 6300.0, "width":  50.0, "height": 40.0, "active":  false },
+            { "x": -450.0, "y": 6300.0, "width":  50.0, "height": 40.0, "active":  false },
+            { "x": -600.0, "y": 6450.0, "width": 150.0, "height": 40.0, "active":  true },
             { "x":  135.0, "y": 5700.0, "width":  70.0, "height": 40.0, "active":  true },
             { "x":  470.0, "y": 5700.0, "width": 550.0, "height": 40.0, "active":  true },
             { "x":  135.0, "y": 6000.0, "width":  70.0, "height": 40.0, "active":  true },
@@ -1381,16 +1384,7 @@
             { "x":  705.0, "y": 6000.0, "width":  50.0, "height": 40.0, "active":  true },
             { "x":  690.0, "y": 6150.0, "width":  50.0, "height": 40.0, "active":  true },
             { "x":  705.0, "y": 6300.0, "width":  50.0, "height": 40.0, "active":  true },
-            { "x":    0.0, "y": 6300.0, "width": 800.0, "height": 40.0, "active":  true },
-            { "x": -375.0, "y": 6450.0, "width": 100.0, "height": 40.0, "active":  true },
-            { "x":  375.0, "y": 6450.0, "width": 100.0, "height": 40.0, "active":  true },
-            { "x": -275.0, "y": 6600.0, "width":  75.0, "height": 40.0, "active":  true },
-            { "x":  275.0, "y": 6600.0, "width":  75.0, "height": 40.0, "active":  true },
-            { "x": -175.0, "y": 6750.0, "width":  50.0, "height": 40.0, "active":  true },
-            { "x":  175.0, "y": 6750.0, "width":  50.0, "height": 40.0, "active":  true },
-            { "x":  -95.0, "y": 6900.0, "width":  25.0, "height": 40.0, "active":  true },
-            { "x":   95.0, "y": 6900.0, "width":  25.0, "height": 40.0, "active":  true },
-            { "x":    0.0, "y": 7050.0, "width": 200.0, "height": 40.0, "active":  true },
+            { "x":    0.0, "y": 6600.0, "width": 700.0, "height": 40.0, "active":  true },
             { "x":  500.0, "y": 6600.0, "width": 150.0, "height": 40.0, "active":  true },
             { "x":  690.0, "y": 6750.0, "width": 140.0, "height": 40.0, "active":  true },
             { "x":  550.0, "y": 6900.0, "width": 130.0, "height": 40.0, "active":  true },
@@ -1426,7 +1420,7 @@
             { "x":   25.0, "y": 8100.0, "width": 100.0, "height": 40.0, "active":  true }
         ],
         "buttons": [
-            { "x": -600.0, "y": 4990.0, "width": 40.0, "height": 40.0, "platformIndices": [10, 11, 12, 13, 14, 15, 16] },
+            { "x": -600.0, "y": 4990.0, "width": 40.0, "height": 40.0, "platformIndices": [10, 11, 12, 13, 14, 15, 16, 17, 18] },
             { "x":  300.0, "y": 6040.0, "width": 40.0, "height": 40.0, "wallIndices": [0], "prompt": "Press E to toggle wall" },
             { "x":  700.0, "y": 8590.0, "width": 40.0, "height": 40.0, "platformIndices": [54, 55, 56, 58] },
             { "x": -350.0, "y": 9040.0, "width": 40.0, "height": 40.0, "platformIndices": [63] },
@@ -1434,15 +1428,15 @@
             { "x":  -60.0, "y": 8140.0, "width": 40.0, "height": 40.0, "platformIndices": [67] }
         ],
         "obstacles" : [
-            { "x": -200.0, "y": 4840.0, "width": 50.0, "height": 40.0, "rotation" : 0.0},
-            { "x": -150.0, "y": 4840.0, "width": 50.0, "height": 40.0, "rotation" : 0.0},
-            { "x": -100.0, "y": 4840.0, "width": 50.0, "height": 40.0, "rotation" : 0.0},
-            { "x":  -50.0, "y": 4840.0, "width": 50.0, "height": 40.0, "rotation" : 0.0},
-            { "x":    0.0, "y": 4840.0, "width": 50.0, "height": 40.0, "rotation" : 0.0},
-            { "x":   50.0, "y": 4840.0, "width": 50.0, "height": 40.0, "rotation" : 0.0},
-            { "x":  100.0, "y": 4840.0, "width": 50.0, "height": 40.0, "rotation" : 0.0},
-            { "x":  150.0, "y": 4840.0, "width": 50.0, "height": 40.0, "rotation" : 0.0},
-            { "x":  200.0, "y": 4840.0, "width": 50.0, "height": 40.0, "rotation" : 0.0},
+            { "x": -200.0, "y": 4840.0, "width": 50.0, "height": 40.0, "rotation" : 0.0, "alwaysStatic":  true },
+            { "x": -150.0, "y": 4840.0, "width": 50.0, "height": 40.0, "rotation" : 0.0, "alwaysStatic":  true },
+            { "x": -100.0, "y": 4840.0, "width": 50.0, "height": 40.0, "rotation" : 0.0, "alwaysStatic":  true },
+            { "x":  -50.0, "y": 4840.0, "width": 50.0, "height": 40.0, "rotation" : 0.0, "alwaysStatic":  true },
+            { "x":    0.0, "y": 4840.0, "width": 50.0, "height": 40.0, "rotation" : 0.0, "alwaysStatic":  true },
+            { "x":   50.0, "y": 4840.0, "width": 50.0, "height": 40.0, "rotation" : 0.0, "alwaysStatic":  true },
+            { "x":  100.0, "y": 4840.0, "width": 50.0, "height": 40.0, "rotation" : 0.0, "alwaysStatic":  true },
+            { "x":  150.0, "y": 4840.0, "width": 50.0, "height": 40.0, "rotation" : 0.0, "alwaysStatic":  true },
+            { "x":  200.0, "y": 4840.0, "width": 50.0, "height": 40.0, "rotation" : 0.0, "alwaysStatic":  true },
             { "x":  350.0, "y": 7990.0, "width": 50.0, "height": 40.0, "rotation":  0.0},
             { "x":  400.0, "y": 7990.0, "width": 50.0, "height": 40.0, "rotation":  0.0},
             { "x":  450.0, "y": 7990.0, "width": 50.0, "height": 40.0, "rotation":  0.0},
@@ -1484,10 +1478,12 @@
             "trigger_radius": 150.0
         },
         "computers": [
-            { "x":    0.0, "y": 7115.0, "width": 100.0, "height": 100.0, "direction": "horizontal", "beamX1": -550.0, "beamY1": 6350.0, "beamX2":  550.0, 
-              "beamY2": 6350.0, "beamStartX": -500.0, "beamStartY": 6350.0, "beamEndX":  500.0, "beamEndY": 6350.0, "beamWidth":  10.0, "indWidth": 120.0, "indHeight": 120.0 },
-            { "x":  700.0, "y": 9665.0, "width": 100.0, "height": 100.0, "direction": "vertical", "beamX1": 700.0, "beamY1": 9540.0, "beamX2":  700.0, 
-              "beamY2": 9540.0, "beamStartX": 700.0, "beamStartY": 9490.0, "beamEndX":  700.0, "beamEndY": 7650.0, "beamWidth":  5.0, "indWidth": 150.0, "indHeight": 150.0 }
+            { "x": -600.0, "y": 6515.0, "width": 100.0, "height": 100.0, "direction": "horizontal", "beamX1": -375.0, "beamY1": 6640.0, "beamX2":  375.0, 
+              "beamY2": 6640.0, "beamStartX": -325.0, "beamStartY": 6650.0, "beamEndX":  325.0, "beamEndY": 6650.0, "beamWidth":  10.0, "indWidth": 120.0, "indHeight": 120.0 },
+            { "x": 275.0, "y": 5765.0, "width": 100.0, "height": 100.0, "direction": "vertical", "beamX1": 700.0, "beamY1": 9540.0, "beamX2":  700.0, 
+              "beamY2": 9540.0, "beamStartX": 700.0, "beamStartY": 9490.0, "beamEndX":  700.0, "beamEndY": 7650.0, "beamWidth":  5.0, "indWidth": 150.0, "indHeight": 150.0 },
+            { "x": 700.0, "y": 9665.0, "width": 100.0, "height": 100.0, "toggle_type": "boss_door", "direction": "horizontal", "beamX1": 0.0, "beamY1": 0.0, "beamX2": 0.0, 
+              "beamY2": 0.0, "beamStartX": 0.0, "beamStartY": 0.0, "beamEndX": 0.0, "beamEndY": 0.0, "beamWidth":  0.0, "indWidth": 0.0, "indHeight": 0.0 }
         ]
     },
     "boss_level": {

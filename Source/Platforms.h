@@ -47,6 +47,7 @@ struct PlatformObstacle {
 	std::unique_ptr<SpriteSheet> sprite;
 	mutable bool spriteInitialized = false;
 	mutable bool prevActive = true;
+	bool alwaysStatic = false;
 };
 
 struct PlatformLaser {
@@ -63,6 +64,7 @@ struct Checkpoint {
 };
 
 enum class BeamDirection { Horizontal, Vertical };
+enum class ComputerToggle { Beam, BossDoor };
 
 struct PlatformComputer {
 	float x, y, w, h;
@@ -88,6 +90,8 @@ struct PlatformComputer {
 	mutable float delayBeamActivate = 0.0f;
 	mutable bool beamKilled = false;
 	mutable float beamDuration = 0.0f;
+
+	ComputerToggle compType = ComputerToggle::Beam;
 
 	std::unique_ptr<SpriteSheet> computerSprite;
 	std::unique_ptr<SpriteSheet> indicatorLeft;

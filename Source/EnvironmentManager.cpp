@@ -494,6 +494,7 @@ void EnvironmentManager::LoadFromConfig(const rapidjson::Document& doc)
             obs.h = o["height"].GetFloat();
             obs.r = o.HasMember("rotation") ? o["rotation"].GetFloat() : 0.0f;
             obs.isSpike = o.HasMember("is_spike") ? o["is_spike"].GetBool() : true;
+            obs.alwaysStatic = o.HasMember("alwaysStatic") ? o["alwaysStatic"].GetBool() : false;
             
              // If this is a spike obstacle, instantiate per-obstacle SpriteSheet
              if (obs.isSpike) {
@@ -550,6 +551,17 @@ void EnvironmentManager::LoadFromConfig(const rapidjson::Document& doc)
             comp.y = c["y"].GetFloat();
             comp.w = c["width"].GetFloat();
             comp.h = c["height"].GetFloat();
+            comp.compType = ComputerToggle::Beam;
+
+            if (c.HasMember("toggle_type"))
+            {
+                std::string toggleType = c["toggle_type"].GetString();
+
+                if (toggleType == "boss_door")
+                {
+                    comp.compType = ComputerToggle::BossDoor;
+                }
+            }
 
             comp.computerSprite = std::make_unique<SpriteSheet>(
                 m_computerFilePath.c_str(),
@@ -916,6 +928,7 @@ void EnvironmentManager::Update(float dt, Player& player, float cameraY)
              for (auto& o : obstacles)
              {
                  if (!o.isSpike) continue;
+                 if (o.alwaysStatic) continue;
                  o.timer += dt;
                  if (o.timer >= o.spikeInterval)
                  {

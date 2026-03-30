@@ -285,20 +285,29 @@ namespace CollisionManager
 
             if (overlapX && overlapY && AEInputCheckTriggered('E'))
             {
-                if (!comp.beamActive && !comp.pendingActivate)
+                switch (comp.compType)
                 {
-                    comp.pendingActivate = true;
-                    comp.preActivateDelay = 0.0f;
-                    comp.indicatorsVisible = false;
-                    comp.beamVisible = false;
-                }
-                else if (comp.beamActive)
-                {
+                    case ComputerToggle::Beam:
+                        if (!comp.beamActive && !comp.pendingActivate)
+                        {
+                            comp.pendingActivate = true;
+                            comp.preActivateDelay = 0.0f;
+                            comp.indicatorsVisible = false;
+                            comp.beamVisible = false;
+                        }
+                        else if (comp.beamActive)
+                        {
 
-                    comp.beamActive = false;
-                    comp.beamVisible = false;
-                    comp.indicatorsVisible = false;
+                            comp.beamActive = false;
+                            comp.beamVisible = false;
+                            comp.indicatorsVisible = false;
 
+                        }
+                        break;
+                    /*
+                    case ComputerToggle::BossDoor:
+                        add in player-bossdoor collision code here
+                    */
                 }
 
                 // Find first laser's Y position for camera target
@@ -400,6 +409,7 @@ namespace CollisionManager
 
     bool HandleObstaclesSpatial(Player& player, const SpatialGrid& grid)
     {
+        bool hitObs = false;
         std::vector<const PlatformObstacle*> nearby;
         grid.GetNearbyObstacles(player.pos.y, player.height, nearby);
 
@@ -420,10 +430,28 @@ namespace CollisionManager
 
             if (overlapX && overlapY)
             {
-                return true;
+                hitObs = true;
+                
+                // knockback from static obstacles
+                if (obs->alwaysStatic) {
+
+                    float pushRight = obsRight - playerLeft;
+                    float pushLeft = playerRight - obsLeft;
+
+                    if (pushRight < pushLeft)
+                    {
+                        player.pos.x += pushRight;
+                   }
+                    else
+                    {
+                        player.pos.x -= pushLeft;
+                    }
+                }
+                // apply damage
+                hitObs = true;
             }
         }
-        return false;
+        return hitObs;
     }
 
     void HandleCheckpointsSpatial(Player& player, const SpatialGrid& grid, bool& checkpointHit, bool& checkpointInRange)
