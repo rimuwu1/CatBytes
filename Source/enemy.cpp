@@ -11,7 +11,7 @@
         s.huimin@digipen.edu
 \date Junuary, 24, 2026
 \brief Implements a simple patrolling(?) enemy.
-The enemy moves automatically left and right between patrol bounds 
+The enemy moves automatically left and right between patrol bounds
 
 Copyright (C) 2026 DigiPen Institute of Technology.
 Reproduction or disclosure of this file or its contents
@@ -40,11 +40,18 @@ Technology is prohibited.
 
 static AEAudio s_EasyEnemyAttackSound{};
 static AEAudio s_HardEnemyAttackSound{};
-//static AEAudio s_BossAttackSound{};
+static AEAudio s_EnemyDeath{};
+static AEAudio s_HardEnemyDeath{};
+static bool s_WalkPlaying = false;
+static bool s_HardWalkPlaying = false;
+static AEAudio s_EasyDamage{};
+static AEAudio s_HardDamage{};
+static AEAudio s_BossDamage{};
+static AEAudio s_BossAttackSound{};
 
 static bool Enemy_IsInCamera(const Enemy& enemy)
 {
-    const float halfScreenW = 1600.0f * 0.5f; 
+    const float halfScreenW = 1600.0f * 0.5f;
     const float halfScreenH = 900.0f * 0.5f;
 
     const float camLeft = globalCam.x - halfScreenW;
@@ -87,6 +94,8 @@ static void Enemy_SetState(Enemy& enemy, EnemyState newState)
     case EnemyState::Attack:
         enemy.vel.x = 0.0f;
 
+        enemy.hasAppliedAttackDamage = false;
+
         if (enemy.spriteSheet && enemy.spriteSheet->GetCurrentClip() != "attack")
             enemy.spriteSheet->Play("attack", true);
 
@@ -94,21 +103,7 @@ static void Enemy_SetState(Enemy& enemy, EnemyState newState)
             enemy.stateTimer = enemy.spriteSheet->GetClipTotalDuration("attack");
         else
             enemy.stateTimer = 0.3f;
-
-        if (enemy.type == EnemyType::Easy)
-        {
-            ObjectManager::Get().SpawnEnemyBullet(
-                enemy,
-                enemy.bulletSpeed,
-                enemy.bulletDamage,
-                enemy.bulletRange
-            );
-
-            if (Enemy_IsInCamera(enemy))
-                AudioManager::Get().PlayAudio(s_EasyEnemyAttackSound, false);
-
-            enemy.shootTimer = enemy.shootCooldown;
-        }
+        break;
     }
 }
 
@@ -147,7 +142,7 @@ static void Enemy_SetState(Enemy& enemy, EnemyState newState)
 
 static float Enemy_GetSpawnYFromPlatform(float platformCenterY, float platformHeight, float enemyHeight)
 {
-    constexpr float ENEMY_VISUAL_Y_OFFSET = 1.0f; 
+    constexpr float ENEMY_VISUAL_Y_OFFSET = 1.0f;
     return platformCenterY + (platformHeight * 0.5f) + (enemyHeight * 0.5f) + ENEMY_VISUAL_Y_OFFSET;
 }
 
@@ -159,6 +154,8 @@ void Enemy_Init(Enemy& enemy, const rapidjson::Value& config) {
     enemy.facesLeft = true;
 
     s_EasyEnemyAttackSound = AudioManager::Get().GetAudio("easy_enemy_attack");
+    s_EnemyDeath = AudioManager::Get().GetAudio("enemy_death_easy");
+    s_EasyDamage = AudioManager::Get().GetAudio("damage_easy");
 
     if (config.HasMember("x") && config["x"].IsFloat())
         enemy.pos.x = config["x"].GetFloat();
@@ -287,6 +284,14 @@ void Enemy_Init(Enemy& enemy, const rapidjson::Value& config) {
     else
         enemy.patrolMaxX = enemy.pos.x + 100.0f;
 
+    //hit cooldown
+    if (config.HasMember("hit_cooldown") && config["hit_cooldown"].IsFloat())
+        enemy.hitCooldown = config["hit_cooldown"].GetFloat();
+    else
+        enemy.hitCooldown = 0.2f;
+
+    enemy.hitCooldownTimer = 0.0f;
+
     //SpriteSheet Loading
     if (config.HasMember("animations"))
     {
@@ -355,6 +360,8 @@ void Enemy_Init(Enemy& enemy, const rapidjson::Value& config) {
 void HardEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
 
     s_HardEnemyAttackSound = AudioManager::Get().GetAudio("hard_enemy_attack");
+    s_HardEnemyDeath = AudioManager::Get().GetAudio("enemy_death_hard");
+    s_HardDamage = AudioManager::Get().GetAudio("damage_hard");
 
     if (config.HasMember("x") && config["x"].IsFloat())
         enemy.pos.x = config["x"].GetFloat();
@@ -422,6 +429,30 @@ void HardEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
         printf("Warning: HardEnemy missing 'damage', defaulting to 3\n");
     }
 
+    // hard enemy melee cooldown/hit timing
+    if (config.HasMember("melee_cooldown") && config["melee_cooldown"].IsFloat())
+        enemy.meleeCooldown = config["melee_cooldown"].GetFloat();
+    else
+        enemy.meleeCooldown = 1.0f;
+
+    enemy.meleeCooldownTimer = 0.0f;
+    enemy.hasAppliedAttackDamage = false;
+
+    if (config.HasMember("attack_hit_time") && config["attack_hit_time"].IsFloat())
+        enemy.attackHitTime = config["attack_hit_time"].GetFloat();
+    else
+        enemy.attackHitTime = 0.2f;
+
+    if (config.HasMember("attack_range_x") && config["attack_range_x"].IsFloat())
+        enemy.attackRangeX = config["attack_range_x"].GetFloat();
+    else
+        enemy.attackRangeX = enemy.width * 0.75f + 40.0f;
+
+    if (config.HasMember("attack_range_y") && config["attack_range_y"].IsFloat())
+        enemy.attackRangeY = config["attack_range_y"].GetFloat();
+    else
+        enemy.attackRangeY = enemy.height;
+
     enemy.shootCooldown = 0.0f; // no shooting
     enemy.vel = { 0.0f, 0.0f };
 
@@ -469,6 +500,14 @@ void HardEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
     enemy.knockbackVel = { 0.0f, 0.0f };
     enemy.knockbackTimer = 0.0f;
 
+    //hit cooldown
+    if (config.HasMember("hit_cooldown") && config["hit_cooldown"].IsFloat())
+        enemy.hitCooldown = config["hit_cooldown"].GetFloat();
+    else
+        enemy.hitCooldown = 0.2f;
+
+    enemy.hitCooldownTimer = 0.0f;
+
     //SpriteSheet Loading
     if (config.HasMember("animations"))
     {
@@ -509,6 +548,8 @@ void BossEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
 
     enemy.facesLeft = false;
 
+    s_BossDamage = AudioManager::Get().GetAudio("damage_boss");
+    s_BossAttackSound = AudioManager::Get().GetAudio("boss_attack");
     // Position
     if (config.HasMember("x") && config["x"].IsFloat())
         enemy.pos.x = config["x"].GetFloat();
@@ -649,12 +690,12 @@ void BossEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
     enemy.stateTimer = 0.0f;
 
     // Load shared laser timing from config if present
-    if (config.HasMember("laser_cooldown"))      enemy.laserCooldown      = config["laser_cooldown"].GetFloat();
+    if (config.HasMember("laser_cooldown"))      enemy.laserCooldown = config["laser_cooldown"].GetFloat();
     if (config.HasMember("laser_track"))         enemy.laserTrackDuration = config["laser_track"].GetFloat();
-    if (config.HasMember("laser_lockon"))        enemy.laserLockDuration  = config["laser_lockon"].GetFloat();
-    if (config.HasMember("laser_fire"))          enemy.laserFireDuration  = config["laser_fire"].GetFloat();
-    if (config.HasMember("laser_damage"))        enemy.laserDamage        = config["laser_damage"].GetFloat();
-    if (config.HasMember("laser_knockback"))     enemy.laserKnockback     = config["laser_knockback"].GetFloat();
+    if (config.HasMember("laser_lockon"))        enemy.laserLockDuration = config["laser_lockon"].GetFloat();
+    if (config.HasMember("laser_fire"))          enemy.laserFireDuration = config["laser_fire"].GetFloat();
+    if (config.HasMember("laser_damage"))        enemy.laserDamage = config["laser_damage"].GetFloat();
+    if (config.HasMember("laser_knockback"))     enemy.laserKnockback = config["laser_knockback"].GetFloat();
     // Load laser texture
     enemy.laserTex = TextureManager::Get().LoadTexture("Assets/Images/laserObstacle.png");
 
@@ -662,10 +703,10 @@ void BossEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
     if (config.HasMember("boss_lasers") && config["boss_lasers"].IsArray()) {
         for (const auto& l : config["boss_lasers"].GetArray()) {
             BossLaser laser;
-            laser.origin.x   = l.HasMember("x") ? l["x"].GetFloat() : 0.0f;
-            laser.origin.y   = l.HasMember("y") ? l["y"].GetFloat() : 0.0f;
-            laser.width      = l.HasMember("width") ? l["width"].GetFloat() : 16.0f;
-            laser.state      = BossLaserState::Inactive;
+            laser.origin.x = l.HasMember("x") ? l["x"].GetFloat() : 0.0f;
+            laser.origin.y = l.HasMember("y") ? l["y"].GetFloat() : 0.0f;
+            laser.width = l.HasMember("width") ? l["width"].GetFloat() : 16.0f;
+            laser.state = BossLaserState::Inactive;
             laser.cooldownTimer = enemy.laserCooldown;
 
             // Stagger lasers so they don't all fire at once:
@@ -687,6 +728,13 @@ void Enemy_Update(Enemy& enemy, float dt) {
 
     enemy.justDied = false;
 
+    if (enemy.hitCooldownTimer > 0.0f)
+    {
+        enemy.hitCooldownTimer -= dt;
+        if (enemy.hitCooldownTimer < 0.0f)
+            enemy.hitCooldownTimer = 0.0f;
+    }
+
     PhysicsManager& physics = PhysicsManager::Get();
 
     // Apply gravity
@@ -702,6 +750,19 @@ void Enemy_Update(Enemy& enemy, float dt) {
     // keep dead animation running until it finishes, then stop drawing
     if (!enemy.isAlive)
     {
+        if (currentClip == "dead" && enemy.hitStunTimer > 0.0f)
+        {
+            if (!enemy.justDied) return;
+            if (enemy.justDied)
+            {
+                if (enemy.type == EnemyType::Easy)
+                    AudioManager::Get().PlayAudio(s_EnemyDeath, false);
+                else if (enemy.type == EnemyType::Hard)
+                    AudioManager::Get().PlayAudio(s_HardEnemyDeath, false);
+
+                enemy.justDied = false;
+            }
+        }
         if (currentClip == "dead")
         {
             enemy.hitStunTimer -= dt;
@@ -811,6 +872,20 @@ void Enemy_Update(Enemy& enemy, float dt) {
             if (enemy.shootTimer <= 0.0f)
             {
                 Enemy_SetState(enemy, EnemyState::Attack);
+                if (enemy.type == EnemyType::Easy)
+                {
+                    ObjectManager::Get().SpawnEnemyBullet(
+                        enemy,
+                        enemy.bulletSpeed,
+                        enemy.bulletDamage,
+                        enemy.bulletRange
+                    );
+
+                    if (Enemy_IsInCamera(enemy))
+                        AudioManager::Get().PlayAudio(s_EasyEnemyAttackSound, false);
+
+                    enemy.shootTimer = enemy.shootCooldown;
+                }
             }
         }
     }
@@ -910,13 +985,26 @@ void Enemy_Update(Enemy& enemy, float dt) {
     {
         enemy.isGrounded = false;
     }
-
     enemy.spriteSheet->Update(dt);
 }
 
 void HardEnemy_Update(Enemy& enemy, float dt) {
     enemy.justDied = false;
-    
+
+    if (enemy.hitCooldownTimer > 0.0f)
+    {
+        enemy.hitCooldownTimer -= dt;
+        if (enemy.hitCooldownTimer < 0.0f)
+            enemy.hitCooldownTimer = 0.0f;
+    }
+
+    if (enemy.meleeCooldownTimer > 0.0f)
+    {
+        enemy.meleeCooldownTimer -= dt;
+        if (enemy.meleeCooldownTimer < 0.0f)
+            enemy.meleeCooldownTimer = 0.0f;
+    }
+
     PhysicsManager& physics = PhysicsManager::Get();
 
     physics.ApplyGravity(enemy.vel.y, enemy.isGrounded, dt);
@@ -962,6 +1050,7 @@ void HardEnemy_Update(Enemy& enemy, float dt) {
             enemy.hitStunTimer -= dt;
             enemy.vel.x = 0.0f;
         }
+
 
         // Integrate Y normally
         enemy.pos.y += enemy.vel.y * dt;
@@ -1079,8 +1168,45 @@ void HardEnemy_Update(Enemy& enemy, float dt) {
     }
 
     case EnemyState::Attack:
+    {
         enemy.stateTimer -= dt;
         enemy.vel.x = 0.0f;
+
+        float attackDuration = enemy.spriteSheet
+            ? enemy.spriteSheet->GetClipTotalDuration("attack")
+            : 0.3f;
+
+        float elapsed = attackDuration - enemy.stateTimer;
+
+        if (!enemy.hasAppliedAttackDamage && elapsed >= enemy.attackHitTime)
+        {
+            Player& player = ObjectManager::Get().GetPlayer();
+
+            const float dx = player.pos.x - enemy.pos.x;
+            const float dy = fabsf(player.pos.y - enemy.pos.y);
+
+            const bool inFront =
+                (enemy.direction > 0 && dx >= 0.0f) ||
+                (enemy.direction < 0 && dx <= 0.0f);
+
+            const bool inRangeX = fabsf(dx) <= enemy.attackRangeX;
+            const bool inRangeY = dy <= enemy.attackRangeY;
+
+            if (inFront && inRangeX && inRangeY &&
+                !player.isHurt && !player.shieldActive && !player.isDashing)
+            {
+                Player_ApplyDamage(player, enemy.damage);
+
+                float knockDir = (player.pos.x >= enemy.pos.x) ? 1.0f : -1.0f;
+                player.vel.x = knockDir * 500.0f;
+                player.knockbackTimer = player.hurtTimer > 0.0f ? player.hurtTimer : 0.6f;
+                Camera_AddTrauma(0.5f);
+            }
+            enemy.hasAppliedAttackDamage = true;
+            enemy.meleeCooldownTimer = enemy.meleeCooldown;
+        }
+
+
 
         if (enemy.stateTimer <= 0.0f)
         {
@@ -1090,6 +1216,7 @@ void HardEnemy_Update(Enemy& enemy, float dt) {
                 Enemy_SetState(enemy, EnemyState::Patrol);
         }
         break;
+    }
     }
 
     if (enemy.knockbackTimer <= 0.0f && enemy.state != EnemyState::Patrol)
@@ -1147,10 +1274,10 @@ void BossLasers_Update(Enemy& enemy, const Player& player, float dt)
     /*const float dy = player.pos.y - enemy.pos.y;
     for (int i = 0; i < (int)enemy.bossLasers.size(); ++i)
     {
-        std::cout << "[LASER " << i << "] state=" << (int)enemy.bossLasers[i].state 
+        std::cout << "[LASER " << i << "] state=" << (int)enemy.bossLasers[i].state
             << " cooldown=" << enemy.bossLasers[i].cooldownTimer << "\n";
     }
-    if (fabsf(dy) > 300.0f) 
+    if (fabsf(dy) > 300.0f)
     {
         std::cout << "[LASER] BLOCKED by range gate, dy=" << dy << "\n";
         return;
@@ -1164,17 +1291,17 @@ void BossLasers_Update(Enemy& enemy, const Player& player, float dt)
             laser.active = false;
             laser.cooldownTimer -= dt;
             if (laser.cooldownTimer <= 0.0f) {
-                laser.state      = BossLaserState::Tracking;
+                laser.state = BossLaserState::Tracking;
                 laser.stateTimer = enemy.laserTrackDuration;
             }
             break;
 
         case BossLaserState::Tracking:
-            laser.target     = player.pos;   // update every frame
+            laser.target = player.pos;   // update every frame
             laser.stateTimer -= dt;
             if (laser.stateTimer <= 0.0f) {
                 // target is now frozen — do not update it again
-                laser.state      = BossLaserState::LockOn;
+                laser.state = BossLaserState::LockOn;
                 laser.stateTimer = enemy.laserLockDuration;
             }
             break;
@@ -1183,8 +1310,8 @@ void BossLasers_Update(Enemy& enemy, const Player& player, float dt)
             // target stays frozen, just count down
             laser.stateTimer -= dt;
             if (laser.stateTimer <= 0.0f) {
-                laser.active     = true;
-                laser.state      = BossLaserState::Firing;
+                laser.active = true;
+                laser.state = BossLaserState::Firing;
                 laser.stateTimer = enemy.laserFireDuration;
             }
             break;
@@ -1192,9 +1319,9 @@ void BossLasers_Update(Enemy& enemy, const Player& player, float dt)
         case BossLaserState::Firing:
             laser.stateTimer -= dt;
             if (laser.stateTimer <= 0.0f) {
-                laser.active         = false;
-                laser.state          = BossLaserState::Inactive;
-                laser.cooldownTimer  = enemy.laserCooldown;
+                laser.active = false;
+                laser.state = BossLaserState::Inactive;
+                laser.cooldownTimer = enemy.laserCooldown;
             }
             break;
         }
@@ -1212,25 +1339,25 @@ void BossLasers_Draw(const Enemy& enemy)
         case BossLaserState::Tracking:
             // Thin yellow preview line
             mm.DrawLine(laser.origin.x, laser.origin.y,
-                        laser.target.x, laser.target.y,
-                        4.0f, 255, 255, 0, 0.5f);
+                laser.target.x, laser.target.y,
+                4.0f, 255, 255, 0, 0.5f);
             break;
 
         case BossLaserState::LockOn:
             // Thicker red telegraph line
             mm.DrawLine(laser.origin.x, laser.origin.y,
-                        laser.target.x, laser.target.y,
-                        8.0f, 255, 50, 50, 0.85f);
+                laser.target.x, laser.target.y,
+                8.0f, 255, 50, 50, 0.85f);
             break;
 
         case BossLaserState::Firing:
             // Full textured laser beam
             mm.DrawTexturedLine(enemy.laserTex,
-                                laser.origin.x, laser.origin.y,
-                                laser.target.x, laser.target.y,
-                                laser.width,
-                                64.0f,   // tile length in world units
-                                1.0f);
+                laser.origin.x, laser.origin.y,
+                laser.target.x, laser.target.y,
+                laser.width,
+                64.0f,   // tile length in world units
+                1.0f);
             break;
 
         default:
@@ -1380,6 +1507,39 @@ void Enemy_OnHit(Enemy& enemy, float damage, float knockbackDir, Player* attacke
 {
     if (!enemy.isAlive) return;
 
+    bool killingBlow = (enemy.type == EnemyType::Boss && enemy.hitPoints - damage <= 0.0f);
+    if (enemy.isInvincible && !killingBlow)
+    {
+        if (enemy.spriteSheet)
+        {
+            const std::string clip = enemy.spriteSheet->GetCurrentClip();
+            if (clip == "hit")
+            {
+                Enemy_SetState(enemy, EnemyState::Patrol);
+            }
+        }
+        return;
+    }
+
+    if (enemy.spriteSheet)
+    {
+        const std::string clip = enemy.spriteSheet->GetCurrentClip();
+
+        if (enemy.type == EnemyType::Boss &&
+            clip == "hurt")
+        {
+            return; // only boss blocks spam by animation
+        }
+    }
+
+    if (enemy.type == EnemyType::Easy || enemy.type == EnemyType::Hard)
+    {
+        if (enemy.hitCooldownTimer > 0.0f)
+            return;
+
+        enemy.hitCooldownTimer = enemy.hitCooldown;
+    }
+
     if (enemy.type == EnemyType::Boss && enemy.spriteSheet
         && enemy.spriteSheet->GetCurrentClip() == "block")
     {
@@ -1387,7 +1547,7 @@ void Enemy_OnHit(Enemy& enemy, float damage, float knockbackDir, Player* attacke
         {
             float blockDir = (attacker->pos.x < enemy.pos.x) ? -1.0f : 1.0f;
             attacker->vel.x = blockDir * 1400.0f;
-            attacker->vel.y = 200.0f;           
+            attacker->vel.y = 200.0f;
             attacker->knockbackTimer = 0.8f;
             attacker->isHurt = true;
             attacker->hurtTimer = 0.8f;
@@ -1395,16 +1555,17 @@ void Enemy_OnHit(Enemy& enemy, float damage, float knockbackDir, Player* attacke
         return;
     }
 
+    /*
     bool killingBlow = (enemy.type == EnemyType::Boss && enemy.hitPoints - damage <= 0.0f);
     if (enemy.isInvincible && !killingBlow) return;
-
+    */
     // Only block damage if already in dead animation (allow knockback to re-trigger)
     if (enemy.spriteSheet)
     {
         const std::string clip = enemy.spriteSheet->GetCurrentClip();
         if (clip == "dead")
             return;
-
+        /*
         // boss uses "hurt", regular enemies use "hit"
         const std::string hitClipName = (enemy.type == EnemyType::Boss) ? "hurt" : "hit";
         if (clip == hitClipName)
@@ -1415,10 +1576,33 @@ void Enemy_OnHit(Enemy& enemy, float damage, float knockbackDir, Player* attacke
             if (enemy.type != EnemyType::Boss)
                 Enemy_ApplyKnockback(enemy, knockbackDir);
             return;
+        }*/
+
+        // boss uses "hurt", regular enemies use "hit"
+        const std::string hitClipName = (enemy.type == EnemyType::Boss) ? "hurt" : "hit";
+
+        // Easy/Hard: if already in hit animation, ignore extra hits completely
+        if ((enemy.type == EnemyType::Easy || enemy.type == EnemyType::Hard) &&
+            clip == hitClipName)
+        {
+            return;
         }
     }
 
     enemy.hitPoints -= damage;
+
+    if (enemy.type == EnemyType::Easy)
+    {
+        AudioManager::Get().PlayAudio(s_EasyDamage, false);
+    }
+    else if (enemy.type == EnemyType::Hard)
+    {
+        AudioManager::Get().PlayAudio(s_HardDamage, false);
+    }
+    else if (enemy.type == EnemyType::Boss)
+    {
+        AudioManager::Get().PlayAudio(s_BossDamage, false);
+    }
 
     // dead
     if (enemy.hitPoints <= 0.0f)
@@ -1438,6 +1622,7 @@ void Enemy_OnHit(Enemy& enemy, float damage, float knockbackDir, Player* attacke
             enemy.hitStunTimer = enemy.spriteSheet->GetClipTotalDuration("dead");
         }
         else enemy.hitStunTimer = 0.45f;
+
 
         enemy.justDied = true;
         enemy.isAlive = false;
@@ -1519,6 +1704,7 @@ void HardEnemy_OnCollision(Enemy& enemy, Player& player)
     }
 
     // damage + knockback
+    /*
     if (!player.isHurt && !player.shieldActive && !player.isDashing)
     {
         Player_ApplyDamage(player, enemy.damage);
@@ -1534,16 +1720,69 @@ void HardEnemy_OnCollision(Enemy& enemy, Player& player)
         player.knockbackTimer = player.hurtTimer > 0.0f ? player.hurtTimer : 0.6f;
         Camera_AddTrauma(0.5f);
     }
+    */
+    // damage + knockback
+    if (!player.isHurt && !player.shieldActive && !player.isDashing)
+    {
+        bool canDamage = false;
+        float knockSpeed = 500.0f;
 
+        if (enemy.type == EnemyType::Hard)
+        {
+            canDamage = false; // hard enemy damage is handled in HardEnemy_Update attack timing
+        }
+        else if (enemy.type == EnemyType::Boss)
+        {
+            if (clip == "slamimpact" || clip == "slamdown")
+            {
+                canDamage = true;
+                knockSpeed = 900.0f;
+
+                if (!enemy.hasAppliedAttackDamage && Enemy_IsInCamera(enemy))
+                    AudioManager::Get().PlayAudio(s_BossAttackSound, false);
+            }
+            else if (clip == "attackpunch")
+            {
+                canDamage = true;
+                knockSpeed = 700.0f;
+
+                if (!enemy.hasAppliedAttackDamage && Enemy_IsInCamera(enemy))
+                    AudioManager::Get().PlayAudio(s_BossAttackSound, false);
+            }
+        }
+
+        if (canDamage)
+        {
+            Player_ApplyDamage(player, enemy.damage);
+
+            float knockDir = (player.pos.x >= enemy.pos.x) ? 1.0f : -1.0f;
+            player.vel.x = knockDir * knockSpeed;
+            player.knockbackTimer = player.hurtTimer > 0.0f ? player.hurtTimer : 0.6f;
+            Camera_AddTrauma(0.5f);
+        }
+    }
+    /*
     if (enemy.type != EnemyType::Boss)
     {
         Enemy_SetState(enemy, EnemyState::Attack);
         AudioManager::Get().PlayAudio(s_HardEnemyAttackSound, false);
     }
+    */
 
+    if (enemy.type == EnemyType::Hard)
+    {
+        if (enemy.meleeCooldownTimer <= 0.0f &&
+            enemy.state != EnemyState::Attack)
+        {
+            enemy.direction = (player.pos.x >= enemy.pos.x) ? 1 : -1;
+            Enemy_SetState(enemy, EnemyState::Attack);
+
+            AudioManager::Get().PlayAudio(s_HardEnemyAttackSound, false);
+        }
+    }
     // clamp player to arena bounds — prevent knockback sending them offscreen
     const float ARENA_MIN_X = -750.0f;
-    const float ARENA_MAX_X =  750.0f;
+    const float ARENA_MAX_X = 750.0f;
     if (player.pos.x < ARENA_MIN_X) player.pos.x = ARENA_MIN_X;
     if (player.pos.x > ARENA_MAX_X) player.pos.x = ARENA_MAX_X;
 }

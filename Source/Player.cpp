@@ -43,7 +43,12 @@ Technology is prohibited.
 static AEAudio s_GunAttackSound{};
 static AEAudio s_MeleeAttackSound{};
 static AEAudio s_JumpSound{};
+static AEAudio s_WeaponSwitchClaws{};
+static AEAudio s_WeaponSwitchGuns{};
+static AEAudio s_PogoSound{};
+static AEAudio s_PlayerDamageSound{};
 static bool s_PlayerAudioLoaded = false;
+static bool s_WasGrounded = true;
 
 static const float MELEE_COOLDOWN = 0.3f;
 
@@ -156,13 +161,17 @@ void Player_Init(Player& player, const rapidjson::Value& config)
 
 	// play slash
 	player.slashSprite->Play("slash", true);
-	
+
 	//load player audios
 	if (!s_PlayerAudioLoaded)
 	{
 		s_GunAttackSound = AudioManager::Get().GetAudio("player_gun_attack");
 		s_MeleeAttackSound = AudioManager::Get().GetAudio("player_melee_attack");
 		s_JumpSound = AudioManager::Get().GetAudio("jump");
+		s_WeaponSwitchClaws = AudioManager::Get().GetAudio("weapon_switch_claws");
+		s_WeaponSwitchGuns = AudioManager::Get().GetAudio("weapon_switch_guns");
+		s_PogoSound = AudioManager::Get().GetAudio("pogo");
+		s_PlayerDamageSound = AudioManager::Get().GetAudio("player_damage");
 		s_PlayerAudioLoaded = true;
 	}
 
@@ -259,18 +268,32 @@ void Player_Init(Player& player, const rapidjson::Value& config)
 
 void Player_Update(Player& player, float dt)
 {
-    PhysicsManager& physics = PhysicsManager::Get();
-    static int s_prevGrounded = 1;
+	PhysicsManager& physics = PhysicsManager::Get();
+	static int s_prevGrounded = 1;
 
-    if (AEInputCheckTriggered(AEVK_SPACE) && player.grounded)
-    {
-        // play jump sound
-        AudioManager::Get().PlayAudio(s_JumpSound, false);
+	if (AEInputCheckTriggered(AEVK_SPACE) && player.grounded)
+	{
+		// Jump dust burst from player feet
+		ParticleManager_Emit(player.pos.x, player.pos.y - player.height * 0.5f,
+			10, 120.f, 200, 200, 200);
+	}
 
-        // Jump dust burst from player feet
-        ParticleManager_Emit(player.pos.x, player.pos.y - player.height * 0.5f,
-            10, 120.f, 200, 200, 200);
-    }
+	// detect jump (leaving ground)
+	if (s_WasGrounded && !player.grounded && player.vel.y > 0.0f)
+	{
+		AudioManager::Get().PlayAudio(s_JumpSound, false);
+	}
+
+	static bool s_PogoPlayed = false;
+	if (player.pogoJustPerformed && !s_PogoPlayed)
+	{
+		AudioManager::Get().PlayAudio(s_PogoSound, false);
+		s_PogoPlayed = true;
+	}
+	if (!player.pogoJustPerformed)
+	{
+		s_PogoPlayed = false;
+	}
 
 	// Apply gravity (skipped while grounded or dashing so velocity does not accumulate)
 	if (!player.isDashing) {
@@ -334,7 +357,7 @@ void Player_Update(Player& player, float dt)
 		// particles
 		const float margin = 8.0f;
 		const float offset = 4.0f;
-		
+
 		const float left = player.pos.x - player.width * 0.5f - margin;
 		const float right = player.pos.x + player.width * 0.5f + margin;
 		const float bottom = player.pos.y - player.height * 0.5f - margin;
@@ -514,6 +537,16 @@ void Player_Update(Player& player, float dt)
 	if (!player.weaponSwitchInProgress && player.weapon != player.previousWeapon) {
 		player.weaponSwitchTriggered = true;
 		player.weaponSwitchInProgress = true;
+		switch (player.weapon)
+		{
+		case PlayerWeapon::MELEE:
+			AudioManager::Get().PlayAudio(s_WeaponSwitchClaws, false);
+			break;
+
+		case PlayerWeapon::GUN:
+			AudioManager::Get().PlayAudio(s_WeaponSwitchGuns, false);
+			break;
+		}
 	}
 
 	//unpause to prevent being stuck on frame
@@ -750,17 +783,19 @@ void Player_Update(Player& player, float dt)
 		player.spriteSheet->Update(dt);
 	}
 
-    // Landing dust — fires once when player touches ground
-    if (!s_prevGrounded && player.grounded) {
-        ParticleManager_Emit(player.pos.x, player.pos.y - player.height * 0.5f,
-            12, 100.f, 220, 220, 220);
-    }
-    s_prevGrounded = player.grounded;
+	// Landing dust — fires once when player touches ground
+	if (!s_prevGrounded && player.grounded) {
+		ParticleManager_Emit(player.pos.x, player.pos.y - player.height * 0.5f,
+			12, 100.f, 220, 220, 220);
+	}
+	s_prevGrounded = player.grounded;
 
-    // Update state trackers
-    player.wasAttacking = player.isAttacking;
-    player.wasWalking = isWalking;
-    player.wasHurt = player.isHurt;
+	// Update state trackers
+	player.wasAttacking = player.isAttacking;
+	player.wasWalking = isWalking;
+	player.wasHurt = player.isHurt;
+
+	s_WasGrounded = player.grounded;
 }
 
 void Player_Draw(const Player& player)
@@ -785,7 +820,7 @@ void Player_Draw(const Player& player)
 	/*for (const auto& b : player.bullets)
 		PlayerBullet_Draw(b);*/
 
-	// Draw player using sprite sheet
+		// Draw player using sprite sheet
 	if (player.spriteSheet) {
 		float scaleX;
 
@@ -882,6 +917,7 @@ void Player_ApplyDamage(Player& player, float damage)
 	if (player.isDashing) return;
 	if (!DebugManager::Get().IsGodModeActive()) {
 		player.hp -= damage;
+		AudioManager::Get().PlayAudio(s_PlayerDamageSound, false);
 
 		// trigger hurt animation
 		player.isHurt = true;
@@ -982,13 +1018,13 @@ void Player_Free(Player& player)
 {
 	//only for gameplay related memory
 	// free shield particles
-	for (int i = 0; i < 4; ++i){
+	for (int i = 0; i < 4; ++i) {
 		if (player.shieldEmitters[i] != INVALID_EMITTER) {
 			ParticleManager_EmitterStop(player.shieldEmitters[i]);
 			player.shieldEmitters[i] = INVALID_EMITTER;
 		}
 	}
-	
+
 	// free bullets
 
 	//free bullet internal resources (if any)

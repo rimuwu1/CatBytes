@@ -15,6 +15,13 @@ Technology is prohibited.
 #include "AudioManager.h"
 #include <iostream>
 
+static float Clamp01(float v)
+{
+    if (v < 0.0f) return 0.0f;
+    if (v > 1.0f) return 1.0f;
+    return v;
+}
+
 AudioManager& AudioManager::Get()
 {
     static AudioManager instance;
@@ -24,6 +31,12 @@ AudioManager& AudioManager::Get()
 AudioManager::AudioManager()
 {
     musicGroup = AEAudioCreateGroup();
+    sfxGroup = AEAudioCreateGroup();
+    musicVolume = 1.0f;
+    sfxVolume = 1.0f;
+
+    AEAudioSetGroupVolume(musicGroup, musicVolume);
+    AEAudioSetGroupVolume(sfxGroup, sfxVolume);
 }
 
 AudioManager::~AudioManager()
@@ -38,7 +51,7 @@ AEAudio AudioManager::LoadAudio(const std::string& filepath, bool isMusic)
     if (it != audioMap.end())
         return it->second;
 
-    AEAudio handle;
+    AEAudio handle{};
 
     if (isMusic)
         handle = AEAudioLoadMusic(filepath.c_str());
@@ -112,11 +125,42 @@ void AudioManager::UnloadAll()
 
     audioMap.clear();
     audioKeyMap.clear();
+
+    if (AEAudioIsValidGroup(musicGroup))
+        AEAudioUnloadAudioGroup(musicGroup);
+
+    if (AEAudioIsValidGroup(sfxGroup))
+        AEAudioUnloadAudioGroup(sfxGroup);
 }
 
 void AudioManager::PlayAudio(AEAudio audioHandle, bool loop)
 {
-    AEAudioPlay(audioHandle, musicGroup, 1.0f, 1.0f, loop ? -1 : 0);
+    if (!AEAudioIsValidAudio(audioHandle))
+        return;
+
+    AEAudioGroup group = sfxGroup;
+    float volume = sfxVolume;
+
+    for (const auto& pair : audioKeyMap)
+    {
+        if (pair.second.fmod_sound == audioHandle.fmod_sound)
+        {
+            // key must contain "music" to be treated as music
+            if (pair.first.find("music") != std::string::npos)
+            {
+                group = musicGroup;
+                volume = musicVolume;
+            }
+            else
+            {
+                group = sfxGroup;
+                volume = sfxVolume;
+            }
+            break;
+        }
+    }
+
+    AEAudioPlay(audioHandle, group, volume, 1.0f, loop ? -1 : 0);
 }
 
 void AudioManager::PlayAudio(const std::string& key, bool loop)
@@ -124,7 +168,45 @@ void AudioManager::PlayAudio(const std::string& key, bool loop)
     PlayAudio(GetAudio(key), loop);
 }
 
-void AudioManager::StopAudio(AEAudio /*audioHandle*/)
+void AudioManager::SetMusicVolume(float volume)
 {
-    AEAudioStopGroup(musicGroup);
+    musicVolume = Clamp01(volume);
+    AEAudioSetGroupVolume(musicGroup, musicVolume);
+}
+
+void AudioManager::SetSFXVolume(float volume)
+{
+    sfxVolume = Clamp01(volume);
+    AEAudioSetGroupVolume(sfxGroup, sfxVolume);
+}
+
+float AudioManager::GetMusicVolume() const
+{
+    return musicVolume;
+}
+
+float AudioManager::GetSFXVolume() const
+{
+    return sfxVolume;
+}
+
+void AudioManager::StopAudio(AEAudio audioHandle)
+{
+    if (!AEAudioIsValidAudio(audioHandle))
+        return;
+
+    for (const auto& pair : audioKeyMap)
+    {
+        if (pair.second.fmod_sound == audioHandle.fmod_sound)
+        {
+            if (pair.first.find("music") != std::string::npos)//needs to have 'music' in string to be in music group
+                AEAudioStopGroup(musicGroup);
+            else
+                AEAudioStopGroup(sfxGroup);
+            return;
+        }
+    }
+
+    // fallback: stop sfx group if unknown
+    AEAudioStopGroup(sfxGroup);
 }

@@ -16,6 +16,7 @@ Technology is prohibited.
 #include "buff.h"
 #include "Player.h"
 #include "MeshManager.h"
+#include "AudioManager.h"
 
 Buff::Buff(BuffType type, float x, float y, float width, float height)
     : type(type), pos({ x, y }), width(width), height(height)
@@ -38,16 +39,22 @@ Buff::Buff(BuffType type, float x, float y, float width, float height)
 void Buff::Activate(Player& player) {
     switch (type) {
     case BuffType::SHIELD:
+        AudioManager::Get().PlayAudio(AudioManager::Get().GetAudio("shield_power_up"), false);
         player.shieldActive = true;
         player.shieldTimer = 10.0f;
         break;
+
     case BuffType::FULL_HP:
+        AudioManager::Get().PlayAudio(AudioManager::Get().GetAudio("healing_power_up"), false);
         player.hp = player.maxHP;
         break;
+
     case BuffType::DASH:
+        AudioManager::Get().PlayAudio(AudioManager::Get().GetAudio("dash_power_up"), false);
         player.dashEnabled = true;
         player.dashCharges++;
         break;
+
     default:
         break;
     }
@@ -83,6 +90,7 @@ void Buff::Draw(float camX, float camY) const {
 // Pickup: move buff into player inventory, mark world instance inactive
 // Does NOT activate - player uses it from inventory later
 void Player_PickupBuff(Player& player, Buff& buff) {
+    AudioManager::Get().PlayAudio(AudioManager::Get().GetAudio("buff_collection"), false);
     if (!buff.active) return;
     buff.active = false;                        // Remove from world
     player.buffs.push_back(std::move(buff));    // Store in inventory

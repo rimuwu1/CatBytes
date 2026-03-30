@@ -102,6 +102,17 @@ struct Enemy
     float bulletHeight = 30.0f;
     std::unique_ptr<SpriteSheet> bulletSprite;
 
+    // melee attack timing
+    float meleeCooldown = 1.0f;// time between completed melee hits
+    float meleeCooldownTimer = 0.0f;// counts down after a hit
+    bool hasAppliedAttackDamage = false; // true once this attack already dealt damage
+    float attackHitTime = 0.2f;// when during the attack animation damage should happen
+    float attackRangeX = 110.0f;
+    float attackRangeY = 120.0f;
+
+    float hitCooldown = 0.2f;
+    float hitCooldownTimer = 0.0f;
+
     bool isGrounded = false;
 
     float damage = 0.0f;

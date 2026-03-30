@@ -42,6 +42,10 @@ Technology is prohibited.
 extern Camera globalCam;
 extern float camTrauma;
 extern float camShakeTime;
+static AEAudio g_BossRoomMusic{};
+static bool g_BossRoomMusicPlaying = false;
+static bool g_BossLaughPlayed = false;
+extern AEAudio g_GameMusic;
 
 // starting cutscene when the boss room is loaded
 enum class CutscenePhase {
@@ -245,8 +249,33 @@ void BossRoom_Load() {}
 
 void BossRoom_Initialize()
 {
+    g_BossLaughPlayed = false;
     // bossAI initialize
     BossAI_Init(g_bossAI);
+    AudioManager::Get().StopAudio(
+        AudioManager::Get().GetAudio("elevator_sound")
+    );
+
+
+    // stop previous game music
+    AudioManager::Get().StopAudio(g_GameMusic);
+
+    // get audio
+    g_BossRoomMusic = AudioManager::Get().GetAudio("boss_room_music");
+
+    // play looping music
+    AudioManager::Get().PlayAudio(g_BossRoomMusic, true);
+    g_BossRoomMusicPlaying = true;
+
+    // play boss laugh ONCE
+    if (!g_BossLaughPlayed)
+    {
+        AudioManager::Get().PlayAudio(
+            AudioManager::Get().GetAudio("boss_laugh"),
+            false
+        );
+        g_BossLaughPlayed = true;
+    }
     std::cout << "BossAI:Initialize" << std::endl;
 
     g_bossRoomFadeAlpha = 1.0f;
@@ -687,6 +716,12 @@ void BossRoom_Draw()
 void BossRoom_Free()
 {
     EnvironmentManager::Get().SetBossRoomMode(false);
+    // stop boss music when leaving
+    if (g_BossRoomMusicPlaying)
+    {
+        AudioManager::Get().StopAudio(g_BossRoomMusic);
+        g_BossRoomMusicPlaying = false;
+    }
 
     BossRoom::Get().Free();
 }

@@ -45,11 +45,22 @@ public:
     void PlayAudio(const std::string& key, bool loop = false);
     void StopAudio(AEAudio audioHandle);
 
+    void SetMusicVolume(float volume);
+    void SetSFXVolume(float volume);
+
+    float GetMusicVolume() const;
+    float GetSFXVolume() const;
+
 private:
     AudioManager();
     ~AudioManager();
 
-    std::map<std::string, AEAudio> audioMap;// filepath, AEAudio
-    std::map<std::string, AEAudio> audioKeyMap; // json key, AEAudio
+    std::map<std::string, AEAudio> audioMap;     // filepath -> AEAudio
+    std::map<std::string, AEAudio> audioKeyMap;  // json key -> AEAudio
+
     AEAudioGroup musicGroup;
+    AEAudioGroup sfxGroup;
+
+    float musicVolume;
+    float sfxVolume;
 };

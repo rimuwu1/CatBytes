@@ -50,6 +50,10 @@ Technology is prohibited.
 AEAudio g_GameMusic{};
 bool g_GameMusicPlaying = false;
 extern AEAudio g_MainMenuMusic;
+static bool g_liftStartedSoundPlayed = false;
+static bool g_liftLoopPlaying = false;
+static std::unordered_map<const PlatformObstacle*, bool> g_prevSpikeStates;
+static std::unordered_map<const PlatformLaser*, bool> g_prevLaserStates;
 
 // Camera pan sequence state for button toggles
 static bool  g_pendingToggle      = false;
@@ -100,6 +104,26 @@ namespace {
 // Walking emitter handle
 static EmitterHandle g_walkEmitter = INVALID_EMITTER;
 
+static bool SpikeIsInCamera(float x, float y, float w, float h)
+{
+    const float halfScreenW = 1600.0f * 0.5f;
+    const float halfScreenH = 900.0f * 0.5f;
+
+    const float camLeft = globalCam.x - halfScreenW;
+    const float camRight = globalCam.x + halfScreenW;
+    const float camBottom = globalCam.y - halfScreenH;
+    const float camTop = globalCam.y + halfScreenH;
+
+    const float objLeft = x - w * 0.5f;
+    const float objRight = x + w * 0.5f;
+    const float objBottom = y - h * 0.5f;
+    const float objTop = y + h * 0.5f;
+
+    const bool overlapX = (objRight >= camLeft) && (objLeft <= camRight);
+    const bool overlapY = (objTop >= camBottom) && (objBottom <= camTop);
+
+    return overlapX && overlapY;
+}
 
 // ------------------------------------------------------------------------
 // Applies the already-parsed GetConfigDoc() to all managers + resets camera
@@ -147,6 +171,7 @@ void MainGame_Initialize()
 {
     // Clear any leftover popup state from a previous visit to this screen
     UIManager::Get().Reset();
+    g_prevSpikeStates.clear();
 
     // Reset camera sequence state
     g_pendingToggle      = false;
@@ -169,6 +194,7 @@ void MainGame_Initialize()
     //Start game music (looped)
     g_GameMusic = AudioManager::Get().GetAudio("game_music");
     AudioManager::Get().PlayAudio(g_GameMusic, true); // loop = true
+    AudioManager::Get().PlayAudio(AudioManager::Get().GetAudio("game_start"), false);
     g_GameMusicPlaying = true;
     std::cout << "MainGame:Initialize" << std::endl;
 }
@@ -233,6 +259,7 @@ void MainGame_Update()
         const auto& toggleWalls = EnvironmentManager::Get().GetLevel3ToggleWalls();
         GameSaveManager::SaveGameAsync(meta, currentLevel, player, enemies, *currentPlatforms, worldBuffs, toggleWalls, levelMinY, levelMaxY);
         GameSaveManager::Notify_Show(GameSaveManager::NotifyType::SAVED);
+        AudioManager::Get().PlayAudio(AudioManager::Get().GetAudio("save"), false);
         ParticleManager_Emit(player.pos.x, player.pos.y, 15, 200.f, 255, 255, 255);
         
         // Restore hidden position after save
@@ -299,6 +326,7 @@ void MainGame_Update()
         if (results.obstacleHit)
         {
             Player_ApplyDamage(player, 1.0f);
+            AudioManager::Get().PlayAudio(AudioManager::Get().GetAudio("damage"),false);
             // Knockback horizontally away from player's movement direction
             float knockDir = player.facingRight ? -1.0f : 1.0f;
             if (player.vel.x > 0.0f) knockDir = -1.0f;
@@ -327,6 +355,7 @@ void MainGame_Update()
         // ----- Camera pan sequence for button toggles -----
         // Start camera sequence if a button was just triggered
         if (results.pendingToggle.triggered && !g_camSequenceActive && !g_pendingToggle) {
+
             Camera_StartSequence(results.pendingToggle.targetY, globalCam.y);
             g_pendingToggle      = true;
             g_pendingToggleMidpt = g_camSequenceDuration + g_camHoldDuration * 0.5f;
@@ -341,6 +370,11 @@ void MainGame_Update()
             float indicatorTime = 1.5f;
             float beamVisible = 1.0f;
             float camHoldTime = indicatorTime + beamVisible;
+            AudioManager::Get().PlayAudio("computer", false);
+            AudioManager::Get().PlayAudio(
+                AudioManager::Get().GetAudio("laser_on"),
+                false
+            );
             Camera_StartSequence(results.cameraPanTargetY, globalCam.y, 0.6f, camHoldTime);
        }
 
@@ -376,6 +410,7 @@ void MainGame_Update()
             const auto& toggleWalls = EnvironmentManager::Get().GetLevel3ToggleWalls();
             GameSaveManager::SaveGameAsync(meta, currentLevel, player, enemies, *currentPlatforms, worldBuffs, toggleWalls, levelMinY, levelMaxY);
             GameSaveManager::Notify_Show(GameSaveManager::NotifyType::SAVED);
+            AudioManager::Get().PlayAudio(AudioManager::Get().GetAudio("save"), false);
             ParticleManager_Emit(player.pos.x, player.pos.y, 15, 200.f, 255, 255, 255);
         }
 
@@ -401,7 +436,16 @@ void MainGame_Update()
                             fabs(btn.y - g_pendingToggleBtnY) < 1.0f) {
                             for (int idx : btn.platformIndices) {
                                 if (idx >= 0 && idx < (int)platforms.size())
+                                {
                                     platforms[idx].active = !platforms[idx].active;
+
+                                    AudioManager::Get().PlayAudio(
+                                        AudioManager::Get().GetAudio(
+                                            platforms[idx].active ? "platform_appear" : "platform_disappear"
+                                        ),
+                                        false
+                                    );
+                                }
                             }
                             EnvironmentManager::Get().MarkStaticDirty();
                             return true;
@@ -527,6 +571,22 @@ void MainGame_Update()
     // boss lift sequence: override camera  
     if (EnvironmentManager::Get().IsLiftActive())
     {
+        if (!g_liftStartedSoundPlayed)
+        {
+            AudioManager::Get().PlayAudio(
+                AudioManager::Get().GetAudio("elevator_ding"),
+                false
+            );
+            g_liftStartedSoundPlayed = true;
+        }
+        if (!g_liftLoopPlaying)
+        {
+            AudioManager::Get().PlayAudio(
+                AudioManager::Get().GetAudio("elevator_sound"),
+                true);
+            g_liftLoopPlaying = true;
+        }
+
         EnvironmentManager::BossLiftSequence& seq = EnvironmentManager::Get().GetLiftSequence();
         globalCam.x = 0.0f;
         globalCam.y = seq.camY;
@@ -542,6 +602,93 @@ void MainGame_Update()
 
     float backgroundY = DebugManager::Get().IsDebugCameraEnabled() ? globalCam.y : player.pos.y;
     EnvironmentManager::Get().Update(dt, player, backgroundY);
+
+    auto checkSpikeToggle = [&](const std::vector<PlatformObstacle>& obstacles)
+        {
+            for (const auto& o : obstacles)
+            {
+                if (!o.isSpike) continue;
+
+                auto it = g_prevSpikeStates.find(&o);
+
+                if (it == g_prevSpikeStates.end())
+                {
+                    // First time seeing this spike
+                    g_prevSpikeStates[&o] = o.active;
+                }
+                else
+                {
+                    // Detect toggle
+                    if (it->second != o.active)
+                    {
+                        if (SpikeIsInCamera(o.x, o.y, o.w, o.h))
+                        {
+                            AudioManager::Get().PlayAudio(
+                                AudioManager::Get().GetAudio("spikes_up_down"),
+                                false
+                            );
+                        }
+
+                        it->second = o.active;
+                    }
+                }
+            }
+        };
+
+
+
+    auto checkLaserToggle = [&](const std::vector<PlatformLaser>& lasers)
+        {
+            for (const auto& l : lasers)
+            {
+                auto it = g_prevLaserStates.find(&l);
+
+                if (it == g_prevLaserStates.end())
+                {
+                    // First time seeing this laser
+                    g_prevLaserStates[&l] = l.laserActive;
+                }
+                else
+                {
+                    // Detect toggle
+                    if (it->second != l.laserActive)
+                    {
+                        // Compute bounds(same logic style as spikes)
+                        float midX = (l.x1 + l.x2) * 0.5f;
+                        float midY = (l.y1 + l.y2) * 0.5f;
+                        float w = fabs(l.x2 - l.x1) + l.w;
+                        float h = fabs(l.y2 - l.y1) + l.w;
+
+                        if (SpikeIsInCamera(midX, midY, w, h))
+                        {
+                            if (l.laserActive)
+                            {
+                                AudioManager::Get().PlayAudio(
+                                    AudioManager::Get().GetAudio("laser_on"),
+                                    false
+                                );
+                            }
+                            else
+                            {
+                                AudioManager::Get().PlayAudio(
+                                    AudioManager::Get().GetAudio("laser_off"),
+                                    false
+                                );
+                            }
+                        }
+
+                        it->second = l.laserActive;
+                    }
+                }
+            }
+        };
+
+
+    checkSpikeToggle(EnvironmentManager::Get().GetLevel1Obstacles());
+    checkSpikeToggle(EnvironmentManager::Get().GetLevel2Obstacles());
+    checkSpikeToggle(EnvironmentManager::Get().GetLevel3Obstacles());
+    checkLaserToggle(EnvironmentManager::Get().GetLevel2Lasers());
+    checkLaserToggle(EnvironmentManager::Get().GetLevel3Lasers());
 
     // Pause button -> changes gamestate to pause
     HUD& hud = EnvironmentManager::Get().GetHUD();

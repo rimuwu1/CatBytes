@@ -27,6 +27,17 @@ Technology is prohibited.
 static AEAudio g_HoverSound{};
 static AEAudio g_ClickSound{};
 static int g_PreviousHoveredButton = -1;
+static float g_MusicSlider = 1.0f;
+static float g_SFXSlider = 1.0f;
+static bool g_DragMusic = false;
+static bool g_DragSFX = false;
+
+static float Clamp01(float v)
+{
+    if (v < 0.0f) return 0.0f;
+    if (v > 1.0f) return 1.0f;
+    return v;
+}
 
 //State
 enum ControlTab
@@ -47,6 +58,7 @@ static AEGfxTexture* g_SettingsBtn = nullptr;
 static AEGfxTexture* g_KeysBtn = nullptr;
 static AEGfxTexture* g_InstructionsBtn = nullptr;
 static AEGfxTexture* g_SettingsPanel = nullptr;
+static AEGfxTexture* g_BackBtn = nullptr;
 
 // textures for instructions page
 static AEGfxTexture* g_ImgMelee = nullptr;
@@ -76,6 +88,13 @@ const float CARD_H = 0.52f;
 const float CARD_GAP_X = 0.04f;
 const float CARD_GAP_Y = 0.05f;
 const float IMG_SIZE = 0.55f;
+
+//slider pos
+const float SLIDER_X = 0.2f;
+const float SLIDER_WIDTH = 0.5f;
+
+const float MUSIC_Y = 0.2f;
+const float SFX_Y = -0.05f;
 
 struct InstructionCard
 {
@@ -184,12 +203,12 @@ static void DrawInstructionCard(const InstructionCard& card, float cx, float cy,
 void Controls_Load()
 {
 
-    //gonna change later
     g_BG = TextureManager::Get().LoadTexture("Assets/Images/ControlPage.png");
     g_SettingsBtn = TextureManager::Get().LoadTexture("Assets/Images/settings.png");
     g_KeysBtn = TextureManager::Get().LoadTexture("Assets/Images/Keys.png");
-    g_InstructionsBtn = TextureManager::Get().LoadTexture("Assets/Images/Keys.png");
+    g_InstructionsBtn = TextureManager::Get().LoadTexture("Assets/Images/Help.png");
     g_SettingsPanel = TextureManager::Get().LoadTexture("Assets/Images/settingstest.png");
+    g_BackBtn = TextureManager::Get().LoadTexture("Assets/Images/Backbutton.png");
 
     // instructions page textures
     g_ImgMelee = TextureManager::Get().LoadTexture("Assets/Images/controls_melee.png");
@@ -234,6 +253,23 @@ void Controls_Update()
     float nx = (mx / w) * 2.0f - 1.0f;
     float ny = 1.0f - (my / h) * 2.0f;
 
+
+    // back button click
+    if (AEInputCheckTriggered(AEVK_LBUTTON))
+    {
+        float bx = -600.0f / (w * 0.5f);
+        float by = 350.0f / (h * 0.5f);
+
+        float bw = 100.0f / (w * 0.5f);
+        float bh = 50.0f / (h * 0.5f);
+
+        if (fabs(nx - bx) < (bw * 0.5f) && fabs(ny - by) < (bh * 0.5f))
+        {
+            GameStateManager::Get().next = GS_MAINMENU;
+            AudioManager::Get().PlayAudio(g_ClickSound, false);
+        }
+    }
+
     g_HoveredButton = -1;
 
     if (IsMouseOver(nx, ny, BTN_X, BTN_KEYS_Y))
@@ -270,7 +306,46 @@ void Controls_Update()
         }
     }
 
+    if (g_CurrentTab == TAB_SETTINGS)
+    {
+        // start dragging
+        if (AEInputCheckTriggered(AEVK_LBUTTON))
+        {
+            if (fabs(nx - SLIDER_X) < (SLIDER_WIDTH * 0.5f) && fabs(ny - MUSIC_Y) < 0.05f)
+                g_DragMusic = true;
+
+            if (fabs(nx - SLIDER_X) < (SLIDER_WIDTH * 0.5f) && fabs(ny - SFX_Y) < 0.05f)
+                g_DragSFX = true;
+        }
+
+        // stop dragging
+        if (!AEInputCheckCurr(AEVK_LBUTTON))
+        {
+            g_DragMusic = false;
+            g_DragSFX = false;
+        }
+
+        // update values
+        float sliderLeft = SLIDER_X - SLIDER_WIDTH * 0.5f;
+
+        if (g_DragMusic)
+        {
+            g_MusicSlider = (nx - sliderLeft) / SLIDER_WIDTH;
+            g_MusicSlider = Clamp01(g_MusicSlider);
+
+            AudioManager::Get().SetMusicVolume(g_MusicSlider);
+        }
+
+        if (g_DragSFX)
+        {
+            g_SFXSlider = (nx - sliderLeft) / SLIDER_WIDTH;
+            g_SFXSlider = Clamp01(g_SFXSlider);
+
+            AudioManager::Get().SetSFXVolume(g_SFXSlider);
+        }
+    }
 }
+
 //temp
 void DrawKeysPage()
 {
@@ -355,6 +430,7 @@ static void DrawInstructionsPage(float halfW, float halfH)
     DrawInstructionCard(g_BuffCards[0], leftX, buffY, cardW, cardH, halfW, halfH);
     DrawInstructionCard(g_BuffCards[1], midX, buffY, cardW, cardH, halfW, halfH);
     DrawInstructionCard(g_BuffCards[2], rightX, buffY, cardW, cardH, halfW, halfH);
+
 }
 
 
@@ -371,6 +447,18 @@ void Controls_Draw()
     if (g_BG)
     {
         MeshManager::Get().DrawTexturedSquare(g_BG, 0, 0, w, h, 1.0f);
+    }
+
+    if (g_BackBtn)
+    {
+        MeshManager::Get().DrawTexturedSquare(
+            g_BackBtn,
+            -600.0f,   // left side
+            350.0f,
+            100.0f,
+            50.0f,
+            1.0f
+        );
     }
 
     float halfW = w / 2.0f;
@@ -424,17 +512,38 @@ void Controls_Draw()
     }
     else if (g_CurrentTab == TAB_SETTINGS)
     {
+        FontManager::Get().Print(FontManager::Get().GetSmallFont(),
+            "Music", -0.2f, 0.2f, 1, 1, 1, 1, 1);
+
+        FontManager::Get().Print(FontManager::Get().GetSmallFont(),
+            "SFX", -0.2f, -0.05f, 1, 1, 1, 1, 1);
+
+        //  bars
+        DrawRect(200, 100, 300, 8, 0.6f, 0.2f, 0.8f, 1.0f);   // music
+        DrawRect(200, -20, 300, 8, 0.6f, 0.2f, 0.8f, 1.0f);   // sfx
+
+        float knobX_Music = 200 + (g_MusicSlider - 0.5f) * 300;
+        float knobX_SFX = 200 + (g_SFXSlider - 0.5f) * 300;
+
         if (g_SettingsPanel)
         {
             MeshManager::Get().DrawTexturedSquare(
                 g_SettingsPanel,
-                200.0f,// move right side
-                0.0f,
-                400.0f,
-                300.0f,
+                knobX_Music,
+                100,
+                30, 30,
+                1.0f
+            );
+
+            MeshManager::Get().DrawTexturedSquare(
+                g_SettingsPanel,
+                knobX_SFX,
+                -20,
+                30, 30,
                 1.0f
             );
         }
+
     }
 
     AESysFrameEnd();
@@ -451,6 +560,7 @@ void Controls_Unload()
 {
     //temp
     TextureManager::Get().UnloadTexture("Assets/Images/ControlPage.png");
+    TextureManager::Get().UnloadTexture("Assets/Images/Backbutton.png");
     TextureManager::Get().UnloadTexture("Assets/Images/settings.png");
     TextureManager::Get().UnloadTexture("Assets/Images/Keys.png");
     TextureManager::Get().UnloadTexture("Assets/Images/settingstest.png");
