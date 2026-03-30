@@ -1001,12 +1001,7 @@ void BossRoom::Draw()
             m.laserState == MonitorLaserState::Firing)
         {
             float monBottomY = m.y;
-            float beamLen = (m.laserState == MonitorLaserState::Firing)
-                ? m.laserLength
-                : (monBottomY - (-325.f));
-            float beamW = (m.laserState == MonitorLaserState::Firing) ? g_laserWidth : 3.f;
             float opacity = (m.laserState == MonitorLaserState::LockedOn) ? 0.7f : 1.f;
-            int   gg = (m.laserState == MonitorLaserState::Firing) ? 50 : 200;
 
             float targetX = m.laserTrackedX;  // live during tracking, frozen during lockedon/firing
             float targetY = m.laserTrackedY;
