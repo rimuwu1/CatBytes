@@ -67,9 +67,9 @@ namespace {
     rapidjson::Document configDoc;   // static to this file
 
     // ------------------------------------------------------------------------
-// Reads GameSave.json if it exists, otherwise falls back to GameConfig.json.
-// Clears configDoc first to prevent stale cached values bleeding through.
-// ------------------------------------------------------------------------
+    // Reads GameSave.json if it exists, otherwise falls back to GameConfig.json.
+    // Clears configDoc first to prevent stale cached values bleeding through.
+    // ------------------------------------------------------------------------
     static void ParseConfigFromDisk()
     {
         // Wait for any in-flight async save to finish before reading.
@@ -101,7 +101,7 @@ namespace {
     }
 } // anon namespace
 
-// Walking emitter handle
+  // Walking emitter handle
 static EmitterHandle g_walkEmitter = INVALID_EMITTER;
 
 static bool SpikeIsInCamera(float x, float y, float w, float h)
@@ -137,7 +137,7 @@ static void ApplyConfigToManagers()
     // Clear HUD inventory before syncing from save to prevent old buffs from persisting
     HUD& hud = EnvironmentManager::Get().GetHUD();
     hud.ClearInventory();
-    
+
     // Sync HUD inventory from restored player buffs
     Player& player = ObjectManager::Get().GetPlayer();
     for (const auto& buff : player.buffs) {
@@ -150,7 +150,7 @@ static void ApplyConfigToManagers()
     const float halfScreenHeight = 900.0f * 0.5f;
     float groundTop = ground + groundHeight * 0.5f;
     Camera_Init(globalCam, ObjectManager::Get().GetPlayer().pos.x, groundTop + halfScreenHeight);
-    
+
     // Reset camera shake state when (re)starting a run
     camTrauma = 0.0f;
     camShakeTime = 0.0f;
@@ -205,7 +205,7 @@ void MainGame_Update()
     if (UIManager::Get().Update(globalCam.x, globalCam.y)) {
         return;
     }
-    
+
     float dt = (float)AEFrameRateControllerGetFrameTime();
     if (DebugManager::Get().Update(dt)) return;
     if (AEInputCheckTriggered(AEVK_ESCAPE)) { //moved from input cos update pause is tweaking
@@ -230,15 +230,15 @@ void MainGame_Update()
     {
         // If boss door was activated, restore original position for save (player is hidden off-screen)
         bool bossDoorTriggered = EnvironmentManager::Get().IsBossDoorLoaded() && 
-                                 EnvironmentManager::Get().GetBossDoor().activated;
+            EnvironmentManager::Get().GetBossDoor().activated;
         float originalX = player.pos.x;
         float originalY = player.pos.y;
-        
+
         if (bossDoorTriggered) {
             player.pos.x = EnvironmentManager::Get().GetBossDoor().savedPlayerX;
             player.pos.y = EnvironmentManager::Get().GetBossDoor().savedPlayerY;
         }
-        
+
         int currentSection = EnvironmentManager::Get().GetCurrentSection();
         int currentLevel = currentSection + 1;
         const std::vector<Platform>* currentPlatforms = nullptr;
@@ -251,17 +251,19 @@ void MainGame_Update()
         }
 
         GameSaveManager::Metadata meta{ "", currentLevel, currentSection, static_cast<int>(ObjectManager::Get().GetPlayerHP()) };
-        
+
         float levelMinY = (currentSection == 0) ? -FLT_MAX : EnvironmentManager::Get().GetSectionHeight(currentSection - 1);
         float levelMaxY = EnvironmentManager::Get().GetSectionHeight(currentSection);
-        
+
         const std::vector<Buff>& worldBuffs = ObjectManager::Get().GetAllBuffs();
         const auto& toggleWalls = EnvironmentManager::Get().GetLevel3ToggleWalls();
         GameSaveManager::SaveGameAsync(meta, currentLevel, player, enemies, *currentPlatforms, worldBuffs, toggleWalls, levelMinY, levelMaxY);
+        GameSaveManager::WaitForSaveToFinish();
         GameSaveManager::Notify_Show(GameSaveManager::NotifyType::SAVED);
         AudioManager::Get().PlayAudio(AudioManager::Get().GetAudio("save"), false);
         ParticleManager_Emit(player.pos.x, player.pos.y, 15, 200.f, 255, 255, 255);
-        
+        EnvironmentManager::Get().PatchBossDoorLockedInSave();
+
         // Restore hidden position after save
         if (bossDoorTriggered) {
             player.pos.x = originalX;
@@ -329,12 +331,13 @@ void MainGame_Update()
 
             if (canTakeObstacleDamage)
             {
-                Player_ApplyDamage(player, 1.0f);AudioManager::Get().PlayAudio(AudioManager::Get().GetAudio("damage"),false);
+                Player_ApplyDamage(player, 1.0f);
+                AudioManager::Get().PlayAudio(AudioManager::Get().GetAudio("damage"), false);
 
                 // Knockback horizontally away from player's movement direction
                 float knockDir = player.facingRight ? -1.0f : 1.0f;
                 if (player.vel.x > 0.0f)      knockDir = -1.0f;
-                else if (player.vel.x < 0.0f) knockDir = 1.0f;
+                else if (player.vel.x < 0.0f) knockDir =  1.0f;
 
                 player.knockbackVel.x = knockDir * player.knockbackVelocity;
                 player.knockbackVel.y = player.grounded ? 0.0f : player.knockbackAirUp;
@@ -381,7 +384,22 @@ void MainGame_Update()
                 false
             );
             Camera_StartSequence(results.cameraPanTargetY, globalCam.y, 0.6f, camHoldTime);
-       }
+        }
+
+        // ----- camera pan down to boss door when the pc unlocks it -----
+        if (results.pendingComputer.triggered &&
+            results.pendingComputer.type == CollisionManager::ToggleType::BossDoorUnlock &&
+            !g_camSequenceActive && !g_pendingToggle)
+        {
+            // pan down to door; unlock fires at midpoint so the player sees it change state
+            Camera_StartSequence(results.pendingComputer.targetY, globalCam.y, 0.6f, 2.0f);
+            g_pendingToggle      = true;
+            g_pendingToggleMidpt = g_camSequenceDuration + g_camHoldDuration * 0.5f;
+            g_pendingToggleTimer = 0.0f;
+            g_pendingToggleBtnX  = results.pendingComputer.buttonX;
+            g_pendingToggleBtnY  = results.pendingComputer.buttonY;
+            g_pendingToggleType  = CollisionManager::ToggleType::BossDoorUnlock;
+        }
 
         // Lock player movement during camera sequence
         if (g_camSequenceActive) {
@@ -407,16 +425,18 @@ void MainGame_Update()
             }
 
             GameSaveManager::Metadata meta{ "", currentLevel, currentSection, static_cast<int>(ObjectManager::Get().GetPlayerHP()) };
-            
+
             float levelMinY = (currentSection == 0) ? -FLT_MAX : EnvironmentManager::Get().GetSectionHeight(currentSection - 1);
             float levelMaxY = EnvironmentManager::Get().GetSectionHeight(currentSection);
-            
+
             const std::vector<Buff>& worldBuffs = ObjectManager::Get().GetAllBuffs();
             const auto& toggleWalls = EnvironmentManager::Get().GetLevel3ToggleWalls();
             GameSaveManager::SaveGameAsync(meta, currentLevel, player, enemies, *currentPlatforms, worldBuffs, toggleWalls, levelMinY, levelMaxY);
+            GameSaveManager::WaitForSaveToFinish();
             GameSaveManager::Notify_Show(GameSaveManager::NotifyType::SAVED);
             AudioManager::Get().PlayAudio(AudioManager::Get().GetAudio("save"), false);
             ParticleManager_Emit(player.pos.x, player.pos.y, 15, 200.f, 255, 255, 255);
+            EnvironmentManager::Get().PatchBossDoorLockedInSave();
         }
 
         if (ObjectManager::Get().IsBossDefeated()) {
@@ -435,37 +455,36 @@ void MainGame_Update()
             case CollisionManager::ToggleType::Platform: {
                 // Find and fire the matching button for platform toggles
                 auto firePlatformButton = [&](const std::vector<PlatformButton>& buttons,
-                                              std::vector<Platform>& platforms) {
-                    for (const auto& btn : buttons) {
-                        if (fabs(btn.x - g_pendingToggleBtnX) < 1.0f &&
-                            fabs(btn.y - g_pendingToggleBtnY) < 1.0f) {
-                            for (int idx : btn.platformIndices) {
-                                if (idx >= 0 && idx < (int)platforms.size())
-                                {
-                                    platforms[idx].active = !platforms[idx].active;
-
-                                    AudioManager::Get().PlayAudio(
-                                        AudioManager::Get().GetAudio(
-                                            platforms[idx].active ? "platform_appear" : "platform_disappear"
-                                        ),
-                                        false
-                                    );
+                    std::vector<Platform>& platforms) {
+                        for (const auto& btn : buttons) {
+                            if (fabs(btn.x - g_pendingToggleBtnX) < 1.0f &&
+                                fabs(btn.y - g_pendingToggleBtnY) < 1.0f) {
+                                for (int idx : btn.platformIndices) {
+                                    if (idx >= 0 && idx < (int)platforms.size())
+                                    {
+                                        platforms[idx].active = !platforms[idx].active;
+                                        AudioManager::Get().PlayAudio(
+                                            AudioManager::Get().GetAudio(
+                                                platforms[idx].active ? "platform_appear" : "platform_disappear"
+                                            ),
+                                            false
+                                        );
+                                    }
                                 }
+                                EnvironmentManager::Get().MarkStaticDirty();
+                                return true;
                             }
-                            EnvironmentManager::Get().MarkStaticDirty();
-                            return true;
                         }
-                    }
-                    return false;
-                };
+                        return false;
+                    };
 
                 const auto& level1Buttons = EnvironmentManager::Get().GetLevel1Buttons();
                 const auto& level2Buttons = EnvironmentManager::Get().GetLevel2Buttons();
                 const auto& level3Buttons = EnvironmentManager::Get().GetLevel3Buttons();
 
                 if (!firePlatformButton(level1Buttons, const_cast<std::vector<Platform>&>(EnvironmentManager::Get().GetLevel1Platforms())))
-                if (!firePlatformButton(level2Buttons, const_cast<std::vector<Platform>&>(EnvironmentManager::Get().GetLevel2Platforms())))
-                    firePlatformButton(level3Buttons, const_cast<std::vector<Platform>&>(EnvironmentManager::Get().GetLevel3Platforms()));
+                    if (!firePlatformButton(level2Buttons, const_cast<std::vector<Platform>&>(EnvironmentManager::Get().GetLevel2Platforms())))
+                        firePlatformButton(level3Buttons, const_cast<std::vector<Platform>&>(EnvironmentManager::Get().GetLevel3Platforms()));
                 break;
             }
             case CollisionManager::ToggleType::Wall: {
@@ -501,6 +520,12 @@ void MainGame_Update()
                         break;
                     }
                 }
+                break;
+            }
+            case CollisionManager::ToggleType::BossDoorUnlock: {
+                // fire the actual unlock now that the camera is on the door
+                if (EnvironmentManager::Get().IsBossDoorLoaded())
+                    EnvironmentManager::Get().GetBossDoor().locked = false;
                 break;
             }
             default:
@@ -554,7 +579,7 @@ void MainGame_Update()
                 }
 
             }
-            
+
             comp.beamDuration -= dt;
 
             // hide beam and indicators after kill
@@ -569,7 +594,7 @@ void MainGame_Update()
             }
 
         }
-        
+
     }
 
 

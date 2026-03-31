@@ -36,6 +36,7 @@ struct PlatformButton {
 	mutable bool spriteInitialized = false;					// track sprite initialization
 	std::unique_ptr<SpriteSheet> buttonSprite;				// sprite for the button
 	std::string btnPrompt = "Press E to toggle platforms";	// default prompt
+	bool blocksWhenDoorLocked = false;                      // block interaction until the boss door is unlocked
 };
 
 struct PlatformObstacle {
@@ -92,6 +93,9 @@ struct PlatformComputer {
 	mutable float beamDuration = 0.0f;
 
 	ComputerToggle compType = ComputerToggle::Beam;
+
+	// if true, interacting with this pc unlocks the boss door and pans the camera down to it
+	bool unlocksBossDoor = false;
 
 	std::unique_ptr<SpriteSheet> computerSprite;
 	std::unique_ptr<SpriteSheet> indicatorLeft;

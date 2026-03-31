@@ -77,13 +77,13 @@ namespace CollisionManager
                     float collisionHalfW = player.width * 0.2f;
                     float playerLeft = player.pos.x - collisionHalfW;
                     float playerRight = player.pos.x + collisionHalfW;
-                   
+
                     bool overlapX = (playerRight > pfLeft) && (playerLeft < pfRight);
                     if (!overlapX) continue;
 
                     // check if player is standing on platform
-                     float tolerance = 0.1f;
-                     if (fabs(playerCurrBottom - pfTop) <= tolerance && overlapX)
+                    float tolerance = 0.1f;
+                    if (fabs(playerCurrBottom - pfTop) <= tolerance && overlapX)
                     {
                         player.grounded = 1;
                         player.pos.y = pfTop + player.height * 0.5f;
@@ -238,6 +238,16 @@ namespace CollisionManager
             bool overlapY = (playerTop >= btnBottom) && (playerBottom <= btnTop);
             bool inRange = overlapX && overlapY;
 
+            // if this button is flagged to block when the boss door is locked, prevent interaction
+            if (btn.blocksWhenDoorLocked &&
+                EnvironmentManager::Get().IsBossDoorLoaded() &&
+                EnvironmentManager::Get().GetBossDoor().locked)
+            {
+                if (inRange)
+                    player.interactHintOverride = "I need to unlock the office door first before I can go down..";
+                continue;
+            }
+
             if (inRange && AEInputCheckTriggered('E'))
             {
                 // Determine toggle type and target position based on what this button controls
@@ -266,7 +276,7 @@ namespace CollisionManager
 
     // ------------------------------------------------------------------------
     // Computers
-    static ButtonToggleResult HandleComputers(Player& player, const std::vector<PlatformComputer>& computers)
+    ButtonToggleResult HandleComputers(Player& player, const std::vector<PlatformComputer>& computers)
     {
         for (auto& comp : computers)
         {
@@ -287,27 +297,34 @@ namespace CollisionManager
             {
                 switch (comp.compType)
                 {
-                    case ComputerToggle::Beam:
-                        if (!comp.beamActive && !comp.pendingActivate)
-                        {
-                            comp.pendingActivate = true;
-                            comp.preActivateDelay = 0.0f;
-                            comp.indicatorsVisible = false;
-                            comp.beamVisible = false;
-                        }
-                        else if (comp.beamActive)
-                        {
+                case ComputerToggle::Beam:
+                    if (!comp.beamActive && !comp.pendingActivate)
+                    {
+                        comp.pendingActivate = true;
+                        comp.preActivateDelay = 0.0f;
+                        comp.indicatorsVisible = false;
+                        comp.beamVisible = false;
+                    }
+                    else if (comp.beamActive)
+                    {
 
-                            comp.beamActive = false;
-                            comp.beamVisible = false;
-                            comp.indicatorsVisible = false;
+                        comp.beamActive = false;
+                        comp.beamVisible = false;
+                        comp.indicatorsVisible = false;
 
-                        }
-                        break;
+                    }
+                    break;
                     /*
                     case ComputerToggle::BossDoor:
-                        add in player-bossdoor collision code here
+                    add in player-bossdoor collision code here
                     */
+                }
+
+                // if this pc is flagged to unlock the boss door, signal a camera pan — actual unlock fires at midpoint
+                if (comp.unlocksBossDoor && EnvironmentManager::Get().IsBossDoorLoaded())
+                {
+                    float doorY = EnvironmentManager::Get().GetBossDoor().y;
+                    return { true, comp.x, comp.y, doorY, ToggleType::BossDoorUnlock };
                 }
 
                 // Find first laser's Y position for camera target
@@ -331,7 +348,7 @@ namespace CollisionManager
             }
         }
     }
-    
+
     // ------------------------------------------------------------------------
     // Player melee vs Enemies
     void HandlePlayerMeleeEnemyCollisions(Player& player, std::vector<Enemy>& enemies)
@@ -431,7 +448,7 @@ namespace CollisionManager
             if (overlapX && overlapY)
             {
                 hitObs = true;
-                
+
                 // knockback from static obstacles
                 if (obs->alwaysStatic) {
 
@@ -441,7 +458,7 @@ namespace CollisionManager
                     if (pushRight < pushLeft)
                     {
                         player.pos.x += pushRight;
-                   }
+                    }
                     else
                     {
                         player.pos.x -= pushLeft;
@@ -589,6 +606,9 @@ namespace CollisionManager
 
         player.grounded = 0;
 
+        // clear any hint override from last frame before collision checks set a new one
+        player.interactHintOverride.clear();
+
         HandleGround(player, -350.0f, 50.0f, playerPrevY);
 
         const SpatialGrid& grid = env.GetSpatialGrid();
@@ -627,12 +647,12 @@ namespace CollisionManager
 
         HandlePlayerEnemyCollisionsSpatial(player, grid);
         HandleEnemyBulletPlayerCollisionsSpatial(player, grid);
-        
+
         // Bullet deflection — player melee hits active enemy bullets
         std::vector<EnemyBullet*> nearbyBullets;
         grid.GetNearbyBullets(player.pos.y, player.height, nearbyBullets);
         PlayerMelee_DeflectBullets(player, nearbyBullets);
-        
+
         HandlePlayerBulletEnemyCollisions(player, enemies); // small no. of bullets
         HandlePlayerMeleeEnemyCollisions(player, enemies); //small no. of bullets
 

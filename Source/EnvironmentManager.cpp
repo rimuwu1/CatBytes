@@ -31,7 +31,7 @@ Technology is prohibited.
 #include "rapidjson/document.h"
 #include <algorithm>
 #include <cmath>
-
+#include <fstream>
 // ------------------------------------------------------------------------
 // Helper: parse a platform array from a JSON value into a vector
 // ------------------------------------------------------------------------
@@ -103,7 +103,7 @@ void EnvironmentManager::LoadFromConfig(const rapidjson::Document& doc)
         m_computerFrameDuration = compCfg["frame_duration"].GetFloat();
 
         m_computerClips.clear();
-        
+
         for (const auto& clip : compCfg["clips"].GetArray())
         {
             ButtonClipConfig cfg;
@@ -136,7 +136,7 @@ void EnvironmentManager::LoadFromConfig(const rapidjson::Document& doc)
 
         m_normalLaserIndWidth = normalInd.HasMember("width") ? normalInd["width"].GetFloat() : 60.0f;
         m_normalLaserIndHeight = normalInd.HasMember("height") ? normalInd["height"].GetFloat() : 60.0f;
-        
+
         m_normalLaserIndTex = std::make_unique<SpriteSheet>(
             normalInd["file"].GetString(),
             normalInd["rows"].GetInt(),
@@ -290,34 +290,34 @@ void EnvironmentManager::LoadFromConfig(const rapidjson::Document& doc)
             obs.h = o["height"].GetFloat();
             obs.r = o.HasMember("rotation") ? o["rotation"].GetFloat() : 0.0f;
             obs.isSpike = o.HasMember("is_spike") ? o["is_spike"].GetBool() : true;
-            
-             // If this is a spike obstacle, instantiate per-obstacle SpriteSheet
-             if (obs.isSpike) {
-                 obs.sprite = std::make_unique<SpriteSheet>(
-                     m_spikeFilePath.c_str(),
-                     m_spikeRows,
-                     m_spikeCols,
-                     m_spikeTotalFrames,
-                     m_spikeFrameDuration
-                 );
-                 
-                 for (const auto& clipCfg : m_spikeClips) {
-                     obs.sprite->AddClip(
-                         clipCfg.name.c_str(),
-                         clipCfg.start,
-                         clipCfg.end,
-                         clipCfg.duration,
-                         clipCfg.loop
-                     );
-                 }
-                 
-                 obs.sprite->Play("on");
-                 obs.active = true;
-                 obs.prevActive = true;
-                 obs.spriteInitialized = true;
-             }
-             
-             m_level1Obstacles.push_back(std::move(obs));
+
+            // If this is a spike obstacle, instantiate per-obstacle SpriteSheet
+            if (obs.isSpike) {
+                obs.sprite = std::make_unique<SpriteSheet>(
+                    m_spikeFilePath.c_str(),
+                    m_spikeRows,
+                    m_spikeCols,
+                    m_spikeTotalFrames,
+                    m_spikeFrameDuration
+                );
+
+                for (const auto& clipCfg : m_spikeClips) {
+                    obs.sprite->AddClip(
+                        clipCfg.name.c_str(),
+                        clipCfg.start,
+                        clipCfg.end,
+                        clipCfg.duration,
+                        clipCfg.loop
+                    );
+                }
+
+                obs.sprite->Play("on");
+                obs.active = true;
+                obs.prevActive = true;
+                obs.spriteInitialized = true;
+            }
+
+            m_level1Obstacles.push_back(std::move(obs));
         }
     }
 
@@ -374,37 +374,37 @@ void EnvironmentManager::LoadFromConfig(const rapidjson::Document& doc)
             obs.h = o["height"].GetFloat();
             obs.r = o.HasMember("rotation") ? o["rotation"].GetFloat() : 0.0f;
             obs.isSpike = o.HasMember("is_spike") ? o["is_spike"].GetBool() : true;
-            
-             // If this is a spike obstacle, instantiate per-obstacle SpriteSheet
-             if (obs.isSpike) {
-                 obs.sprite = std::make_unique<SpriteSheet>(
-                     m_spikeFilePath.c_str(),
-                     m_spikeRows,
-                     m_spikeCols,
-                     m_spikeTotalFrames,
-                     m_spikeFrameDuration
-                 );
-                 
-                 for (const auto& clipCfg : m_spikeClips) {
-                     obs.sprite->AddClip(
-                         clipCfg.name.c_str(),
-                         clipCfg.start,
-                         clipCfg.end,
-                         clipCfg.duration,
-                         clipCfg.loop
-                     );
-                 }
-                 
-                 obs.sprite->Play("on");
-                 obs.active = true;
-                 obs.prevActive = true;
-                 obs.spriteInitialized = true;
-             }
-             
-             m_level2Obstacles.push_back(std::move(obs));
+
+            // If this is a spike obstacle, instantiate per-obstacle SpriteSheet
+            if (obs.isSpike) {
+                obs.sprite = std::make_unique<SpriteSheet>(
+                    m_spikeFilePath.c_str(),
+                    m_spikeRows,
+                    m_spikeCols,
+                    m_spikeTotalFrames,
+                    m_spikeFrameDuration
+                );
+
+                for (const auto& clipCfg : m_spikeClips) {
+                    obs.sprite->AddClip(
+                        clipCfg.name.c_str(),
+                        clipCfg.start,
+                        clipCfg.end,
+                        clipCfg.duration,
+                        clipCfg.loop
+                    );
+                }
+
+                obs.sprite->Play("on");
+                obs.active = true;
+                obs.prevActive = true;
+                obs.spriteInitialized = true;
+            }
+
+            m_level2Obstacles.push_back(std::move(obs));
         }
     }
- 
+
     // ---- Lasers (level_2 only) ----
     if (doc.HasMember("level_2") && doc["level_2"].HasMember("lasers")) {
         m_level2Lasers.clear();
@@ -479,6 +479,9 @@ void EnvironmentManager::LoadFromConfig(const rapidjson::Document& doc)
                 }
             }
 
+            // block that one button until the boss door is unlocked
+            btn.blocksWhenDoorLocked = b.HasMember("blocks_when_door_locked") && b["blocks_when_door_locked"].GetBool();
+
             m_level3Buttons.push_back(std::move(btn));
         }
     }
@@ -495,34 +498,34 @@ void EnvironmentManager::LoadFromConfig(const rapidjson::Document& doc)
             obs.r = o.HasMember("rotation") ? o["rotation"].GetFloat() : 0.0f;
             obs.isSpike = o.HasMember("is_spike") ? o["is_spike"].GetBool() : true;
             obs.alwaysStatic = o.HasMember("alwaysStatic") ? o["alwaysStatic"].GetBool() : false;
-            
-             // If this is a spike obstacle, instantiate per-obstacle SpriteSheet
-             if (obs.isSpike) {
-                 obs.sprite = std::make_unique<SpriteSheet>(
-                     m_spikeFilePath.c_str(),
-                     m_spikeRows,
-                     m_spikeCols,
-                     m_spikeTotalFrames,
-                     m_spikeFrameDuration
-                 );
-                 
-                 for (const auto& clipCfg : m_spikeClips) {
-                     obs.sprite->AddClip(
-                         clipCfg.name.c_str(),
-                         clipCfg.start,
-                         clipCfg.end,
-                         clipCfg.duration,
-                         clipCfg.loop
-                     );
-                 }
-                 
-                 obs.sprite->Play("on");
-                 obs.active = true;
-                 obs.prevActive = true;
-                 obs.spriteInitialized = true;
-             }
-             
-             m_level3Obstacles.push_back(std::move(obs));
+
+            // If this is a spike obstacle, instantiate per-obstacle SpriteSheet
+            if (obs.isSpike) {
+                obs.sprite = std::make_unique<SpriteSheet>(
+                    m_spikeFilePath.c_str(),
+                    m_spikeRows,
+                    m_spikeCols,
+                    m_spikeTotalFrames,
+                    m_spikeFrameDuration
+                );
+
+                for (const auto& clipCfg : m_spikeClips) {
+                    obs.sprite->AddClip(
+                        clipCfg.name.c_str(),
+                        clipCfg.start,
+                        clipCfg.end,
+                        clipCfg.duration,
+                        clipCfg.loop
+                    );
+                }
+
+                obs.sprite->Play("on");
+                obs.active = true;
+                obs.prevActive = true;
+                obs.spriteInitialized = true;
+            }
+
+            m_level3Obstacles.push_back(std::move(obs));
         }
     }
 
@@ -599,6 +602,9 @@ void EnvironmentManager::LoadFromConfig(const rapidjson::Document& doc)
             comp.indW = c.HasMember("indWidth") ? c["indWidth"].GetFloat() : comp.w;
             comp.indH = c.HasMember("indHeight") ? c["indHeight"].GetFloat() : comp.h;
 
+            // computer type boss_door always unlocks the boss door on interaction
+            comp.unlocksBossDoor = (comp.compType == ComputerToggle::BossDoor);
+
             if (isHorizontal)
             {
                 comp.indicatorLeft = std::make_unique<SpriteSheet>(
@@ -666,7 +672,7 @@ void EnvironmentManager::LoadFromConfig(const rapidjson::Document& doc)
             toggleWall.w = tw["width"].GetFloat();
             toggleWall.h = tw["height"].GetFloat();
             toggleWall.active = tw.HasMember("active") ? tw["active"].GetBool() : true;
-            
+
             m_level3ToggleWalls.push_back(toggleWall);
         }
     }
@@ -686,6 +692,8 @@ void EnvironmentManager::LoadFromConfig(const rapidjson::Document& doc)
         m_bossDoor.triggerRadius = bd["trigger_radius"].GetFloat();
         m_bossDoor.prompt        = bd["prompt"].GetString();
         m_bossDoorLoaded         = true;
+        // door always starts locked; the pc must unlock it before the player can interact
+        m_bossDoor.locked        = bd.HasMember("locked") ? bd["locked"].GetBool() : true;
     }
 
     // ---- Checkpoints ----
@@ -756,12 +764,12 @@ void EnvironmentManager::LoadAssetsFromConfig(const rapidjson::Document& doc)
         const auto& parallax = env["parallax"];
         /*const char* layerNames[3] = {"back", "middle", "front"};
         float speeds[3] = {0.3f, 0.6f, 1.0f};
-        
+
         for (int i = 0; i < 3; i++) {
-            if (parallax.HasMember(layerNames[i]) && parallax[layerNames[i]].IsString()) {
-                m_parallaxLayers[i].texture = TextureManager::Get().LoadTexture(parallax[layerNames[i]].GetString());
-                m_parallaxLayers[i].speed = speeds[i];
-            }
+        if (parallax.HasMember(layerNames[i]) && parallax[layerNames[i]].IsString()) {
+        m_parallaxLayers[i].texture = TextureManager::Get().LoadTexture(parallax[layerNames[i]].GetString());
+        m_parallaxLayers[i].speed = speeds[i];
+        }
         }*/
 
         const char* layerNames[10] = {
@@ -804,7 +812,7 @@ void EnvironmentManager::LoadAssetsFromConfig(const rapidjson::Document& doc)
     // ---- Spike obstacle configuration ----
     if (env.HasMember("spike_anim") && env["spike_anim"].IsObject()) {
         const auto& spikeConfig = env["spike_anim"];
-        
+
         // Read sprite sheet metadata
         m_spikeFilePath = spikeConfig.HasMember("file") ? spikeConfig["file"].GetString() : "Assets/Images/spikeObstacle.png";
         m_spikeRows = spikeConfig.HasMember("rows") ? spikeConfig["rows"].GetInt() : 1;
@@ -813,14 +821,14 @@ void EnvironmentManager::LoadAssetsFromConfig(const rapidjson::Document& doc)
         m_spikeFrameDuration = spikeConfig.HasMember("frame_duration") ? spikeConfig["frame_duration"].GetFloat() : 0.05f;
 
         // Create sprite sheet with loaded metadata
-         // No shared spike animation; each obstacle owns its own sprite
+        // No shared spike animation; each obstacle owns its own sprite
 
         // Parse clip configs if present; apply defaults per field for robustness
         if (spikeConfig.HasMember("clips") && spikeConfig["clips"].IsArray()) {
             std::vector<ButtonClipConfig> tempClips;
             for (const auto& clip : spikeConfig["clips"].GetArray()) {
                 ButtonClipConfig cfg;
-                
+
                 // name: required, but guard with HasMember and isString
                 if (clip.HasMember("name") && clip["name"].IsString()) {
                     cfg.name = clip["name"].GetString();
@@ -828,20 +836,20 @@ void EnvironmentManager::LoadAssetsFromConfig(const rapidjson::Document& doc)
                     // Skip clips without a name (or apply a default name if desired)
                     continue;
                 }
-                
+
                 // start: int, default 0
                 cfg.start = (clip.HasMember("start") && clip["start"].IsInt()) ? clip["start"].GetInt() : 0;
-                
+
                 // end: int, default 0
                 cfg.end = (clip.HasMember("end") && clip["end"].IsInt()) ? clip["end"].GetInt() : 0;
-                
+
                 // duration: float, default m_spikeFrameDuration
                 cfg.duration = (clip.HasMember("duration") && clip["duration"].IsNumber()) ? 
                     static_cast<float>(clip["duration"].GetDouble()) : m_spikeFrameDuration;
-                
+
                 // loop: bool, default false
                 cfg.loop = (clip.HasMember("loop") && clip["loop"].IsBool()) ? clip["loop"].GetBool() : false;
-                
+
                 tempClips.push_back(cfg);
             }
             // Only replace m_spikeClips if at least one valid clip was parsed
@@ -873,13 +881,25 @@ void EnvironmentManager::LoadAssetsFromConfig(const rapidjson::Document& doc)
     if (m_bossDoorLoaded && doc.HasMember("level_3") && doc["level_3"].HasMember("boss_door"))
     {
         const auto& bd = doc["level_3"]["boss_door"];
-        m_bossDoor.doorTex = TextureManager::Get().LoadTexture(bd["file"].GetString());
+
+        // load as a 2-frame spritesheet: frame 0 = unlocked, frame 1 = locked
+        // the json can optionally specify door_rows/door_cols; default is 1 row, 2 cols
+        int doorRows = bd.HasMember("door_rows") ? bd["door_rows"].GetInt() : 1;
+        int doorCols = bd.HasMember("door_cols") ? bd["door_cols"].GetInt() : 2;
+        m_bossDoorSheet = std::make_unique<SpriteSheet>(
+            bd["file"].GetString(),
+            doorRows,
+            doorCols,
+            doorRows * doorCols,
+            1.0f
+        );
+
         m_bossDoor.liftAnim = std::make_unique<SpriteSheet>(
             bd["lift_file"].GetString(),
             bd["lift_rows"].GetInt(),
             bd["lift_cols"].GetInt()
         );
-        m_bossDoor.liftAnim->AddClip("rise", 0, 16, 0.08f, false);
+        m_bossDoor.liftAnim->AddClip("rise", 0, 21, 0.3f, false); // how fast the lift goes up
         m_bossDoor.liftAnim->SetFrame(0);
     }
 }
@@ -906,7 +926,7 @@ void EnvironmentManager::Update(float dt, Player& player, float cameraY)
     if (m_checkpointAnim) m_checkpointAnim->Update(dt);
 
     UpdateBackground(cameraY);
-    
+
     // Update parallax offset based on camera Y
     m_parallaxY = cameraY;
 
@@ -922,82 +942,86 @@ void EnvironmentManager::Update(float dt, Player& player, float cameraY)
         LevelIndicator_Update(dt);
     }
 
-     // update spike timer
-     auto updateObsTimer = [&](std::vector<PlatformObstacle>& obstacles)
-         {
-             for (auto& o : obstacles)
-             {
-                 if (!o.isSpike) continue;
-                 if (o.alwaysStatic) continue;
-                 o.timer += dt;
-                 if (o.timer >= o.spikeInterval)
-                 {
-                     o.timer = 0.0f;
-                     o.active = !o.active;
-                 }
-             }
-         };
-     updateObsTimer(m_level1Obstacles);
-     updateObsTimer(m_level2Obstacles);
-     updateObsTimer(m_level3Obstacles);
+    // update spike timer
+    auto updateObsTimer = [&](std::vector<PlatformObstacle>& obstacles)
+        {
+            for (auto& o : obstacles)
+            {
+                if (!o.isSpike) continue;
+                if (o.alwaysStatic) continue;
+                o.timer += dt;
+                if (o.timer >= o.spikeInterval)
+                {
+                    o.timer = 0.0f;
+                    o.active = !o.active;
+                }
+            }
+        };
+    updateObsTimer(m_level1Obstacles);
+    updateObsTimer(m_level2Obstacles);
+    updateObsTimer(m_level3Obstacles);
 
-      // Per-obstacle spike animation state machine
-       auto updateSpikeAnimations = [&](std::vector<PlatformObstacle>& obstacles)
-           {
-               for (auto& o : obstacles)
-               {
-                   if (!o.isSpike || !o.sprite) continue;
+    // Per-obstacle spike animation state machine
+    auto updateSpikeAnimations = [&](std::vector<PlatformObstacle>& obstacles)
+        {
+            for (auto& o : obstacles)
+            {
+                if (!o.isSpike || !o.sprite) continue;
 
-                   // Initialize sprite if not yet done
-                   if (!o.spriteInitialized) {
-                       o.sprite->Play("on");
-                       o.prevActive = true;
-                       o.spriteInitialized = true;
-                   }
+                // Initialize sprite if not yet done
+                if (!o.spriteInitialized) {
+                    o.sprite->Play("on");
+                    o.prevActive = true;
+                    o.spriteInitialized = true;
+                }
 
-                   // Detect state changes and trigger transitions
-                   // Off -> On: play toggle animation then switch to "on"
-                   // On -> Off: immediately play "off" (no toggle)
-                   if (o.prevActive != o.active) {
-                       if (o.active) {
-                           // Transitioning OFF -> ON: play toggle
-                           o.sprite->Play("toggle");
-                       } else {
-                           // Transitioning ON -> OFF: immediately show off
-                           o.sprite->Play("off");
-                       }
-                   }
+                // Detect state changes and trigger transitions
+                // Off -> On: play toggle animation then switch to "on"
+                // On -> Off: immediately play "off" (no toggle)
+                if (o.prevActive != o.active) {
+                    if (o.active) {
+                        // Transitioning OFF -> ON: play toggle
+                        o.sprite->Play("toggle");
+                    } else {
+                        // Transitioning ON -> OFF: immediately show off
+                        o.sprite->Play("off");
+                    }
+                }
 
-                   // Update sprite animation
-                   o.sprite->Update(dt);
+                // Update sprite animation
+                o.sprite->Update(dt);
 
-                   // If toggle animation finished, switch to "on" clip
-                   if (o.sprite->GetCurrentClip() == "toggle" && !o.sprite->IsPlaying()) {
-                       o.sprite->Play("on");
-                   }
+                // If toggle animation finished, switch to "on" clip
+                if (o.sprite->GetCurrentClip() == "toggle" && !o.sprite->IsPlaying()) {
+                    o.sprite->Play("on");
+                }
 
-                   // Update previous state
-                   o.prevActive = o.active;
-              }
-          };
-     updateSpikeAnimations(m_level1Obstacles);
-     updateSpikeAnimations(m_level2Obstacles);
-     updateSpikeAnimations(m_level3Obstacles);
+                // Update previous state
+                o.prevActive = o.active;
+            }
+        };
+    updateSpikeAnimations(m_level1Obstacles);
+    updateSpikeAnimations(m_level2Obstacles);
+    updateSpikeAnimations(m_level3Obstacles);
 
     // boss door proxmity check
     if (m_bossDoorLoaded && !m_liftSeq.active)
     {
         float dx = player.pos.x - m_bossDoor.x;
-        float dy = player.pos.y - m_bossDoor.y;
+        float doorBottom = m_bossDoor.y - m_bossDoor.h * 0.5f;
+        float dy = player.pos.y - doorBottom;
         float dist = sqrtf(dx * dx + dy * dy);
         m_bossDoor.playerNear = (dist < m_bossDoor.triggerRadius);
 
         if (m_bossDoor.playerNear && AEInputCheckTriggered('E') && !m_bossDoor.activated)
         {
+            // do nothing while the door is still locked; the pc must be activated first
+            if (m_bossDoor.locked) return;
+
             // Store original position for save, then hide player for animation
             m_bossDoor.savedPlayerX = player.pos.x;
             m_bossDoor.savedPlayerY = player.pos.y;
-            
+
             m_bossDoor.activated = true;
             m_liftSeq.active = true;
             m_liftSeq.liftPosY = m_bossDoor.liftY;
@@ -1010,7 +1034,7 @@ void EnvironmentManager::Update(float dt, Player& player, float cameraY)
             // Hide player off screen during lift sequence
             player.pos.x = -1000.0f;
             player.pos.y = 7400.0f;
-            
+
             // Trigger save AFTER storing position but while lift is active
             RequestSave();
         }
@@ -1167,7 +1191,7 @@ void EnvironmentManager::RebuildStaticCache()
                 // drawn per-frame in Draw(). Do NOT cache hover sprites here.
             }
         }
-    };
+        };
 
     collectPlatforms(m_level1Platforms);
     collectPlatforms(m_level2Platforms);
@@ -1196,7 +1220,7 @@ void EnvironmentManager::RebuildStaticCache()
                 addSprite(m_wallMidTex, 1.0f, 1.0f, midCenterX, w.y, midWidth, w.h, 0.0f, 0.0f);
             }
         }
-    };
+        };
 
     collectWalls(m_wallPlatforms);
     collectWalls(m_level3WallPlatforms);
@@ -1238,7 +1262,7 @@ void EnvironmentManager::FlushStaticCache(float camY, float cullHalf)
             item.opacity = s.opacity;
             item.rotation = s.rotation;
             bool visible = (s.y + s.h * 0.5f) >= (camY - cullHalf) &&
-                           (s.y - s.h * 0.5f) <= (camY + cullHalf);
+                (s.y - s.h * 0.5f) <= (camY + cullHalf);
             if (visible)
                 mm.QueueSprite(item);
             ++i; // always advance the index to preserve grouping logic
@@ -1286,7 +1310,7 @@ void EnvironmentManager::DrawWorld(float camX, float camY, PlayerWeapon weapon, 
             if (o.isSpike && o.sprite) return true;
         }
         return false;
-    };
+        };
     bool hasSprites = m_hoverAnim || m_checkpointAnim ||
         hasObstaclesWithSprites(m_level1Obstacles) ||
         hasObstaclesWithSprites(m_level2Obstacles) ||
@@ -1327,7 +1351,7 @@ void EnvironmentManager::DrawWorld(float camX, float camY, PlayerWeapon weapon, 
                             m_hoverAnim->GetUVOffsetY());
                     }
                 }
-            };
+                };
 
             addHoverForLevel(m_level1Platforms);
             addHoverForLevel(m_level2Platforms);
@@ -1374,7 +1398,7 @@ void EnvironmentManager::DrawWorld(float camX, float camY, PlayerWeapon weapon, 
                     o.sprite->GetUVOffsetX(),
                     o.sprite->GetUVOffsetY());
             }
-        };
+            };
         drawObstacles(m_level1Obstacles);
         drawObstacles(m_level2Obstacles);
         drawObstacles(m_level3Obstacles);
@@ -1439,6 +1463,8 @@ void EnvironmentManager::DrawWorld(float camX, float camY, PlayerWeapon weapon, 
 
             if (screenX >  0.5f) screenX =  0.5f;
             if (screenX < -0.9f) screenX = -0.9f;
+            if (screenY >  0.9f) screenY =  0.9f;
+            if (screenY < -0.9f) screenY = -0.9f;
 
             FontManager::Get().PrintThemeAligned(FontManager::Get().GetSmallFont(), "Press E to save game", screenX, screenY, 1.0f, TextAlignment::Center, FontTheme::Gold);
             break; // only show for nearest checkpoint
@@ -1535,7 +1561,7 @@ void EnvironmentManager::DrawWorld(float camX, float camY, PlayerWeapon weapon, 
                 btn.buttonSprite->GetUVOffsetX(),
                 btn.buttonSprite->GetUVOffsetY());
         }
-    };
+        };
 
     collectButtons(m_level1Buttons, m_level1Platforms);
     collectButtons(m_level2Buttons, m_level2Platforms);
@@ -1545,94 +1571,94 @@ void EnvironmentManager::DrawWorld(float camX, float camY, PlayerWeapon weapon, 
     // 3. Computers
     // --------------------------------------------------------------------
     auto collectComputers = [&](std::vector<PlatformComputer>& computers, const std::vector<PlatformLaser>& /*lasers*/)
-    {
-        for (auto& comp : computers)
         {
-            if (!comp.computerSprite) continue;
-
-            bool isActive = comp.beamActive;            
-
-            // initialize first draw
-            if (!comp.spriteInitialized)
+            for (auto& comp : computers)
             {
-                comp.computerSprite->Play(isActive ? "on" : "off");
-                comp.prevState = isActive;
-                comp.spriteInitialized = true;
-            }
+                if (!comp.computerSprite) continue;
 
-            // state change
-            if (isActive != comp.prevState)
-            {
-                if (isActive)
+                bool isActive = comp.beamActive;            
+
+                // initialize first draw
+                if (!comp.spriteInitialized)
                 {
-                    comp.computerSprite->Play("transition");
+                    comp.computerSprite->Play(isActive ? "on" : "off");
+                    comp.prevState = isActive;
+                    comp.spriteInitialized = true;
                 }
-                else
+
+                // state change
+                if (isActive != comp.prevState)
                 {
-                    comp.computerSprite->Play("off");
-                }
-                comp.prevState = isActive;
-            }
-
-            // advance animation
-            comp.computerSprite->Update(dt);
-
-            if (comp.computerSprite->GetCurrentClip() == "transition" && !comp.computerSprite->IsPlaying())
-            {
-                comp.computerSprite->Play("on");
-
-                if (comp.beamActive)
-                {
-                    comp.pendingCameraPan = true;
-                }
-            }
-
-            // sync indicator w/ computer
-            auto syncIndicator = [&](SpriteSheet* ind)
-            {
-                    if (!ind) return;
-
-                    std::string currentClip = comp.computerSprite->GetCurrentClip();
-                    if (currentClip != ind->GetCurrentClip())
+                    if (isActive)
                     {
-                        ind->Play(currentClip.c_str());
+                        comp.computerSprite->Play("transition");
                     }
-                    ind->Update(dt);
-            };
+                    else
+                    {
+                        comp.computerSprite->Play("off");
+                    }
+                    comp.prevState = isActive;
+                }
 
-            syncIndicator(comp.indicatorLeft.get());
-            syncIndicator(comp.indicatorRight.get());
+                // advance animation
+                comp.computerSprite->Update(dt);
 
-            // draw computer sprite
-            addSprite(comp.computerSprite->GetTexture(),
-                      comp.computerSprite->GetSpriteUVWidth(),
-                      comp.computerSprite->GetSpriteUVHeight(),
-                      comp.x, comp.y, comp.w, comp.h,
-                      comp.computerSprite->GetUVOffsetX(),
-                      comp.computerSprite->GetUVOffsetY());
+                if (comp.computerSprite->GetCurrentClip() == "transition" && !comp.computerSprite->IsPlaying())
+                {
+                    comp.computerSprite->Play("on");
 
-            // draw indicators when visible
-            if (comp.indicatorLeft && comp.indicatorsVisible)
-            {
-                addSprite(comp.indicatorLeft->GetTexture(),
-                    comp.indicatorLeft->GetSpriteUVWidth(),
-                    comp.indicatorLeft->GetSpriteUVHeight(),
-                    comp.beamX1, comp.beamY1, comp.indW, comp.indH,
-                    comp.indicatorLeft->GetUVOffsetX(),
-                    comp.indicatorLeft->GetUVOffsetY());
+                    if (comp.beamActive)
+                    {
+                        comp.pendingCameraPan = true;
+                    }
+                }
+
+                // sync indicator w/ computer
+                auto syncIndicator = [&](SpriteSheet* ind)
+                    {
+                        if (!ind) return;
+
+                        std::string currentClip = comp.computerSprite->GetCurrentClip();
+                        if (currentClip != ind->GetCurrentClip())
+                        {
+                            ind->Play(currentClip.c_str());
+                        }
+                        ind->Update(dt);
+                    };
+
+                syncIndicator(comp.indicatorLeft.get());
+                syncIndicator(comp.indicatorRight.get());
+
+                // draw computer sprite
+                addSprite(comp.computerSprite->GetTexture(),
+                    comp.computerSprite->GetSpriteUVWidth(),
+                    comp.computerSprite->GetSpriteUVHeight(),
+                    comp.x, comp.y, comp.w, comp.h,
+                    comp.computerSprite->GetUVOffsetX(),
+                    comp.computerSprite->GetUVOffsetY());
+
+                // draw indicators when visible
+                if (comp.indicatorLeft && comp.indicatorsVisible)
+                {
+                    addSprite(comp.indicatorLeft->GetTexture(),
+                        comp.indicatorLeft->GetSpriteUVWidth(),
+                        comp.indicatorLeft->GetSpriteUVHeight(),
+                        comp.beamX1, comp.beamY1, comp.indW, comp.indH,
+                        comp.indicatorLeft->GetUVOffsetX(),
+                        comp.indicatorLeft->GetUVOffsetY());
+                }
+
+                if (comp.indicatorRight && comp.indicatorsVisible)
+                {
+                    addSprite(comp.indicatorRight->GetTexture(),
+                        comp.indicatorRight->GetSpriteUVWidth(),
+                        comp.indicatorRight->GetSpriteUVHeight(),
+                        comp.beamX2, comp.beamY2, comp.indW, comp.indH,
+                        comp.indicatorRight->GetUVOffsetX(),
+                        comp.indicatorRight->GetUVOffsetY());
+                }
             }
-
-            if (comp.indicatorRight && comp.indicatorsVisible)
-            {
-                addSprite(comp.indicatorRight->GetTexture(),
-                    comp.indicatorRight->GetSpriteUVWidth(),
-                    comp.indicatorRight->GetSpriteUVHeight(),
-                    comp.beamX2, comp.beamY2, comp.indW, comp.indH,
-                    comp.indicatorRight->GetUVOffsetX(),
-                    comp.indicatorRight->GetUVOffsetY());
-            }
-        }
-    };
+        };
 
     collectComputers(m_level3Computers, m_level3Lasers);
 
@@ -1660,10 +1686,14 @@ void EnvironmentManager::DrawWorld(float camX, float camY, PlayerWeapon weapon, 
                 float screenY = (btn.y + btn.h + 20.0f - camY) / (windowHeight * 0.5f);
                 if (screenX > 0.5f)  screenX = 0.5f;
                 if (screenX < -0.9f) screenX = -0.9f;
-                FontManager::Get().PrintThemeAligned(FontManager::Get().GetSmallFont(), btn.btnPrompt.c_str(), screenX, screenY, 1.0f, TextAlignment::Center, FontTheme::Cyan);
+                // if the collision pass set a hint override (e.g. locked boss door), show that instead
+                const std::string& promptText = player.interactHintOverride.empty()
+                    ? btn.btnPrompt
+                    : player.interactHintOverride;
+                FontManager::Get().PrintThemeAligned(FontManager::Get().GetSmallFont(), promptText.c_str(), screenX, screenY, 1.0f, TextAlignment::Center, FontTheme::Cyan);
             }
         }
-    };
+        };
 
     drawButtonPrompts(m_level1Buttons);
     drawButtonPrompts(m_level2Buttons);
@@ -1691,16 +1721,16 @@ void EnvironmentManager::DrawWorld(float camX, float camY, PlayerWeapon weapon, 
                 float windowHeight = (float)AEGfxGetWindowHeight();
                 float screenX = (comp.x - camX) / (windowWidth * 0.5f);
                 float screenY = (comp.y + comp.h + 20.0f - camY) / (windowHeight * 0.5f);
-                
+
                 // Center above computer, then apply small left offset if needed for screen bounds
                 if (screenX > 0.3f) {
                     screenX -= 0.15f; // Small left offset when near right edge
                 }
-                
-                FontManager::Get().PrintThemeAligned(FontManager::Get().GetSmallFont(), "Press E to toggle lasers", screenX, screenY, 1.0f, TextAlignment::Center, FontTheme::Magenta);
+
+                FontManager::Get().PrintThemeAligned(FontManager::Get().GetSmallFont(), "Press E to hack PC", screenX, screenY, 1.0f, TextAlignment::Center, FontTheme::Magenta);
             }
         }
-    };
+        };
 
     drawComputerPrompts(m_level3Computers);
 
@@ -1778,7 +1808,7 @@ void EnvironmentManager::DrawWorld(float camX, float camY, PlayerWeapon weapon, 
             }
 
         }
-    };
+        };
 
     collectLasers(m_level2Lasers);
     collectLasers(m_level3Lasers);
@@ -1794,7 +1824,7 @@ void EnvironmentManager::DrawWorld(float camX, float camY, PlayerWeapon weapon, 
                 comp.beamEndX, comp.beamEndY,
                 comp.beamW, 64.0f);
         }
-    };
+        };
 
     drawBeams(m_level3Computers);
 
@@ -1803,10 +1833,14 @@ void EnvironmentManager::DrawWorld(float camX, float camY, PlayerWeapon weapon, 
     // --------------------------------------------------------------------
     if (m_bossDoorLoaded)
     {
-        if (m_bossDoor.doorTex && inView(m_bossDoor.y, m_bossDoor.h * 0.5f))
-            mm.DrawTexturedSquare(m_bossDoor.doorTex,
+        if (m_bossDoorSheet && inView(m_bossDoor.y, m_bossDoor.h * 0.5f))
+        {
+            // freeze on frame 1 (locked) or frame 0 (unlocked) — no animation
+            m_bossDoorSheet->SetFrame(m_bossDoor.locked ? 1 : 0);
+            mm.DrawSpriteSheet(*m_bossDoorSheet,
                 m_bossDoor.x, m_bossDoor.y,
-                m_bossDoor.w, m_bossDoor.h, 1.0f);
+                m_bossDoor.w, m_bossDoor.h);
+        }
 
         if (m_bossDoor.liftAnim)
         {
@@ -1817,17 +1851,25 @@ void EnvironmentManager::DrawWorld(float camX, float camY, PlayerWeapon weapon, 
                     m_bossDoor.liftW, m_bossDoor.liftH);
         }
 
-        if (m_bossDoor.playerNear && !m_liftSeq.active)
-        {
-            float windowWidth  = (float)AEGfxGetWindowWidth();
-            float windowHeight = (float)AEGfxGetWindowHeight();
-            float screenX = (m_bossDoor.x - camX) / (windowWidth  * 0.5f);
-            float screenY = (m_bossDoor.y + m_bossDoor.h * 0.5f + 20.0f - camY) / (windowHeight * 0.5f);
-            if (screenX >  0.5f) screenX =  0.5f;
-            if (screenX < -0.9f) screenX = -0.9f;
-            FontManager::Get().Print(FontManager::Get().GetSmallFont(), m_bossDoor.prompt.c_str(),
-                screenX, screenY, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f);
-        }
+        //if (m_bossDoor.playerNear && !m_liftSeq.active)
+        //{
+        //    float windowWidth  = (float)AEGfxGetWindowWidth();
+        //    float windowHeight = (float)AEGfxGetWindowHeight();
+        //    // shift text to the right of the door so it clears the lift on the left side of screen
+        //    float textWorldX = m_bossDoor.x + 10.0f;
+        //    float screenX = (textWorldX - camX) / (windowWidth  * 0.5f);
+        //    // anchor text to the bottom of the door instead of top so it stays at player level
+        //    float screenY = (m_bossDoor.y - m_bossDoor.h * 0.5f + 20.0f - camY) / (windowHeight * 0.5f);
+        //    if (screenX >  0.5f) screenX =  0.5f;
+        //    if (screenX < -0.9f) screenX = -0.9f;
+        //    // if the door is locked, show a locked message; otherwise show the normal interact prompt
+        //    const std::string lockedHint = "I need to unlock the office door first before I can go down..";
+        //    const std::string& doorPrompt = m_bossDoor.locked
+        //        ? lockedHint
+        //        : m_bossDoor.prompt;
+        //    FontManager::Get().PrintThemeAligned(FontManager::Get().GetSmallFont(), doorPrompt.c_str(),
+        //        screenX, screenY, 1.0f, TextAlignment::Left, FontTheme::Gold);
+        //}
     }
 
     // fade overlay
@@ -1852,9 +1894,26 @@ void EnvironmentManager::DrawHUD(float camX, float camY, PlayerWeapon weapon)
     // Update press timers during draw phase so animations play even during pause
     float dt = (float)AEFrameRateControllerGetFrameTime();
     m_HUD.UpdatePressTimers(dt);
-    
+
     m_HUD.Draw(MeshManager::Get(), camX, camY, weapon);
     LevelIndicator_Draw();
+
+    //draw boss door here 
+    if (m_bossDoorLoaded && m_bossDoor.playerNear && !m_liftSeq.active)
+    {
+        float windowWidth  = (float)AEGfxGetWindowWidth();
+        float windowHeight = (float)AEGfxGetWindowHeight();
+        // anchor to door bottom so it stays near the player regardless of door height
+        float textWorldX = m_bossDoor.x + 120.0f;
+        float screenX = (textWorldX - camX) / (windowWidth  * 0.5f);
+        float screenY = (m_bossDoor.y - m_bossDoor.h * 0.5f + 20.0f - camY) / (windowHeight * 0.5f);
+        if (screenX >  0.5f) screenX =  0.5f;
+        if (screenX < -0.9f) screenX = -0.9f;
+        const std::string lockedHint = "I need to unlock the boss door first before I can go down..";
+        const std::string& doorPrompt = m_bossDoor.locked ? lockedHint : m_bossDoor.prompt;
+        FontManager::Get().PrintThemeAligned(FontManager::Get().GetSmallFont(), doorPrompt.c_str(),
+            screenX, screenY, 1.0f, TextAlignment::Left, FontTheme::Gold);
+    }
 }
 
 // ------------------------------------------------------------------------
@@ -1878,7 +1937,7 @@ void EnvironmentManager::DrawBackground(float camX, float camY) const
 {
     // Set background color
     AEGfxSetBackgroundColor(m_currentColour.r, m_currentColour.g, m_currentColour.b);
-    
+
     // Draw each parallax layer (layer 0 stretched, layers 1-2 tiled)
     MeshManager& mm = MeshManager::Get();
     const float maxWorldHeight = 10600.0f;  // highest section height
@@ -1893,13 +1952,13 @@ void EnvironmentManager::DrawBackground(float camX, float camY) const
             screenWidth, screenHeight);
         return;
     }
-    
+
     for (int i = 0; i < 10; i++) {
         if (m_parallaxLayers[i].texture) {
             // Calculate parallax offset (negative for proper scrolling direction)
             // Divide by 5 to reduce parallax strength
             float offsetY = -m_parallaxY * m_parallaxLayers[i].speed / 3.0f ;
-            
+
             //if (i == 0 || i == 2) {
             //    // First layer (back) - stretch from ground to max world height
             //    float layerHeight = maxWorldHeight - groundY;
@@ -1944,7 +2003,7 @@ void EnvironmentManager::DrawBackgroundOverlay(float camX, float camY) const
     MeshManager& mm = MeshManager::Get();
     const float screenWidth = 1600.0f;
     const float screenHeight = 900.0f;
-    
+
     // Draw a dark semi-transparent rectangle covering the entire screen
     // Dark gray with 40% opacity (60 out of 255)
     mm.DrawSquare(camX, camY, screenWidth, screenHeight, 30, 30, 30, 0.3f);
@@ -1985,6 +2044,45 @@ bool EnvironmentManager::isSaveRequested()
         m_saveRequested = false; // reset after checking
     }
     return shouldSave;
+}
+
+void EnvironmentManager::PatchBossDoorLockedInSave()
+{
+    if (!m_bossDoorLoaded) return;
+
+    // read the whole file as a string
+    std::ifstream ifs("Assets/Data/GameSave.json");
+    if (!ifs.is_open()) return;
+    std::string content((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
+    ifs.close();
+
+    const std::string lockedTrue  = "\"locked\": true";
+    const std::string lockedFalse = "\"locked\": false";
+    const std::string newValue    = m_bossDoor.locked ? lockedTrue : lockedFalse;
+
+    // if the locked key already exists, replace it
+    size_t pos = content.find("\"locked\"");
+    if (pos != std::string::npos)
+    {
+        // replace whichever value is currently there
+        size_t truePos  = content.find(lockedTrue);
+        size_t falsePos = content.find(lockedFalse);
+        if (truePos  != std::string::npos) content.replace(truePos,  lockedTrue.size(),  newValue);
+        else if (falsePos != std::string::npos) content.replace(falsePos, lockedFalse.size(), newValue);
+    }
+    else
+    {
+        // inject it into the boss_door block — find "boss_door": { and insert after the opening brace
+        size_t doorPos = content.find("\"boss_door\"");
+        if (doorPos == std::string::npos) return;
+        size_t bracePos = content.find('{', doorPos);
+        if (bracePos == std::string::npos) return;
+        content.insert(bracePos + 1, "\n            " + newValue + ",");
+    }
+
+    std::ofstream ofs("Assets/Data/GameSave.json");
+    if (!ofs.is_open()) return;
+    ofs << content;
 }
 
 void EnvironmentManager::SetCheckpointInRange(bool inRange)
@@ -2066,7 +2164,7 @@ void EnvironmentManager::Clear()
     m_liftSeq         = BossLiftSequence{};
     m_bossDoorLoaded  = false;
     m_bossRoomMode = false;
-    
+
     // Also clear static cache and mark dirty to avoid stale geometry after a restart/load
     m_staticCache.clear();
     m_staticBatchDirty = true;

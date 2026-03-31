@@ -65,6 +65,8 @@ static std::unique_ptr<SpriteSheet> g_ButtonSheet = nullptr;
 static float g_ButtonWidth = 300.0f;
 static float g_ButtonHeight = 60.0f;
 
+extern const char* textScreenMessage;
+
 static rapidjson::Document LoadConfig()  
 {
     rapidjson::Document doc;
@@ -364,14 +366,17 @@ void MainMenu_Update()
                     []() {
                         g_newGame = true;
                         GameSaveManager::ResetSave();
-                        GameStateManager::Get().next = GS_MAINGAME;
+                        textScreenMessage = "Cutscene";
+                        GameStateManager::Get().next = GS_WINLOSE;
                     },
                     []() { /* cancel – do nothing */ }
                 );
             }
             else {
                 GameSaveManager::ResetSave();
-                GameStateManager::Get().next = GS_MAINGAME;
+                /*GameStateManager::Get().next = GS_MAINGAME;*/
+                textScreenMessage = "Cutscene";
+                GameStateManager::Get().next = GS_WINLOSE;
             }
             break;
         case BTN_CONTROLS:

@@ -67,10 +67,10 @@ public:
     const std::vector<Platform>& GetLevel3ToggleWalls() const { return m_level3ToggleWalls; }
 
     const std::vector<Platform>& GetBossPlatforms()  const { return m_bossPlatforms; }
-    
+
     const std::vector<Platform>& GetWallPlatforms()  const { return m_wallPlatforms; }
     const std::vector<Platform>& GetLevel3WallPlatforms() const { return m_level3WallPlatforms; }
-     
+
     const std::vector<Checkpoint>& GetCheckpoints() const { return m_checkpoints; }
 
     // Non-const accessors for vectors that may be modified (add 3 and 4 here when needed)
@@ -93,6 +93,7 @@ public:
     bool HandleCheckpoint(bool checkpointHit); //not used anymore
     bool isSaveRequested(); //saves once then clears state
     void RequestSave();  // sets internal save request flag
+    void PatchBossDoorLockedInSave();
     void SetCheckpointInRange(bool inRange);
     bool GetCheckpointInRange() const;
 
@@ -110,7 +111,7 @@ public:
         float duration = 0.0f;
         bool loop = false;
     };
-    
+
     // boss door
     struct BossDoor {
         float x = 0, y = 0, w = 30.0f, h = 100.0f;
@@ -125,6 +126,8 @@ public:
         // Store original player position before hiding for lift sequence (for save)
         float savedPlayerX = 0.0f;
         float savedPlayerY = 0.0f;
+        // door starts locked; must be unlocked by the pc before the player can interact
+        bool locked = true;
     };
 
     struct BossLiftSequence {
@@ -146,7 +149,7 @@ public:
     bool               IsBossDoorLoaded() const { return m_bossDoorLoaded; }
     bool               IsLiftActive()     const { return m_liftSeq.active; }
 
-   
+
     void SetBossRoomMode(bool enabled) { m_bossRoomMode = enabled; }
     bool IsBossRoomMode() const { return m_bossRoomMode; }
 
@@ -309,6 +312,8 @@ private:
     BossDoor         m_bossDoor{};
     BossLiftSequence m_liftSeq{};
     bool             m_bossDoorLoaded = false;
+    // boss door spritesheet: frame 0 = unlocked, frame 1 = locked
+    std::unique_ptr<SpriteSheet> m_bossDoorSheet;
 
     bool m_bossRoomMode = false;
     std::unique_ptr<SpriteSheet> m_bossRoomBg;

@@ -144,13 +144,27 @@
 
     "computer": "Assets/Audio/ADDING-MACHINE-ELECTRONIC_GEN-HDF-00037.wav"
   },
+  "cutscene_images": {
+    "slides": [
+        "Assets/Images/F0.png",
+        "Assets/Images/F1.png",
+        "Assets/Images/F2.png",
+        "Assets/Images/F3.png",
+        "Assets/Images/F4.png",
+        "Assets/Images/F5.png",
+        "Assets/Images/F6.png",
+        "Assets/Images/F7.png"
+    ],
+    "win":  "Assets/Images/F8.png",
+    "lose": "Assets/Images/F9.png"
+},
     "player": {
             "x": 0.0,
             "y": -300.0,
             "width": 50.0,
             "height": 80.0,
             "hp": 5.0,
-            "melee_damage": 10.0,
+            "melee_damage": 100.0,
             "knockback_velocity": 400.0,
             "knockback_air_up": 300.0,
             "pogo_velocity": 600.0,
@@ -1519,7 +1533,7 @@
             { "x": -600.0, "y": 4990.0, "width": 40.0, "height": 40.0, "platformIndices": [10, 11, 12, 13, 14, 15, 16, 17, 18] },
             { "x":  300.0, "y": 6040.0, "width": 40.0, "height": 40.0, "wallIndices": [0], "prompt": "Press E to toggle wall" },
             { "x":  700.0, "y": 8590.0, "width": 40.0, "height": 40.0, "platformIndices": [48, 49, 50, 52] },
-            { "x": -350.0, "y": 9040.0, "width": 40.0, "height": 40.0, "platformIndices": [57] },
+            { "x": -350.0, "y": 9040.0, "width": 40.0, "height": 40.0, "platformIndices": [57], "blocks_when_door_locked": true },
             { "x":   -5.0, "y": 8590.0, "width": 40.0, "height": 40.0, "platformIndices": [58] },
             { "x":  -60.0, "y": 8140.0, "width": 40.0, "height": 40.0, "platformIndices": [61] }
         ],
@@ -1554,20 +1568,21 @@
             { "x1":  -75.0, "x2":  -75.0, "y1": 9000.0, "y2": 8550.0, "width": 10.0, "active": true, "toggeable" : true }
         ],
         "walls": [     
-            { "x":  100.0, "y": 8270.0, "width": 20.0, "height": 1800.0 }
+            { "x":  100.0, "y": 8270.0, "width": 20.0, "height": 1800.0 },
+            { "x":  -425.0, "y": 9122.0, "width": 20.0, "height": 3500.0 }
         ],
       "toggleable_walls": [
             { "x":  450.0, "y": 7125.0, "width": 10.0, "height": 1010.0 }
         ],
         "boss_door": {
-            "x": -410.0,
-            "y": 7466.0,
+            "x": -400.0,
+            "y": 7729.0,
             "width": 20.0,
-            "height": 200.0,
+            "height": 715.0,
             "file": "Assets/Images/bossdoor.png",
             "lift_file": "Assets/Images/bosslift.png",
             "lift_rows": 1,
-            "lift_cols": 17,
+            "lift_cols": 22,
             "lift_x": -590.0,
             "lift_y": 9163.0,
             "prompt": "Press E to enter boss room",

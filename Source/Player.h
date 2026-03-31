@@ -6,12 +6,12 @@
 		Joash ng, joash.ng, 2502780
 		Sim Hui Min, s.huimin, 2503506
 \par    kerwinjiajie.wong@digipen.edu
-	    tse.x@digipen.edu
+		tse.x@digipen.edu
 		joash.ng@digipen.edu
 		s.huimin@digipen.edu
 \date January, 23, 2026
 \brief This file contains the function declarations for the Player movements, physics,
-		input handling, and rendering.
+input handling, and rendering.
 
 Copyright (C) 2026 DigiPen Institute of Technology.
 Reproduction or disclosure of this file or its contents
@@ -28,6 +28,7 @@ Technology is prohibited.
 #include "rapidjson/document.h"
 #include <vector>
 #include <memory>
+#include <string>
 
 // ----------------------------------------------------------------------------
 // Types of weapons the player can equip
@@ -70,7 +71,7 @@ struct Player
 	float attackTimer = 0.0f;//how long the attack lasts
 	float meleeDamage = 0.0f;//damage dealt to enemies
 	float meleeCooldownTimer = 0.0f;
-	
+
 	// player gun
 	int maxBullets = 0;
 	float bulletSpeed = 0.0f;
@@ -138,6 +139,9 @@ struct Player
 	// spike pogo
 	bool pogoJustPerformed = false;
 	float pogoVelocity = 0.0f;
+
+	// overrides the normal "press e" hint for special cases; cleared each frame by collision pass
+	std::string interactHintOverride;
 };
 
 struct Enemy; // forward declaration

@@ -33,10 +33,10 @@ namespace CollisionManager
 
 
     bool HandleLandingOnAnyPlatform(Player& player, float playerPrevY,
-                                    const std::vector<Platform>& platforms1,
-                                    const std::vector<Platform>& platforms2,
-                                    const std::vector<Platform>& platforms3,
-                                    const std::vector<Platform>& platforms4);
+        const std::vector<Platform>& platforms1,
+        const std::vector<Platform>& platforms2,
+        const std::vector<Platform>& platforms3,
+        const std::vector<Platform>& platforms4);
 
     // Wall collisions (horizontal push)
     void HandleWalls(Player& player, const std::vector<Platform>& walls);
@@ -50,9 +50,10 @@ namespace CollisionManager
     // Toggle type for button/computer interactions
     enum class ToggleType {
         None,
-        Platform,   // button toggles platforms
-        Wall,       // button toggles toggle walls
-        Laser       // computer toggles lasers
+        Platform,       // button toggles platforms
+        Wall,           // button toggles toggle walls
+        Laser,          // computer toggles lasers
+        BossDoorUnlock  // boss-door pc was activated and unlocked the boss door
     };
 
     // Button toggle result - returns position and type of toggled element
@@ -68,7 +69,7 @@ namespace CollisionManager
     ButtonToggleResult HandleButtons(Player& player, const std::vector<PlatformButton>& buttons, const std::vector<Platform>& platforms, const std::vector<Platform>& toggleWalls);
 
     // Computer collisions (toggle lasers) - returns result for camera pan
-    ButtonToggleResult HandleComputers(Player& player, const std::vector<PlatformComputer>& computers, std::vector<Enemy>& enemies);
+    ButtonToggleResult HandleComputers(Player& player, const std::vector<PlatformComputer>& computers);
 
     // Player bullet collisions with enemies
     //void HandlePlayerBulletEnemyCollisions(Player& player, std::vector<Enemy>& enemies);
