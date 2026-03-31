@@ -325,18 +325,23 @@ void MainGame_Update()
         //obstacle reaction
         if (results.obstacleHit)
         {
-            Player_ApplyDamage(player, 1.0f);
-            AudioManager::Get().PlayAudio(AudioManager::Get().GetAudio("damage"),false);
-            // Knockback horizontally away from player's movement direction
-            float knockDir = player.facingRight ? -1.0f : 1.0f;
-            if (player.vel.x > 0.0f) knockDir = -1.0f;
-            else if (player.vel.x < 0.0f) knockDir = 1.0f;
-            
-            player.knockbackVel.x = knockDir * player.knockbackVelocity;
-            player.knockbackVel.y = player.grounded ? 0.0f : player.knockbackAirUp;
-            player.knockbackTimer = player.hurtTimer;
-            player.vel.x = player.knockbackVel.x;
-            player.vel.y = player.knockbackVel.y;
+            const bool canTakeObstacleDamage = (player.hurtTimer <= 0.0f);
+
+            if (canTakeObstacleDamage)
+            {
+                Player_ApplyDamage(player, 1.0f);AudioManager::Get().PlayAudio(AudioManager::Get().GetAudio("damage"),false);
+
+                // Knockback horizontally away from player's movement direction
+                float knockDir = player.facingRight ? -1.0f : 1.0f;
+                if (player.vel.x > 0.0f)      knockDir = -1.0f;
+                else if (player.vel.x < 0.0f) knockDir = 1.0f;
+
+                player.knockbackVel.x = knockDir * player.knockbackVelocity;
+                player.knockbackVel.y = player.grounded ? 0.0f : player.knockbackAirUp;
+                player.knockbackTimer = player.hurtTimer;
+                player.vel.x = player.knockbackVel.x;
+                player.vel.y = player.knockbackVel.y;
+            }
         }
 
         // Pogo reaction

@@ -34,6 +34,16 @@
       "width": 300,
       "height": 60
     }
+  },
+
+  "controls_menu": {
+    "buttons": {
+      "file": "Assets/Images/ControlButtons.png",
+      "rows": 2,
+      "cols": 4,
+      "width": 120,
+      "height": 60
+    }
   }
 },
     "environment": {

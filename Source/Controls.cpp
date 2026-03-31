@@ -23,6 +23,15 @@ Technology is prohibited.
 #include "AEEngine.h"
 #include "AudioManager.h"
 #include "Fonts.h"
+#include <memory>
+#include "SpriteSheet.h"
+#include <fstream>
+#include "rapidjson/document.h"
+#include "rapidjson/istreamwrapper.h"
+
+static std::unique_ptr<SpriteSheet> g_ControlButtonSheet = nullptr;
+static float g_ControlButtonWidth = 120.0f;
+static float g_ControlButtonHeight = 60.0f;
 
 static AEAudio g_HoverSound{};
 static AEAudio g_ClickSound{};
@@ -32,7 +41,7 @@ static float g_SFXSlider = 1.0f;
 static bool g_DragMusic = false;
 static bool g_DragSFX = false;
 
-static float Clamp01(float v)
+static float Clamp01(float v) noexcept
 {
     if (v < 0.0f) return 0.0f;
     if (v > 1.0f) return 1.0f;
@@ -47,18 +56,61 @@ enum ControlTab
     TAB_SETTINGS
 };
 
+static rapidjson::Document LoadConfig() noexcept
+{
+    rapidjson::Document doc;
+
+    std::ifstream ifs("Assets/Data/GameConfig.json");
+
+    if (!ifs.is_open())
+    {
+        doc.SetObject();
+        return doc;
+    }
+
+    rapidjson::IStreamWrapper isw(ifs);
+    doc.ParseStream(isw);
+
+    if (!doc.IsObject())
+        doc.SetObject();
+
+    return doc;
+}
+enum ControlButtonFrame
+{
+    FRAME_KEYS = 0,
+    FRAME_INSTRUCTIONS = 1,
+    FRAME_SETTINGS = 2,
+    FRAME_BACK = 3,
+
+    FRAME_KEYS_PRESSED = 4,
+    FRAME_INSTRUCTIONS_PRESSED = 5,
+    FRAME_SETTINGS_PRESSED = 6
+};
+
+enum ControlButton
+{
+    CONTROLBTN_NONE = -1,
+    CONTROLBTN_KEYS = 0,
+    CONTROLBTN_INSTRUCTIONS,
+    CONTROLBTN_SETTINGS,
+    CONTROLBTN_BACK
+};
+
+static bool IsMouseOverRect(float mx, float my, float cx, float cy, float w, float h) noexcept
+{
+    return (fabs(mx - cx) <= w * 0.5f &&
+        fabs(my - cy) <= h * 0.5f);
+}
+
 static ControlTab g_CurrentTab = TAB_KEYS;
 
-static int g_HoveredButton = -1;
+static int g_HoveredButton = CONTROLBTN_NONE;
 
 
 // textures, temp
 static AEGfxTexture* g_BG = nullptr;
-static AEGfxTexture* g_SettingsBtn = nullptr;
-static AEGfxTexture* g_KeysBtn = nullptr;
-static AEGfxTexture* g_InstructionsBtn = nullptr;
 static AEGfxTexture* g_SettingsPanel = nullptr;
-static AEGfxTexture* g_BackBtn = nullptr;
 
 // textures for instructions page
 static AEGfxTexture* g_ImgMelee = nullptr;
@@ -76,9 +128,9 @@ const float BTN_X = -0.85f;
 const float BTN_WIDTH = 0.2f;
 const float BTN_HEIGHT = 0.15f;
 
-const float BTN_KEYS_Y = 0.22f;
+const float BTN_KEYS_Y = 0.30f;
 const float BTN_INSTRUCTIONS_Y = 0.05f;
-const float BTN_SETTINGS_Y =-0.12f;
+const float BTN_SETTINGS_Y = -0.20f;
 
 // instruction card layout
 const float CARD_LEFT = -0.62f;
@@ -129,7 +181,7 @@ static constexpr int g_InteractionCount = static_cast<int>(sizeof(g_InteractionC
 static constexpr int g_BuffCount = static_cast<int>(sizeof(g_BuffCards) / sizeof(g_BuffCards[0]));
 
 //check for hovering
-static bool IsMouseOver(float mx, float my, float x, float y)
+static bool IsMouseOver(float mx, float my, float x, float y) noexcept
 {
     return (mx >= x && mx <= x + BTN_WIDTH &&
         my >= y - BTN_HEIGHT * 0.5f &&
@@ -140,7 +192,7 @@ static bool IsMouseOver(float mx, float my, float x, float y)
 static void DrawRect(
     float cx, float cy, float pw, float ph, 
     float r, float g, float b, float a
-)
+)noexcept
 {
     MeshManager::Get().DrawSquare(
         cx, cy, pw, ph,
@@ -204,11 +256,7 @@ void Controls_Load()
 {
 
     g_BG = TextureManager::Get().LoadTexture("Assets/Images/ControlPage.png");
-    g_SettingsBtn = TextureManager::Get().LoadTexture("Assets/Images/settings.png");
-    g_KeysBtn = TextureManager::Get().LoadTexture("Assets/Images/Keys.png");
-    g_InstructionsBtn = TextureManager::Get().LoadTexture("Assets/Images/Help.png");
-    g_SettingsPanel = TextureManager::Get().LoadTexture("Assets/Images/settingstest.png");
-    g_BackBtn = TextureManager::Get().LoadTexture("Assets/Images/Backbutton.png");
+    g_SettingsPanel = TextureManager::Get().LoadTexture("Assets/Images/sliderbutton.png");
 
     // instructions page textures
     g_ImgMelee = TextureManager::Get().LoadTexture("Assets/Images/controls_melee.png");
@@ -227,13 +275,37 @@ void Controls_Load()
 void Controls_Initialize()
 {
     std::cout << "Controls:Initialize" << std::endl;
+
+    rapidjson::Document doc = LoadConfig();
+
+    if (doc.HasMember("menus") &&
+        doc["menus"].IsObject() &&
+        doc["menus"].HasMember("controls_menu"))
+    {
+        const auto& menu = doc["menus"]["controls_menu"];
+
+        if (menu.HasMember("buttons"))
+        {
+            const auto& btns = menu["buttons"];
+
+            g_ControlButtonSheet = std::make_unique<SpriteSheet>(
+                btns["file"].GetString(),
+                btns["rows"].GetInt(),
+                btns["cols"].GetInt()
+            );
+
+            if (btns.HasMember("width"))
+                g_ControlButtonWidth = btns["width"].GetFloat();
+
+            if (btns.HasMember("height"))
+                g_ControlButtonHeight = btns["height"].GetFloat();
+        }
+    }
+
     g_HoverSound = AudioManager::Get().GetAudio("hover_button");
     g_ClickSound = AudioManager::Get().GetAudio("click_button");
     g_PreviousHoveredButton = -1;
     g_CurrentTab = TAB_KEYS;
-
-
-    std::cout << "Controls:Load" << std::endl;
 }
 
 void Controls_Update()
@@ -253,34 +325,27 @@ void Controls_Update()
     float nx = (mx / w) * 2.0f - 1.0f;
     float ny = 1.0f - (my / h) * 2.0f;
 
-
-    // back button click
-    if (AEInputCheckTriggered(AEVK_LBUTTON))
-    {
-        float bx = -600.0f / (w * 0.5f);
-        float by = 350.0f / (h * 0.5f);
-
-        float bw = 100.0f / (w * 0.5f);
-        float bh = 50.0f / (h * 0.5f);
-
-        if (fabs(nx - bx) < (bw * 0.5f) && fabs(ny - by) < (bh * 0.5f))
-        {
-            GameStateManager::Get().next = GS_MAINMENU;
-            AudioManager::Get().PlayAudio(g_ClickSound, false);
-        }
-    }
-
-    g_HoveredButton = -1;
+    g_HoveredButton = CONTROLBTN_NONE;
 
     if (IsMouseOver(nx, ny, BTN_X, BTN_KEYS_Y))
-        g_HoveredButton = TAB_KEYS;
+        g_HoveredButton = CONTROLBTN_KEYS;
     else if (IsMouseOver(nx, ny, BTN_X, BTN_INSTRUCTIONS_Y))
-        g_HoveredButton = TAB_INSTRUCTIONS;
+        g_HoveredButton = CONTROLBTN_INSTRUCTIONS;
     else if (IsMouseOver(nx, ny, BTN_X, BTN_SETTINGS_Y))
-        g_HoveredButton = TAB_SETTINGS;
+        g_HoveredButton = CONTROLBTN_SETTINGS;
+    else
+    {
+        float backCX = -720.0f / (w * 0.5f);
+        float backCY = 400.0f / (h * 0.5f);
+        float backW = g_ControlButtonWidth / w * 2.0f;
+        float backH = g_ControlButtonHeight / h * 2.0f;
+
+        if (IsMouseOverRect(nx, ny, backCX, backCY, backW, backH))
+            g_HoveredButton = CONTROLBTN_BACK;
+    }
 
     //hover
-    if (g_HoveredButton != -1 && g_HoveredButton != g_PreviousHoveredButton)
+    if (g_HoveredButton != CONTROLBTN_NONE && g_HoveredButton != g_PreviousHoveredButton)
     {
         AudioManager::Get().PlayAudio(g_HoverSound, false);
     }
@@ -289,19 +354,24 @@ void Controls_Update()
     // click
     if (AEInputCheckTriggered(AEVK_LBUTTON))
     {
-        if (g_HoveredButton == TAB_KEYS)
+        if (g_HoveredButton == CONTROLBTN_KEYS)
         {
             g_CurrentTab = TAB_KEYS;
             AudioManager::Get().PlayAudio(g_ClickSound, false);
         }
-        else if (g_HoveredButton == TAB_INSTRUCTIONS)
+        else if (g_HoveredButton == CONTROLBTN_INSTRUCTIONS)
         {
             g_CurrentTab = TAB_INSTRUCTIONS;
             AudioManager::Get().PlayAudio(g_ClickSound, false);
         }
-        else if (g_HoveredButton == TAB_SETTINGS)
+        else if (g_HoveredButton == CONTROLBTN_SETTINGS)
         {
             g_CurrentTab = TAB_SETTINGS;
+            AudioManager::Get().PlayAudio(g_ClickSound, false);
+        }
+        else if (g_HoveredButton == CONTROLBTN_BACK)
+        {
+            GameStateManager::Get().next = GS_MAINMENU;
             AudioManager::Get().PlayAudio(g_ClickSound, false);
         }
     }
@@ -448,56 +518,48 @@ void Controls_Draw()
     {
         MeshManager::Get().DrawTexturedSquare(g_BG, 0, 0, w, h, 1.0f);
     }
-
-    if (g_BackBtn)
-    {
-        MeshManager::Get().DrawTexturedSquare(
-            g_BackBtn,
-            -600.0f,   // left side
-            350.0f,
-            100.0f,
-            50.0f,
-            1.0f
-        );
-    }
-
     float halfW = w / 2.0f;
     float halfH = h / 2.0f;
-    float btnX = (BTN_X * (w / 2.0f)) + 80.0f;
 
-    // draw KEYS button
-    if (g_KeysBtn)
+    if (g_ControlButtonSheet)
     {
-        float y = BTN_KEYS_Y * halfH;
-        float scale = (g_HoveredButton == TAB_KEYS) ? 1.1f : 1.0f;
+        float btnX = (BTN_X * halfW) + 40.0f;
 
-        MeshManager::Get().DrawTexturedSquare(
-            g_KeysBtn, btnX, y,
-            120.0f * scale, 60.0f * scale, 1.0f
-        );
-    }
+        auto DrawBtn = [&](int normalFrame, int pressedFrame, int btnId, float ndcY)
+            {
+                int frame = normalFrame;
 
-    // draw INSTRUCTIONS button
-    if (g_InstructionsBtn)
-    {
-        float y = BTN_INSTRUCTIONS_Y * halfH;
-        float scale = (g_HoveredButton == TAB_INSTRUCTIONS) ? 1.1f : 1.0f;
+                if (g_HoveredButton == btnId)
+                    frame = pressedFrame;
 
-        MeshManager::Get().DrawTexturedSquare(
-            g_InstructionsBtn, btnX, y,
-            120.0f * scale, 60.0f * scale, 1.0f
-        );
-    }
+                g_ControlButtonSheet->SetFrame(frame);
 
-    // draw SETTINGS button
-    if (g_SettingsBtn)
-    {
-        float y = BTN_SETTINGS_Y * halfH;
-        float scale = (g_HoveredButton == TAB_SETTINGS) ? 1.1f : 1.0f;
+                float scale = (g_HoveredButton == btnId) ? 1.12f : 1.0f;
 
-        MeshManager::Get().DrawTexturedSquare(
-            g_SettingsBtn, btnX, y,
-            120.0f * scale, 60.0f * scale, 1.0f
+                MeshManager::Get().DrawSpriteSheet(
+                    *g_ControlButtonSheet,
+                    btnX,
+                    ndcY * halfH,
+                    g_ControlButtonWidth * scale,
+                    g_ControlButtonHeight * scale
+                );
+            };
+
+        DrawBtn(FRAME_KEYS, FRAME_KEYS_PRESSED, CONTROLBTN_KEYS, BTN_KEYS_Y);
+        DrawBtn(FRAME_INSTRUCTIONS, FRAME_INSTRUCTIONS_PRESSED, CONTROLBTN_INSTRUCTIONS, BTN_INSTRUCTIONS_Y);
+        DrawBtn(FRAME_SETTINGS, FRAME_SETTINGS_PRESSED, CONTROLBTN_SETTINGS, BTN_SETTINGS_Y);
+
+        // back button (no pressed frame, scale instead)
+        float backScale = (g_HoveredButton == CONTROLBTN_BACK) ? 1.05f : 1.0f;
+
+        g_ControlButtonSheet->SetFrame(FRAME_BACK);
+
+        MeshManager::Get().DrawSpriteSheet(
+            *g_ControlButtonSheet,
+            -720.0f, 
+            400.0f,
+            g_ControlButtonWidth * backScale,
+            g_ControlButtonHeight * backScale
         );
     }
 
@@ -558,12 +620,8 @@ void Controls_Free()
 
 void Controls_Unload()
 {
-    //temp
     TextureManager::Get().UnloadTexture("Assets/Images/ControlPage.png");
-    TextureManager::Get().UnloadTexture("Assets/Images/Backbutton.png");
-    TextureManager::Get().UnloadTexture("Assets/Images/settings.png");
-    TextureManager::Get().UnloadTexture("Assets/Images/Keys.png");
-    TextureManager::Get().UnloadTexture("Assets/Images/settingstest.png");
+    TextureManager::Get().UnloadTexture("Assets/Images/sliderbutton.png");
     
     // unload instruction page textures
     TextureManager::Get().UnloadTexture("Assets/Images/controls_melee.png");
@@ -577,9 +635,6 @@ void Controls_Unload()
     TextureManager::Get().UnloadTexture("Assets/Images/controls_dash.png");
 
     g_BG = nullptr;
-    g_SettingsBtn = nullptr;
-    g_KeysBtn = nullptr;
-    g_InstructionsBtn = nullptr;
     g_SettingsPanel = nullptr;
 
     // instructions page
@@ -592,6 +647,8 @@ void Controls_Unload()
     g_ImgHpRecovery = nullptr;
     g_ImgShield = nullptr;
     g_ImgDash = nullptr;
+
+    g_ControlButtonSheet.reset();
 
     std::cout << "Controls:Unload" << std::endl;
 }
