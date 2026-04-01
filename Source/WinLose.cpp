@@ -338,13 +338,36 @@ void WinLose_Update()
         s_SoundPlayed = true;
     }
 
-    if (AEInputCheckTriggered(AEVK_SPACE) || AEInputCheckTriggered(AEVK_RETURN))
+    if (s_Mode == WLMode::Win)
+    {
+        // space to lshift go to creds
+        if (AEInputCheckTriggered(AEVK_SPACE) || AEInputCheckTriggered(VK_LBUTTON))
+            GameStateManager::Get().next = GS_CREDITS;
+        return;
+    }
+
+    // lose screen
+    if (AEInputCheckTriggered(AEVK_SPACE) || AEInputCheckTriggered(VK_LBUTTON))
         GameStateManager::Get().next = GS_MAINMENU;
 }
 
 // ============================================================
 // WinLose_Draw
 // ============================================================
+static void DrawPromptHint(s8 font, float yOffset = 0.0f)
+{
+    float y = TEXT_TOP_Y - TEXT_LINE_STEP * 3.0f + yOffset; // for manual offset because win screen text is higher than others
+
+    FontManager::Get().PrintCentered(font,
+        "Space/Click",
+        -0.1f, y, 0.6f,
+        1.0f, 0.6f, 0.75f, 0.9f);   // pink
+
+    FontManager::Get().PrintCentered(font,
+        "to continue",
+        0.14f, y, 0.6f,
+        0.5f, 0.5f, 0.5f, 0.8f);    // grey
+}
 void WinLose_Draw()
 {
     AESysFrameStart();
@@ -379,11 +402,7 @@ void WinLose_Draw()
             0.0f, TEXT_TOP_Y + 1.45f, 1.0f,
             1.0f, 0.6f, 0.7f, 1.0f);
 
-        FontManager::Get().PrintCentered(medFont,
-            "Press Space to return",
-            0.0f, TEXT_TOP_Y - TEXT_LINE_STEP, 0.7f,
-            0.5f, 0.5f, 0.5f, 0.8f);
-
+        DrawPromptHint(medFont, 0.2f);
         AESysFrameEnd();
         return;
     }
@@ -401,11 +420,7 @@ void WinLose_Draw()
         0.0f, TEXT_TOP_Y - TEXT_LINE_STEP, 1.0f,
         1.0f, 1.0f, 1.0f, 1.0f);
 
-    FontManager::Get().PrintCentered(medFont,
-        "Press Space to return",
-        0.0f, TEXT_TOP_Y - TEXT_LINE_STEP * 2.0f, 0.7f,
-        0.5f, 0.5f, 0.5f, 0.8f);
-
+    DrawPromptHint(medFont);
     AESysFrameEnd();
 }
 
