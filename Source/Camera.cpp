@@ -147,14 +147,19 @@ bool Camera_UpdateSequence(Camera& cam, float dt)
     } else {
         // phase 3: pan back to return position
         float t = (g_camSequenceTimer - panDur - holdDur) / panDur;
-        t = t * t * (3.0f - 2.0f * t);
-        cam.y = g_camTargetY + (g_camReturnY - g_camTargetY) * t;
-    }
+         t = t * t * (3.0f - 2.0f * t);
+         cam.y = g_camTargetY + (g_camReturnY - g_camTargetY) * t;
+     }
 
-    if (g_camSequenceTimer >= totalDur) {
-        g_camSequenceActive = false;
-        cam.y = g_camReturnY;
-        return false;
-    }
-    return true;
+     if (g_camSequenceTimer >= totalDur) {
+         g_camSequenceActive = false;
+         cam.y = g_camReturnY;
+         return false;
+     }
+     return true;
+}
+
+bool Camera_IsSequenceActive()
+{
+    return g_camSequenceActive;
 }

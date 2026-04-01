@@ -19,6 +19,7 @@ Technology is prohibited.
 #include "DebugManager.h"
 #include "MeshManager.h"
 #include <cmath>
+#include <unordered_set>
 
 void SpatialGrid::RebuildAdd(
     const std::vector<Platform>& platforms,
@@ -143,10 +144,13 @@ void SpatialGrid::GetNearbyPlatforms(float y, float height, std::vector<const Pl
     float objMaxY = y + height * 0.5f;
     int startCell = GetCellIndex(objMinY);
     int endCell = GetCellIndex(objMaxY);
+    std::unordered_set<const Platform*> seen;
     for (int i = startCell; i <= endCell; ++i) {
         if (i >= 0 && i < numCells) {
             for (const auto& obj : platformCells[i]) {
-                out.push_back(obj);
+                if (seen.insert(obj).second) {
+                    out.push_back(obj);
+                }
             }
         }
     }
@@ -158,10 +162,13 @@ void SpatialGrid::GetNearbyObstacles(float y, float height, std::vector<const Pl
     float objMaxY = y + height * 0.5f;
     int startCell = GetCellIndex(objMinY);
     int endCell = GetCellIndex(objMaxY);
+    std::unordered_set<const PlatformObstacle*> seen;
     for (int i = startCell; i <= endCell; ++i) {
         if (i >= 0 && i < numCells) {
             for (const auto& obj : obstacleCells[i]) {
-                out.push_back(obj);
+                if (seen.insert(obj).second) {
+                    out.push_back(obj);
+                }
             }
         }
     }

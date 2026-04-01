@@ -156,6 +156,9 @@ public:
     // boss room
     void LoadBossArenaFromConfig(const rapidjson::Document& doc);
 
+    // BossDoor hack success trigger
+    void TriggerBossDoorHackSuccess();
+
     // Parallax layer data structure
     struct ParallaxLayer {
         AEGfxTexture* texture = nullptr;

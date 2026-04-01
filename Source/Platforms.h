@@ -104,6 +104,8 @@ struct PlatformComputer {
 	bool  hackAnimPlaying   = false;
 	float hackAnimTimer     = 0.0f;
 	float hackAnimDuration  = 1.5f; // how long the "hacking" anim plays before pan starts
+	
+	bool  bossDoorHackComplete = false;  // true when boss door hack finished (no pan, show success prompt + particles)
 
 };
 

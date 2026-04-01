@@ -365,7 +365,11 @@ namespace CollisionManager
     // ------------------------------------------------------------------------
     void HandlePlatformsSpatial(Player& player, float playerPrevY, const SpatialGrid& grid)
     {
+        constexpr float PLAYER_COLLISION_WIDTH_FACTOR = 0.2f;
+        constexpr float GROUND_TOLERANCE = 0.5f;
+
         std::vector<const Platform*> nearby;
+        nearby.reserve(16);
         grid.GetNearbyPlatforms(player.pos.y, player.height, nearby);
 
         for (const Platform* pf : nearby)
@@ -385,7 +389,7 @@ namespace CollisionManager
             float playerCurrBottom = player.pos.y - player.height * 0.5f;
 
             // horizontal overlap
-            float collisionHalfW = player.width * 0.2f;
+            float collisionHalfW = player.width * PLAYER_COLLISION_WIDTH_FACTOR;
             float playerLeft = player.pos.x - collisionHalfW;
             float playerRight = player.pos.x + collisionHalfW;
 
@@ -393,8 +397,7 @@ namespace CollisionManager
             if (!overlapX) continue;
 
             // check if player is standing on platform
-            float tolerance = 0.5f;
-            if (fabs(playerCurrBottom - pfTop) <= tolerance && overlapX)
+            if (fabs(playerCurrBottom - pfTop) <= GROUND_TOLERANCE && overlapX)
             {
                 player.grounded = 1;
                 player.pos.y = pfTop + player.height * 0.5f;

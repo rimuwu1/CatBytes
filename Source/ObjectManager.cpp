@@ -135,13 +135,22 @@ void ObjectManager::Update(float dt)
 {
     Player_Update(player, dt);
 
+    // Track if any enemies died this frame
+    bool anyEnemyDied = false;
+
     for (auto& e : enemies) {
-        //if (!e.isAlive) continue;
+        bool wasAlive = e.isAlive;
         switch (e.type) {
         case EnemyType::Easy: Enemy_Update(e, dt);     break;
         case EnemyType::Hard: HardEnemy_Update(e, dt); break;
         case EnemyType::Boss: BossEnemy_Update(e, player, dt); break;
         }
+        if (wasAlive && !e.isAlive) {
+            anyEnemyDied = true;
+        }
+    }
+
+    if (anyEnemyDied) {
     }
 
     for (auto& b : enemyBullets) {
@@ -178,6 +187,16 @@ void ObjectManager::Draw(float camX, float camY, float screenHalfW, float screen
 {
     MeshManager& mm = MeshManager::Get();
 
+    // Local sprite struct for this frame only (values, not pointers)
+    struct DrawSprite {
+        AEGfxTexture* texture;
+        float x, y, w, h, uvW, uvH, uvOffX, uvOffY, opacity, rotation;
+        int layer;
+    };
+
+    std::vector<DrawSprite> sprites;
+    sprites.reserve(128);
+
     // Culling setup
     const float CULL_MARGIN = 100.0f;
     float cullL = camX - screenHalfW - CULL_MARGIN;
@@ -187,28 +206,13 @@ void ObjectManager::Draw(float camX, float camY, float screenHalfW, float screen
 
     auto InView = [&](float x, float y, float halfW, float halfH) {
         return (x + halfW) >= cullL && (x - halfW) <= cullR &&
-            (y + halfH) >= cullB && (y - halfH) <= cullT;
-        };
-
-    // --------------------------------------------------------------------
-    // 1. Collect all visible sprites into a single list
-    // --------------------------------------------------------------------
-    // TODO: move to member
-    struct QueuedSprite {
-        AEGfxTexture* texture;
-        float uvW, uvH;
-        float x, y, w, h, uvOffX, uvOffY, opacity, rotation;
-        int layer;      // 0 = enemies, 1 = enemy bullets, 2 = player bullets
+               (y + halfH) >= cullB && (y - halfH) <= cullT;
     };
-    std::vector<QueuedSprite> sprites;
 
-    // ----- Enemies (excluding boss) -----
+    // ----- Collect Enemies (excluding boss) -----
     for (const auto& e : enemies) {
         if (!e.isAlive) continue;
-        if (e.type == EnemyType::Boss) {
-            // Boss drawn separately later (unique sprite, no batching)
-            continue;
-        }
+        if (e.type == EnemyType::Boss) continue;  // Boss drawn separately
         if (!InView(e.pos.x, e.pos.y, e.width * 0.5f, e.height * 0.5f)) continue;
         if (!e.spriteSheet) continue;
 
@@ -218,91 +222,78 @@ void ObjectManager::Draw(float camX, float camY, float screenHalfW, float screen
         else
             scaleX = (e.direction == -1) ? -e.width : e.width;
 
-        QueuedSprite qs;
-        qs.texture = e.spriteSheet->GetTexture();
-        qs.uvW = e.spriteSheet->GetSpriteUVWidth();
-        qs.uvH = e.spriteSheet->GetSpriteUVHeight();
-        qs.x = e.pos.x;
-        qs.y = e.pos.y;
-        qs.w = scaleX;
-        qs.h = e.height;
-        qs.uvOffX = e.spriteSheet->GetUVOffsetX();
-        qs.uvOffY = e.spriteSheet->GetUVOffsetY();
-        qs.opacity = 1.0f;
-        qs.rotation = 0.0f;
-        qs.layer = 0;
-        sprites.push_back(qs);
+        DrawSprite ds;
+        ds.texture = e.spriteSheet->GetTexture();
+        ds.x = e.pos.x;  // Copy value, not pointer
+        ds.y = e.pos.y;
+        ds.w = scaleX;
+        ds.h = e.height;
+        ds.uvW = e.spriteSheet->GetSpriteUVWidth();
+        ds.uvH = e.spriteSheet->GetSpriteUVHeight();
+        ds.uvOffX = e.spriteSheet->GetUVOffsetX();
+        ds.uvOffY = e.spriteSheet->GetUVOffsetY();
+        ds.opacity = 1.0f;
+        ds.rotation = 0.0f;
+        ds.layer = 0;
+        sprites.push_back(ds);
     }
 
-    // ----- Enemy bullets -----
+    // ----- Collect Enemy Bullets -----
     for (const auto& b : enemyBullets) {
         if (!b.active) continue;
         if (!InView(b.pos.x, b.pos.y, b.width * 0.5f, b.height * 0.5f)) continue;
         if (!b.bulletSprite) continue;
 
-        QueuedSprite qs;
-        qs.texture = b.bulletSprite->GetTexture();
-        qs.uvW = b.bulletSprite->GetSpriteUVWidth();
-        qs.uvH = b.bulletSprite->GetSpriteUVHeight();
-        qs.x = b.pos.x;
-        qs.y = b.pos.y;
-        qs.w = b.width;
-        qs.h = b.height;
-        qs.uvOffX = b.bulletSprite->GetUVOffsetX();
-        qs.uvOffY = b.bulletSprite->GetUVOffsetY();
-        qs.opacity = 1.0f;
-        qs.rotation = 0.0f;
-        qs.layer = 1;
-        sprites.push_back(qs);
+        DrawSprite ds;
+        ds.texture = b.bulletSprite->GetTexture();
+        ds.x = b.pos.x;
+        ds.y = b.pos.y;
+        ds.w = b.width;
+        ds.h = b.height;
+        ds.uvW = b.bulletSprite->GetSpriteUVWidth();
+        ds.uvH = b.bulletSprite->GetSpriteUVHeight();
+        ds.uvOffX = b.bulletSprite->GetUVOffsetX();
+        ds.uvOffY = b.bulletSprite->GetUVOffsetY();
+        ds.opacity = 1.0f;
+        ds.rotation = 0.0f;
+        ds.layer = 1;
+        sprites.push_back(ds);
     }
 
-    // ----- Player bullets -----
+    // ----- Collect Player Bullets -----
     for (const auto& b : player.bullets) {
         if (!b.active) continue;
         if (!InView(b.pos.x, b.pos.y, b.width * 0.5f, b.height * 0.5f)) continue;
         if (!b.bulletSprite) continue;
 
-        QueuedSprite qs;
-        qs.texture = b.bulletSprite->GetTexture();
-        qs.uvW = b.bulletSprite->GetSpriteUVWidth();
-        qs.uvH = b.bulletSprite->GetSpriteUVHeight();
-        qs.x = b.pos.x;
-        qs.y = b.pos.y;
-        qs.w = b.width;
-        qs.h = b.height;
-        qs.uvOffX = b.bulletSprite->GetUVOffsetX();
-        qs.uvOffY = b.bulletSprite->GetUVOffsetY();
-        qs.opacity = 1.0f;
-        qs.rotation = 0.0f;
-        qs.layer = 2;
-        sprites.push_back(qs);
+        DrawSprite ds;
+        ds.texture = b.bulletSprite->GetTexture();
+        ds.x = b.pos.x;
+        ds.y = b.pos.y;
+        ds.w = b.width;
+        ds.h = b.height;
+        ds.uvW = b.bulletSprite->GetSpriteUVWidth();
+        ds.uvH = b.bulletSprite->GetSpriteUVHeight();
+        ds.uvOffX = b.bulletSprite->GetUVOffsetX();
+        ds.uvOffY = b.bulletSprite->GetUVOffsetY();
+        ds.opacity = 1.0f;
+        ds.rotation = 0.0f;
+        ds.layer = 2;
+        sprites.push_back(ds);
     }
 
-    // ----- Buffs -----
-    for (const auto& buff : buffs) {
-        if (!buff.active) continue;
-        if (InView(buff.pos.x, buff.pos.y, buff.width * 0.5f, buff.height * 0.5f))
-            buff.Draw(camX, camY);
-    }
+    // ----- Sort by layer, then texture, then UV dimensions for batching -----
+    std::sort(sprites.begin(), sprites.end(), [](const DrawSprite& a, const DrawSprite& b) {
+        if (a.layer != b.layer) return a.layer < b.layer;
+        if (a.texture != b.texture) return a.texture < b.texture;
+        if (a.uvW != b.uvW) return a.uvW < b.uvW;
+        return a.uvH < b.uvH;
+    });
 
-    // --------------------------------------------------------------------
-    // 2. Sort sprites by (layer, texture, uvW, uvH)
-    //    This groups sprites into batches while preserving layer order.
-    // --------------------------------------------------------------------
-    std::sort(sprites.begin(), sprites.end(),
-        [](const QueuedSprite& a, const QueuedSprite& b) {
-            if (a.layer != b.layer) return a.layer < b.layer;
-            if (a.texture != b.texture) return a.texture < b.texture;
-            if (a.uvW != b.uvW) return a.uvW < b.uvW;
-            return a.uvH < b.uvH;
-        });
-
-    // --------------------------------------------------------------------
-    // 3. Draw sprites in batches
-    // --------------------------------------------------------------------
+    // ----- Draw sprites in batches -----
     size_t i = 0;
     while (i < sprites.size()) {
-        const QueuedSprite& first = sprites[i];
+        const DrawSprite& first = sprites[i];
         mm.BeginBatch(first.texture, first.uvW, first.uvH);
 
         // Queue all sprites with same texture and UV dimensions
@@ -319,19 +310,23 @@ void ObjectManager::Draw(float camX, float camY, float screenHalfW, float screen
             mm.QueueSprite(item);
             ++i;
         } while (i < sprites.size() &&
-            sprites[i].layer == first.layer &&
-            sprites[i].texture == first.texture &&
-            sprites[i].uvW == first.uvW &&
-            sprites[i].uvH == first.uvH);
+                 sprites[i].layer == first.layer &&
+                 sprites[i].texture == first.texture &&
+                 sprites[i].uvW == first.uvW &&
+                 sprites[i].uvH == first.uvH);
 
         mm.EndBatch();
     }
 
-    // --------------------------------------------------------------------
-    // 4. Draw boss and HP bars (immediate, not batched)
-    // --------------------------------------------------------------------
+    // ----- Draw Buffs -----
+    for (const auto& buff : buffs) {
+        if (!buff.active) continue;
+        if (InView(buff.pos.x, buff.pos.y, buff.width * 0.5f, buff.height * 0.5f))
+            buff.Draw(camX, camY);
+    }
+
+    // ----- Draw Boss and HP bars (immediate, not batched) -----
     for (auto& e : enemies) {
-        /*if (!e.isAlive) continue;*/
         if (!e.isAlive && e.type != EnemyType::Boss) continue;
         if (e.type == EnemyType::Boss && InView(e.pos.x, e.pos.y, e.width * 0.5f, e.height * 0.5f)) {
             float scaleX;
@@ -350,19 +345,15 @@ void ObjectManager::Draw(float camX, float camY, float screenHalfW, float screen
             float hpX = e.pos.x;
             float hpY = e.pos.y + e.height * 0.5f + 10.0f;
 
-            /*if (hpRatio <= 0.0f) {
-                e.isAlive = false;
-            }*/
-
-            mm.DrawSquare(hpX, hpY, hpBarWidth + 6.0f, hpBarHeight + 6.0f, 0, 0, 0, 1.0f);
-            mm.DrawSquare(hpX, hpY, hpBarWidth, hpBarHeight, 40, 40, 40, 1.0f);
-            mm.DrawSquare(hpX - (hpBarWidth / 2) + (hpBarWidth * hpRatio) * 0.5f, hpY, hpBarWidth * hpRatio, hpBarHeight, 220, 40, 40, 1.0f);
+            if (InView(hpX, hpY, hpBarWidth * 0.5f, hpBarHeight * 0.5f)) {
+                mm.DrawSquare(hpX, hpY, hpBarWidth + 6.0f, hpBarHeight + 6.0f, 0, 0, 0, 1.0f);
+                mm.DrawSquare(hpX, hpY, hpBarWidth, hpBarHeight, 40, 40, 40, 1.0f);
+                mm.DrawSquare(hpX - (hpBarWidth / 2) + (hpBarWidth * hpRatio) * 0.5f, hpY, hpBarWidth * hpRatio, hpBarHeight, 220, 40, 40, 1.0f);
+            }
         }
     }
 
-    // --------------------------------------------------------------------
-    // 5. Draw player (including slash effect)
-    // --------------------------------------------------------------------
+    // ----- Draw Player -----
     Player_Draw(player);
 }
 
@@ -403,18 +394,20 @@ bool ObjectManager::IsBossDefeated() const
 // ------------------------------------------------------------------------
 void ObjectManager::RemoveInactiveBullets()
 {
-    enemyBullets.erase(
-        std::remove_if(enemyBullets.begin(), enemyBullets.end(),
-            [](const EnemyBullet& b) { return !b.active; }),
-        enemyBullets.end());
+    auto it = std::remove_if(enemyBullets.begin(), enemyBullets.end(),
+        [](const EnemyBullet& b) { return !b.active; });
+    if (it != enemyBullets.end()) {
+        enemyBullets.erase(it, enemyBullets.end());
+    }
 }
 
 void ObjectManager::RemoveInactiveBuffs()
 {
-    buffs.erase(
-        std::remove_if(buffs.begin(), buffs.end(),
-            [](const Buff& buff) { return !buff.active; }),
-        buffs.end());
+    auto it = std::remove_if(buffs.begin(), buffs.end(),
+        [](const Buff& buff) { return !buff.active; });
+    if (it != buffs.end()) {
+        buffs.erase(it, buffs.end());
+    }
 }
 
 // ------------------------------------------------------------------------

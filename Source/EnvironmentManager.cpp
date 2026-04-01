@@ -1629,7 +1629,16 @@ void EnvironmentManager::DrawWorld(float camX, float camY, PlayerWeapon weapon, 
                     {
                         comp.hackAnimPlaying  = false;
                         comp.hackAnimTimer    = 0.0f;
-                        comp.pendingCameraPan = true; // now trigger the camera pan
+                        
+                        if (comp.compType == ComputerToggle::BossDoor)
+                        {
+                            // Signal that hack is complete - waiting for camera to return to show success
+                            comp.pendingCameraPan = true; // triggers pan down to boss door
+                        }
+                        else
+                        {
+                            comp.pendingCameraPan = true; // normal beam computers still pan
+                        }
                     }
                 }
 
@@ -1684,75 +1693,6 @@ void EnvironmentManager::DrawWorld(float camX, float camY, PlayerWeapon weapon, 
 
     // Draw batched buttons
     flushBatch();
-
-    // Draw immediate "Press E" prompts for buttons when player overlaps
-    auto drawButtonPrompts = [&](const std::vector<PlatformButton>& buttons) {
-        for (const auto& btn : buttons) {
-            float btnLeft = btn.x - btn.w * 0.5f;
-            float btnRight = btn.x + btn.w * 0.5f;
-            float btnTop = btn.y + btn.h * 0.5f;
-            float btnBottom = btn.y - btn.h * 0.5f;
-            float playerLeft = player.pos.x - player.width * 0.5f;
-            float playerRight = player.pos.x + player.width * 0.5f;
-            float playerBottom = player.pos.y - player.height * 0.5f;
-            float playerTop = player.pos.y + player.height * 0.5f;
-
-            bool overlapX = (playerRight >= btnLeft) && (playerLeft <= btnRight);
-            bool overlapY = (playerTop >= btnBottom) && (playerBottom <= btnTop);
-            if (overlapX && overlapY) {
-                float windowWidth = (float)AEGfxGetWindowWidth();
-                float windowHeight = (float)AEGfxGetWindowHeight();
-                float screenX = (btn.x - camX) / (windowWidth * 0.5f);
-                float screenY = (btn.y + btn.h + 20.0f - camY) / (windowHeight * 0.5f);
-                if (screenX > 0.5f)  screenX = 0.5f;
-                if (screenX < -0.9f) screenX = -0.9f;
-                // if the collision pass set a hint override (e.g. locked boss door), show that instead
-                const std::string& promptText = player.interactHintOverride.empty()
-                    ? btn.btnPrompt
-                    : player.interactHintOverride;
-                FontManager::Get().PrintThemeAligned(FontManager::Get().GetSmallFont(), promptText.c_str(), screenX, screenY, 1.0f, TextAlignment::Center, FontTheme::Cyan);
-            }
-        }
-        };
-
-    drawButtonPrompts(m_level1Buttons);
-    drawButtonPrompts(m_level2Buttons);
-    drawButtonPrompts(m_level3Buttons);
-
-    // Draw immediate "Press E" prompts for computers when player overlaps
-    auto drawComputerPrompts = [&](const std::vector<PlatformComputer>& computers) {
-        for (const auto& comp : computers) {
-
-            float compLeft = comp.x - comp.w * 0.5f;
-            float compRight = comp.x + comp.w * 0.5f;
-            float compTop = comp.y + comp.h * 0.5f;
-            float compBot = comp.y - comp.h * 0.5f;
-
-            float playerLeft = player.pos.x - player.width * 0.5f;
-            float playerRight = player.pos.x + player.width * 0.5f;
-            float playerTop = player.pos.y + player.height * 0.5f;
-            float playerBot = player.pos.y - player.height * 0.5f;
-
-            bool overlapX = (playerRight >= compLeft) && (playerLeft <= compRight);
-            bool overlapY = (playerTop >= compBot) && (playerBot <= compTop);
-
-            if (overlapX && overlapY) {
-                float windowWidth = (float)AEGfxGetWindowWidth();
-                float windowHeight = (float)AEGfxGetWindowHeight();
-                float screenX = (comp.x - camX) / (windowWidth * 0.5f);
-                float screenY = (comp.y + comp.h + 20.0f - camY) / (windowHeight * 0.5f);
-
-                // Center above computer, then apply small left offset if needed for screen bounds
-                if (screenX > 0.3f) {
-                    screenX -= 0.15f; // Small left offset when near right edge
-                }
-
-                FontManager::Get().PrintThemeAligned(FontManager::Get().GetSmallFont(), "Press E to hack PC", screenX, screenY, 1.0f, TextAlignment::Center, FontTheme::Magenta);
-            }
-        }
-        };
-
-    drawComputerPrompts(m_level3Computers);
 
     // --------------------------------------------------------------------
     // 4. Lasers
@@ -1934,6 +1874,89 @@ void EnvironmentManager::DrawHUD(float camX, float camY, PlayerWeapon weapon)
         FontManager::Get().PrintThemeAligned(FontManager::Get().GetSmallFont(), doorPrompt.c_str(),
             screenX, screenY, 1.0f, TextAlignment::Left, FontTheme::Gold);
     }
+
+    // Draw button/checkpoint/computer prompts on top of all game objects
+    Player& player = ObjectManager::Get().GetPlayer();
+    
+    // Draw immediate "Press E" prompts for buttons when player overlaps
+    auto drawButtonPrompts = [&](const std::vector<PlatformButton>& buttons) {
+        for (const auto& btn : buttons) {
+            float btnLeft = btn.x - btn.w * 0.5f;
+            float btnRight = btn.x + btn.w * 0.5f;
+            float btnTop = btn.y + btn.h * 0.5f;
+            float btnBottom = btn.y - btn.h * 0.5f;
+            float playerLeft = player.pos.x - player.width * 0.5f;
+            float playerRight = player.pos.x + player.width * 0.5f;
+            float playerBottom = player.pos.y - player.height * 0.5f;
+            float playerTop = player.pos.y + player.height * 0.5f;
+
+            bool overlapX = (playerRight >= btnLeft) && (playerLeft <= btnRight);
+            bool overlapY = (playerTop >= btnBottom) && (playerBottom <= btnTop);
+            if (overlapX && overlapY) {
+                float windowWidth = (float)AEGfxGetWindowWidth();
+                float windowHeight = (float)AEGfxGetWindowHeight();
+                float screenX = (btn.x - camX) / (windowWidth * 0.5f);
+                float screenY = (btn.y + btn.h + 20.0f - camY) / (windowHeight * 0.5f);
+                if (screenX > 0.5f)  screenX = 0.5f;
+                if (screenX < -0.9f) screenX = -0.9f;
+                // if the collision pass set a hint override (e.g. locked boss door), show that instead
+                const std::string& promptText = player.interactHintOverride.empty()
+                    ? btn.btnPrompt
+                    : player.interactHintOverride;
+                FontManager::Get().PrintThemeAligned(FontManager::Get().GetSmallFont(), promptText.c_str(), screenX, screenY, 1.0f, TextAlignment::Center, FontTheme::Cyan);
+            }
+        }
+    };
+
+    drawButtonPrompts(m_level1Buttons);
+    drawButtonPrompts(m_level2Buttons);
+    drawButtonPrompts(m_level3Buttons);
+
+    // Draw immediate "Press E" prompts for computers when player overlaps
+    auto drawComputerPrompts = [&](const std::vector<PlatformComputer>& computers) {
+        for (const auto& comp : computers) {
+
+            float compLeft = comp.x - comp.w * 0.5f;
+            float compRight = comp.x + comp.w * 0.5f;
+            float compTop = comp.y + comp.h * 0.5f;
+            float compBot = comp.y - comp.h * 0.5f;
+
+            float playerLeft = player.pos.x - player.width * 0.5f;
+            float playerRight = player.pos.x + player.width * 0.5f;
+            float playerTop = player.pos.y + player.height * 0.5f;
+            float playerBot = player.pos.y - player.height * 0.5f;
+
+            bool overlapX = (playerRight >= compLeft) && (playerLeft <= compRight);
+            bool overlapY = (playerTop >= compBot) && (playerBot <= compTop);
+
+            if (overlapX && overlapY) {
+                float windowWidth = (float)AEGfxGetWindowWidth();
+                float windowHeight = (float)AEGfxGetWindowHeight();
+                float screenX = (comp.x - camX) / (windowWidth * 0.5f);
+                float screenY = (comp.y + comp.h + 20.0f - camY) / (windowHeight * 0.5f);
+
+                // Center above computer, then apply small left offset if needed for screen bounds
+                if (screenX > 0.3f) {
+                    screenX -= 0.15f; // Small left offset when near right edge
+                }
+
+                // Show different prompt based on hack completion status
+                const char* promptText;
+                FontTheme theme;
+                if (comp.compType == ComputerToggle::BossDoor && comp.bossDoorHackComplete) {
+                    promptText = "Hacked! Boss door unlocked!";
+                    theme = FontTheme::Gold;  // Gold color for success
+                } else {
+                    promptText = "Press E to hack PC";
+                    theme = FontTheme::Magenta;
+                }
+
+                FontManager::Get().PrintThemeAligned(FontManager::Get().GetSmallFont(), promptText, screenX, screenY, 1.0f, TextAlignment::Center, theme);
+            }
+        }
+    };
+
+    drawComputerPrompts(m_level3Computers);
 }
 
 // ------------------------------------------------------------------------
@@ -2189,4 +2212,16 @@ void EnvironmentManager::Clear()
     m_staticCache.clear();
     m_staticBatchDirty = true;
 
+}
+
+void EnvironmentManager::TriggerBossDoorHackSuccess()
+{
+    // Find the BossDoor computer and mark it complete
+    for (auto& comp : m_level3Computers) {
+        if (comp.compType == ComputerToggle::BossDoor) {
+            comp.bossDoorHackComplete = true;
+            ParticleManager_Emit(comp.x, comp.y, 30, 400.0f, 100, 200, 255); // Electric blue particles
+            break;
+        }
+    }
 }

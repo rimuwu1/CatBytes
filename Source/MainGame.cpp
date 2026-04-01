@@ -61,6 +61,7 @@ static float g_pendingToggleTimer = 0.0f;
 static float g_pendingToggleMidpt = 0.0f;
 static float g_pendingToggleBtnX  = 0.0f;  // button/computer X for matching
 static float g_pendingToggleBtnY  = 0.0f;  // button/computer Y for matching
+static bool g_bossDoorHackPendingReturn = false;  // true when BossDoor hack done, waiting for camera to return
 static CollisionManager::ToggleType g_pendingToggleType = CollisionManager::ToggleType::None;
 
 namespace {
@@ -178,6 +179,7 @@ void MainGame_Initialize()
     g_pendingToggleTimer = 0.0f;
     g_pendingToggleType  = CollisionManager::ToggleType::None;
     g_camSequenceActive  = false;
+    g_bossDoorHackPendingReturn = false;
 
     // clear old game objects/environment before reloading from JSON
     ObjectManager::Get().Clear();
@@ -399,6 +401,7 @@ void MainGame_Update()
             g_pendingToggleBtnX  = results.pendingComputer.buttonX;
             g_pendingToggleBtnY  = results.pendingComputer.buttonY;
             g_pendingToggleType  = CollisionManager::ToggleType::BossDoorUnlock;
+            g_bossDoorHackPendingReturn = true;
         }
 
         // Lock player movement during camera sequence
@@ -535,6 +538,13 @@ void MainGame_Update()
             g_pendingToggle = false;
             g_pendingToggleType = CollisionManager::ToggleType::None;
         }
+    }
+
+    // Check if BossDoor hack camera pan just completed
+    if (g_bossDoorHackPendingReturn && !Camera_IsSequenceActive()) {
+        g_bossDoorHackPendingReturn = false;
+        // Trigger success effects: prompt change + particles
+        EnvironmentManager::Get().TriggerBossDoorHackSuccess();
     }
 
     if (!Camera_UpdateSequence(globalCam, dt)) {

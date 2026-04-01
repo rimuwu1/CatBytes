@@ -50,3 +50,4 @@ extern float g_camReturnY;
 void Camera_StartSequence(float targetY, float currentY,
                           float panDuration = 0.6f, float holdDuration = 1.0f);
 bool Camera_UpdateSequence(Camera& cam, float dt);  // returns true while active
+bool Camera_IsSequenceActive();  // returns true if camera sequence is currently active
