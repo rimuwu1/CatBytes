@@ -17,6 +17,7 @@ Technology is prohibited.
 #pragma once
 
 extern const char* textScreenMessage; // winlose text
+extern bool g_playerDiedBefore;
 
 void WinLose_Load();
 void WinLose_Initialize();

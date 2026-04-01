@@ -1032,6 +1032,7 @@ void DebugManager::HandleHotkeys()
     if (AEInputCheckTriggered(AEVK_F5))
     {
         textScreenMessage = "You Lose";
+        g_playerDiedBefore = true;
         GameStateManager::Get().next = GS_WINLOSE;
     }
 }

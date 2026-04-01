@@ -936,6 +936,7 @@ void Player_ApplyDamage(Player& player, float damage)
 			player.hp = 0.0f;
 			//trigger death: return to main menu
 			textScreenMessage = "You Lose";
+			g_playerDiedBefore = true;
 			GameStateManager::Get().next = GS_WINLOSE;
 		}
 	}

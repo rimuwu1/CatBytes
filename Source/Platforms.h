@@ -100,6 +100,11 @@ struct PlatformComputer {
 	std::unique_ptr<SpriteSheet> computerSprite;
 	std::unique_ptr<SpriteSheet> indicatorLeft;
 	std::unique_ptr<SpriteSheet> indicatorRight;
+
+	bool  hackAnimPlaying   = false;
+	float hackAnimTimer     = 0.0f;
+	float hackAnimDuration  = 1.5f; // how long the "hacking" anim plays before pan starts
+
 };
 
 

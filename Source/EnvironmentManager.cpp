@@ -1595,7 +1595,9 @@ void EnvironmentManager::DrawWorld(float camX, float camY, PlayerWeapon weapon, 
                     }
                     else
                     {
-                        comp.computerSprite->Play("off");
+                        // don't reset boss door computers back to "off" once activated
+                        if (comp.compType != ComputerToggle::BossDoor)
+                            comp.computerSprite->Play("off");
                     }
                     comp.prevState = isActive;
                 }
@@ -1607,9 +1609,27 @@ void EnvironmentManager::DrawWorld(float camX, float camY, PlayerWeapon weapon, 
                 {
                     comp.computerSprite->Play("on");
 
-                    if (comp.beamActive)
+                    if (comp.compType == ComputerToggle::BossDoor)
+                    {
+                        // play "on" anim for hackAnimDuration, then trigger camera pan
+                        comp.hackAnimPlaying = true;
+                        comp.hackAnimTimer   = 0.0f;
+                    }
+                    else if (comp.beamActive)
                     {
                         comp.pendingCameraPan = true;
+                    }
+                }
+
+                // tick hack anim timer for boss door computers
+                if (comp.hackAnimPlaying)
+                {
+                    comp.hackAnimTimer += dt;
+                    if (comp.hackAnimTimer >= comp.hackAnimDuration)
+                    {
+                        comp.hackAnimPlaying  = false;
+                        comp.hackAnimTimer    = 0.0f;
+                        comp.pendingCameraPan = true; // now trigger the camera pan
                     }
                 }
 

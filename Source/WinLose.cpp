@@ -33,6 +33,7 @@ Technology is prohibited.
 // external state
 // ============================================================
 const char* textScreenMessage = "You Lose";
+extern bool g_playerDiedBefore;
 
 // ============================================================
 // textures
@@ -81,11 +82,10 @@ static const CutsceneSlide SLIDES[] = // cutscene texts
     { 5, { "In the city above the clouds..", nullptr, nullptr, nullptr }, 1 }, 
     { 5, { "at the top of that skyscraper.", nullptr, nullptr }, 2 },
     { 6, { "It won't be an easy climb.", "I'll have to make it to the top to reach it..", nullptr, nullptr }, 2 },
-    { 6, { "defeat whoever runs that greedy corporation to get her back.", nullptr, nullptr }, 2 },
+    { 6, { "Defeat whoever runs that greedy corporation to get her back.", nullptr, nullptr }, 2 },
     { 7, { "My intel tells me their top level is locked off.", nullptr, nullptr, nullptr }, 1 },
     { 7, { "I'll need to find a Computer Terminal to unlock it --", "one of it is specially made for the boss room.", nullptr, nullptr }, 2 },
-    { 7, { "I'll find it.", nullptr, nullptr, nullptr }, 1 },
-    { 7, { "Get her back.", nullptr, nullptr, nullptr }, 1 },
+    { 7, { "I'll find it, get her back.", nullptr, nullptr, nullptr }, 1 },
     { 7, { "Starting now.", nullptr, nullptr, nullptr }, 1 },
 };
 static const int SLIDE_COUNT = (int)(sizeof(SLIDES) / sizeof(SLIDES[0]));
@@ -135,16 +135,32 @@ static void DrawCutsceneText(int idx)
     }
 
     // skip hint -- upper left
-    FontManager::Get().PrintCentered(font,
-        "LSHIFT to skip",
-        -0.65f, 0.88f, 0.6f,
-        0.5f, 0.5f, 0.5f, 0.8f);
+    /*FontManager::Get().PrintCentered(font,
+        "LSHIFT to skip || Space/Click to continue",
+        -0.55f, 0.88f, 0.6f,
+        0.5f, 0.5f, 0.5f, 0.8f);*/
 
-    // advance hint -- just below the text block
+
+    // upper left skip hint - separated for the color emphasis
     FontManager::Get().PrintCentered(font,
-        "SPACE to continue",
-        0.0f, TEXT_TOP_Y - (float)slide.lineCount * TEXT_LINE_STEP - 0.04f, 0.6f,
-        0.4f, 0.4f, 0.4f, 0.7f);
+        "LSHIFT",
+        -0.85f, 0.88f, 0.6f,
+        0.5f, 0.4f, 0.75f, 0.9f);   // teal
+
+    FontManager::Get().PrintCentered(font,
+        "to skip  -",
+        -0.68f, 0.88f, 0.6f,
+        0.5f, 0.5f, 0.5f, 0.8f);    // grey
+
+    FontManager::Get().PrintCentered(font,
+        "Space/Click",
+        -0.49f, 0.88f, 0.6f,
+        1.0f, 0.6f, 0.75f, 0.9f);   // pink
+
+    FontManager::Get().PrintCentered(font,
+        "to continue",
+        -0.25f, 0.88f, 0.6f,
+        0.5f, 0.5f, 0.5f, 0.8f);    // grey
 }
 
 // ============================================================
@@ -264,7 +280,7 @@ void WinLose_Update()
             return;
         }
 
-        if (AEInputCheckTriggered(AEVK_SPACE))
+        if (AEInputCheckTriggered(AEVK_SPACE) || AEInputCheckTriggered(VK_LBUTTON))
         {
             s_slideIdx++;
             if (s_slideIdx >= SLIDE_COUNT)
@@ -324,8 +340,8 @@ void WinLose_Draw()
 
         FontManager::Get().PrintCentered(largeFont,
             "You Win",
-            0.0f, TEXT_TOP_Y, 1.0f,
-            1.0f, 1.0f, 1.0f, 1.0f);
+            0.0f, TEXT_TOP_Y + 1.45f, 1.0f,
+            1.0f, 0.6f, 0.7f, 1.0f);
 
         FontManager::Get().PrintCentered(medFont,
             "Press Space to return",
@@ -370,7 +386,7 @@ void WinLose_Free()
 void WinLose_Unload()
 {
     for (int i = 0; i < (int)s_SlideTex.size(); ++i)
-        if (s_SlideTex[i])
+        if (s_SlideTex[i]) 
             TextureManager::Get().UnloadTexture(s_SlideTexPaths[i].c_str());
     s_SlideTex.clear();
     s_SlideTexPaths.clear();

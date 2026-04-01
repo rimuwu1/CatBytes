@@ -314,22 +314,19 @@ namespace CollisionManager
 
                     }
                     break;
-                    /*
-                    case ComputerToggle::BossDoor:
-                    add in player-bossdoor collision code here
-                    */
+
+                case ComputerToggle::BossDoor:
+                    // only activate once -- if already playing the hack anim or done, ignore
+                    if (!comp.beamActive && !comp.hackAnimPlaying)
+                    {
+                        comp.beamActive = true; // triggers transition -> on -> hackAnim -> cameraPan
+                    }
+                    return { true, comp.x, comp.y, comp.y, ToggleType::None };
                 }
 
-                // if this pc is flagged to unlock the boss door, signal a camera pan — actual unlock fires at midpoint
-                if (comp.unlocksBossDoor && EnvironmentManager::Get().IsBossDoorLoaded())
-                {
-                    float doorY = EnvironmentManager::Get().GetBossDoor().y;
-                    return { true, comp.x, comp.y, doorY, ToggleType::BossDoorUnlock };
-                }
-
-                // Find first laser's Y position for camera target
+                // beam computer: signal camera pan to laser midpoint
                 float targetY = (comp.beamStartY + comp.beamEndY) * 0.5f;
-                return { true, comp.x, comp.y, targetY, ToggleType::Laser }; 
+                return { true, comp.x, comp.y, targetY, ToggleType::Laser };
 
             }
         }
@@ -668,8 +665,23 @@ namespace CollisionManager
         for (auto& comp : env.GetLevel3Computers()) {
             if (comp.pendingCameraPan) {
                 comp.pendingCameraPan = false;
-                results.pendingCameraPan = true;
-                results.cameraPanTargetY = (comp.beamStartY + comp.beamEndY) * 0.5f;
+
+                if (comp.compType == ComputerToggle::BossDoor && env.IsBossDoorLoaded())
+                {
+                    // route through the BossDoorUnlock path so MainGame fires the unlock at midpoint
+                    results.pendingComputer.triggered  = true;
+                    results.pendingComputer.buttonX    = comp.x;
+                    results.pendingComputer.buttonY    = comp.y;
+                    results.pendingComputer.targetY    = env.GetBossDoor().y;
+                    results.pendingComputer.type       = CollisionManager::ToggleType::BossDoorUnlock;
+                }
+                else
+                {
+                    results.pendingCameraPan    = true;
+                    results.cameraPanTargetY    = (comp.beamStartY + comp.beamEndY) * 0.5f;
+                }
+
+                break;
             }
         }
 

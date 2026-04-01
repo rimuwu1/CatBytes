@@ -20,6 +20,7 @@ Technology is prohibited.
 #include "pch.h"
 #include "BossRoom.h"
 #include "BossAI.h"
+#include "FontManager.h"
 #include "ObjectManager.h"
 #include "AudioManager.h"
 #include "CollisionManager.h"
@@ -105,6 +106,54 @@ static bool  g_bossAtMonitor         = false;
 static float g_bossPlatformX         = 0.f;
 static float g_bossPlatformY         = 0.f;
 static float g_laserTrackedY = -325.f;
+
+// ============================================================
+// dialogue
+// ============================================================
+static bool  g_bossDialogueActive  = false;
+static float g_bossDialogueTimer   = 0.0f;
+static const char* g_bossDialogueLine = nullptr;
+static bool g_dialogueStarted = false; // true once BossBackIdle has initialized dialogue
+bool g_playerDiedBefore = false;
+
+// defeat dialogue -- plays during FightOver loop before disappearing
+static bool  g_defeatDialogueShown = false;
+static float g_defeatDialogueTimer = 0.0f;
+static const char* g_defeatDialogueLine = nullptr;
+
+struct DialoguePair {
+    const char* beforeTurn;  // shown while boss faces away
+    const char* afterTurn;   // shown after boss turns around
+};
+
+static const DialoguePair INTRO_DIALOGUE = {
+    "Hm. You actually made it up here. What a surprise.",
+    nullptr  // no after-turn line for intro pair 1
+};
+
+// intro has 2 beats: one before turn, one spanning turn + fight idle
+static const char* INTRO_BEFORE_TURN = "Hm. You actually made it up here. What a surprise.";
+static const char* INTRO_AFTER_TURN  = "Still... you're no match for me. Allow me to send you back down.";
+
+// pre-fight ragebait after losing once to boss
+static const DialoguePair RETRY_DIALOGUES[] = {
+    { "You don't know when to quit, do you?",       "Let me give you a reminder."                          },
+    { "Back again?",                                "I'll make this quicker."                              },
+    { "It's a shame, really.",                      "You climbed all the way up here just to lose again."  },
+    { "You're persistent, I'll give you that.",     "Not that it will save you."                           },
+    { "Back again.",                                "Do you really think it will go differently this time?"},
+};
+// post-fight
+static const char* DEFEAT_LINES[] = {
+    "...Impossible.",
+    "You... actually beat me..",
+    "Don't think.. this is over..",
+};
+static constexpr int RETRY_PAIR_COUNT = 5;
+static constexpr int DEFEAT_LINE_COUNT = 3;
+
+static int  g_retryPairIdx    = -1; // set once at BossBackIdle start
+static bool g_afterTurnShown  = false;
 
 // ============================================================
 // monitor helpers
@@ -249,6 +298,8 @@ void BossRoom_Load() {}
 
 void BossRoom_Initialize()
 {
+    g_dialogueStarted = false;
+
     g_BossLaughPlayed = false;
     // bossAI initialize
     BossAI_Init(g_bossAI);
@@ -283,6 +334,16 @@ void BossRoom_Initialize()
     g_cutscenePhase     = CutscenePhase::WalkIn;
     g_cutsceneTimer     = 0.0f;
     g_cutsceneDone      = false;
+
+    // boss dialogue
+    g_bossDialogueActive  = false;
+    g_bossDialogueTimer   = 0.0f;
+    g_bossDialogueLine    = nullptr;
+    g_retryPairIdx   = -1;
+    g_afterTurnShown = false;
+    g_defeatDialogueShown = false;   
+    g_defeatDialogueTimer = 0.0f;   
+    g_defeatDialogueLine  = nullptr;  
 
     // reset monitor state
     g_bossAtMonitor         = false;
@@ -409,11 +470,17 @@ void BossRoom_Update()
         {
             g_cutsceneDone  = true;
             g_cutscenePhase = CutscenePhase::Done;
+
+            // clear any active dialogue  
+            g_bossDialogueActive = false;
+            g_bossDialogueTimer  = 0.0f;
+            g_bossDialogueLine   = nullptr;
+            g_afterTurnShown     = true; 
+
             auto& en = ObjectManager::Get().GetAllEnemies();
             for (auto& e : en)
                 if (e.type == EnemyType::Boss && e.spriteSheet)
                     e.spriteSheet->Play("attackidle");
-            // don't return — fall through to normal gameplay
         }
         else {
             g_cutsceneTimer += dt;
@@ -461,7 +528,44 @@ void BossRoom_Update()
                 player.vel.y = 0.0f;
                 player.grounded = 1;
 
-                if (g_cutsceneTimer >= 3.0f)
+                // initialize dialogue exactly once on entering this phase
+                if (!g_dialogueStarted)
+                {
+                    std::cout << "[DIALOGUE] g_playerDiedBefore=" << g_playerDiedBefore << "\n"; // debug
+
+                    g_dialogueStarted    = true;
+                    g_afterTurnShown     = false;
+                    g_bossDialogueActive = false;
+                    g_bossDialogueTimer  = 0.0f;
+
+                    if (g_playerDiedBefore)
+                    {
+                        g_retryPairIdx     = rand() % RETRY_PAIR_COUNT;
+                        g_bossDialogueLine = RETRY_DIALOGUES[g_retryPairIdx].beforeTurn;
+                    }
+                    else
+                    {
+                        g_retryPairIdx     = -1;
+                        g_bossDialogueLine = INTRO_BEFORE_TURN;
+                    }
+                    g_bossDialogueActive = true;
+                    g_bossDialogueTimer  = 0.0f;
+                }
+
+                // tick dialogue
+                if (g_bossDialogueActive)
+                {
+                    g_bossDialogueTimer += dt;
+                    if (g_bossDialogueTimer >= 3.0f)
+                    {
+                        g_bossDialogueActive = false;
+                        g_bossDialogueTimer  = 0.0f;
+                        g_bossDialogueLine   = nullptr;
+                    }
+                }
+
+                bool readyToTurn = !g_bossDialogueActive && g_cutsceneTimer >= 3.0f;
+                if (readyToTurn)
                 {
                     for (auto& e : enemies)
                         if (e.type == EnemyType::Boss && e.spriteSheet)
@@ -484,7 +588,7 @@ void BossRoom_Update()
                     if (e.type == EnemyType::Boss && e.spriteSheet)
                         turnDone = !e.spriteSheet->IsPlaying();
 
-                if (turnDone || g_cutsceneTimer >= 1.0f)
+                if (turnDone || g_cutsceneTimer >= 1.5f)
                 {
                     for (auto& e : enemies)
                         if (e.type == EnemyType::Boss && e.spriteSheet)
@@ -502,7 +606,39 @@ void BossRoom_Update()
                 player.vel.y = 0.0f;
                 player.grounded = 1;
 
-                if (g_cutsceneTimer >= 3.0f)
+                // show after-turn line on first frame of this phase
+                if (!g_afterTurnShown && !g_bossDialogueActive)
+                {
+                    g_afterTurnShown = true;
+                    const char* afterLine = nullptr;
+
+                    if (g_playerDiedBefore && g_retryPairIdx >= 0 && g_retryPairIdx < RETRY_PAIR_COUNT)
+                        afterLine = RETRY_DIALOGUES[g_retryPairIdx].afterTurn;
+                    else if (!g_playerDiedBefore)
+                        afterLine = INTRO_AFTER_TURN;
+
+                    if (afterLine)
+                    {
+                        g_bossDialogueLine   = afterLine;
+                        g_bossDialogueActive = true;
+                        g_bossDialogueTimer  = 0.0f;
+                    }
+                }
+
+                // tick after-turn dialogue
+                if (g_bossDialogueActive)
+                {
+                    g_bossDialogueTimer += dt;
+                    if (g_bossDialogueTimer >= 3.0f)
+                    {
+                        g_bossDialogueActive = false;
+                        g_bossDialogueTimer  = 0.0f;
+                        g_bossDialogueLine   = nullptr;
+                    }
+                }
+
+                // end cutscene once after-turn line is done (or 6s failsafe)
+                if (g_afterTurnShown && !g_bossDialogueActive)
                 {
                     g_cutsceneDone  = true;
                     g_cutscenePhase = CutscenePhase::Done;
@@ -511,7 +647,6 @@ void BossRoom_Update()
                         if (e.type == EnemyType::Boss && e.spriteSheet)
                             e.spriteSheet->Play("attackidle");
 
-                    // reset laser cooldown so boss doesn't fire immediately
                     for (auto& e : enemies)
                         if (e.type == EnemyType::Boss)
                             for (auto& laser : e.bossLasers)
@@ -571,6 +706,36 @@ void BossRoom_Update()
 
     ObjectManager::Get().Update(dt);
     BossRoom::Get().Update(dt);
+
+    // defeat dialogue -- fires once when FightOver starts, runs outside cutscene block
+    for (const auto& e : enemies)
+    {
+        if (e.type != EnemyType::Boss) continue;
+        if (g_bossAI.attackState == BossAttackState::FightOver && !g_defeatDialogueShown)
+        {
+            g_defeatDialogueShown = true;
+            g_defeatDialogueTimer = 0.0f;
+
+            // pick randomly, but track across runs to avoid repeating
+            static int s_lastDefeatIdx = -1;
+            int idx;
+            do {
+                idx = rand() % DEFEAT_LINE_COUNT;
+            } while (idx == s_lastDefeatIdx && DEFEAT_LINE_COUNT > 1);
+            s_lastDefeatIdx = idx;
+
+            g_defeatDialogueLine = DEFEAT_LINES[idx];
+        }
+    }
+
+    if (g_defeatDialogueLine)
+    {
+        g_defeatDialogueTimer += dt;
+        if (g_defeatDialogueTimer >= 3.0f)
+            g_defeatDialogueLine = nullptr;
+    }
+
+
     ObjectManager::Get().RebuildSpatialGrid();
 
     CollisionManager::HandleAllCollisionsSpatial(
@@ -700,6 +865,24 @@ void BossRoom_Draw()
         MeshManager::Get().DrawSquare(globalCam.x, globalCam.y, w, h, 0, 0, 0, g_bossRoomFadeAlpha);
     }
 
+    if (g_bossDialogueActive && g_bossDialogueLine)
+    {
+        s8 font = FontManager::Get().GetMediumFont();
+        // draw a dark backing strip
+        float w = (float)AEGfxGetWindowWidth();
+        MeshManager::Get().DrawSquare(globalCam.x, globalCam.y - 200.0f, w, 70.0f, 0, 0, 0, 0.6f);
+        // boss name tag
+        FontManager::Get().PrintCentered(font,
+            "???",
+            -0.72f, -0.50f, 0.55f,
+            1.0f, 0.6f, 0.75f, 1.0f);  
+        // dialogue line
+        FontManager::Get().PrintCentered(font,
+            g_bossDialogueLine,
+            0.0f, -0.46f, 0.75f,
+            1.0f, 1.0f, 1.0f, 1.0f);
+    }
+
     // cutscene letterbox bars
     if (!g_cutsceneDone || BossAI_IsFightOver(g_bossAI))
     {
@@ -708,6 +891,22 @@ void BossRoom_Draw()
         float barH = h * 0.10f;
         float topY = globalCam.y + h * 0.5f - barH * 0.5f;
         MeshManager::Get().DrawSquare(globalCam.x, topY, w, barH, 0, 0, 0, 1.0f);
+    }
+
+    // defeat dialogue (separate from cutscene dialogue)
+    if (g_defeatDialogueLine)
+    {
+        s8 font = FontManager::Get().GetMediumFont();
+        float w = (float)AEGfxGetWindowWidth();
+        MeshManager::Get().DrawSquare(globalCam.x, globalCam.y - 200.0f, w, 70.0f, 0, 0, 0, 0.6f);
+        FontManager::Get().PrintCentered(font,
+            "???",
+            -0.72f, -0.50f, 0.55f,
+            1.0f, 0.6f, 0.75f, 1.0f);
+        FontManager::Get().PrintCentered(font,
+            g_defeatDialogueLine,
+            0.0f, -0.46f, 0.75f,
+            1.0f, 1.0f, 1.0f, 1.0f);
     }
 
     AESysFrameEnd();
