@@ -15,10 +15,12 @@ Technology is prohibited.
 
 #pragma once
 
+extern bool g_FromPause;
+
 void Controls_Load();
 void Controls_Initialize();
 void Controls_Update();
-void DrawKeysPage();//temp
+void DrawKeysPage();
 void Controls_Draw();
 void Controls_Free();
 void Controls_Unload();

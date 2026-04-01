@@ -6,7 +6,7 @@
 \par tse.x@digipen.edu
      kerwinjiajie.wong@digipen.edu
 \date January, 24, 2026
-\brief 
+\brief
 
 Copyright (C) 2026 DigiPen Institute of Technology.
 Reproduction or disclosure of this file or its contents
@@ -29,6 +29,7 @@ Technology is prohibited.
 #include "rapidjson/document.h"
 #include "rapidjson/istreamwrapper.h"
 
+bool g_FromPause = false;
 static std::unique_ptr<SpriteSheet> g_ControlButtonSheet = nullptr;
 static float g_ControlButtonWidth = 120.0f;
 static float g_ControlButtonHeight = 60.0f;
@@ -111,6 +112,7 @@ static int g_HoveredButton = CONTROLBTN_NONE;
 // textures, temp
 static AEGfxTexture* g_BG = nullptr;
 static AEGfxTexture* g_SettingsPanel = nullptr;
+static AEGfxTexture* g_Background = nullptr;
 
 // textures for instructions page
 static AEGfxTexture* g_ImgMelee = nullptr;
@@ -165,8 +167,8 @@ static InstructionCard g_InteractionCards[] =
 {
     { &g_ImgCheckpoint, "Checkpoint", "Saves your progress" },
     { &g_ImgSwitch, "Toggle Switch", "Unlocks platforms & walls" },
-    { &g_ImgComputer, "Computer", "Kills enemies with lasers" },
-    { &g_ImgBossRoom, "Boss Room", "Moves to the boss stage" }
+    { &g_ImgComputer, "Computer", "Lasers/Door unlocking" },
+    { &g_ImgBossRoom, "Lift Door", "Moves to the boss stage" }
 };
 
 static InstructionCard g_BuffCards[] =
@@ -190,7 +192,7 @@ static bool IsMouseOver(float mx, float my, float x, float y) noexcept
 
 // for drawing instruction cards
 static void DrawRect(
-    float cx, float cy, float pw, float ph, 
+    float cx, float cy, float pw, float ph,
     float r, float g, float b, float a
 )noexcept
 {
@@ -213,8 +215,8 @@ static void DrawInstructionCard(const InstructionCard& card, float cx, float cy,
     if (*card.img)
     {
         MeshManager::Get().DrawTexturedSquare(
-            *card.img, 
-            cx, imgCY, 
+            *card.img,
+            cx, imgCY,
             cardW - 4.0f, imgH - 4.0f,
             1.0f
         );
@@ -254,9 +256,8 @@ static void DrawInstructionCard(const InstructionCard& card, float cx, float cy,
 
 void Controls_Load()
 {
-
-    g_BG = TextureManager::Get().LoadTexture("Assets/Images/ControlPage.png");
     g_SettingsPanel = TextureManager::Get().LoadTexture("Assets/Images/sliderbutton.png");
+    g_Background = TextureManager::Get().LoadTexture("Assets/Images/back.png");
 
     // instructions page textures
     g_ImgMelee = TextureManager::Get().LoadTexture("Assets/Images/controls_melee.png");
@@ -312,7 +313,15 @@ void Controls_Update()
 {
     if (AEInputCheckTriggered(AEVK_ESCAPE))
     {
-        GameStateManager::Get().next = GS_MAINMENU;
+        if (g_FromPause)
+        {
+            GameStateManager::Get().next = GS_MAINGAME;
+            g_FromPause = false;
+        }
+        else
+        {
+            GameStateManager::Get().next = GS_MAINMENU;
+        }
     }
 
     // mouse position
@@ -371,7 +380,15 @@ void Controls_Update()
         }
         else if (g_HoveredButton == CONTROLBTN_BACK)
         {
-            GameStateManager::Get().next = GS_MAINMENU;
+            if (g_FromPause)
+            {
+                GameStateManager::Get().next = GS_MAINGAME;
+                g_FromPause = false;
+            }
+            else
+            {
+                GameStateManager::Get().next = GS_MAINMENU;
+            }
             AudioManager::Get().PlayAudio(g_ClickSound, false);
         }
     }
@@ -439,6 +456,7 @@ void DrawKeysPage()
     Print("ESC - Pause");
     Print("Q - Quit");
     Print("E - Interaction with mechanisms");
+    Print("Left Click - Interaction on-screen buttons");
 
     y -= spacing;
 
@@ -450,6 +468,8 @@ void DrawKeysPage()
     Print("F - Weapon Switch");
     Print("1/2/3 - Inventory");
     Print("Right Click - Dash (when enabled)");
+    Print("W/S + Left Click - Melee ONLY, Attack Up/Down");
+    Print("Left Click - Attack");
 }
 
 // draw instructions page
@@ -467,13 +487,13 @@ static void DrawInstructionsPage(float halfW, float halfH)
     float y = 340.0f;
 
     auto DrawSectionTitle = [&](const char* text, float nx, float ny)
-    {
-        FontManager::Get().Print(
-            FontManager::Get().GetMediumFont(),
-            text, nx, ny,
-            1.0f, 1, 1, 1, 1
-        );
-    };
+        {
+            FontManager::Get().Print(
+                FontManager::Get().GetMediumFont(),
+                text, nx, ny,
+                1.0f, 1, 1, 1, 1
+            );
+        };
 
     // ---- Combat / Weapon Section ---- //
     DrawSectionTitle("COMBAT / WEAPONS", -0.37f, y / halfH);
@@ -513,11 +533,24 @@ void Controls_Draw()
     float w = (float)AEGfxGetWindowWidth();
     float h = (float)AEGfxGetWindowHeight();
 
-    // background
-    if (g_BG)
+    // draw blue 
+    MeshManager::Get().DrawSquare(
+        0, 0,
+        w, h,
+        10, 25, 60,
+        180
+    );
+    //background
+    if (g_Background)
     {
-        MeshManager::Get().DrawTexturedSquare(g_BG, 0, 0, w, h, 1.0f);
+        MeshManager::Get().DrawTexturedSquare(
+            g_Background,
+            0, 0,
+            w, h,
+            0.3f
+        );
     }
+
     float halfW = w / 2.0f;
     float halfH = h / 2.0f;
 
@@ -556,7 +589,7 @@ void Controls_Draw()
 
         MeshManager::Get().DrawSpriteSheet(
             *g_ControlButtonSheet,
-            -720.0f, 
+            -720.0f,
             400.0f,
             g_ControlButtonWidth * backScale,
             g_ControlButtonHeight * backScale
@@ -620,9 +653,9 @@ void Controls_Free()
 
 void Controls_Unload()
 {
-    TextureManager::Get().UnloadTexture("Assets/Images/ControlPage.png");
     TextureManager::Get().UnloadTexture("Assets/Images/sliderbutton.png");
-    
+    TextureManager::Get().UnloadTexture("Assets/Images/back.png");
+
     // unload instruction page textures
     TextureManager::Get().UnloadTexture("Assets/Images/controls_melee.png");
     TextureManager::Get().UnloadTexture("Assets/Images/controls_ranged.png");
@@ -636,6 +669,7 @@ void Controls_Unload()
 
     g_BG = nullptr;
     g_SettingsPanel = nullptr;
+    g_Background = nullptr;
 
     // instructions page
     g_ImgMelee = nullptr;

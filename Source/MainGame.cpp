@@ -381,10 +381,7 @@ void MainGame_Update()
             float beamVisible = 1.0f;
             float camHoldTime = indicatorTime + beamVisible;
             AudioManager::Get().PlayAudio("computer", false);
-            AudioManager::Get().PlayAudio(
-                AudioManager::Get().GetAudio("laser_on"),
-                false
-            );
+            AudioManager::Get().PlayAudio("laser_on", false);
             Camera_StartSequence(results.cameraPanTargetY, globalCam.y, 0.6f, camHoldTime);
         }
 
@@ -394,6 +391,8 @@ void MainGame_Update()
             !g_camSequenceActive && !g_pendingToggle)
         {
             // pan down to door; unlock fires at midpoint so the player sees it change state
+            AudioManager::Get().PlayAudio("computer", false);
+            AudioManager::Get().PlayAudio("elevator_unlocked", false);
             Camera_StartSequence(results.pendingComputer.targetY, globalCam.y, 0.6f, 2.0f);
             g_pendingToggle      = true;
             g_pendingToggleMidpt = g_camSequenceDuration + g_camHoldDuration * 0.5f;

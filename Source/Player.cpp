@@ -49,6 +49,8 @@ static AEAudio s_PogoSound{};
 static AEAudio s_PlayerDamageSound{};
 static bool s_PlayerAudioLoaded = false;
 static bool s_WasGrounded = true;
+static bool s_WeaponSwitchSoundPlayed = false;
+static bool s_PlayerDamageSoundPlayed = false;
 
 static const float MELEE_COOLDOWN = 0.3f;
 
@@ -308,6 +310,9 @@ void Player_Update(Player& player, float dt)
 		if (player.hurtTimer <= 0.0f) {
 			player.hurtTimer = 0.0f;
 			player.isHurt = false;
+
+			// reset sound flag when hurt ends
+			s_PlayerDamageSoundPlayed = false;
 		}
 	}
 
@@ -537,15 +542,21 @@ void Player_Update(Player& player, float dt)
 	if (!player.weaponSwitchInProgress && player.weapon != player.previousWeapon) {
 		player.weaponSwitchTriggered = true;
 		player.weaponSwitchInProgress = true;
-		switch (player.weapon)
-		{
-		case PlayerWeapon::MELEE:
-			AudioManager::Get().PlayAudio(s_WeaponSwitchClaws, false);
-			break;
 
-		case PlayerWeapon::GUN:
-			AudioManager::Get().PlayAudio(s_WeaponSwitchGuns, false);
-			break;
+		if (!s_WeaponSwitchSoundPlayed)
+		{
+			switch (player.weapon)
+			{
+			case PlayerWeapon::MELEE:
+				AudioManager::Get().PlayAudio(s_WeaponSwitchClaws, false);
+				break;
+
+			case PlayerWeapon::GUN:
+				AudioManager::Get().PlayAudio(s_WeaponSwitchGuns, false);
+				break;
+			}
+
+			s_WeaponSwitchSoundPlayed = true;
 		}
 	}
 
@@ -600,6 +611,7 @@ void Player_Update(Player& player, float dt)
 				player.weaponSwitchTriggered = false;
 				player.weaponSwitchInProgress = false;
 				player.previousWeapon = player.weapon;
+				s_WeaponSwitchSoundPlayed = false;
 			}
 		}
 	}
@@ -917,7 +929,11 @@ void Player_ApplyDamage(Player& player, float damage)
 	if (player.isDashing) return;
 	if (!DebugManager::Get().IsGodModeActive()) {
 		player.hp -= damage;
-		AudioManager::Get().PlayAudio(s_PlayerDamageSound, false);
+		if (!s_PlayerDamageSoundPlayed)
+		{
+			AudioManager::Get().PlayAudio(s_PlayerDamageSound, false);
+			s_PlayerDamageSoundPlayed = true;
+		}
 
 		// trigger hurt animation
 		player.isHurt = true;

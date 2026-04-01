@@ -34,7 +34,7 @@ public:
     void ShowPause();
     void UIManager::HidePause() { m_PauseActive = false; }
     bool UIManager::IsPauseActive() const { return m_PauseActive; }
-    bool UIManager::IsActive()      const { return m_PopupActive || m_PauseActive; }
+    bool UIManager::IsActive() const { return m_PopupActive || m_PauseActive; }
 
     bool Update(float camX, float camY);
     void Draw(float camX, float camY);

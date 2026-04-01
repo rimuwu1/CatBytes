@@ -50,7 +50,11 @@ static std::string                s_LoseTexPath;
 // ============================================================
 static AEAudio s_WinSound{};
 static AEAudio s_LoseSound{};
+static AEAudio s_CutsceneMusic{};
+static AEAudio s_ClickSound{};
+
 static bool    s_SoundPlayed = false;
+static bool    s_CutsceneMusicPlaying = false;
 
 // ============================================================
 // screen mode
@@ -163,6 +167,15 @@ static void DrawCutsceneText(int idx)
         0.5f, 0.5f, 0.5f, 0.8f);    // grey
 }
 
+static void StopCutsceneMusic()
+{
+    if (s_CutsceneMusicPlaying)
+    {
+        AudioManager::Get().StopAudio(s_CutsceneMusic);
+        s_CutsceneMusicPlaying = false;
+    }
+}
+
 // ============================================================
 // WinLose_Load -- one-time, just read paths from config
 // ============================================================
@@ -229,6 +242,8 @@ void WinLose_Initialize()
 
     s_WinSound  = AudioManager::Get().GetAudio("win_effect");
     s_LoseSound = AudioManager::Get().GetAudio("lose_effect");
+    s_CutsceneMusic = AudioManager::Get().GetAudio("cutscene_music");
+    s_ClickSound = AudioManager::Get().GetAudio("click_button");
 
     // load textures every entry -- mirrors MainMenu_Initialize loading 
     for (int i = 0; i < (int)s_SlideTex.size(); ++i)
@@ -250,6 +265,26 @@ void WinLose_Initialize()
         s_Mode = WLMode::Win;
     else
         s_Mode = WLMode::Lose;
+
+    // always stop cutscene music first so it never leaks between entries
+    StopCutsceneMusic();
+
+    if (s_Mode == WLMode::Cutscene)
+    {
+        // stop any music that may already be playing before intro starts
+        AudioManager::Get().StopAudio(AudioManager::Get().GetAudio("main_menu_music"));
+        AudioManager::Get().StopAudio(AudioManager::Get().GetAudio("game_music"));
+        AudioManager::Get().StopAudio(AudioManager::Get().GetAudio("boss_room_music"));
+
+        // play intro cutscene music looping
+        AudioManager::Get().PlayAudio(s_CutsceneMusic, true);
+        s_CutsceneMusicPlaying = true;
+    }
+    else
+    {
+        // if this state is Win or Lose, make sure cutscene music is not still alive
+        StopCutsceneMusic();
+    }
 }
 
 // ============================================================
@@ -282,6 +317,7 @@ void WinLose_Update()
 
         if (AEInputCheckTriggered(AEVK_SPACE) || AEInputCheckTriggered(VK_LBUTTON))
         {
+            AudioManager::Get().PlayAudio(s_ClickSound, false);
             s_slideIdx++;
             if (s_slideIdx >= SLIDE_COUNT)
             {
@@ -302,37 +338,13 @@ void WinLose_Update()
         s_SoundPlayed = true;
     }
 
-    if (s_Mode == WLMode::Win)
-    {
-        // space to lshift go to creds
-        if (AEInputCheckTriggered(AEVK_SPACE) || AEInputCheckTriggered(VK_LBUTTON))
-            GameStateManager::Get().next = GS_CREDITS;
-        return;
-    }
-
-    // lose screen
-    if (AEInputCheckTriggered(AEVK_SPACE) || AEInputCheckTriggered(VK_LBUTTON))
+    if (AEInputCheckTriggered(AEVK_SPACE) || AEInputCheckTriggered(AEVK_RETURN))
         GameStateManager::Get().next = GS_MAINMENU;
 }
 
 // ============================================================
 // WinLose_Draw
 // ============================================================
-static void DrawPromptHint(s8 font, float yOffset = 0.0f)
-{
-    float y = TEXT_TOP_Y - TEXT_LINE_STEP * 3.0f + yOffset; // for manual offset because win screen text is higher than others
-
-    FontManager::Get().PrintCentered(font,
-        "Space/Click",
-        -0.1f, y, 0.6f,
-        1.0f, 0.6f, 0.75f, 0.9f);   // pink
-
-    FontManager::Get().PrintCentered(font,
-        "to continue",
-        0.14f, y, 0.6f,
-        0.5f, 0.5f, 0.5f, 0.8f);    // grey
-}
-
 void WinLose_Draw()
 {
     AESysFrameStart();
@@ -361,11 +373,17 @@ void WinLose_Draw()
     if (s_Mode == WLMode::Win)
     {
         DrawBG(s_WinTex);
+
         FontManager::Get().PrintCentered(largeFont,
             "You Win",
             0.0f, TEXT_TOP_Y + 1.45f, 1.0f,
             1.0f, 0.6f, 0.7f, 1.0f);
-        DrawPromptHint(medFont, 0.2f);
+
+        FontManager::Get().PrintCentered(medFont,
+            "Press Space to return",
+            0.0f, TEXT_TOP_Y - TEXT_LINE_STEP, 0.7f,
+            0.5f, 0.5f, 0.5f, 0.8f);
+
         AESysFrameEnd();
         return;
     }
@@ -383,7 +401,11 @@ void WinLose_Draw()
         0.0f, TEXT_TOP_Y - TEXT_LINE_STEP, 1.0f,
         1.0f, 1.0f, 1.0f, 1.0f);
 
-    DrawPromptHint(medFont);
+    FontManager::Get().PrintCentered(medFont,
+        "Press Space to return",
+        0.0f, TEXT_TOP_Y - TEXT_LINE_STEP * 2.0f, 0.7f,
+        0.5f, 0.5f, 0.5f, 0.8f);
+
     AESysFrameEnd();
 }
 
@@ -399,6 +421,7 @@ void WinLose_Free()
 // ============================================================
 void WinLose_Unload()
 {
+    StopCutsceneMusic();
     for (int i = 0; i < (int)s_SlideTex.size(); ++i)
         if (s_SlideTex[i]) 
             TextureManager::Get().UnloadTexture(s_SlideTexPaths[i].c_str());
