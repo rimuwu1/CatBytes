@@ -211,7 +211,7 @@ void MainGame_Update()
     float dt = (float)AEFrameRateControllerGetFrameTime();
     if (DebugManager::Get().Update(dt)) return;
     if (AEInputCheckTriggered(AEVK_ESCAPE)) { //moved from input cos update pause is tweaking
-        UIManager::Get().ShowPause();
+        UIManager::Get().ShowPause(globalCam.x, globalCam.y);
     }
 
     Player& player = ObjectManager::Get().GetPlayer();
@@ -736,7 +736,7 @@ void MainGame_Update()
         // Trigger press animation for pause button
         hud.TriggerPauseButtonPress();
 
-        UIManager::Get().ShowPause();
+        UIManager::Get().ShowPause(globalCam.x, globalCam.y);
         return;
     }
 

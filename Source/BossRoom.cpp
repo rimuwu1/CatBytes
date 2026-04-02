@@ -450,7 +450,7 @@ void BossRoom_Update()
     if (DebugManager::Get().Update(dt)) return;
 
     if (AEInputCheckTriggered(AEVK_ESCAPE))
-        UIManager::Get().ShowPause();
+        UIManager::Get().ShowPause(globalCam.x, globalCam.y);
 
     // fade in from black
     if (g_bossRoomFadingIn)
@@ -819,7 +819,7 @@ void BossRoom_Update()
 
     HUD& hud = EnvironmentManager::Get().GetHUD();
     if (hud.IsPauseButtonClicked(globalCam.x, globalCam.y))
-        UIManager::Get().ShowPause();
+        UIManager::Get().ShowPause(globalCam.x, globalCam.y);
 
     // check for boss fight over sequence completion
     bool bossPresent = false;

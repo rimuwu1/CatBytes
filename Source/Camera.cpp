@@ -35,19 +35,12 @@ void Camera_Init(Camera& cam, float startX, float startY)
 
 void Camera_FollowPlayer(Camera& cam, float /*playerX*/, float playerY, float dt)
 {
-	//cam.x += (playerX - cam.x) * followSpeed * dt;
 	cam.x = 0.0f; // Fixed player cam.x
 
 	const float followSpeed = 10.0f;
 	const float verticalOffset = 50.0f;
 
 	float targetY = playerY + verticalOffset;
-
-	//// Fixed camera y positon
-	//if (targetY > cam.y)
-	//{
-	//	cam.y += (targetY - cam.y) * followSpeed * dt;
-	//}
 
 	cam.y += (targetY - cam.y) * followSpeed * dt;
 
@@ -67,10 +60,21 @@ void Camera_FollowPlayer(Camera& cam, float /*playerX*/, float playerY, float dt
 
 void Camera_Apply(const Camera& cam)
 {
-	AEGfxSetCamPosition(cam.x, cam.y);
+	//AEGfxSetCamPosition(cam.x, cam.y);
+    float renderX = cam.x;
+    float renderY = cam.y;
+
+    if (camTrauma > 0.0f) {
+        float shake = camTrauma * camTrauma;
+        renderX += sinf(camShakeTime * 1.1f) * shake * 20.0f;
+        renderY += cosf(camShakeTime * 0.9f) * shake * 20.0f;
+    }
+
+    AEGfxSetCamPosition(renderX, renderY);
 }
 
-void Camera_Debug(Camera& cam, float dt) {
+void Camera_Debug(Camera& cam, float dt) 
+{
 
 	const float camSpeed = 500.0f;
 
@@ -90,18 +94,19 @@ void Camera_Debug(Camera& cam, float dt) {
 
 }
 
-void Camera_AddTrauma(float amount) {
+void Camera_AddTrauma(float amount) 
+{
     camTrauma = (std::min)(camTrauma + amount, 1.0f);
 }
 
-void Camera_UpdateShake(Camera& cam, float dt) {
+void Camera_UpdateShake(Camera& cam, float dt) 
+{
+    (void)cam;
+
     if (camTrauma <= 0.0f) return;
     camTrauma -= dt * 1.5f;
     if (camTrauma < 0.0f) camTrauma = 0.0f;
-    float shake = camTrauma * camTrauma;
     camShakeTime += dt * 30.0f;
-    cam.x += sinf(camShakeTime * 1.1f) * shake * 20.0f;
-    cam.y += cosf(camShakeTime * 0.9f) * shake * 20.0f;
 }
 
 // Camera pan sequence state

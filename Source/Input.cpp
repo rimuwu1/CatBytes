@@ -55,7 +55,8 @@ void Input_Handle() {
 			"Quit Game",
 			"Are you sure you want to quit?",
 			[]() { GameStateManager::Get().next = GS_QUIT; },
-			[]() {} // cancel: do nothing
+			[]() {},
+			globalCam.x, globalCam.y// cancel: do nothing
 		);
 	}
 

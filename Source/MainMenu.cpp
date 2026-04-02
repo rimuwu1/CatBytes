@@ -369,7 +369,8 @@ void MainMenu_Update()
                         textScreenMessage = "Cutscene";
                         GameStateManager::Get().next = GS_WINLOSE;
                     },
-                    []() { /* cancel – do nothing */ }
+                    []() { /* cancel – do nothing */ },
+                    globalCam.x, globalCam.y
                 );
             }
             else {
@@ -394,7 +395,8 @@ void MainMenu_Update()
                     []() {
                         GameStateManager::Get().next = GS_QUIT;
                     },
-                    []() { /* cancel – do nothing */ }
+                    []() { /* cancel – do nothing */ },
+                    globalCam.x, globalCam.y
                 );
             break;
         }

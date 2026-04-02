@@ -29,9 +29,10 @@ public:
     void ShowConfirmation(const std::string& title,
         const std::string& message,
         std::function<void()> onConfirm,
-        std::function<void()> onCancel);
+        std::function<void()> onCancel,
+        float camX, float camY);
 
-    void ShowPause();
+    void ShowPause(float camX, float camY);
     void ShowControls();
 
     void HidePause() { m_PauseActive = false; }
@@ -62,7 +63,11 @@ private:
     int  m_PauseHovered = 0;
     int  m_PausePrevHov = 0;
 
+    float m_UIAnchorX = 0.0f;
+    float m_UIAnchorY = 0.0f;
+
     bool IsMouseOverButton(float btnX, float btnY, float btnW, float btnH, float camX, float camY) const;
+    void SetUIAnchor(float camX, float camY);
     void UpdateConfirmation(float camX, float camY, bool& consumed);
     void UpdatePause(float camX, float camY, bool& consumed);
     void UpdateControls(float camX, float camY, bool& consumed);

@@ -3,8 +3,10 @@
 \file UIManager.cpp
 \author Joash ng, joash.ng, 2502780
         Tse Xuan Qi Tristin, tse.x, 2503757
+        Kerwin Wong Jia Jie, kerwinjiajie.wong, 2502740
 \par joash.ng@digipen.edu
      tse.x@digipen.edu
+     kerwinjiajie.wong@digipen.edu
 \date 03/03/2026
 \brief This file implements functions to overlay & pause gamestates to render a popup menu/pause menu
 
@@ -67,12 +69,15 @@ static float PauseBtnY(int idx) { return PAUSE_START_Y - (idx - 1) * PAUSE_SPACI
 void UIManager::ShowConfirmation(const std::string& title,
     const std::string& message,
     std::function<void()> onConfirm,
-    std::function<void()> onCancel)
+    std::function<void()> onCancel,
+    float camX, float camY)
 {
     if (m_PopupActive) {
         std::cout << "UIManager: popup already active, ignoring.\n";
         return;
     }
+    SetUIAnchor(camX, camY);
+
     m_Popup.title = title;
     m_Popup.message = message;
     m_Popup.onConfirm = onConfirm;
@@ -83,7 +88,7 @@ void UIManager::ShowConfirmation(const std::string& title,
 // ----------------------------------------------------------------------------
 // ShowPause / HidePause
 // ----------------------------------------------------------------------------
-void UIManager::ShowPause()
+void UIManager::ShowPause(float camX, float camY)
 {
     if (m_PauseActive) return;  // already open: ignore re-entry
     if (!s_PauseSoundsLoaded) {
@@ -91,6 +96,8 @@ void UIManager::ShowPause()
         s_PauseClickSound = AudioManager::Get().GetAudio("click_button");
         s_PauseSoundsLoaded = true;
     }
+    SetUIAnchor(camX, camY);
+
     m_PauseActive = true;
     m_PauseHovered = 0;
     m_PausePrevHov = 0;
@@ -118,6 +125,8 @@ void UIManager::HideControls()
 // ----------------------------------------------------------------------------
 void UIManager::Reset()
 {
+    m_UIAnchorX = 0.0f;
+    m_UIAnchorY = 0.0f;
     m_PopupActive = false;
     m_Popup.title = "";
     m_Popup.message = "";
@@ -182,21 +191,24 @@ void UIManager::UpdateConfirmation(float camX, float camY, bool& consumed)
 
 void UIManager::DrawConfirmation(float camX, float camY)
 {
+    (void)camX;
+    (void)camY;
+
     f32 winW = (f32)AEGfxGetWindowWidth();
     f32 winH = (f32)AEGfxGetWindowHeight();
 
     // Extra dim layer on top of pause (if both active) or game world
-    MeshManager::Get().DrawSquare(camX, camY, winW, winH, 0, 0, 0, 0.55f);
-    MeshManager::Get().DrawSquare(camX + PANEL_CX, camY + PANEL_CY, PANEL_W, PANEL_H, 30, 30, 30);
+    MeshManager::Get().DrawSquare(m_UIAnchorX, m_UIAnchorY, winW, winH, 0, 0, 0, 0.55f);
+    MeshManager::Get().DrawSquare(m_UIAnchorX + PANEL_CX, m_UIAnchorY + PANEL_CY, PANEL_W, PANEL_H, 30, 30, 30);
 
     if (g_FontLarge != -1)
         FontManager::Get().PrintCentered(FontManager::Get().GetLargeFont(), m_Popup.title.c_str(),
-            camX, PxToNdcY(TITLE_Y_PX, winH),
+            0.0f, PxToNdcY(TITLE_Y_PX, winH),
             0.6f, 1, 1, 1, 1);
 
     if (g_FontMedium != -1)
         FontManager::Get().PrintCentered(FontManager::Get().GetMediumFont(), m_Popup.message.c_str(),
-            camX, PxToNdcY(MSG_Y_PX, winH),
+            0.0f, PxToNdcY(MSG_Y_PX, winH),
             0.5f, 1, 1, 1, 1);
 
     float btnWNdc = BTN_W / (winW * 0.5f);
@@ -209,7 +221,7 @@ void UIManager::DrawConfirmation(float camX, float camY)
     { // YES
         bool hover = IsMouseOverButton(btnYesX, btnYNdc, btnWNdc, btnHNdc, camX, camY);
         int s = hover ? 180 : 100;
-        MeshManager::Get().DrawSquare(camX + BTN_YES_X_PX, camY + BTN_Y_PX, BTN_W, BTN_H, s, s, s);
+        MeshManager::Get().DrawSquare(m_UIAnchorX + BTN_YES_X_PX, m_UIAnchorY + BTN_Y_PX, BTN_W, BTN_H, s, s, s);
         if (g_FontMedium != -1) {
             float hw = 3.f * 0.04f * 0.5f * 0.5f;
             FontManager::Get().Print(FontManager::Get().GetMediumFont(), "YES", btnYesX - hw, btnYNdc + textOffY, 0.5f, 1, 1, 1, 1);
@@ -218,12 +230,14 @@ void UIManager::DrawConfirmation(float camX, float camY)
     { // NO
         bool hover = IsMouseOverButton(btnNoX, btnYNdc, btnWNdc, btnHNdc, camX, camY);
         int s = hover ? 180 : 100;
-        MeshManager::Get().DrawSquare(camX + BTN_NO_X_PX, camY + BTN_Y_PX, BTN_W, BTN_H, s, s, s);
+        MeshManager::Get().DrawSquare(m_UIAnchorX + BTN_NO_X_PX, m_UIAnchorY + BTN_Y_PX, BTN_W, BTN_H, s, s, s);
         if (g_FontMedium != -1) {
             float hw = 2.f * 0.04f * 0.5f * 0.5f;
             FontManager::Get().Print(FontManager::Get().GetMediumFont(), "NO", btnNoX - hw, btnYNdc + textOffY, 0.5f, 1, 1, 1, 1);
         }
     }
+
+    AEGfxSetCamPosition(camX, camY);
 }
 
 // ============================================================================
@@ -277,19 +291,22 @@ void UIManager::UpdatePause(float camX, float camY, bool& consumed)
             m_PauseActive = false;
             ShowConfirmation("Restart Game?", "All progress will be lost!",
                 []() { g_newGame = true; GameSaveManager::ResetSave(); },
-                []() {});
+                []() {},
+                camX, camY);
             break;
         case 4: // Main Menu -- confirm first
             m_PauseActive = false;
             ShowConfirmation("Exit to Main Menu?", "Unsaved progress will be lost!",
                 []() { GameStateManager::Get().next = GS_MAINMENU; },
-                []() {});
+                []() {},
+                camX, camY);
             break;
         case 5: // Quit -- confirm first
             m_PauseActive = false;
             ShowConfirmation("Quit Game?", "Are you sure you want to quit?",
                 []() { GameStateManager::Get().next = GS_QUIT; },
-                []() {});
+                []() {},
+                camX, camY);
             break;
         }
     }
@@ -298,25 +315,31 @@ void UIManager::UpdatePause(float camX, float camY, bool& consumed)
 
 void UIManager::DrawPause(float camX, float camY)
 {
+    (void)camX;
+    (void)camY;
+
     f32 winW = (f32)AEGfxGetWindowWidth();
     f32 winH = (f32)AEGfxGetWindowHeight();
 
     // Dim overlay over game world
     MeshManager::Get().DrawSquare(camX, camY, winW, winH, 0, 0, 0, 0.55f);
     // Panel
-    MeshManager::Get().DrawSquare(camX, camY, PAUSE_PANEL_W_PX, PAUSE_PANEL_H_PX, 30, 30, 30);
+    MeshManager::Get().DrawSquare(m_UIAnchorX, m_UIAnchorY, PAUSE_PANEL_W_PX, PAUSE_PANEL_H_PX, 30, 30, 30);
 
     if (g_FontLarge == -1 || g_FontMedium == -1) return;
 
     // Title -- centered
-    FontManager::Get().PrintCentered(FontManager::Get().GetLargeFont(), "PAUSED", camX, PauseBtnY(0) + 0.10f, 0.8f, 1, 1, 1, 1);
+    FontManager::Get().PrintCentered(FontManager::Get().GetLargeFont(), "PAUSED", 0.0f, PauseBtnY(0) + 0.10f, 0.8f, 1, 1, 1, 1);
 
     const char* labels[] = { "", "RESUME GAME", "CONTROLS", "RESTART", "EXIT TO MAIN MENU", "QUIT GAME" };
     for (int i = 1; i <= 5; ++i) {
         float bright = (m_PauseHovered == i) ? 1.0f : 0.6f;
         FontManager::Get().Print(FontManager::Get().GetMediumFont(), labels[i], PAUSE_BTN_X, PauseBtnY(i), 1.0f, bright, bright, bright, 1.0f);
     }
+
+    AEGfxSetCamPosition(camX, camY);
 }
+
 void UIManager::UpdateControls(float camX, float camY, bool& consumed)
 {
     (void)camX;
@@ -348,4 +371,13 @@ bool UIManager::IsMouseOverButton(float btnX, float btnY,
     f32 ndcY = 1.f - ((f32)my / winH) * 2.f;
     return (ndcX >= btnX - btnWidth * 0.5f && ndcX <= btnX + btnWidth * 0.5f &&
         ndcY >= btnY - btnHeight * 0.5f && ndcY <= btnY + btnHeight * 0.5f);
+}
+
+// ============================================================================
+// UI anchor helper
+// ============================================================================
+void UIManager::SetUIAnchor(float camX, float camY)
+{
+    m_UIAnchorX = camX;
+    m_UIAnchorY = camY;
 }
