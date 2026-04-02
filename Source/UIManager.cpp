@@ -99,7 +99,18 @@ void UIManager::ShowPause()
 
 void UIManager::ShowControls()
 {
+    if (!m_ControlsActive) {
+        Controls_Load();
+        Controls_Initialize();
+    }
     m_ControlsActive = true;
+}
+
+void UIManager::HideControls()
+{
+    Controls_Free();
+    Controls_Unload();
+    m_ControlsActive = false;
 }
 
 // ----------------------------------------------------------------------------
@@ -259,7 +270,8 @@ void UIManager::UpdatePause(float camX, float camY, bool& consumed)
             m_PauseActive = false;
             break;
         case 2: // Controls
-            m_ControlsActive = true;
+            //m_ControlsActive = true;
+            ShowControls();
             break;
         case 3: // Restart -- confirm first
             m_PauseActive = false;
@@ -315,9 +327,9 @@ void UIManager::UpdateControls(float camX, float camY, bool& consumed)
 
 void UIManager::DrawControls(float camX, float camY)
 {
-    (void)camX;
-    (void)camY;
-    Controls_DrawOverlay();
+    AEGfxSetCamPosition(0.0f, 0.0f);
+    Controls_DrawOverlay(camX, camY);
+    AEGfxSetCamPosition(camX, camY);
 }
 
 

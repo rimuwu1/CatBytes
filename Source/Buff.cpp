@@ -70,17 +70,13 @@ void Buff::Deactivate(Player& player) {
         player.shieldActive = false;
         player.shieldTimer = 0.0f;
         break;
-    case BuffType::DASH:
-        // activate godmode (TBA)
-        break;
     default:
         break;
     }
 }
 
 void Buff::Update(float dt) {
-    // Update logic e.g. buff expiry timer etc (TBA)
-    (void)dt; // TBA
+    (void)dt;
 }
 
 void Buff::Draw(float camX, float camY) const {

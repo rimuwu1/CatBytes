@@ -337,7 +337,7 @@
       "w": 32,
       "h": 450,
       "minY": 0,
-      "maxY": 7500,
+      "maxY": 9665,
       "gap": 0,
       "paddingX": 2,
       "paddingY": 2,
@@ -346,7 +346,7 @@
       "segments": [
         { "endY": 1900 },
         { "endY": 4650 },
-        { "endY": 9600 }
+        { "endY": 9665 }
       ],
       "texture": "Assets/Images/progressBar.png"
     },

@@ -35,7 +35,7 @@ public:
     void ShowControls();
 
     void HidePause() { m_PauseActive = false; }
-    void HideControls() { m_ControlsActive = false; }
+    void HideControls();
 
     bool IsPauseActive() const { return m_PauseActive; }
     bool IsControlsActive() const { return m_ControlsActive; }

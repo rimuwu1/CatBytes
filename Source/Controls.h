@@ -21,7 +21,7 @@ void Controls_Load();
 void Controls_Initialize();
 void Controls_Update();
 void Controls_UpdateOverlay();
-void Controls_DrawOverlay();
+void Controls_DrawOverlay(float camX, float camY);
 void DrawKeysPage();
 void Controls_Draw();
 void Controls_Free();

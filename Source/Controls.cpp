@@ -120,6 +120,7 @@ static AEGfxTexture* g_ImgMelee = nullptr;
 static AEGfxTexture* g_ImgRanged = nullptr;
 static AEGfxTexture* g_ImgCheckpoint = nullptr;
 static AEGfxTexture* g_ImgSwitch = nullptr;
+static AEGfxTexture* g_ImgSpike = nullptr;
 static AEGfxTexture* g_ImgComputer = nullptr;
 static AEGfxTexture* g_ImgBossRoom = nullptr;
 static AEGfxTexture* g_ImgHpRecovery = nullptr;
@@ -168,6 +169,7 @@ static InstructionCard g_InteractionCards[] =
 {
     { &g_ImgCheckpoint, "Checkpoint", "Saves your progress" },
     { &g_ImgSwitch, "Toggle Switch", "Unlocks platforms & walls" },
+    { &g_ImgSpike, "Spike", "Slash down to bounce" },
     { &g_ImgComputer, "Computer", "Lasers/Door unlocking" },
     { &g_ImgBossRoom, "Lift Door", "Moves to the boss stage" }
 };
@@ -265,6 +267,7 @@ void Controls_Load()
     g_ImgRanged = TextureManager::Get().LoadTexture("Assets/Images/controls_ranged.png");
     g_ImgCheckpoint = TextureManager::Get().LoadTexture("Assets/Images/controls_checkpoint.png");
     g_ImgSwitch = TextureManager::Get().LoadTexture("Assets/Images/controls_switch.png");
+    g_ImgSpike = TextureManager::Get().LoadTexture("Assets/Images/controls_spike.png");
     g_ImgComputer = TextureManager::Get().LoadTexture("Assets/Images/controls_computer.png");
     g_ImgBossRoom = TextureManager::Get().LoadTexture("Assets/Images/controls_bossdoor.png");
     g_ImgHpRecovery = TextureManager::Get().LoadTexture("Assets/Images/controls_full_hp.png");
@@ -607,8 +610,9 @@ static void DrawInstructionsPage(float halfW, float halfH)
     y -= 70.0f;
     DrawInstructionCard(g_InteractionCards[0], leftX, y, cardW, cardH, halfW, halfH);
     DrawInstructionCard(g_InteractionCards[1], midX, y, cardW, cardH, halfW, halfH);
-    DrawInstructionCard(g_InteractionCards[2], leftX, y - cardH - gapY, cardW, cardH, halfW, halfH);
-    DrawInstructionCard(g_InteractionCards[3], midX, y - cardH - gapY, cardW, cardH, halfW, halfH);
+    DrawInstructionCard(g_InteractionCards[2], rightX, y, cardW, cardH, halfW, halfH);
+    DrawInstructionCard(g_InteractionCards[3], leftX, y - cardH - gapY, cardW, cardH, halfW, halfH);
+    DrawInstructionCard(g_InteractionCards[4], midX, y - cardH - gapY, cardW, cardH, halfW, halfH);
 
     // ---- Buff Section ---- //
     float buffY = y - 2.0f * (cardH + gapY) - 35.0f;
@@ -693,7 +697,7 @@ static void DrawControlsContents(float w, float h)
         if (g_SettingsPanel)
         {
             MeshManager::Get().DrawTexturedSquare(g_SettingsPanel, knobX_Music, 100, 30, 30, 1.0f);
-            MeshManager::Get().DrawTexturedSquare(g_SettingsPanel,  knobX_SFX, 20, 30, 30, 1.0f);
+            MeshManager::Get().DrawTexturedSquare(g_SettingsPanel,  knobX_SFX, -20, 30, 30, 1.0f);
         }
     }
 }
@@ -730,25 +734,17 @@ void Controls_Draw()
    AESysFrameEnd();
 }
 
-void Controls_DrawOverlay()
+void Controls_DrawOverlay(float camX, float camY)
 {
     AEGfxSetBlendMode(AE_GFX_BM_BLEND);
 
     float w = (float)AEGfxGetWindowWidth();
     float h = (float)AEGfxGetWindowHeight();
 
-    // dim layer over pause
-    MeshManager::Get().DrawSquare(
-        0, 0,
-        w, h,
-        0, 0, 0,
-        0.35f
-    );
-
     // same full controls background as standalone
     MeshManager::Get().DrawSquare(
-        0, 0,
-        w, h,
+        camX, camY,
+        w + 150.0f, h + 150.0f,
         10, 25, 60,
         180
     );
@@ -782,6 +778,7 @@ void Controls_Unload()
     TextureManager::Get().UnloadTexture("Assets/Images/controls_ranged.png");
     TextureManager::Get().UnloadTexture("Assets/Images/controls_checkpoint.png");
     TextureManager::Get().UnloadTexture("Assets/Images/controls_switch.png");
+    TextureManager::Get().UnloadTexture("Assets/Images/controls_spike.png");
     TextureManager::Get().UnloadTexture("Assets/Images/controls_computer.png");
     TextureManager::Get().UnloadTexture("Assets/Images/controls_bossdoor.png");
     TextureManager::Get().UnloadTexture("Assets/Images/controls_full_hp.png");
@@ -797,6 +794,7 @@ void Controls_Unload()
     g_ImgRanged = nullptr;
     g_ImgCheckpoint = nullptr;
     g_ImgSwitch = nullptr;
+    g_ImgSpike = nullptr;
     g_ImgComputer = nullptr;
     g_ImgBossRoom = nullptr;
     g_ImgHpRecovery = nullptr;
