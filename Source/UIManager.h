@@ -32,9 +32,14 @@ public:
         std::function<void()> onCancel);
 
     void ShowPause();
-    void UIManager::HidePause() { m_PauseActive = false; }
-    bool UIManager::IsPauseActive() const { return m_PauseActive; }
-    bool UIManager::IsActive() const { return m_PopupActive || m_PauseActive; }
+    void ShowControls();
+
+    void HidePause() { m_PauseActive = false; }
+    void HideControls() { m_ControlsActive = false; }
+
+    bool IsPauseActive() const { return m_PauseActive; }
+    bool IsControlsActive() const { return m_ControlsActive; }
+    bool IsActive() const { return m_PopupActive || m_PauseActive || m_ControlsActive; }
 
     bool Update(float camX, float camY);
     void Draw(float camX, float camY);
@@ -53,12 +58,15 @@ private:
     bool m_PopupActive = false;
 
     bool m_PauseActive = false;
+    bool m_ControlsActive = false;
     int  m_PauseHovered = 0;
     int  m_PausePrevHov = 0;
 
     bool IsMouseOverButton(float btnX, float btnY, float btnW, float btnH, float camX, float camY) const;
     void UpdateConfirmation(float camX, float camY, bool& consumed);
     void UpdatePause(float camX, float camY, bool& consumed);
+    void UpdateControls(float camX, float camY, bool& consumed);
     void DrawConfirmation(float camX, float camY);
     void DrawPause(float camX, float camY);
+    void DrawControls(float camX, float camY);
 };

@@ -20,6 +20,8 @@ extern bool g_FromPause;
 void Controls_Load();
 void Controls_Initialize();
 void Controls_Update();
+void Controls_UpdateOverlay();
+void Controls_DrawOverlay();
 void DrawKeysPage();
 void Controls_Draw();
 void Controls_Free();

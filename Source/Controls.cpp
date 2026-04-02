@@ -20,6 +20,7 @@ Technology is prohibited.
 #include "GameStateManager.h"
 #include "TextureManager.h"
 #include "MeshManager.h"
+#include "UIManager.h"
 #include "AEEngine.h"
 #include "AudioManager.h"
 #include "Fonts.h"
@@ -432,8 +433,106 @@ void Controls_Update()
         }
     }
 }
+void Controls_UpdateOverlay()
+{
+    if (AEInputCheckTriggered(AEVK_ESCAPE))
+    {
+        UIManager::Get().HideControls();
+        return;
+    }
 
-//temp
+    // mouse position
+    s32 mx, my;
+    AEInputGetCursorPosition(&mx, &my);
+
+    float w = (float)AEGfxGetWindowWidth();
+    float h = (float)AEGfxGetWindowHeight();
+
+    float nx = (mx / w) * 2.0f - 1.0f;
+    float ny = 1.0f - (my / h) * 2.0f;
+
+    g_HoveredButton = CONTROLBTN_NONE;
+
+    if (IsMouseOver(nx, ny, BTN_X, BTN_KEYS_Y))
+        g_HoveredButton = CONTROLBTN_KEYS;
+    else if (IsMouseOver(nx, ny, BTN_X, BTN_INSTRUCTIONS_Y))
+        g_HoveredButton = CONTROLBTN_INSTRUCTIONS;
+    else if (IsMouseOver(nx, ny, BTN_X, BTN_SETTINGS_Y))
+        g_HoveredButton = CONTROLBTN_SETTINGS;
+    else
+    {
+        float backCX = -720.0f / (w * 0.5f);
+        float backCY = 400.0f / (h * 0.5f);
+        float backW = g_ControlButtonWidth / w * 2.0f;
+        float backH = g_ControlButtonHeight / h * 2.0f;
+
+        if (IsMouseOverRect(nx, ny, backCX, backCY, backW, backH))
+            g_HoveredButton = CONTROLBTN_BACK;
+    }
+
+    if (g_HoveredButton != CONTROLBTN_NONE && g_HoveredButton != g_PreviousHoveredButton)
+    {
+        AudioManager::Get().PlayAudio(g_HoverSound, false);
+    }
+    g_PreviousHoveredButton = g_HoveredButton;
+
+    if (AEInputCheckTriggered(AEVK_LBUTTON))
+    {
+        if (g_HoveredButton == CONTROLBTN_KEYS)
+        {
+            g_CurrentTab = TAB_KEYS;
+            AudioManager::Get().PlayAudio(g_ClickSound, false);
+        }
+        else if (g_HoveredButton == CONTROLBTN_INSTRUCTIONS)
+        {
+            g_CurrentTab = TAB_INSTRUCTIONS;
+            AudioManager::Get().PlayAudio(g_ClickSound, false);
+        }
+        else if (g_HoveredButton == CONTROLBTN_SETTINGS)
+        {
+            g_CurrentTab = TAB_SETTINGS;
+            AudioManager::Get().PlayAudio(g_ClickSound, false);
+        }
+        else if (g_HoveredButton == CONTROLBTN_BACK)
+        {
+            UIManager::Get().HideControls();
+            AudioManager::Get().PlayAudio(g_ClickSound, false);
+            return;
+        }
+    }
+
+    if (g_CurrentTab == TAB_SETTINGS)
+    {
+        if (AEInputCheckTriggered(AEVK_LBUTTON))
+        {
+            if (fabs(nx - SLIDER_X) < (SLIDER_WIDTH * 0.5f) && fabs(ny - MUSIC_Y) < 0.05f)
+                g_DragMusic = true;
+
+            if (fabs(nx - SLIDER_X) < (SLIDER_WIDTH * 0.5f) && fabs(ny - SFX_Y) < 0.05f)
+                g_DragSFX = true;
+        }
+
+        if (!AEInputCheckCurr(AEVK_LBUTTON))
+        {
+            g_DragMusic = false;
+            g_DragSFX = false;
+        }
+
+        float sliderLeft = SLIDER_X - SLIDER_WIDTH * 0.5f;
+
+        if (g_DragMusic)
+        {
+            g_MusicSlider = Clamp01((nx - sliderLeft) / SLIDER_WIDTH);
+            AudioManager::Get().SetMusicVolume(g_MusicSlider);
+        }
+
+        if (g_DragSFX)
+        {
+            g_SFXSlider = Clamp01((nx - sliderLeft) / SLIDER_WIDTH);
+            AudioManager::Get().SetSFXVolume(g_SFXSlider);
+        }
+    }
+}
 void DrawKeysPage()
 {
     AEGfxSetBlendMode(AE_GFX_BM_BLEND);
@@ -523,34 +622,8 @@ static void DrawInstructionsPage(float halfW, float halfH)
 
 }
 
-
-void Controls_Draw()
+static void DrawControlsContents(float w, float h)
 {
-    AESysFrameStart();
-    AEGfxSetBackgroundColor(0, 0, 0);
-    AEGfxSetBlendMode(AE_GFX_BM_BLEND);
-
-    float w = (float)AEGfxGetWindowWidth();
-    float h = (float)AEGfxGetWindowHeight();
-
-    // draw blue 
-    MeshManager::Get().DrawSquare(
-        0, 0,
-        w, h,
-        10, 25, 60,
-        180
-    );
-    //background
-    if (g_Background)
-    {
-        MeshManager::Get().DrawTexturedSquare(
-            g_Background,
-            0, 0,
-            w, h,
-            0.3f
-        );
-    }
-
     float halfW = w / 2.0f;
     float halfH = h / 2.0f;
 
@@ -582,7 +655,6 @@ void Controls_Draw()
         DrawBtn(FRAME_INSTRUCTIONS, FRAME_INSTRUCTIONS_PRESSED, CONTROLBTN_INSTRUCTIONS, BTN_INSTRUCTIONS_Y);
         DrawBtn(FRAME_SETTINGS, FRAME_SETTINGS_PRESSED, CONTROLBTN_SETTINGS, BTN_SETTINGS_Y);
 
-        // back button (no pressed frame, scale instead)
         float backScale = (g_HoveredButton == CONTROLBTN_BACK) ? 1.05f : 1.0f;
 
         g_ControlButtonSheet->SetFrame(FRAME_BACK);
@@ -596,7 +668,6 @@ void Controls_Draw()
         );
     }
 
-    // draw page
     if (g_CurrentTab == TAB_KEYS)
     {
         DrawKeysPage();
@@ -613,36 +684,86 @@ void Controls_Draw()
         FontManager::Get().Print(FontManager::Get().GetSmallFont(),
             "SFX", -0.2f, -0.05f, 1, 1, 1, 1, 1);
 
-        //  bars
-        DrawRect(200, 100, 300, 8, 0.6f, 0.2f, 0.8f, 1.0f);   // music
-        DrawRect(200, -20, 300, 8, 0.6f, 0.2f, 0.8f, 1.0f);   // sfx
+        DrawRect(200, 100, 300, 8, 0.6f, 0.2f, 0.8f, 1.0f);
+        DrawRect(200, -20, 300, 8, 0.6f, 0.2f, 0.8f, 1.0f);
 
         float knobX_Music = 200 + (g_MusicSlider - 0.5f) * 300;
         float knobX_SFX = 200 + (g_SFXSlider - 0.5f) * 300;
 
         if (g_SettingsPanel)
         {
-            MeshManager::Get().DrawTexturedSquare(
-                g_SettingsPanel,
-                knobX_Music,
-                100,
-                30, 30,
-                1.0f
-            );
-
-            MeshManager::Get().DrawTexturedSquare(
-                g_SettingsPanel,
-                knobX_SFX,
-                -20,
-                30, 30,
-                1.0f
-            );
+            MeshManager::Get().DrawTexturedSquare(g_SettingsPanel, knobX_Music, 100, 30, 30, 1.0f);
+            MeshManager::Get().DrawTexturedSquare(g_SettingsPanel,  knobX_SFX, 20, 30, 30, 1.0f);
         }
+    }
+}
 
+
+void Controls_Draw()
+{
+    AESysFrameStart();
+    AEGfxSetBackgroundColor(0, 0, 0);
+    AEGfxSetBlendMode(AE_GFX_BM_BLEND);
+
+    float w = (float)AEGfxGetWindowWidth();
+    float h = (float)AEGfxGetWindowHeight();
+
+    MeshManager::Get().DrawSquare(
+        0, 0,
+        w, h,
+        10, 25, 60,
+        180
+    );
+
+    if (g_Background)
+    {
+        MeshManager::Get().DrawTexturedSquare(
+            g_Background,
+            0, 0,
+            w, h,
+            0.3f
+        );
     }
 
-    AESysFrameEnd();
+    DrawControlsContents(w, h);
 
+   AESysFrameEnd();
+}
+
+void Controls_DrawOverlay()
+{
+    AEGfxSetBlendMode(AE_GFX_BM_BLEND);
+
+    float w = (float)AEGfxGetWindowWidth();
+    float h = (float)AEGfxGetWindowHeight();
+
+    // dim layer over pause
+    MeshManager::Get().DrawSquare(
+        0, 0,
+        w, h,
+        0, 0, 0,
+        0.35f
+    );
+
+    // same full controls background as standalone
+    MeshManager::Get().DrawSquare(
+        0, 0,
+        w, h,
+        10, 25, 60,
+        180
+    );
+
+    if (g_Background)
+    {
+        MeshManager::Get().DrawTexturedSquare(
+            g_Background,
+            0, 0,
+            w, h,
+            0.3f
+        );
+    }
+
+    DrawControlsContents(w, h);
 }
 
 

@@ -97,6 +97,11 @@ void UIManager::ShowPause()
 }
 
 
+void UIManager::ShowControls()
+{
+    m_ControlsActive = true;
+}
+
 // ----------------------------------------------------------------------------
 // Reset
 // ----------------------------------------------------------------------------
@@ -108,6 +113,7 @@ void UIManager::Reset()
     m_Popup.onConfirm = nullptr;
     m_Popup.onCancel = nullptr;
     m_PauseActive = false;
+    m_ControlsActive = false;
     m_PauseHovered = 0;
     m_PausePrevHov = 0;
 }
@@ -119,7 +125,9 @@ bool UIManager::Update(float camX, float camY)
 {
     if (!IsActive()) return false;
     bool consumed = false;
+
     if (m_PopupActive) UpdateConfirmation(camX, camY, consumed);
+    else if (m_ControlsActive) UpdateControls(camX, camY, consumed);
     else if (m_PauseActive) UpdatePause(camX, camY, consumed);
     return true;  // modal: always consume input when any overlay is up
 }
@@ -131,6 +139,7 @@ void UIManager::Draw(float camX, float camY)
 {
     if (!IsActive()) return;
     if (m_PauseActive) DrawPause(camX, camY);
+    if (m_ControlsActive) DrawControls(camX, camY);
     if (m_PopupActive) DrawConfirmation(camX, camY);
 }
 
@@ -250,9 +259,7 @@ void UIManager::UpdatePause(float camX, float camY, bool& consumed)
             m_PauseActive = false;
             break;
         case 2: // Controls
-            m_PauseActive = false;
-            g_FromPause = true;
-            GameStateManager::Get().next = GS_CONTROLS;
+            m_ControlsActive = true;
             break;
         case 3: // Restart -- confirm first
             m_PauseActive = false;
@@ -298,6 +305,21 @@ void UIManager::DrawPause(float camX, float camY)
         FontManager::Get().Print(FontManager::Get().GetMediumFont(), labels[i], PAUSE_BTN_X, PauseBtnY(i), 1.0f, bright, bright, bright, 1.0f);
     }
 }
+void UIManager::UpdateControls(float camX, float camY, bool& consumed)
+{
+    (void)camX;
+    (void)camY;
+    Controls_UpdateOverlay();
+    consumed = true;
+}
+
+void UIManager::DrawControls(float camX, float camY)
+{
+    (void)camX;
+    (void)camY;
+    Controls_DrawOverlay();
+}
+
 
 // ============================================================================
 // Shared NDC hit-test helper
