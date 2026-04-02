@@ -14,7 +14,7 @@ Technology is prohibited.
 /* End Header **************************************************************************/
 #pragma once
 #include "Platforms.h"
-#include "enemy.h"
+#include "Enemy.h"
 #include "EnemyBullet.h"
 #include "Buff.h"
 #include "AEEngine.h"

@@ -21,7 +21,7 @@ Technology is prohibited.
 /* End Header **************************************************************************/
 
 #include "pch.h"
-#include "enemy.h"
+#include "Enemy.h"
 #include "ObjectManager.h"
 #include "MeshManager.h"
 #include "PhysicsManager.h"
@@ -36,6 +36,12 @@ Technology is prohibited.
 #include "rapidjson/document.h"
 #include "rapidjson/filereadstream.h"
 #include "rapidjson/istreamwrapper.h"
+
+namespace {
+    // Constants for player pushback when boss blocks
+    constexpr float BOSS_BLOCK_PUSHBACK_HORIZONTAL = 1400.0f;
+    constexpr float BOSS_BLOCK_PUSHBACK_VERTICAL = 200.0f;
+}
 
 
 static AEAudio s_EasyEnemyAttackSound{};
@@ -1237,19 +1243,6 @@ void HardEnemy_Update(Enemy& enemy, float dt) {
 // Update each boss laser's internal state machine
 void BossLasers_Update(Enemy& enemy, const Player& player, float dt)
 {
-    // TODO: replace hardcoded range gate with proper boss phase / aggro system
-    /*const float dy = player.pos.y - enemy.pos.y;
-    for (int i = 0; i < (int)enemy.bossLasers.size(); ++i)
-    {
-        std::cout << "[LASER " << i << "] state=" << (int)enemy.bossLasers[i].state
-            << " cooldown=" << enemy.bossLasers[i].cooldownTimer << "\n";
-    }
-    if (fabsf(dy) > 300.0f)
-    {
-        std::cout << "[LASER] BLOCKED by range gate, dy=" << dy << "\n";
-        return;
-    }*/
-
     for (BossLaser& laser : enemy.bossLasers)
     {
         switch (laser.state)
@@ -1400,8 +1393,8 @@ void Enemy_OnHit(Enemy& enemy, float damage, float knockbackDir, Player* attacke
         if (attacker)
         {
             float blockDir = (attacker->pos.x < enemy.pos.x) ? -1.0f : 1.0f;
-            attacker->vel.x = blockDir * 1400.0f;
-            attacker->vel.y = 200.0f;
+            attacker->vel.x = blockDir * BOSS_BLOCK_PUSHBACK_HORIZONTAL;
+            attacker->vel.y = BOSS_BLOCK_PUSHBACK_VERTICAL;
             attacker->knockbackTimer = 0.8f;
             attacker->isHurt = true;
             attacker->hurtTimer = 0.8f;
@@ -1409,28 +1402,12 @@ void Enemy_OnHit(Enemy& enemy, float damage, float knockbackDir, Player* attacke
         return;
     }
 
-    /*
-    bool killingBlow = (enemy.type == EnemyType::Boss && enemy.hitPoints - damage <= 0.0f);
-    if (enemy.isInvincible && !killingBlow) return;
-    */
     // Only block damage if already in dead animation (allow knockback to re-trigger)
     if (enemy.spriteSheet)
     {
         const std::string clip = enemy.spriteSheet->GetCurrentClip();
         if (clip == "dead")
             return;
-        /*
-        // boss uses "hurt", regular enemies use "hit"
-        const std::string hitClipName = (enemy.type == EnemyType::Boss) ? "hurt" : "hit";
-        if (clip == hitClipName)
-        {
-            enemy.hitStunTimer = enemy.spriteSheet->GetClipTotalDuration(hitClipName);
-            if (enemy.hitStunTimer <= 0.0f) enemy.hitStunTimer = 0.5f;
-            // boss does not receive knockback from player hits
-            if (enemy.type != EnemyType::Boss)
-                Enemy_ApplyKnockback(enemy, knockbackDir);
-            return;
-        }*/
 
         // boss uses "hurt", regular enemies use "hit"
         const std::string hitClipName = (enemy.type == EnemyType::Boss) ? "hurt" : "hit";
@@ -1548,8 +1525,8 @@ void HardEnemy_OnCollision(Enemy& enemy, Player& player)
         if (!player.isHurt)
         {
             float blockDir = (player.pos.x < enemy.pos.x) ? -1.0f : 1.0f;
-            player.vel.x = blockDir * 1400.0f;
-            player.vel.y = 200.0f;
+            player.vel.x = blockDir * BOSS_BLOCK_PUSHBACK_HORIZONTAL;
+            player.vel.y = BOSS_BLOCK_PUSHBACK_VERTICAL;
             player.knockbackTimer = 0.8f;
             player.isHurt = true;
             player.hurtTimer = 0.8f;

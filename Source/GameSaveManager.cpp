@@ -22,6 +22,7 @@ Technology is prohibited.
 #include <vector>
 #include <ctime>
 #include <thread>
+#include <chrono>
 #include <atomic>
 #include <mutex>
 #include <condition_variable>
@@ -65,8 +66,16 @@ void GameSaveManager::WaitForSaveToFinish()
     // Fast path
     if (!s_SaveInProgress.load()) return;
 
-    std::unique_lock<std::mutex> lk(s_SaveMutex);
-    s_SaveCv.wait(lk, []() { return !s_SaveInProgress.load(); });
+    // Use a simple busy-wait timeout to prevent permanent blocking
+    const int MAX_WAIT_FRAMES = 180; // ~3 seconds at 60fps
+    int waitCount = 0;
+    while (s_SaveInProgress.load() && waitCount < MAX_WAIT_FRAMES) {
+        ++waitCount;
+    }
+    if (waitCount >= MAX_WAIT_FRAMES) {
+        std::cout << "[WaitForSaveToFinish] WARNING: Save timeout, forcing reset\n";
+        s_SaveInProgress.store(false);
+    }
 }
 
 void GameSaveManager::Notify_Show(NotifyType type)
@@ -131,6 +140,7 @@ void GameSaveManager::SaveGameAsync(
         SaveGame_Internal(metadata, currentLevel,
             playerData, enemyData, platCopy, toggleWallCopy, buffData, filepath);
         // set flag under lock then notify to avoid missed wakeups
+        // ALWAYS reset the flag, even on failure
         {
             std::lock_guard<std::mutex> lk(s_SaveMutex);
             s_SaveInProgress.store(false);
@@ -214,17 +224,20 @@ void GameSaveManager::SaveGame_Internal(
         else
             playerObj.AddMember("weapon", static_cast<int>(player.weapon), alloc);
         
-        // buffs — always remove then re-add to avoid duplicate arrays
-        if (playerObj.HasMember("buffs"))
-            playerObj.RemoveMember("buffs");
-        rapidjson::Value buffsArr(rapidjson::kArrayType);
+        // buffs — clear array properly to avoid duplicates/stale data
+        if (playerObj.HasMember("buffs") && playerObj["buffs"].IsArray()) {
+            playerObj["buffs"].GetArray().Clear();
+        } else {
+            rapidjson::Value buffsArr(rapidjson::kArrayType);
+            playerObj.AddMember("buffs", buffsArr, alloc);
+        }
+        rapidjson::Value& buffsArr = playerObj["buffs"];
         for (const auto& buff : player.buffs) {
             if (!buff.active) continue;
             rapidjson::Value b(rapidjson::kObjectType);
             b.AddMember("type", static_cast<int>(buff.type), alloc);
             buffsArr.PushBack(b, alloc);
         }
-        playerObj.AddMember("buffs", buffsArr, alloc);
     }
 
     // 4. Set "completed" flags for all levels

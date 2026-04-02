@@ -16,7 +16,7 @@ Technology is prohibited.
 /* End Header **************************************************************************/
 #pragma once
 #include "Player.h"
-#include "enemy.h"
+#include "Enemy.h"
 #include "Platforms.h"
 #include "EnemyBullet.h"
 #include "PlayerBullet.h"

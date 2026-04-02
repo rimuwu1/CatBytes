@@ -16,7 +16,7 @@ Technology is prohibited.
 #pragma once
 #include "pch.h"
 #include "Player.h"
-#include "enemy.h"
+#include "Enemy.h"
 #include "Platforms.h"
 #include "Buff.h"
 #include <cfloat>

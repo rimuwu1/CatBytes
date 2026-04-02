@@ -9,7 +9,7 @@
 /* End Header **********************************************************/
 
 #pragma once
-#include "enemy.h"
+#include "Enemy.h"
 
 struct Player;
 
@@ -27,7 +27,7 @@ enum class BossPhase {
 // boss attack states
 // -----------------------------------------------------------------------
 enum class BossAttackState {
-    Idle,               // attackidle — tracking player, choosing next move
+    Idle,               // attackidle - tracking player, choosing next move
     WalkToRange,        // walk toward/away from player to reach attack range
     DashWindup,         // lock-on position shown, attackidle briefly before dash
     DashAttack,         // dashing toward locked position

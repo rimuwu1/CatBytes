@@ -36,7 +36,7 @@ Technology is prohibited.
 #include "GameSaveManager.h"
 #include "LevelIndicator.h"
 #include "Player.h"
-#include "enemy.h"
+#include "Enemy.h"
 #include "EnemyBullet.h"
 #include "rapidjson/document.h"
 #include "rapidjson/filereadstream.h"

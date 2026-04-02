@@ -42,7 +42,7 @@
     <ClCompile Include="..\Source\SplashScreen.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Source\enemy.cpp">
+    <ClCompile Include="..\Source\Enemy.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Source\Background.cpp">
@@ -158,7 +158,7 @@
     <ClInclude Include="..\Source\SplashScreen.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\Source\enemy.h">
+    <ClInclude Include="..\Source\Enemy.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\Source\Background.h">

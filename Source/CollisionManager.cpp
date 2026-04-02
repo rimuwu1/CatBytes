@@ -31,6 +31,12 @@ Technology is prohibited.
 #include "PlayerMelee.h"        // for PlayerMelee_CheckCollisions
 #include <cmath>
 
+namespace {
+    // Ground constants for player collision
+    constexpr float DEFAULT_GROUND_Y = -350.0f;
+    constexpr float DEFAULT_GROUND_HEIGHT = 50.0f;
+}
+
 namespace CollisionManager
 {
     // ------------------------------------------------------------------------
@@ -609,7 +615,7 @@ namespace CollisionManager
         // clear any hint override from last frame before collision checks set a new one
         player.interactHintOverride.clear();
 
-        HandleGround(player, -350.0f, 50.0f, playerPrevY);
+        HandleGround(player, DEFAULT_GROUND_Y, DEFAULT_GROUND_HEIGHT, playerPrevY);
 
         const SpatialGrid& grid = env.GetSpatialGrid();
         HandlePlatformsSpatial(player, playerPrevY, grid);

@@ -24,7 +24,7 @@ Technology is prohibited.
 #include "GameSaveManager.h"
 #include "GameStateManager.h"
 #include "Player.h"
-#include "enemy.h"
+#include "Enemy.h"
 #include "EnemyBullet.h"
 #include "ObjectManager.h"
 #include "Fonts.h"

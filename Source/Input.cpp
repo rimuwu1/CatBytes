@@ -179,6 +179,9 @@ void Input_Handle() {
 				player.vel.x = (player.facingRight ? 1.0f : -1.0f) * player.dashSpeed;
 				player.vel.y = 0.0f;
 
+				// Dash particle burst on initiation
+				ParticleManager_Emit(player.pos.x, player.pos.y, 15, 300.0f, 255, 255, 255); // white burst
+
 				// decrement dash charges
 				player.dashCharges--;
 				if (player.dashCharges <= 0)

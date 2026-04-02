@@ -21,7 +21,7 @@
     <ClCompile Include="..\Source\Controls.cpp" />
     <ClCompile Include="..\Source\Credits.cpp" />
     <ClCompile Include="..\Source\DebugManager.cpp" />
-    <ClCompile Include="..\Source\enemy.cpp" />
+    <ClCompile Include="..\Source\Enemy.cpp" />
     <ClCompile Include="..\Source\EnemyBullet.cpp" />
     <ClCompile Include="..\Source\EnvironmentManager.cpp" />
     <ClCompile Include="..\Source\GameSaveManager.cpp" />
@@ -62,7 +62,7 @@
     <ClInclude Include="..\Source\Controls.h" />
     <ClInclude Include="..\Source\Credits.h" />
     <ClInclude Include="..\Source\DebugManager.h" />
-    <ClInclude Include="..\Source\enemy.h" />
+    <ClInclude Include="..\Source\Enemy.h" />
     <ClInclude Include="..\Source\EnemyBullet.h" />
     <ClInclude Include="..\Source\EnvironmentManager.h" />
     <ClInclude Include="..\Source\GameSaveManager.h" />

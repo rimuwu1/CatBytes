@@ -30,10 +30,11 @@ Technology is prohibited.
 #include "GameStateManager.h"
 #include "GameStateList.h"
 #include "Camera.h"
-#include "enemy.h"
+#include "Enemy.h"
 #include "WinLose.h"
 #include "LevelIndicator.h"
 #include "TextureManager.h"
+#include "ParticleManager.h"
 #include <fstream>
 #include <algorithm>
 #include <numeric>
@@ -706,6 +707,7 @@ void BossRoom_Update()
 
     ObjectManager::Get().Update(dt);
     BossRoom::Get().Update(dt);
+    ParticleManager_Update(dt);
 
     // defeat dialogue -- fires once when FightOver starts, runs outside cutscene block
     for (const auto& e : enemies)
@@ -853,6 +855,7 @@ void BossRoom_Draw()
     BossRoom::Get().Draw();
     EnvironmentManager::Get().DrawWorld(globalCam.x, globalCam.y, player.weapon, player, 900.0f * 0.5f);
     ObjectManager::Get().Draw(globalCam.x, globalCam.y, 800.0f, 450.0f);
+    ParticleManager_Draw();
     EnvironmentManager::Get().DrawHUD(globalCam.x, globalCam.y, player.weapon);
     DebugManager::Get().DrawWorldOverlays(globalCam.x, globalCam.y);    
     DebugManager::Get().Draw(globalCam.x, globalCam.y);               

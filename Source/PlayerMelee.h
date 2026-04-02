@@ -16,7 +16,7 @@ Technology is prohibited.
 
 #pragma once
 #include "Player.h"
-#include "enemy.h"
+#include "Enemy.h"
 #include "EnemyBullet.h"
 #include <vector>
 

@@ -85,7 +85,7 @@ Technology is prohibited.
 #include "Fonts.h"
 #include "Player.h"
 #include "PlayerBullet.h"
-#include "enemy.h"
+#include "Enemy.h"
 #include "Buff.h"
 #include "HUD.h"
 #include <sstream>

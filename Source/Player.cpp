@@ -40,6 +40,16 @@ Technology is prohibited.
 #include "ParticleManager.h"
 #include "EnvironmentManager.h"
 
+namespace {
+    // Shield visual constants
+    constexpr float SHIELD_WIDTH_OFFSET = 35.0f;
+    constexpr float SHIELD_HEIGHT_OFFSET = 45.0f;
+    
+    // Block pushback force (from boss blocking player attack)
+    constexpr float BLOCK_PUSHBACK_HORIZONTAL = 1400.0f;
+    constexpr float BLOCK_PUSHBACK_VERTICAL = 200.0f;
+}
+
 static AEAudio s_GunAttackSound{};
 static AEAudio s_MeleeAttackSound{};
 static AEAudio s_JumpSound{};
@@ -266,6 +276,9 @@ void Player_Init(Player& player, const rapidjson::Value& config)
 	for (int i = 0; i < 4; ++i) {
 		player.shieldEmitters[i] = INVALID_EMITTER;
 	}
+
+	// dash trail particles
+	player.dashEmitter = INVALID_EMITTER;
 }
 
 void Player_Update(Player& player, float dt)
@@ -415,11 +428,31 @@ void Player_Update(Player& player, float dt)
 		player.vel.x = (player.facingRight ? 1.0f : -1.0f) * player.dashSpeed;
 		player.vel.y = 0.0f;  // maintain horizontal dash, no vertical movement
 
+		// Start dash trail emitter if not already running
+		if (player.dashEmitter == INVALID_EMITTER) {
+			player.dashEmitter = ParticleManager_EmitterStart(
+				player.pos.x, player.pos.y,
+				60,                         // particles per second
+				100.0f,                     // speed
+				255, 255, 255,             // white trail
+				0.1f, 0.2f,                // short life for fast-moving trail
+				3.0f, 6.0f                 // small particles
+			);
+		} else {
+			// Move emitter to player position
+			ParticleManager_EmitterMove(player.dashEmitter, player.pos.x, player.pos.y);
+		}
+
 		if (player.dashTimer <= 0.0f) {
 			player.dashTimer = 0.0f;
 			player.isDashing = false;
 			player.dashCooldown = Player::DASH_COOLDOWN;
 			player.vel.x = 0.0f;
+			// Stop dash trail emitter
+			if (player.dashEmitter != INVALID_EMITTER) {
+				ParticleManager_EmitterStop(player.dashEmitter);
+				player.dashEmitter = INVALID_EMITTER;
+			}
 		}
 	}
 
@@ -427,10 +460,6 @@ void Player_Update(Player& player, float dt)
 
 	// Euler-integrate velocity -> position
 	physics.Integrate(player.pos, player.vel, dt);
-
-	//For hit text
-	//if (player.hitTextTimer > 0.0f)
-		//player.hitTextTimer -= dt;
 
 		//count down melee attack timer
 	if (player.isAttacking)
@@ -795,8 +824,8 @@ void Player_Update(Player& player, float dt)
 		player.spriteSheet->Update(dt);
 	}
 
-	// Landing dust — fires once when player touches ground
-	if (!s_prevGrounded && player.grounded) {
+	// Landing dust — fires once when player touches ground (only when falling, not during upward jumps)
+	if (!s_prevGrounded && player.grounded && player.vel.y <= 0.0f) {
 		ParticleManager_Emit(player.pos.x, player.pos.y - player.height * 0.5f,
 			12, 100.f, 220, 220, 220);
 	}
@@ -815,8 +844,8 @@ void Player_Draw(const Player& player)
 	// Draw shield sprite
 	if (player.shieldActive && player.shieldSprite) {
 
-		float shieldWidth = player.width + 35.0f;
-		float shieldHeight = player.height + 45.0f;
+		float shieldWidth = player.width + SHIELD_WIDTH_OFFSET;
+		float shieldHeight = player.height + SHIELD_HEIGHT_OFFSET;
 
 		MeshManager::Get().DrawSpriteSheet(
 			*player.shieldSprite,
@@ -1013,8 +1042,8 @@ void Player_CheckBulletCollisions(Player& player, Enemy& enemy)
 			{
 				// push player back, no damage, no hitStun
 				float blockDir = (player.pos.x < enemy.pos.x) ? -1.0f : 1.0f;
-				player.vel.x = blockDir * 1400.0f;
-				player.vel.y = 200.0f;
+				player.vel.x = blockDir * BLOCK_PUSHBACK_HORIZONTAL;
+				player.vel.y = BLOCK_PUSHBACK_VERTICAL;
 				player.knockbackTimer = 0.8f;
 				player.isHurt = true;
 				player.hurtTimer = 0.8f;
@@ -1040,6 +1069,12 @@ void Player_Free(Player& player)
 			ParticleManager_EmitterStop(player.shieldEmitters[i]);
 			player.shieldEmitters[i] = INVALID_EMITTER;
 		}
+	}
+
+	// free dash trail particles
+	if (player.dashEmitter != INVALID_EMITTER) {
+		ParticleManager_EmitterStop(player.dashEmitter);
+		player.dashEmitter = INVALID_EMITTER;
 	}
 
 	// free bullets

@@ -97,8 +97,9 @@ struct Player
 	float dashCooldown = 0.0f;
 	float dashSpeed = 800.0f;
 	int dashCharges = 0;
+	EmitterHandle dashEmitter{ INVALID_EMITTER }; // trail effect during dash
 
-	static constexpr float DASH_DURATION = 0.2f;
+	static constexpr float DASH_DURATION = 0.3f;
 	static constexpr float DASH_COOLDOWN = 0.5f;
 
 	std::vector<Buff> buffs;
