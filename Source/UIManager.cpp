@@ -324,7 +324,7 @@ void UIManager::DrawPause(float camX, float camY)
     // Dim overlay over game world
     MeshManager::Get().DrawSquare(camX, camY, winW, winH, 0, 0, 0, 0.55f);
     // Panel
-    MeshManager::Get().DrawSquare(m_UIAnchorX, m_UIAnchorY, PAUSE_PANEL_W_PX, PAUSE_PANEL_H_PX, 30, 30, 30);
+    MeshManager::Get().DrawSquare(camX, camY, PAUSE_PANEL_W_PX, PAUSE_PANEL_H_PX, 30, 30, 30);
 
     if (g_FontLarge == -1 || g_FontMedium == -1) return;
 
