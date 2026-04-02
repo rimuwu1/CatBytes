@@ -20,6 +20,9 @@ Technology is prohibited.
 void ParticleManager_Init();
 void ParticleManager_Emit(float x, float y, int count, float speed,
                           int r, int g, int b);
+// Emit dust particles in an upward hemisphere (for jump/land effects)
+void ParticleManager_EmitDust(float x, float y, int count, float speed,
+                              int r, int g, int b);
 // Textured one-shot burst — pass a pre-loaded AEGfxTexture*
 void ParticleManager_EmitTextured(float x, float y, int count, float speed,
                                   AEGfxTexture* tex,

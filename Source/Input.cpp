@@ -29,6 +29,7 @@ Technology is prohibited.
 #include "ObjectManager.h"
 #include "PhysicsManager.h"
 #include "Camera.h"
+#include "ParticleManager.h"
 
 // ----------------------------------------------------------------------------
 // Handles all user input processing for the current frame
@@ -88,13 +89,16 @@ void Input_Handle() {
 			player.vel.x = physics.ComputeHorizontalVelocity(moveLeft, moveRight, MOVE_SPEED);
 		}
 
-		// Jumping (Space) � PhysicsManager validates grounded state internally
+		// Jumping (Space) – PhysicsManager validates grounded state internally
 		if (AEInputCheckTriggered(AEVK_SPACE))
 		{
 			bool grounded = static_cast<bool>(player.grounded);
 			if (physics.TryJump(player.vel.y, grounded))
 			{
 				player.grounded = grounded ? 1 : 0;
+				// Emit jump dust from player feet
+				ParticleManager_EmitDust(player.pos.x, player.pos.y - player.height * 0.5f,
+					10, 120.f, 200, 200, 200);
 			}
 		}
 

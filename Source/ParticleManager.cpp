@@ -68,6 +68,25 @@ void ParticleManager_Emit(float x, float y, int count, float speed,
     }
 }
 
+void ParticleManager_EmitDust(float x, float y, int count, float speed,
+                               int r, int g, int b) {
+    // Emit in upward hemisphere: angles from 0 to PI (0=right, PI/2=up, PI=left)
+    // This gives upward burst with left/right spread
+    int spawned = 0;
+    for (auto& p : s_particles) {
+        if (p.active) continue;
+        float angle = ((float)rand() / RAND_MAX) * 3.14159f; // 0 to PI
+        float s = speed * (0.5f + (float)rand() / RAND_MAX * 0.5f);
+        p.pos = { x, y };
+        p.vel = { cosf(angle) * s, sinf(angle) * s };
+        p.life = p.maxLife = 0.3f + ((float)rand() / RAND_MAX) * 0.15f;
+        p.size = 5.0f + ((float)rand() / RAND_MAX) * 4.0f;
+        p.r = r; p.g = g; p.b = b;
+        p.active = true;
+        if (++spawned >= count) break;
+    }
+}
+
 void ParticleManager_Update(float dt) {
     // Tick emitters
     for (auto& em : s_emitters) {

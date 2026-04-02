@@ -63,6 +63,21 @@ static bool s_WeaponSwitchSoundPlayed = false;
 static bool s_PlayerDamageSoundPlayed = false;
 
 static const float MELEE_COOLDOWN = 0.3f;
+static int s_prevGrounded = 1;
+
+namespace {
+    void Player_HandleJumpInput(Player& player);
+    void Player_HandlePogoSound(Player& player);
+    void Player_HandleHurt(Player& player, float dt);
+    bool Player_HandleKnockback(Player& player, float dt, PhysicsManager& physics);
+    void Player_HandleShield(Player& player, float dt);
+    void Player_HandleDash(Player& player, float dt);
+    void Player_HandleCombat(Player& player, float dt, bool uiClicked);
+    void Player_UpdateWeaponSwitchAnimation(Player& player, float dt);
+    void Player_UpdateMovementAnimation(Player& player, float dt, bool isWalking, bool isInAir);
+    void Player_HandleLandingDust(Player& player);
+    void Player_UpdateStateTrackers(Player& player, bool isWalking);
+}
 
 void Player_Init(Player& player, const rapidjson::Value& config)
 {
@@ -284,21 +299,51 @@ void Player_Init(Player& player, const rapidjson::Value& config)
 void Player_Update(Player& player, float dt)
 {
 	PhysicsManager& physics = PhysicsManager::Get();
-	static int s_prevGrounded = 1;
 
-	if (AEInputCheckTriggered(AEVK_SPACE) && player.grounded)
-	{
-		// Jump dust burst from player feet
-		ParticleManager_Emit(player.pos.x, player.pos.y - player.height * 0.5f,
-			10, 120.f, 200, 200, 200);
+	Player_HandleJumpInput(player);
+	Player_HandlePogoSound(player);
+
+	// Apply gravity (skipped while grounded or dashing so velocity does not accumulate)
+	if (!player.isDashing) {
+		physics.ApplyGravity(player.vel.y, static_cast<bool>(player.grounded), dt);
+		physics.ClampFallSpeed(player.vel.y);
 	}
 
+	Player_HandleHurt(player, dt);
+
+	if (Player_HandleKnockback(player, dt, physics))
+		return;
+
+	Player_HandleShield(player, dt);
+	Player_HandleDash(player, dt);
+
+	HUD& hud = EnvironmentManager::Get().GetHUD();
+	bool uiClicked = hud.IsAnyUIElementClicked(globalCam.x, globalCam.y);
+	physics.Integrate(player.pos, player.vel, dt);
+	Player_HandleCombat(player, dt, uiClicked);
+
+	bool isWalking = (fabs(player.vel.x) > 0.1f) && player.grounded;
+	bool isInAir = !player.grounded;
+
+	Player_UpdateWeaponSwitchAnimation(player, dt);
+	Player_UpdateMovementAnimation(player, dt, isWalking, isInAir);
+	Player_HandleLandingDust(player);
+	Player_UpdateStateTrackers(player, isWalking);
+}
+
+namespace {
+
+void Player_HandleJumpInput(Player& player)
+{
 	// detect jump (leaving ground)
 	if (s_WasGrounded && !player.grounded && player.vel.y > 0.0f)
 	{
 		AudioManager::Get().PlayAudio(s_JumpSound, false);
 	}
+}
 
+void Player_HandlePogoSound(Player& player)
+{
 	static bool s_PogoPlayed = false;
 	if (player.pogoJustPerformed && !s_PogoPlayed)
 	{
@@ -309,14 +354,10 @@ void Player_Update(Player& player, float dt)
 	{
 		s_PogoPlayed = false;
 	}
+}
 
-	// Apply gravity (skipped while grounded or dashing so velocity does not accumulate)
-	if (!player.isDashing) {
-		physics.ApplyGravity(player.vel.y, static_cast<bool>(player.grounded), dt);
-		// Cap fall speed to terminal velocity
-		physics.ClampFallSpeed(player.vel.y);
-	}
-
+void Player_HandleHurt(Player& player, float dt)
+{
 	// hurt state
 	if (player.isHurt) {
 		player.hurtTimer -= dt;
@@ -328,7 +369,10 @@ void Player_Update(Player& player, float dt)
 			s_PlayerDamageSoundPlayed = false;
 		}
 	}
+}
 
+bool Player_HandleKnockback(Player& player, float dt, PhysicsManager& physics)
+{
 	// knockback — owns the update loop for its duration, skips all input
 	if (player.knockbackTimer > 0.0f)
 	{
@@ -351,9 +395,13 @@ void Player_Update(Player& player, float dt)
 
 		player.wasHurt = player.isHurt;
 		s_prevGrounded = player.grounded;
-		return;
+		return true;
 	}
+	return false;
+}
 
+void Player_HandleShield(Player& player, float dt)
+{
 	// active shield
 	if (player.shieldActive) {
 
@@ -421,7 +469,10 @@ void Player_Update(Player& player, float dt)
 			}
 		}
 	}
+}
 
+void Player_HandleDash(Player& player, float dt)
+{
 	// dash timer
 	if (player.isDashing) {
 		player.dashTimer -= dt;
@@ -457,11 +508,11 @@ void Player_Update(Player& player, float dt)
 	}
 
 	if (player.dashCooldown > 0.0f) player.dashCooldown -= dt;
+}
 
-	// Euler-integrate velocity -> position
-	physics.Integrate(player.pos, player.vel, dt);
-
-		//count down melee attack timer
+void Player_HandleCombat(Player& player, float dt, bool uiClicked)
+{
+	//count down melee attack timer
 	if (player.isAttacking)
 	{
 		player.attackTimer -= dt;
@@ -482,10 +533,6 @@ void Player_Update(Player& player, float dt)
 	// decrease fire timer
 	if (player.fireTimer > 0.0f)
 		player.fireTimer -= dt;
-
-	// Get HUD reference to check for UI clicks
-	HUD& hud = EnvironmentManager::Get().GetHUD();
-	bool uiClicked = hud.IsAnyUIElementClicked(globalCam.x, globalCam.y);
 
 	//changed tomake it GUN
 	// only fire if the player has the weapon equipped
@@ -556,13 +603,11 @@ void Player_Update(Player& player, float dt)
 	if (player.slashSprite) {
 		player.slashSprite->Update(dt);
 	}
+}
 
-
-	// --- Determine walking and jumping state ---
-	bool isWalking = (fabs(player.vel.x) > 0.1f) && player.grounded;
-	// (you can adjust threshold as needed)
-	bool isInAir = !player.grounded;
-
+void Player_UpdateWeaponSwitchAnimation(Player& player, float dt)
+{
+	(void)dt;
 	// --- Detect weapon switch ---
 	//if (player.weapon != player.previousWeapon) {
 	//	player.weaponSwitchTriggered = true;
@@ -593,10 +638,13 @@ void Player_Update(Player& player, float dt)
 	if (player.spriteSheet->IsPaused()) {
 		player.spriteSheet->SetPaused(false);
 	}
+}
 
+void Player_UpdateMovementAnimation(Player& player, float dt, bool isWalking, bool isInAir)
+{
 	// --- Decide desired clip ---
-	std::string desiredClip = "";
-	bool forceRestart = false;
+	player._desiredClip = "";
+	player._forceRestart = false;
 
 	// handle weapon switch animation (reworked)
 	if (player.weaponSwitchTriggered) {
@@ -609,33 +657,33 @@ void Player_Update(Player& player, float dt)
 			if (player.weapon == PlayerWeapon::NONE) {
 				// switching to normal
 				if (player.previousWeapon == PlayerWeapon::MELEE)
-					desiredClip = "claw2normal";
+					player._desiredClip = "claw2normal";
 				else if (player.previousWeapon == PlayerWeapon::GUN)
-					desiredClip = "gun2normal";
+					player._desiredClip = "gun2normal";
 			}
 			else if (player.weapon == PlayerWeapon::MELEE) {
 				// switching to melee
 				if (player.previousWeapon == PlayerWeapon::NONE)
-					desiredClip = "normal2claw";
+					player._desiredClip = "normal2claw";
 				else if (player.previousWeapon == PlayerWeapon::GUN)
-					desiredClip = "gun2claw";
+					player._desiredClip = "gun2claw";
 			}
 			else if (player.weapon == PlayerWeapon::GUN) {
 				// switching to gun
 				if (player.previousWeapon == PlayerWeapon::NONE)
-					desiredClip = "normal2gun";
+					player._desiredClip = "normal2gun";
 				else if (player.previousWeapon == PlayerWeapon::MELEE)
-					desiredClip = "claw2gun";
+					player._desiredClip = "claw2gun";
 			}
 
 			// force restart only if we just entered this clip
-			if (!desiredClip.empty() && player.spriteSheet->GetCurrentClip() != desiredClip) {
-				forceRestart = true;
+			if (!player._desiredClip.empty() && player.spriteSheet->GetCurrentClip() != player._desiredClip) {
+				player._forceRestart = true;
 			}
 
 			// if the switch clip has finished playing, clear the trigger and update previousWeapon
 			if (player.weaponSwitchTriggered &&
-				player.spriteSheet->GetCurrentClip() == desiredClip &&
+				player.spriteSheet->GetCurrentClip() == player._desiredClip &&
 				!player.spriteSheet->IsPlaying()) {
 				player.weaponSwitchTriggered = false;
 				player.weaponSwitchInProgress = false;
@@ -646,44 +694,44 @@ void Player_Update(Player& player, float dt)
 	}
 
 	// dash animation
-	if (player.isDashing && desiredClip.empty()) {
-		desiredClip = "dash";
-		forceRestart = !player.isDashing;
+	if (player.isDashing && player._desiredClip.empty()) {
+		player._desiredClip = "dash";
+		player._forceRestart = !player.isDashing;
 	}
 	// hurt animation 
-	else if (player.isHurt && desiredClip.empty()) {
-		desiredClip = "hurt";
-		if (!player.wasHurt) forceRestart = true;
+	else if (player.isHurt && player._desiredClip.empty()) {
+		player._desiredClip = "hurt";
+		if (!player.wasHurt) player._forceRestart = true;
 	}
 	// gun attack override everything except hurt
-	else if (player.weapon == PlayerWeapon::GUN && player.fireTimer > 0.0f && desiredClip.empty())
+	else if (player.weapon == PlayerWeapon::GUN && player.fireTimer > 0.0f && player._desiredClip.empty())
 	{
-		desiredClip = "gunShoot";
+		player._desiredClip = "gunShoot";
 
 		// restart when firing starts
 		if (fabs(player.fireTimer - player.fireCooldown) < 0.001f)
-			forceRestart = true;
+			player._forceRestart = true;
 
 		player.playingTailAnim = false;
 		player.idleLoopCount = 0;
 	}
 	// melee aerial attacks (up/down) animate while jumping
-	else if (isInAir && player.weapon == PlayerWeapon::MELEE && player.isAttacking && desiredClip.empty()) {
+	else if (isInAir && player.weapon == PlayerWeapon::MELEE && player.isAttacking && player._desiredClip.empty()) {
 		if (player.slashDirection == SlashDirection::UP)
-			desiredClip = "clawAttackUP";
+			player._desiredClip = "clawAttackUP";
 		else if (player.slashDirection == SlashDirection::DOWN)
-			desiredClip = "clawAttackDOWN";
+			player._desiredClip = "clawAttackDOWN";
 		else
-			desiredClip = "clawAttack"; // horizontal aerial attack
+			player._desiredClip = "clawAttack"; // horizontal aerial attack
 
-		if (!player.wasAttacking) forceRestart = true;
+		if (!player.wasAttacking) player._forceRestart = true;
 	}
 	// jump animation when in air
 	else if (isInAir && !player.weaponSwitchTriggered) {
 		// check if moving sideways (A or D held)
 		bool movingSideways = AEInputCheckCurr('A') || AEInputCheckCurr('D');
 		if (movingSideways) {
-			desiredClip = "jumpSIDE";
+			player._desiredClip = "jumpSIDE";
 			// if already playing jumpSIDE and reached the end, freeze it
 			if (player.spriteSheet->GetCurrentClip() == "jumpSIDE") {
 				u32 currentFrame = player.spriteSheet->GetCurrentFrame();
@@ -692,33 +740,33 @@ void Player_Update(Player& player, float dt)
 					player.spriteSheet->SetPaused(true);
 				}
 				else {
-					forceRestart = false;
+					player._forceRestart = false;
 				}
 			}
 			else {
-				forceRestart = true;
+				player._forceRestart = true;
 			}
 		}
 		else {
-			desiredClip = "jumpFRONT";
+			player._desiredClip = "jumpFRONT";
 			// if already playing jumpFRONT and reached the end, freeze it
 			if (player.spriteSheet->GetCurrentClip() == "jumpFRONT") {
 				u32 currentFrame = player.spriteSheet->GetCurrentFrame();
 				// frame 12 is the last frame of jumpFRONT (start: 10, end: 12)
 				if (currentFrame >= 12) {
-					forceRestart = false;
+					player._forceRestart = false;
 					player.spriteSheet->SetPaused(true);
 				}
 				else {
-					forceRestart = false;
+					player._forceRestart = false;
 				}
 			}
 			else {
-				forceRestart = true;
+				player._forceRestart = true;
 			}
 		}
 	}
-	if (desiredClip.empty()) {
+	if (player._desiredClip.empty()) {
 		// when landing, unpause the spritesheet
 		if (player.spriteSheet->IsPaused()) {
 			player.spriteSheet->SetPaused(false);
@@ -727,26 +775,26 @@ void Player_Update(Player& player, float dt)
 		switch (player.weapon) {
 		case PlayerWeapon::NONE:
 			if (isWalking) {
-				desiredClip = "walk";
+				player._desiredClip = "walk";
 				player.playingTailAnim = false;
 				player.idleLoopCount = 0;
 			}
 			else {
 				// idle tail animation logic
 				if (player.playingTailAnim) {
-					desiredClip = "idle2";
+					player._desiredClip = "idle2";
 					// check if tail animation finished (non-looping clip stops)
 					if (player.spriteSheet->GetCurrentClip() == "idle2" &&
 						!player.spriteSheet->IsPlaying()) {
 						player.playingTailAnim = false;
 						player.idleLoopCount = 0;
 						player.idleLoopsBeforeTail = 5 + (rand() % 6); // new random count
-						desiredClip = "idle";
-						forceRestart = true;
+						player._desiredClip = "idle";
+						player._forceRestart = true;
 					}
 				}
 				else {
-					desiredClip = "idle";
+					player._desiredClip = "idle";
 					// track frame changes to detect loop completion
 					u32 lastFrame = player.lastFrame;
 					u32 currentFrame = player.spriteSheet->GetCurrentFrame();
@@ -756,8 +804,8 @@ void Player_Update(Player& player, float dt)
 						// trigger tail animation after random loops
 						if (player.idleLoopCount >= player.idleLoopsBeforeTail) {
 							player.playingTailAnim = true;
-							desiredClip = "idle2";
-							forceRestart = true;
+							player._desiredClip = "idle2";
+							player._forceRestart = true;
 						}
 					}
 					player.lastFrame = currentFrame;
@@ -774,20 +822,20 @@ void Player_Update(Player& player, float dt)
 			if (player.isAttacking) {
 				// choose attack animation based on slash direction
 				if (player.slashDirection == SlashDirection::UP)
-					desiredClip = "clawAttackUP";
+					player._desiredClip = "clawAttackUP";
 				else
-					desiredClip = "clawAttack"; // horizontal
-				if (!player.wasAttacking) forceRestart = true;
+					player._desiredClip = "clawAttack"; // horizontal
+				if (!player.wasAttacking) player._forceRestart = true;
 				player.playingTailAnim = false;
 				player.idleLoopCount = 0;
 			}
 			else if (isWalking) {
-				desiredClip = "clawWalk";
+				player._desiredClip = "clawWalk";
 				player.playingTailAnim = false;
 				player.idleLoopCount = 0;
 			}
 			else {
-				desiredClip = "clawIdle";
+				player._desiredClip = "clawIdle";
 				player.playingTailAnim = false;
 				player.idleLoopCount = 0;
 			}
@@ -795,21 +843,21 @@ void Player_Update(Player& player, float dt)
 
 		case PlayerWeapon::GUN:
 			if (player.fireTimer > 0.0f) {
-				desiredClip = "gunShoot";
+				player._desiredClip = "gunShoot";
 
 				if (fabs(player.fireTimer - player.fireCooldown) < 0.001f)
-					forceRestart = true;
+					player._forceRestart = true;
 
 				player.playingTailAnim = false;
 				player.idleLoopCount = 0;
 			}
 			else if (isWalking) {
-				desiredClip = "gunWalk";
+				player._desiredClip = "gunWalk";
 				player.playingTailAnim = false;
 				player.idleLoopCount = 0;
 			}
 			else {
-				desiredClip = "gunIdle";
+				player._desiredClip = "gunIdle";
 				player.playingTailAnim = false;
 				player.idleLoopCount = 0;
 			}
@@ -819,18 +867,24 @@ void Player_Update(Player& player, float dt)
 	}
 
 	// Play the clip and update animation
-	if (player.spriteSheet && !desiredClip.empty()) {
-		player.spriteSheet->Play(desiredClip, forceRestart);
+	if (player.spriteSheet && !player._desiredClip.empty()) {
+		player.spriteSheet->Play(player._desiredClip, player._forceRestart);
 		player.spriteSheet->Update(dt);
 	}
+}
 
+void Player_HandleLandingDust(Player& player)
+{
 	// Landing dust — fires once when player touches ground (only when falling, not during upward jumps)
 	if (!s_prevGrounded && player.grounded && player.vel.y <= 0.0f) {
-		ParticleManager_Emit(player.pos.x, player.pos.y - player.height * 0.5f,
+		ParticleManager_EmitDust(player.pos.x, player.pos.y - player.height * 0.5f,
 			12, 100.f, 220, 220, 220);
 	}
 	s_prevGrounded = player.grounded;
+}
 
+void Player_UpdateStateTrackers(Player& player, bool isWalking)
+{
 	// Update state trackers
 	player.wasAttacking = player.isAttacking;
 	player.wasWalking = isWalking;
@@ -838,6 +892,8 @@ void Player_Update(Player& player, float dt)
 
 	s_WasGrounded = player.grounded;
 }
+
+} // anonymous namespace
 
 void Player_Draw(const Player& player)
 {

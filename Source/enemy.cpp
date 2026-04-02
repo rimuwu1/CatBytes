@@ -120,6 +120,163 @@ static float Enemy_GetSpawnYFromPlatform(float platformCenterY, float platformHe
 }
 
 // -----------------------------------------------------------------------------
+// Common initialization helper for Enemy_Init and HardEnemy_Init
+// Handles position, size, direction, alive status, patrol bounds, spritesheet, etc.
+// -----------------------------------------------------------------------------
+namespace {
+    void Enemy_InitBase(Enemy& enemy, const rapidjson::Value& config, EnemyType type, 
+                        float defaultSpeed, float defaultHP) {
+        // Position X
+        if (config.HasMember("x") && config["x"].IsFloat())
+            enemy.pos.x = config["x"].GetFloat();
+        else {
+            enemy.pos.x = 0.0f;
+            printf("Warning: Enemy missing 'x', defaulting to 0\n");
+        }
+
+        // Size
+        const char* typeName = (type == EnemyType::Easy) ? "Enemy" : "HardEnemy";
+        if (config.HasMember("width") && config["width"].IsFloat())
+            enemy.width = config["width"].GetFloat();
+        else {
+            enemy.width = 80.0f;
+            printf("Warning: %s missing 'width', defaulting to 80\n", typeName);
+        }
+        if (config.HasMember("height") && config["height"].IsFloat())
+            enemy.height = config["height"].GetFloat();
+        else {
+            enemy.height = 80.0f;
+            printf("Warning: %s missing 'height', defaulting to 80\n", typeName);
+        }
+
+        // Position Y (platform_y or y)
+        if (config.HasMember("platform_y") && config["platform_y"].IsFloat())
+        {
+            enemy.platformY = config["platform_y"].GetFloat();
+            enemy.pos.y = Enemy_GetSpawnYFromPlatform(enemy.platformY, 40.0f, enemy.height);
+        }
+        else if (config.HasMember("y") && config["y"].IsFloat())
+        {
+            enemy.pos.y = config["y"].GetFloat();
+            enemy.platformY = enemy.pos.y - (40.0f * 0.5f) - (enemy.height * 0.5f);
+        }
+        else
+        {
+            enemy.platformY = 0.0f;
+            enemy.pos.y = Enemy_GetSpawnYFromPlatform(enemy.platformY, 40.0f, enemy.height);
+            printf("Warning: %s missing 'platform_y'/'y', defaulting to 0\n", typeName);
+        }
+
+        // Movement speed
+        if (config.HasMember("speed") && config["speed"].IsFloat())
+            enemy.moveSpeed = config["speed"].GetFloat();
+        else {
+            enemy.moveSpeed = defaultSpeed;
+            printf("Warning: %s missing 'speed', defaulting to %.0f\n", typeName, defaultSpeed);
+        }
+
+        // Hit points
+        if (config.HasMember("hp") && config["hp"].IsFloat()) {
+            enemy.hitPoints = config["hp"].GetFloat();
+            enemy.maxHitPoints = enemy.hitPoints;
+        }
+        else {
+            enemy.hitPoints = defaultHP;
+            printf("Warning: %s missing 'hp', defaulting to %.0f\n", typeName, defaultHP);
+        }
+
+        enemy.vel = { 0.0f, 0.0f };
+
+        // Direction
+        if (config.HasMember("start_direction") && config["start_direction"].IsInt())
+            enemy.direction = (config["start_direction"].GetInt() < 0) ? -1 : 1;
+        else
+            enemy.direction = 1;
+
+        enemy.homeDirection = enemy.direction;
+
+        // Alive check
+        if (enemy.hitPoints <= 0.0f) {
+            enemy.hitPoints = 0.0f;
+            enemy.justDied = true;
+            enemy.isAlive = false;
+        }
+        else {
+            enemy.isAlive = true;
+        }
+        enemy.isPlayerColliding = false;
+        enemy.type = type;
+        enemy.homeX = enemy.pos.x;
+
+        // Return to home only
+        if (config.HasMember("return_to_home_only") && config["return_to_home_only"].IsBool())
+            enemy.returnToHomeOnly = config["return_to_home_only"].GetBool();
+        else
+            enemy.returnToHomeOnly = false;
+
+        // Patrol bounds
+        if (config.HasMember("patrol_min_x") && config["patrol_min_x"].IsFloat())
+            enemy.patrolMinX = config["patrol_min_x"].GetFloat();
+        else
+            enemy.patrolMinX = enemy.pos.x - 100.0f;
+
+        if (config.HasMember("patrol_max_x") && config["patrol_max_x"].IsFloat())
+            enemy.patrolMaxX = config["patrol_max_x"].GetFloat();
+        else
+            enemy.patrolMaxX = enemy.pos.x + 100.0f;
+
+        // Hit cooldown
+        if (config.HasMember("hit_cooldown") && config["hit_cooldown"].IsFloat())
+            enemy.hitCooldown = config["hit_cooldown"].GetFloat();
+        else
+            enemy.hitCooldown = 0.2f;
+
+        enemy.hitCooldownTimer = 0.0f;
+
+        // SpriteSheet Loading
+        if (config.HasMember("animations"))
+        {
+            const auto& anims = config["animations"];
+
+            enemy.spriteSheet = std::make_unique<SpriteSheet>(
+                anims["file"].GetString(),
+                anims["rows"].GetInt(),
+                anims["cols"].GetInt()
+            );
+
+            const auto& clips = anims["clips"];
+            for (rapidjson::SizeType i = 0; i < clips.Size(); i++)
+            {
+                const auto& c = clips[i];
+                enemy.spriteSheet->AddClip(
+                    c["name"].GetString(),
+                    c["start"].GetInt(),
+                    c["end"].GetInt(),
+                    c["duration"].GetFloat(),
+                    c["loop"].GetBool()
+                );
+            }
+
+            enemy.spriteSheet->Play("patrol");
+        }
+
+        // Knockback
+        if (config.HasMember("knockback_velocity") && config["knockback_velocity"].IsFloat())
+            enemy.knockbackVelocity = config["knockback_velocity"].GetFloat();
+        else
+            enemy.knockbackVelocity = 300.0f;
+        enemy.knockbackVel = { 0.0f, 0.0f };
+        enemy.knockbackTimer = 0.0f;
+
+        // Idle duration
+        if (config.HasMember("idle_duration") && config["idle_duration"].IsFloat())
+            enemy.idleDuration = config["idle_duration"].GetFloat();
+        else
+            enemy.idleDuration = 1.0f;
+    }
+}
+
+// -----------------------------------------------------------------------------
 // initialize easy enemy
 // sets position, size, direction, alive status, loads speed and textures
 // -----------------------------------------------------------------------------
@@ -130,65 +287,10 @@ void Enemy_Init(Enemy& enemy, const rapidjson::Value& config) {
     s_EnemyDeath = AudioManager::Get().GetAudio("enemy_death_easy");
     s_EasyDamage = AudioManager::Get().GetAudio("damage_easy");
 
-    if (config.HasMember("x") && config["x"].IsFloat())
-        enemy.pos.x = config["x"].GetFloat();
-    else {
-        enemy.pos.x = 0.0f;
-        printf("Warning: Enemy missing 'x', defaulting to 0\n");
-    }
+    // Common initialization
+    Enemy_InitBase(enemy, config, EnemyType::Easy, 100.0f, 3.0f);
 
-    // Size
-    if (config.HasMember("width") && config["width"].IsFloat())
-        enemy.width = config["width"].GetFloat();
-    else {
-        enemy.width = 80.0f;
-        printf("Warning: Enemy missing 'width', defaulting to 80\n");
-    }
-    if (config.HasMember("height") && config["height"].IsFloat())
-        enemy.height = config["height"].GetFloat();
-    else {
-        enemy.height = 80.0f;
-        printf("Warning: Enemy missing 'height', defaulting to 80\n");
-    }
-
-    // Position (required, but provide fallback)
-    if (config.HasMember("platform_y") && config["platform_y"].IsFloat())
-    {
-        enemy.platformY = config["platform_y"].GetFloat();
-        enemy.pos.y = Enemy_GetSpawnYFromPlatform(enemy.platformY, 40.0f, enemy.height);
-    }
-    else if (config.HasMember("y") && config["y"].IsFloat())
-    {
-        enemy.pos.y = config["y"].GetFloat();
-        enemy.platformY = enemy.pos.y - (40.0f * 0.5f) - (enemy.height * 0.5f);
-    }
-    else
-    {
-        enemy.platformY = 0.0f;
-        enemy.pos.y = Enemy_GetSpawnYFromPlatform(enemy.platformY, 40.0f, enemy.height);
-        printf("Warning: Enemy missing 'platform_y'/'y', defaulting to 0\n");
-    }
-
-
-    // Movement speed
-    if (config.HasMember("speed") && config["speed"].IsFloat())
-        enemy.moveSpeed = config["speed"].GetFloat();
-    else {
-        enemy.moveSpeed = 100.0f;
-        printf("Warning: Enemy missing 'speed', defaulting to 100\n");
-    }
-
-    // Hit points
-    if (config.HasMember("hp") && config["hp"].IsFloat()) {
-        enemy.hitPoints = config["hp"].GetFloat();
-        enemy.maxHitPoints = enemy.hitPoints;
-    }
-    else {
-        enemy.hitPoints = 3.0f;
-        printf("Warning: Enemy missing 'hp', defaulting to 3\n");
-    }
-
-    // Shooting parameters (optional)
+    // Shooting parameters (specific to easy enemy)
     if (config.HasMember("shoot_cooldown") && config["shoot_cooldown"].IsFloat())
         enemy.shootCooldown = config["shoot_cooldown"].GetFloat();
     else
@@ -220,79 +322,8 @@ void Enemy_Init(Enemy& enemy, const rapidjson::Value& config) {
         enemy.bulletHeight = 30.0f;
 
     enemy.shootTimer = enemy.shootCooldown;
-    enemy.vel = { 0.0f, 0.0f };
 
-    if (config.HasMember("start_direction") && config["start_direction"].IsInt())
-        enemy.direction = (config["start_direction"].GetInt() < 0) ? -1 : 1;
-    else
-        enemy.direction = 1;
-
-    enemy.homeDirection = enemy.direction;
-
-    if (enemy.hitPoints <= 0.0f) {
-        enemy.hitPoints = 0.0f;
-        enemy.justDied = true;
-        enemy.isAlive = false;
-    }
-    else {
-        enemy.isAlive = true;
-    }
-    enemy.isPlayerColliding = false;
-    enemy.type = EnemyType::Easy;
-    enemy.homeX = enemy.pos.x;
-
-    if (config.HasMember("return_to_home_only") && config["return_to_home_only"].IsBool())
-        enemy.returnToHomeOnly = config["return_to_home_only"].GetBool();
-    else
-        enemy.returnToHomeOnly = false;
-
-    // Patrol bounds
-    if (config.HasMember("patrol_min_x") && config["patrol_min_x"].IsFloat())
-        enemy.patrolMinX = config["patrol_min_x"].GetFloat();
-    else
-        enemy.patrolMinX = enemy.pos.x - 100.0f;
-
-    if (config.HasMember("patrol_max_x") && config["patrol_max_x"].IsFloat())
-        enemy.patrolMaxX = config["patrol_max_x"].GetFloat();
-    else
-        enemy.patrolMaxX = enemy.pos.x + 100.0f;
-
-    //hit cooldown
-    if (config.HasMember("hit_cooldown") && config["hit_cooldown"].IsFloat())
-        enemy.hitCooldown = config["hit_cooldown"].GetFloat();
-    else
-        enemy.hitCooldown = 0.2f;
-
-    enemy.hitCooldownTimer = 0.0f;
-
-    //SpriteSheet Loading
-    if (config.HasMember("animations"))
-    {
-        const auto& anims = config["animations"];
-
-        enemy.spriteSheet = std::make_unique<SpriteSheet>(
-            anims["file"].GetString(),
-            anims["rows"].GetInt(),
-            anims["cols"].GetInt()
-        );
-
-        const auto& clips = anims["clips"];
-        for (rapidjson::SizeType i = 0; i < clips.Size(); i++)
-        {
-            const auto& c = clips[i];
-            enemy.spriteSheet->AddClip(
-                c["name"].GetString(),
-                c["start"].GetInt(),
-                c["end"].GetInt(),
-                c["duration"].GetFloat(),
-                c["loop"].GetBool()
-            );
-        }
-
-        enemy.spriteSheet->Play("patrol");
-    }
-
-    // Enemy bullet sprite
+    // Enemy bullet sprite (specific to easy enemy - shooting)
     if (config.HasMember("bullet_animations")) {
         const auto& anims = config["bullet_animations"];
         enemy.bulletSprite = std::make_unique<SpriteSheet>(
@@ -314,19 +345,6 @@ void Enemy_Init(Enemy& enemy, const rapidjson::Value& config) {
         enemy.bulletSprite->Play("fly");
     }
 
-    // Knockback
-    if (config.HasMember("knockback_velocity") && config["knockback_velocity"].IsFloat())
-        enemy.knockbackVelocity = config["knockback_velocity"].GetFloat();
-    else
-        enemy.knockbackVelocity = 300.0f;
-    enemy.knockbackVel = { 0.0f, 0.0f };
-    enemy.knockbackTimer = 0.0f;
-
-    if (config.HasMember("idle_duration") && config["idle_duration"].IsFloat())
-        enemy.idleDuration = config["idle_duration"].GetFloat();
-    else
-        enemy.idleDuration = 1.0f;
-
     Enemy_SetState(enemy, EnemyState::Patrol);
 }
 
@@ -336,65 +354,10 @@ void HardEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
     s_HardEnemyDeath = AudioManager::Get().GetAudio("enemy_death_hard");
     s_HardDamage = AudioManager::Get().GetAudio("damage_hard");
 
-    if (config.HasMember("x") && config["x"].IsFloat())
-        enemy.pos.x = config["x"].GetFloat();
-    else {
-        enemy.pos.x = 0.0f;
-        printf("Warning: Enemy missing 'x', defaulting to 0\n");
-    }
+    // Common initialization
+    Enemy_InitBase(enemy, config, EnemyType::Hard, 150.0f, 5.0f);
 
-    // Size
-    if (config.HasMember("width") && config["width"].IsFloat())
-        enemy.width = config["width"].GetFloat();
-    else {
-        enemy.width = 80.0f;
-        printf("Warning: HardEnemy missing 'width', defaulting to 80\n");
-    }
-    if (config.HasMember("height") && config["height"].IsFloat())
-        enemy.height = config["height"].GetFloat();
-    else {
-        enemy.height = 80.0f;
-        printf("Warning: HardEnemy missing 'height', defaulting to 80\n");
-    }
-
-    // Position
-    if (config.HasMember("platform_y") && config["platform_y"].IsFloat())
-    {
-        enemy.platformY = config["platform_y"].GetFloat();
-        enemy.pos.y = Enemy_GetSpawnYFromPlatform(enemy.platformY, 40.0f, enemy.height);
-    }
-    else if (config.HasMember("y") && config["y"].IsFloat())
-    {
-        enemy.pos.y = config["y"].GetFloat();
-        enemy.platformY = enemy.pos.y - (40.0f * 0.5f) - (enemy.height * 0.5f);
-    }
-    else
-    {
-        enemy.platformY = 0.0f;
-        enemy.pos.y = Enemy_GetSpawnYFromPlatform(enemy.platformY, 40.0f, enemy.height);
-        printf("Warning: HardEnemy missing 'platform_y'/'y', defaulting to 0\n");
-    }
-
-
-    // Movement speed
-    if (config.HasMember("speed") && config["speed"].IsFloat())
-        enemy.moveSpeed = config["speed"].GetFloat();
-    else {
-        enemy.moveSpeed = 150.0f;
-        printf("Warning: HardEnemy missing 'speed', defaulting to 150\n");
-    }
-
-    // Hit points
-    if (config.HasMember("hp") && config["hp"].IsFloat()) {
-        enemy.hitPoints = config["hp"].GetFloat();
-        enemy.maxHitPoints = enemy.hitPoints;
-    }
-    else {
-        enemy.hitPoints = 5.0f;
-        printf("Warning: HardEnemy missing 'hp', defaulting to 5\n");
-    }
-
-    // Collision damage
+    // Collision damage (specific to hard enemy)
     if (config.HasMember("damage") && config["damage"].IsFloat())
         enemy.damage = config["damage"].GetFloat();
     else {
@@ -427,92 +390,6 @@ void HardEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
         enemy.attackRangeY = enemy.height;
 
     enemy.shootCooldown = 0.0f; // no shooting
-    enemy.vel = { 0.0f, 0.0f };
-
-    if (config.HasMember("start_direction") && config["start_direction"].IsInt())
-        enemy.direction = (config["start_direction"].GetInt() < 0) ? -1 : 1;
-    else
-        enemy.direction = 1;
-
-    enemy.homeDirection = enemy.direction;
-
-    if (enemy.hitPoints <= 0.0f) {
-        enemy.hitPoints = 0.0f;
-        enemy.justDied = true;
-        enemy.isAlive = false;
-    }
-    else {
-        enemy.isAlive = true;
-    }
-    enemy.isPlayerColliding = false;
-    enemy.type = EnemyType::Hard;
-
-    enemy.homeX = enemy.pos.x;
-
-    if (config.HasMember("return_to_home_only") && config["return_to_home_only"].IsBool())
-        enemy.returnToHomeOnly = config["return_to_home_only"].GetBool();
-    else
-        enemy.returnToHomeOnly = false;
-
-    // Patrol bounds
-    if (config.HasMember("patrol_min_x") && config["patrol_min_x"].IsFloat())
-        enemy.patrolMinX = config["patrol_min_x"].GetFloat();
-    else
-        enemy.patrolMinX = enemy.pos.x - 100.0f;
-
-    if (config.HasMember("patrol_max_x") && config["patrol_max_x"].IsFloat())
-        enemy.patrolMaxX = config["patrol_max_x"].GetFloat();
-    else
-        enemy.patrolMaxX = enemy.pos.x + 100.0f;
-
-    // Knockback
-    if (config.HasMember("knockback_velocity") && config["knockback_velocity"].IsFloat())
-        enemy.knockbackVelocity = config["knockback_velocity"].GetFloat();
-    else
-        enemy.knockbackVelocity = 300.0f;
-    enemy.knockbackVel = { 0.0f, 0.0f };
-    enemy.knockbackTimer = 0.0f;
-
-    //hit cooldown
-    if (config.HasMember("hit_cooldown") && config["hit_cooldown"].IsFloat())
-        enemy.hitCooldown = config["hit_cooldown"].GetFloat();
-    else
-        enemy.hitCooldown = 0.2f;
-
-    enemy.hitCooldownTimer = 0.0f;
-
-    //SpriteSheet Loading
-    if (config.HasMember("animations"))
-    {
-        const auto& anims = config["animations"];
-
-        enemy.spriteSheet = std::make_unique<SpriteSheet>(
-            anims["file"].GetString(),
-            anims["rows"].GetInt(),
-            anims["cols"].GetInt()
-        );
-
-        const auto& clips = anims["clips"];
-        for (rapidjson::SizeType i = 0; i < clips.Size(); i++)
-        {
-            const auto& c = clips[i];
-            enemy.spriteSheet->AddClip(
-                c["name"].GetString(),
-                c["start"].GetInt(),
-                c["end"].GetInt(),
-                c["duration"].GetFloat(),
-                c["loop"].GetBool()
-            );
-        }
-
-        enemy.spriteSheet->Play("patrol");
-    }
-
-    if (config.HasMember("idle_duration") && config["idle_duration"].IsFloat())
-        enemy.idleDuration = config["idle_duration"].GetFloat();
-    else
-        enemy.idleDuration = 1.0f;
-
     enemy.state = EnemyState::Patrol;
     enemy.stateTimer = 0.0f;
 }

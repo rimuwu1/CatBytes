@@ -17,6 +17,7 @@ Technology is prohibited.
 #include "Player.h"
 #include "MeshManager.h"
 #include "AudioManager.h"
+#include "ParticleManager.h"
 
 Buff::Buff(BuffType type, float x, float y, float width, float height)
     : type(type), pos({ x, y }), width(width), height(height)
@@ -47,6 +48,8 @@ void Buff::Activate(Player& player) {
     case BuffType::FULL_HP:
         AudioManager::Get().PlayAudio(AudioManager::Get().GetAudio("healing_power_up"), false);
         player.hp = player.maxHP;
+        // Emit green healing particles
+        ParticleManager_Emit(player.pos.x, player.pos.y, 15, 150.0f, 50, 255, 50);
         break;
 
     case BuffType::DASH:

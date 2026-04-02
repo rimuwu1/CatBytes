@@ -117,6 +117,8 @@ struct Player
 	SlashDirection slashDirection = SlashDirection::HORIZONTAL;
 	bool weaponSwitchTriggered = false;
 	bool weaponSwitchInProgress = false;
+	std::string _desiredClip;
+	bool _forceRestart = false;
 
 	// tail idle animation
 	int idleLoopCount = 0;
