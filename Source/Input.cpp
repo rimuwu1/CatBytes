@@ -28,8 +28,10 @@ Technology is prohibited.
 #include "UIManager.h"
 #include "ObjectManager.h"
 #include "PhysicsManager.h"
+#include "SplashScreen.h"
 #include "Camera.h"
 #include "ParticleManager.h"
+#include "Player.h"
 
 // ----------------------------------------------------------------------------
 // Handles all user input processing for the current frame
@@ -43,10 +45,13 @@ void Input_Handle() {
 		GameStateManager::Get().next = GS_QUIT;
 	}
 
-	// ESC goes back to main menu (from anywhere)
+	// ESC during splash screen cutsceen skips to loading phase (no skipping during loading)
 	if (AEInputCheckTriggered(AEVK_ESCAPE)) {
-		if (GameStateManager::Get().current == GS_SPLASHSCREEN)
-			GameStateManager::Get().next = GS_MAINMENU;
+		if (GameStateManager::Get().current == GS_SPLASHSCREEN) {
+			if (SplashScreen_IsInCutscene()) {
+				SplashScreen_SkipCutscene();
+			}
+		}
 	}
 
 	// Q to quit the game -- show confirmation popup
@@ -97,6 +102,8 @@ void Input_Handle() {
 			if (physics.TryJump(player.vel.y, grounded))
 			{
 				player.grounded = grounded ? 1 : 0;
+				// Mark that jump was pressed this frame (for jump sound in Player_Update)
+				s_JumpPressedThisFrame = true;
 				// Emit jump dust from player feet
 				ParticleManager_EmitDust(player.pos.x, player.pos.y - player.height * 0.5f,
 					10, 120.f, 200, 200, 200);

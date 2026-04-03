@@ -61,6 +61,7 @@ static bool s_PlayerAudioLoaded = false;
 static bool s_WasGrounded = true;
 static bool s_WeaponSwitchSoundPlayed = false;
 static bool s_PlayerDamageSoundPlayed = false;
+bool s_JumpPressedThisFrame = false; // true when player presses jump, cleared after sound plays
 
 static const float MELEE_COOLDOWN = 0.3f;
 static int s_prevGrounded = 1;
@@ -335,10 +336,11 @@ namespace {
 
 void Player_HandleJumpInput(Player& player)
 {
-	// detect jump (leaving ground)
-	if (s_WasGrounded && !player.grounded && player.vel.y > 0.0f)
+	// Only play jump sound if player actually pressed jump (not just walking off platforms)
+	if (s_JumpPressedThisFrame)
 	{
 		AudioManager::Get().PlayAudio(s_JumpSound, false);
+		s_JumpPressedThisFrame = false;
 	}
 }
 

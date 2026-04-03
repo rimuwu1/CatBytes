@@ -150,6 +150,10 @@ struct Player
 struct Enemy; // forward declaration
 struct PlatformObstacle;
 
+// Jump input tracking - true when player presses jump, cleared after sound plays
+// Defined in Player.cpp, used in Input.cpp
+extern bool s_JumpPressedThisFrame;
+
 void Player_Init(Player& player, const rapidjson::Value& config);
 void Player_Update(Player& player, float dt);
 void Player_Draw(const Player& player);

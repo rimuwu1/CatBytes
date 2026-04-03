@@ -32,6 +32,10 @@ Technology is prohibited.
 #include <algorithm>
 #include <cmath>
 #include <fstream>
+
+// Deferred boss door patch state (for non-blocking save)
+bool EnvironmentManager::s_bossDoorPatchDeferred = false;
+bool EnvironmentManager::s_deferredBossDoorLocked = false;
 // ------------------------------------------------------------------------
 // Helper: parse a platform array from a JSON value into a vector
 // ------------------------------------------------------------------------
@@ -1059,13 +1063,17 @@ void EnvironmentManager::Update(float dt, Player& player, float cameraY)
 
         if (m_liftSeq.fadeAlpha >= 1.0f)
         {
-            m_liftSeq.active = false;
-            m_bossDoor.activated = false;
-            m_liftSeq.fadeAlpha = 0.0f;
-            m_liftSeq.fadingIn = false;
-            if (m_bossDoor.liftAnim)
-                m_bossDoor.liftAnim->SetFrame(0);
-            GameStateManager::Get().next = GS_BOSSROOM;
+            // Wait for save to complete before transitioning
+            if (!GameSaveManager::IsSaveInProgress())
+            {
+                m_liftSeq.active = false;
+                m_bossDoor.activated = false;
+                m_liftSeq.fadeAlpha = 0.0f;
+                m_liftSeq.fadingIn = false;
+                if (m_bossDoor.liftAnim)
+                    m_bossDoor.liftAnim->SetFrame(0);
+                GameStateManager::Get().next = GS_BOSSROOM;
+            }
         }
     }
 
@@ -2093,6 +2101,10 @@ void EnvironmentManager::PatchBossDoorLockedInSave()
 {
     if (!m_bossDoorLoaded) return;
 
+    // Wait for any in-progress save to complete before patching
+    // The lift sequence (~3 seconds) provides ample time for async save to finish
+    GameSaveManager::WaitForSaveToFinish();
+
     // read the whole file as a string
     std::ifstream ifs("Assets/Data/GameSave.json");
     if (!ifs.is_open()) return;
@@ -2103,29 +2115,49 @@ void EnvironmentManager::PatchBossDoorLockedInSave()
     const std::string lockedFalse = "\"locked\": false";
     const std::string newValue    = m_bossDoor.locked ? lockedTrue : lockedFalse;
 
-    // if the locked key already exists, replace it
-    size_t pos = content.find("\"locked\"");
-    if (pos != std::string::npos)
+    // Find the boss_door block first
+    size_t doorPos = content.find("\"boss_door\"");
+    if (doorPos == std::string::npos) return;
+    
+    // Search for "locked" only within the boss_door block (not in other parts of the file)
+    size_t bracePos = content.find('{', doorPos);
+    if (bracePos == std::string::npos) return;
+    size_t endBracePos = content.find('}', bracePos);
+    if (endBracePos == std::string::npos) return;
+    
+    // Look for "locked" within the boss_door block
+    size_t lockedPos = content.find("\"locked\"", bracePos);
+    if (lockedPos != std::string::npos && lockedPos < endBracePos)
     {
         // replace whichever value is currently there
-        size_t truePos  = content.find(lockedTrue);
-        size_t falsePos = content.find(lockedFalse);
-        if (truePos  != std::string::npos) content.replace(truePos,  lockedTrue.size(),  newValue);
-        else if (falsePos != std::string::npos) content.replace(falsePos, lockedFalse.size(), newValue);
+        size_t truePos  = content.find(lockedTrue, bracePos);
+        size_t falsePos = content.find(lockedFalse, bracePos);
+        if (truePos != std::string::npos && truePos < endBracePos) 
+            content.replace(truePos, lockedTrue.size(), newValue);
+        else if (falsePos != std::string::npos && falsePos < endBracePos) 
+            content.replace(falsePos, lockedFalse.size(), newValue);
     }
     else
     {
-        // inject it into the boss_door block — find "boss_door": { and insert after the opening brace
-        size_t doorPos = content.find("\"boss_door\"");
-        if (doorPos == std::string::npos) return;
-        size_t bracePos = content.find('{', doorPos);
-        if (bracePos == std::string::npos) return;
+        // inject it into the boss_door block — insert after the opening brace
         content.insert(bracePos + 1, "\n            " + newValue + ",");
     }
 
     std::ofstream ofs("Assets/Data/GameSave.json");
     if (!ofs.is_open()) return;
     ofs << content;
+}
+
+void EnvironmentManager::FlushDeferredBossDoorPatch()
+{
+    if (!s_bossDoorPatchDeferred) return;
+    s_bossDoorPatchDeferred = false;
+
+    // Temporarily set m_bossDoor.locked to the deferred value and patch
+    bool savedLocked = m_bossDoor.locked;
+    m_bossDoor.locked = s_deferredBossDoorLocked;
+    PatchBossDoorLockedInSave();
+    m_bossDoor.locked = savedLocked;
 }
 
 void EnvironmentManager::SetCheckpointInRange(bool inRange)
@@ -2216,6 +2248,12 @@ void EnvironmentManager::Clear()
 
 void EnvironmentManager::TriggerBossDoorHackSuccess()
 {
+    // Unlock the boss door
+    m_bossDoor.locked = false;
+    
+    // Immediately patch the save file to persist the unlock
+    PatchBossDoorLockedInSave();
+    
     // Find the BossDoor computer and mark it complete
     for (auto& comp : m_level3Computers) {
         if (comp.compType == ComputerToggle::BossDoor) {

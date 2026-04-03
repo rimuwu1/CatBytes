@@ -163,6 +163,9 @@ void MainMenu_Load()
 {
     std::cout << "Main Menu:Load" << std::endl;
 
+    // Preload game config once for fast saves
+    GameSaveManager::PreloadConfig();
+
     // load background texture once at load time
     g_MainMenuBG = TextureManager::Get().LoadTexture("Assets/Images/MainMenuBackground.png");  
 }
@@ -598,7 +601,7 @@ void MainMenu_Draw()
                 FontManager::Get().PrintThemeAligned(font, line1.c_str(), x, y, scale, TextAlignment::Center, FontTheme::Gold); y -= INFO_LINE_SPACING;
                 std::string line2 = "Completed: " + std::to_string(g_LevelsCompleted);
                 FontManager::Get().PrintThemeAligned(font, line2.c_str(), x, y, scale, TextAlignment::Center, FontTheme::White); y -= INFO_LINE_SPACING;
-                std::string line3 = "Lives: " + std::to_string(g_PlayerLives) + "/3";
+                std::string line3 = "Lives: " + std::to_string(g_PlayerLives) + " / 5";
                 FontManager::Get().PrintThemeAligned(font, line3.c_str(), x, y, scale, TextAlignment::Center, FontTheme::White); y -= INFO_LINE_SPACING;
                 std::string line4 = "Saved: " + g_LastSavedDate;
                 FontManager::Get().PrintThemeAligned(font, line4.c_str(), x, y, scale, TextAlignment::Center, FontTheme::Dim);

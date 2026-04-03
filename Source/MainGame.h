@@ -21,3 +21,21 @@ void MainGame_Draw();
 void MainGame_Free();
 void MainGame_Unload();
 void MainGame_RequestSave();
+
+// ------------------------------------------------------------------------
+// Splash screen loading API - runs during splash screen cutscene
+// Phase 1: JSON parsing in background thread (StartAsyncLoading)
+// Phase 2: Manager loading on main thread (ContinueMainThreadLoading)
+// ------------------------------------------------------------------------
+void ResetGameDataLoaded();
+bool IsGameDataLoaded();
+
+// Start async JSON parsing - spawns background thread (call from SplashScreen_Initialize)
+void StartAsyncLoading();
+
+// Continue main-thread loading - call each frame from SplashScreen_Update
+// Returns true when all loading is complete
+bool ContinueMainThreadLoading();
+
+// Get loading progress (0-100) for display
+int GetLoadingProgress();

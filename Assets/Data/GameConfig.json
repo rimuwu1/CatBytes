@@ -1589,7 +1589,8 @@
             "lift_x": -590.0,
             "lift_y": 9163.0,
             "prompt": "Press E to enter boss room",
-            "trigger_radius": 150.0
+            "trigger_radius": 150.0,
+            "locked": true
         },
         "computers": [
             { "x": -600.0, "y": 6515.0, "width": 100.0, "height": 100.0, "direction": "horizontal", "beamX1": -375.0, "beamY1": 6640.0, "beamX2":  375.0, 

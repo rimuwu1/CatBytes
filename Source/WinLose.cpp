@@ -147,7 +147,7 @@ static void DrawCutsceneText(int idx)
 
     // upper left skip hint - separated for the color emphasis
     FontManager::Get().PrintCentered(font,
-        "LSHIFT",
+        "ESC",
         -0.85f, 0.88f, 0.6f,
         0.5f, 0.4f, 0.75f, 0.9f);   // teal
 
@@ -307,7 +307,7 @@ void WinLose_Update()
             return;
         }
 
-        if (AEInputCheckTriggered(AEVK_LSHIFT))
+        if (AEInputCheckTriggered(AEVK_ESCAPE))
         {
             s_cutsceneDone = true;
             s_fading       = true;

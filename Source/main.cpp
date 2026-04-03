@@ -32,13 +32,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     UNREFERENCED_PARAMETER(lpCmdLine);
 
     // Initialize system components (console on if debug, else off)
-    System_Initialize(hInstance, nCmdShow,
-#ifdef _DEBUG
-        true //yes console
-#else
-        false //no console
-#endif
-    );
+    System_Initialize(hInstance, nCmdShow, false); //toggled off cos the rubrics say no console
 
     auto& gsm = GameStateManager::Get();
     gsm.Initialize(gsm.current);

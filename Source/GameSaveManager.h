@@ -27,7 +27,7 @@ Technology is prohibited.
 class GameSaveManager
 {
 public:
-    enum class NotifyType { NONE, SAVED, RESET };
+    enum class NotifyType { NONE, SAVING, SAVED, RESET };
 
     // ----- Save / Load data structures ------------------------------------
     struct Metadata {
@@ -51,6 +51,10 @@ public:
     struct BuffSaveData {
         int type;
         float x, y;
+    };
+
+    struct PlatformSaveData {
+        bool active;
     };
 
     // ----- Notification control -------------------------------------------
@@ -77,6 +81,9 @@ public:
         float levelMaxY = FLT_MAX,
         const std::string& filepath = "Assets/Data/GameSave.json");
 
+    // Preload config once at startup - MUST be called before first save
+    static bool PreloadConfig();
+
     // ----- Reset save file (copy config over save) -----------------------
     static void ResetSave(
         const std::string& configPath = "Assets/Data/GameConfig.json",
@@ -89,8 +96,8 @@ private:
         int                        currentLevel,
         const PlayerSaveData& player,
         const std::vector<EnemySaveData>& enemies,
-        const std::vector<Platform>& platforms,
-        const std::vector<Platform>& toggleWalls,
+        const std::vector<PlatformSaveData>& platforms,
+        const std::vector<PlatformSaveData>& toggleWalls,
         const std::vector<BuffSaveData>& worldBuffs,
         const std::string& filepath);
 
@@ -101,6 +108,7 @@ private:
         float levelMinY = -FLT_MAX,
         float levelMaxY = FLT_MAX);
     static std::vector<BuffSaveData> ExtractBuffData(const std::vector<Buff>& buffs);
+    static std::vector<PlatformSaveData> ExtractPlatformData(const std::vector<Platform>& platforms);
 
     // ----- Static members -------------------------------------------------
     static std::atomic<bool>  s_SaveInProgress;

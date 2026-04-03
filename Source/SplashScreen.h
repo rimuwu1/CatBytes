@@ -20,3 +20,9 @@ void SplashScreen_Update();
 void SplashScreen_Draw();
 void SplashScreen_Free();
 void SplashScreen_Unload();
+
+// Skip the cutscene and jump to loading phase
+void SplashScreen_SkipCutscene();
+
+// Returns true if cutscene is still playing (before loading phase)
+bool SplashScreen_IsInCutscene();

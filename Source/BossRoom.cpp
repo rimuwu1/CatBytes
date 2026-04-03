@@ -695,12 +695,14 @@ void BossRoom_Update()
         }
     }
 
-    // noclip
+    // noclip - skip collision handling when active
     if (DebugManager::Get().IsNoclipActive()) {
         player.vel.y = 0.0f;
         player.grounded = 1;
         if (AEInputCheckCurr(AEVK_W)) player.pos.y += 400.f * dt;
         if (AEInputCheckCurr(AEVK_S)) player.pos.y -= 400.f * dt;
+        if (AEInputCheckCurr(AEVK_A)) player.pos.x -= 400.f * dt;
+        if (AEInputCheckCurr(AEVK_D)) player.pos.x += 400.f * dt;
     }
     
     float playerPrevY = player.pos.y;
@@ -708,6 +710,20 @@ void BossRoom_Update()
     ObjectManager::Get().Update(dt);
     BossRoom::Get().Update(dt);
     ParticleManager_Update(dt);
+
+    // noclip - skip collision handling but still rebuild spatial grid
+    if (!DebugManager::Get().IsNoclipActive()) {
+        ObjectManager::Get().RebuildSpatialGrid();
+
+        CollisionManager::HandleAllCollisionsSpatial(
+            player, playerPrevY,
+            EnvironmentManager::Get(),
+            ObjectManager::Get().GetAllEnemies()
+        );
+    } else {
+        // noclip mode: still rebuild grid for proper enemy updates
+        ObjectManager::Get().RebuildSpatialGrid();
+    }
 
     // defeat dialogue -- fires once when FightOver starts, runs outside cutscene block
     for (const auto& e : enemies)
@@ -736,15 +752,6 @@ void BossRoom_Update()
         if (g_defeatDialogueTimer >= 3.0f)
             g_defeatDialogueLine = nullptr;
     }
-
-
-    ObjectManager::Get().RebuildSpatialGrid();
-
-    CollisionManager::HandleAllCollisionsSpatial(
-        player, playerPrevY,
-        EnvironmentManager::Get(),
-        ObjectManager::Get().GetAllEnemies()
-    );
 
     // notify boss AI when player lands a melee/bullet hit
     static float s_prevBossHitStun = 0.0f;
@@ -924,6 +931,11 @@ void BossRoom_Free()
         AudioManager::Get().StopAudio(g_BossRoomMusic);
         g_BossRoomMusicPlaying = false;
     }
+
+    // Reset camera position to prevent popup UI position issues
+    globalCam.x = 0.0f;
+    globalCam.y = 0.0f;
+    AEGfxSetCamPosition(0.0f, 0.0f);
 
     BossRoom::Get().Free();
 }

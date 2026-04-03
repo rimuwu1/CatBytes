@@ -94,8 +94,13 @@ public:
     bool isSaveRequested(); //saves once then clears state
     void RequestSave();  // sets internal save request flag
     void PatchBossDoorLockedInSave();
+    // Flush any deferred boss door patch after save completes
+    void FlushDeferredBossDoorPatch();
     void SetCheckpointInRange(bool inRange);
     bool GetCheckpointInRange() const;
+    
+    // Boss door state query for save system
+    bool IsBossDoorLocked() const { return m_bossDoor.locked; }
 
     //clean up functions
     void Clear();   // clears all environment vectors
@@ -317,6 +322,9 @@ private:
     bool             m_bossDoorLoaded = false;
     // boss door spritesheet: frame 0 = unlocked, frame 1 = locked
     std::unique_ptr<SpriteSheet> m_bossDoorSheet;
+    // Deferred boss door patch state (for non-blocking save)
+    static bool      s_bossDoorPatchDeferred;
+    static bool      s_deferredBossDoorLocked;
 
     bool m_bossRoomMode = false;
     std::unique_ptr<SpriteSheet> m_bossRoomBg;

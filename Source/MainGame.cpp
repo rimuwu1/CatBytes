@@ -21,6 +21,7 @@ Technology is prohibited.
 */
 /* End Header **************************************************************************/
 
+#include "MainGame.h"
 #include <fstream>
 #include <thread>
 #include "pch.h"
@@ -185,11 +186,39 @@ void MainGame_Initialize()
     ObjectManager::Get().Clear();
     EnvironmentManager::Get().Clear();
 
-    ParseConfigFromDisk();
-    AudioManager::Get().LoadFromJson(GetConfigDoc()["audio"]);
-    ApplyConfigToManagers();
-    DebugManager::Get().Initialize();
-    ParticleManager_Init();
+    // If data wasn't loaded during splash screen, parse JSON now
+    // The managers need to be reloaded every time because we Clear() above
+    if (!IsGameDataLoaded()) {
+        ParseConfigFromDisk();
+        AudioManager::Get().LoadFromJson(GetConfigDoc()["audio"]);
+        DebugManager::Get().Initialize();
+        ParticleManager_Init();
+    }
+    
+    // Always reload managers from the parsed config (handles Clear() above)
+    // Note: This is fast since textures are already cached by TextureManager
+    EnvironmentManager::Get().LoadFromConfig(GetConfigDoc());
+    EnvironmentManager::Get().LoadAssetsFromConfig(GetConfigDoc());
+    ObjectManager::Get().LoadFromConfig(GetConfigDoc());
+    
+    // Sync HUD inventory from restored player buffs
+    HUD& hud = EnvironmentManager::Get().GetHUD();
+    hud.ClearInventory();
+    Player& player = ObjectManager::Get().GetPlayer();
+    for (const auto& buff : player.buffs) {
+        if (buff.active)
+            hud.AddBuffToInventory(buff.type);
+    }
+    
+    // Initialize camera
+    const float ground = -350.0f;
+    const float groundHeight = 50.0f;
+    const float halfScreenHeight = 900.0f * 0.5f;
+    float groundTop = ground + groundHeight * 0.5f;
+    Camera_Init(globalCam, player.pos.x, groundTop + halfScreenHeight);
+    camTrauma = 0.0f;
+    camShakeTime = 0.0f;
+    
     g_walkEmitter = INVALID_EMITTER;
     //Stop main menu music
     AudioManager::Get().StopAudio(g_MainMenuMusic);
@@ -784,4 +813,133 @@ void MainGame_Free()
 void MainGame_Unload()
 {
     std::cout << "MainGame:Unload" << std::endl;
+}
+
+// ============================================================================
+// Splash screen loading API - runs during splash screen cutscene
+// Phase 1: JSON parsing in background thread (thread-safe file I/O only)
+// Phase 2: Manager loading on main thread (OpenGL texture loading)
+// ============================================================================
+static std::atomic<bool> g_GameDataLoaded(false);       // true when ALL loading complete
+static std::atomic<bool> g_JsonParsed(false);           // true when JSON parsing done
+static std::atomic<bool> g_ParsingInProgress(false);    // true while background thread running
+static int g_MainThreadLoadStep = 0;                    // tracks incremental main-thread loading
+
+void ResetGameDataLoaded()
+{
+    g_GameDataLoaded.store(false, std::memory_order_release);
+    g_JsonParsed.store(false, std::memory_order_release);
+    g_ParsingInProgress.store(false, std::memory_order_release);
+    g_MainThreadLoadStep = 0;
+}
+
+bool IsGameDataLoaded()
+{
+    return g_GameDataLoaded.load(std::memory_order_acquire);
+}
+
+// Background thread: ONLY parses JSON files (no OpenGL calls!)
+static void AsyncJsonParser()
+{
+    // This is the slow file I/O part - safe to run in background
+    ParseConfigFromDisk();
+    
+    // Signal that JSON is ready for main thread to process
+    g_JsonParsed.store(true, std::memory_order_release);
+    g_ParsingInProgress.store(false, std::memory_order_release);
+}
+
+void StartAsyncLoading()
+{
+    // Don't start if already parsing, parsed, or fully loaded
+    if (g_ParsingInProgress.load(std::memory_order_acquire) || 
+        g_JsonParsed.load(std::memory_order_acquire) || 
+        g_GameDataLoaded.load(std::memory_order_acquire)) {
+        return;
+    }
+    
+    g_ParsingInProgress.store(true, std::memory_order_release);
+    g_JsonParsed.store(false, std::memory_order_release);
+    g_GameDataLoaded.store(false, std::memory_order_release);
+    g_MainThreadLoadStep = 0;
+    
+    // Spawn background thread for JSON parsing ONLY
+    std::thread(AsyncJsonParser).detach();
+}
+
+// Main thread loading - call each frame from SplashScreen_Update
+// Does one loading step per frame to avoid blocking the cutscene animation
+// Returns true when all loading is complete
+bool ContinueMainThreadLoading()
+{
+    // If already done, return immediately
+    if (g_GameDataLoaded.load(std::memory_order_acquire)) {
+        return true;
+    }
+    
+    // Wait for JSON parsing to complete before doing manager loading
+    if (!g_JsonParsed.load(std::memory_order_acquire)) {
+        return false;
+    }
+    
+    // Incremental loading on main thread (one step per frame)
+    // Each step does OpenGL texture loading which must be on main thread
+    switch (g_MainThreadLoadStep) {
+        case 0:
+            // Step 0: Load audio (fast, no textures)
+            AudioManager::Get().LoadFromJson(GetConfigDoc()["audio"]);
+            g_MainThreadLoadStep++;
+            break;
+            
+        case 1:
+            // Step 1: Environment manager config parsing (fast)
+            EnvironmentManager::Get().LoadFromConfig(GetConfigDoc());
+            g_MainThreadLoadStep++;
+            break;
+            
+        case 2:
+            // Step 2: Environment assets (textures - must be on main thread)
+            EnvironmentManager::Get().LoadAssetsFromConfig(GetConfigDoc());
+            g_MainThreadLoadStep++;
+            break;
+            
+        case 3:
+            // Step 3: Object manager (may load textures)
+            ObjectManager::Get().LoadFromConfig(GetConfigDoc());
+            g_MainThreadLoadStep++;
+            break;
+            
+        case 4:
+            // Step 4: Debug manager & particles
+            DebugManager::Get().Initialize();
+            ParticleManager_Init();
+            g_MainThreadLoadStep++;
+            
+            // All done!
+            g_GameDataLoaded.store(true, std::memory_order_release);
+            break;
+            
+        default:
+            // Already completed
+            break;
+    }
+    
+    return g_GameDataLoaded.load(std::memory_order_acquire);
+}
+
+// Get loading progress (0-100) for display
+int GetLoadingProgress()
+{
+    if (g_GameDataLoaded.load(std::memory_order_acquire)) {
+        return 100;
+    }
+    
+    // JSON parsing is ~20% of work (file I/O)
+    if (!g_JsonParsed.load(std::memory_order_acquire)) {
+        return g_ParsingInProgress.load(std::memory_order_acquire) ? 10 : 0;
+    }
+    
+    // Main thread loading is steps 0-4 (5 steps), 80% of work
+    // Step 0=20%, 1=36%, 2=52%, 3=68%, 4=84%, done=100%
+    return 20 + (g_MainThreadLoadStep * 16);
 }

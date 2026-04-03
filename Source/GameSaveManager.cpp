@@ -13,7 +13,9 @@ Technology is prohibited.
 */
 /* End Header **************************************************************************/
 #include "GameSaveManager.h"
+#include "EnvironmentManager.h"
 #include "Fonts.h"                      // for g_FontMedium
+#include "MainGame.h"                   // for ResetGameDataLoaded
 #include "rapidjson/document.h"
 #include "rapidjson/prettywriter.h"
 #include "rapidjson/stringbuffer.h"
@@ -37,6 +39,10 @@ const float GameSaveManager::NOTIFY_FADE = 0.5f;
 static std::mutex s_SaveMutex;
 static std::condition_variable s_SaveCv;
 
+// Cached config - loaded once at startup for fast saves
+static std::string s_CachedConfigContent;
+static bool s_ConfigPreloaded = false;
+
 namespace {
     // -------------------------------------------------------------------------
     // File‑local helpers (not part of the class)
@@ -59,6 +65,26 @@ namespace {
 bool GameSaveManager::IsSaveInProgress()
 {
     return s_SaveInProgress.load();
+}
+
+bool GameSaveManager::PreloadConfig()
+{
+    if (s_ConfigPreloaded) return true;
+
+    std::ifstream configFile("Assets/Data/GameConfig.json");
+    if (!configFile.is_open())
+    {
+        std::cout << "[PreloadConfig] ERROR: Could not open GameConfig.json\n";
+        return false;
+    }
+
+    s_CachedConfigContent = std::string(
+        (std::istreambuf_iterator<char>(configFile)),
+        std::istreambuf_iterator<char>());
+    configFile.close();
+    s_ConfigPreloaded = true;
+    std::cout << "[PreloadConfig] Config cached, " << s_CachedConfigContent.size() << " bytes\n";
+    return true;
 }
 
 void GameSaveManager::WaitForSaveToFinish()
@@ -101,7 +127,9 @@ void GameSaveManager::Notify_Draw()
 {
     if (s_NotifyType == NotifyType::NONE) return;
 
-    const char* text = (s_NotifyType == NotifyType::SAVED) ? "Game Saved" : "Save Deleted";
+    const char* text = "Game Saved";
+    if (s_NotifyType == NotifyType::SAVING) text = "Saving...";
+    else if (s_NotifyType == NotifyType::RESET) text = "Save Deleted";
 
     // fade in / out
     float a = 1.0f;
@@ -129,16 +157,19 @@ void GameSaveManager::SaveGameAsync(
     if (s_SaveInProgress.load()) return;
     s_SaveInProgress.store(true);
 
-    // Extract only trivially copyable data
+    // Show "Saving..." notification at start
+    Notify_Show(NotifyType::SAVING);
+
+    // Extract only minimal data needed - avoid heavy vector copies on main thread
     PlayerSaveData              playerData = ExtractPlayerData(player);
     std::vector<EnemySaveData>  enemyData = ExtractEnemyData(enemies, levelMinY, levelMaxY);
     std::vector<BuffSaveData>   buffData = ExtractBuffData(worldBuffs);
-    std::vector<Platform>       platCopy = platforms;
-    std::vector<Platform>       toggleWallCopy = toggleWalls;
+    std::vector<PlatformSaveData> platformData = ExtractPlatformData(platforms);
+    std::vector<PlatformSaveData> toggleWallData = ExtractPlatformData(toggleWalls);
 
     std::thread([=]() mutable {
         SaveGame_Internal(metadata, currentLevel,
-            playerData, enemyData, platCopy, toggleWallCopy, buffData, filepath);
+            playerData, enemyData, platformData, toggleWallData, buffData, filepath);
         // set flag under lock then notify to avoid missed wakeups
         // ALWAYS reset the flag, even on failure
         {
@@ -146,11 +177,17 @@ void GameSaveManager::SaveGameAsync(
             s_SaveInProgress.store(false);
         }
         s_SaveCv.notify_all();
+        
+        // Show "Game Saved" notification when complete
+        Notify_Show(NotifyType::SAVED);
         }).detach();
 }
 
 void GameSaveManager::ResetSave(const std::string& configPath, const std::string& savePath)
 {
+    // Reset the game data loaded flag so splash screen will reload
+    ResetGameDataLoaded();
+
     std::ifstream src(configPath, std::ios::binary);
     if (!src.is_open())
     {
@@ -174,14 +211,21 @@ void GameSaveManager::SaveGame_Internal(
     int                        currentLevel,
     const PlayerSaveData& player,
     const std::vector<EnemySaveData>& enemies,
-    const std::vector<Platform>& platforms,
-    const std::vector<Platform>& toggleWalls,
+    const std::vector<PlatformSaveData>& platforms,
+    const std::vector<PlatformSaveData>& toggleWalls,
     const std::vector<BuffSaveData>& worldBuffs,
     const std::string& filepath)
 {
-    // 1. Load the static configuration (GameConfig.json) as the base document
-    rapidjson::Document doc(rapidjson::kObjectType);
-    {
+    // 1. Use cached config content - avoid disk I/O
+    rapidjson::Document doc;
+    if (s_ConfigPreloaded) {
+        doc.Parse(s_CachedConfigContent.c_str());
+        if (doc.HasParseError()) {
+            std::cout << "[SaveGame] ERROR: Failed to parse cached config\n";
+            return;
+        }
+    } else {
+        // Fallback: load from disk if not preloaded
         std::ifstream configFile("Assets/Data/GameConfig.json");
         if (!configFile.is_open())
         {
@@ -356,10 +400,25 @@ void GameSaveManager::SaveGame_Internal(
         levelObj.AddMember("buffs", buffsArr, doc.GetAllocator());
     }
 
-    // 6. Write to file
+    // 6. Update boss_door locked state to persist unlock across save/load
+    if (doc.HasMember("level_3") && doc["level_3"].IsObject())
+    {
+        rapidjson::Value& level3 = doc["level_3"];
+        if (level3.HasMember("boss_door") && level3["boss_door"].IsObject())
+        {
+            rapidjson::Value& bossDoor = level3["boss_door"];
+            // Get current in-memory locked state from EnvironmentManager
+            bool currentLocked = EnvironmentManager::Get().IsBossDoorLocked();
+            if (bossDoor.HasMember("locked"))
+                bossDoor["locked"] = currentLocked;
+            else
+                bossDoor.AddMember("locked", currentLocked, doc.GetAllocator());
+        }
+    }
+
+    // 7. Write to file - use compact writer for faster I/O
     rapidjson::StringBuffer buffer;
-    rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buffer);
-    writer.SetIndent(' ', 4);
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
     doc.Accept(writer);
 
     std::ofstream outFile(filepath);
@@ -395,6 +454,17 @@ std::vector<GameSaveManager::BuffSaveData> GameSaveManager::ExtractBuffData(
     for (const auto& buff : buffs) {
         if (buff.active)
             out.push_back({ static_cast<int>(buff.type), buff.pos.x, buff.pos.y });
+    }
+    return out;
+}
+
+std::vector<GameSaveManager::PlatformSaveData> GameSaveManager::ExtractPlatformData(
+    const std::vector<Platform>& platforms)
+{
+    std::vector<PlatformSaveData> out;
+    out.reserve(platforms.size());
+    for (const auto& p : platforms) {
+        out.push_back({ p.active });
     }
     return out;
 }
