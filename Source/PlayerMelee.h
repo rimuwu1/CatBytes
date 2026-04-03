@@ -3,7 +3,7 @@
 \file PlayerMelee.h
 \author Tse Xuan Qi Tristin, tse.x, 2503757
 \par tse.x@digipen.edu
-\date Junuary, 24, 2026
+\date January, 24, 2026
 \brief Declares functions and structures for handling the player's melee attacks,
        including hit detection, attack state, and damage application.
 

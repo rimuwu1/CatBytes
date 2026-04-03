@@ -5,7 +5,7 @@
         Joash ng, joash.ng, 2502780
 \par    tse.x@digipen.edu
         joash.ng@digipen.edu
-\date Junuary, 24, 2026
+\date January, 24, 2026
 \brief
 
 Copyright (C) 2026 DigiPen Institute of Technology.

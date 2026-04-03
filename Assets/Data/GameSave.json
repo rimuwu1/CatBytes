@@ -94,10 +94,12 @@
     }
   },
   "audio": {
-    "main_menu_music": "Assets/Audio/MUSIC-STINGER_GEN-HDF-17880.wav",
+    "main_menu_music": "Assets/Audio/MUSIC-STINGER_GEN-HDF-17880.mp3",
     "game_music": "Assets/Audio/DATA DANCE - NewAge MSCNEW2_13.mp3",
-    "cutscene_music": "Assets/Audio/BY THE NUMBERS - DanceTechno MSCDNT1_37.wav",
+    "cutscene_music": "Assets/Audio/BY THE NUMBERS - DanceTechno MSCDNT1_37.mp3",
     "boss_room_music": "Assets/Audio/SCREAM - HardRock MSCRCK2_56.mp3",
+    "win_music": "Assets/Audio/HIT THE SPOT - DanceTechno MSCDNT1_01.mp3",
+    "lose_music": "Assets/Audio/CUT DATA DANCE - NewAge MSCNEW2_13.mp3",
 
     "hover_button": "Assets/Audio/rohhsadotcom-video-game-gui-hovering-sound-417440.wav",
     "click_button": "Assets/Audio/CAMERA-VINTAGE_GEN-HDF-06160.wav",
@@ -116,6 +118,7 @@
     "boss_attack": "Assets/Audio/HORROR_GEN-HDF-14515.wav",
     "boss_laugh": "Assets/Audio/HumanLaugh CTE03_37.10.wav",
     "damage_boss": "Assets/Audio/HumanVocalMal CTE03_94.6.wav",
+    "boss_dead": "Assets/Audio/HumanScream CTE03_44.4.wav",
     "damage_easy": "Assets/Audio/driken5482-retro-hurt-2-236675.wav",
     "damage_hard": "Assets/Audio/driken5482-retro-explode-1-236678.wav",
     "enemy_death_easy": "Assets/Audio/dogwolf123-retro-hurt-sound-03-474780.wav",
@@ -123,14 +126,14 @@
 
     "damage": "Assets/Audio/playerhit-43108.wav",
     "spikes_up_down": "Assets/Audio/collect-item-retro-sfx-383230.wav",
-    "laser_on": "Assets/Audio/laser.mp3",
+    "laser_on": "Assets/Audio/laser.wav",
     "laser_off": "Assets/Audio/dragon-studio-power-off-386180.wav",
 
     "platform_disappear": "Assets/Audio/floraphonic-classic-game-action-positive-9-224399.wav",
     "platform_appear": "Assets/Audio/floraphonic-arcade-ui-2-229500.wav",
     "save": "Assets/Audio/rohhsadotcom-video-game-save-sound-effect-sound-417445.wav",
 
-    "elevator_unlocked": "Assets/Audio/lesiakower-level-up-enhancement-8-bit-retro-sound-effect-153002.mp3",
+    "elevator_unlocked": "Assets/Audio/lesiakower-level-up-enhancement-8-bit-retro-sound-effect-153002.wav",
     "elevator_ding": "Assets/Audio/lift-bell-107838.wav",
     "elevator_sound": "Assets/Audio/electric-hoist-65902.wav",
 

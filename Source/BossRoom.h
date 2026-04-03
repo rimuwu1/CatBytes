@@ -5,7 +5,7 @@
         Tse Xuan Qi Tristin, tse.x, 2503757
 \par    s.huimin@digipen.edu
         tse.x@digipen.edu
-\date Junuary, 24, 2026
+\date January, 24, 2026
 \brief
 Copyright (C) 2026 DigiPen Institute of Technology.
 Reproduction or disclosure of this file or its contents

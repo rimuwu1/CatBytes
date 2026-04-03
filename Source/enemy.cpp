@@ -9,9 +9,10 @@
         joash.ng@digipen.edu
         kerwinjiajie.wong@digipen.edu
         s.huimin@digipen.edu
-\date Junuary, 24, 2026
-\brief Implements a simple patrolling(?) enemy.
-The enemy moves automatically left and right between patrol bounds
+\date January, 24, 2026
+\brief Implements easy/hard enemy behaviour including patrol, attack, hit reactions,
+and boss mechanics such as lasers and blocking. Enemies move automatically
+within patrol bounds and interact with the player through combat logic
 
 Copyright (C) 2026 DigiPen Institute of Technology.
 Reproduction or disclosure of this file or its contents
@@ -43,7 +44,7 @@ namespace {
     constexpr float BOSS_BLOCK_PUSHBACK_VERTICAL = 200.0f;
 }
 
-
+// Audio assets and playback flags for enemy actions (attack, damage, death)
 static AEAudio s_EasyEnemyAttackSound{};
 static AEAudio s_HardEnemyAttackSound{};
 static AEAudio s_EnemyDeath{};
@@ -55,6 +56,8 @@ static AEAudio s_HardDamage{};
 static AEAudio s_BossDamage{};
 static AEAudio s_BossAttackSound{};
 
+// Checks if the enemy is within the current camera view bounds
+// Used to avoid playing sounds or effects when the enemy is off-screen
 static bool Enemy_IsInCamera(const Enemy& enemy)
 {
     const float halfScreenW = 1600.0f * 0.5f;
@@ -76,6 +79,8 @@ static bool Enemy_IsInCamera(const Enemy& enemy)
     return overlapX && overlapY;
 }
 
+// Changes the enemy's state and sets up corresponding timers, velocity,
+// and animation clips based on the new state
 static void Enemy_SetState(Enemy& enemy, EnemyState newState)
 {
     enemy.state = newState;
@@ -113,6 +118,7 @@ static void Enemy_SetState(Enemy& enemy, EnemyState newState)
     }
 }
 
+// Computes the correct spawn Y position so the enemy stands on top of a platform
 static float Enemy_GetSpawnYFromPlatform(float platformCenterY, float platformHeight, float enemyHeight)
 {
     constexpr float ENEMY_VISUAL_Y_OFFSET = 1.0f;
@@ -121,7 +127,9 @@ static float Enemy_GetSpawnYFromPlatform(float platformCenterY, float platformHe
 
 // -----------------------------------------------------------------------------
 // Common initialization helper for Enemy_Init and HardEnemy_Init
-// Handles position, size, direction, alive status, patrol bounds, spritesheet, etc.
+// Initializes common enemy properties from configuration data.
+// Used by Easy, Hard, and Boss enemies to avoid duplicated setup logic.
+// Handles position, size, movement, health, patrol bounds, animations, etc.
 // -----------------------------------------------------------------------------
 namespace {
     void Enemy_InitBase(Enemy& enemy, const rapidjson::Value& config, EnemyType type, 
@@ -277,7 +285,8 @@ namespace {
 }
 
 // -----------------------------------------------------------------------------
-// initialize easy enemy
+// Initializes an Easy enemy (ranged type) including shooting behaviour,
+// bullet properties, and associated animations.
 // sets position, size, direction, alive status, loads speed and textures
 // -----------------------------------------------------------------------------
 void Enemy_Init(Enemy& enemy, const rapidjson::Value& config) {
@@ -348,6 +357,10 @@ void Enemy_Init(Enemy& enemy, const rapidjson::Value& config) {
     Enemy_SetState(enemy, EnemyState::Patrol);
 }
 
+// -----------------------------------------------------------------------------
+// Initializes a Hard enemy (melee type) with close-range attack logic,
+// damage values, and attack timing configuration.
+// -----------------------------------------------------------------------------
 void HardEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
 
     s_HardEnemyAttackSound = AudioManager::Get().GetAudio("hard_enemy_attack");
@@ -394,6 +407,11 @@ void HardEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
     enemy.stateTimer = 0.0f;
 }
 
+
+// -----------------------------------------------------------------------------
+// Initializes the Boss enemy, including movement, health, attack behaviour,
+// laser mechanics, and sprite animations loaded from configuration
+// -----------------------------------------------------------------------------
 void BossEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
 
     enemy.facesLeft = false;
@@ -572,7 +590,12 @@ void BossEnemy_Init(Enemy& enemy, const rapidjson::Value& config) {
 }
 
 // -----------------------------------------------------------------------------
-// Update enemy: automatic left/right patrol
+//  Updates enemy behaviour each frame, including:
+// - state transitions (idle, patrol, attack)
+// - shooting logic (for ranged enemies)
+// - hit stun and knockback handling
+// - physics integration and ground collision
+// - animation updates
 // -----------------------------------------------------------------------------
 void Enemy_Update(Enemy& enemy, float dt) {
 
@@ -597,7 +620,8 @@ void Enemy_Update(Enemy& enemy, float dt) {
 
     const std::string currentClip = enemy.spriteSheet->GetCurrentClip();
 
-    // keep dead animation running until it finishes, then stop drawing
+    // If enemy is dead, continue playing death animation until it finishes,
+    // then stop updating movement/logic.
     if (!enemy.isAlive)
     {
         if (currentClip == "dead" && enemy.hitStunTimer > 0.0f)
@@ -651,6 +675,8 @@ void Enemy_Update(Enemy& enemy, float dt) {
 
         // Integrate X, but clamp to patrol/platform bounds
         const float halfWidth = enemy.width * 0.5f;
+
+        // Clamp enemy position within patrol bounds while applying knockback
         const float minCenterX = enemy.patrolMinX + halfWidth;
         const float maxCenterX = enemy.patrolMaxX - halfWidth;
 
@@ -701,6 +727,7 @@ void Enemy_Update(Enemy& enemy, float dt) {
         return;
     }
 
+    // handle ranged enemy shooting behaviour based on cooldown and state
     if (enemy.shootCooldown > 0.0f)
     {
         bool canShoot = false;
@@ -774,7 +801,10 @@ void Enemy_Update(Enemy& enemy, float dt) {
         {
             enemy.vel.x = enemy.direction * enemy.moveSpeed;
 
+            // Integrate X, but clamp to patrol/platform bounds
             const float halfWidth = enemy.width * 0.5f;
+
+            // Clamp enemy position within patrol bounds while applying knockback
             const float minCenterX = enemy.patrolMinX + halfWidth;
             const float maxCenterX = enemy.patrolMaxX - halfWidth;
 
@@ -838,6 +868,10 @@ void Enemy_Update(Enemy& enemy, float dt) {
     enemy.spriteSheet->Update(dt);
 }
 
+// -----------------------------------------------------------------------------
+// Updates Hard enemy behaviour(melee type), including attack timing,
+// hit detection, knockback, and patrol movement
+// -----------------------------------------------------------------------------
 void HardEnemy_Update(Enemy& enemy, float dt) {
     enemy.justDied = false;
 
@@ -907,6 +941,8 @@ void HardEnemy_Update(Enemy& enemy, float dt) {
 
         // Integrate X, but clamp to patrol/platform bounds
         const float halfWidth = enemy.width * 0.5f;
+
+        // Clamp enemy position within patrol bounds while applying knockback
         const float minCenterX = enemy.patrolMinX + halfWidth;
         const float maxCenterX = enemy.patrolMaxX - halfWidth;
 
@@ -989,7 +1025,10 @@ void HardEnemy_Update(Enemy& enemy, float dt) {
         {
             enemy.vel.x = enemy.direction * enemy.moveSpeed;
 
+            // Integrate X, but clamp to patrol/platform bounds
             const float halfWidth = enemy.width * 0.5f;
+
+            // Clamp enemy position within patrol bounds while applying knockback
             const float minCenterX = enemy.patrolMinX + halfWidth;
             const float maxCenterX = enemy.patrolMaxX - halfWidth;
 
@@ -1077,6 +1116,8 @@ void HardEnemy_Update(Enemy& enemy, float dt) {
 
     // Integrate X, but clamp to patrol/platform bounds
     const float halfWidth = enemy.width * 0.5f;
+
+    // Clamp enemy position within patrol bounds while applying knockback
     const float minCenterX = enemy.patrolMinX + halfWidth;
     const float maxCenterX = enemy.patrolMaxX - halfWidth;
 
@@ -1117,7 +1158,9 @@ void HardEnemy_Update(Enemy& enemy, float dt) {
     enemy.spriteSheet->Update(dt);
 }
 
+// -----------------------------------------------------------------------------
 // Update each boss laser's internal state machine
+// -----------------------------------------------------------------------------
 void BossLasers_Update(Enemy& enemy, const Player& player, float dt)
 {
     for (BossLaser& laser : enemy.bossLasers)
@@ -1165,6 +1208,10 @@ void BossLasers_Update(Enemy& enemy, const Player& player, float dt)
     }
 }
 
+// -----------------------------------------------------------------------------
+// Renders boss laser visuals based on their current state
+// (tracking preview, lock-on warning, or active beam)
+// -----------------------------------------------------------------------------
 void BossLasers_Draw(const Enemy& enemy)
 {
     MeshManager& mm = MeshManager::Get();
@@ -1224,8 +1271,11 @@ void BossEnemy_Update(Enemy& enemy, const Player& player, float dt) {
 }
 
 // -----------------------------------------------------------------------------
-// called when player collides with enemy
-// reduces hitPoints and sets hit stun
+// Handles damage applied to an enemy, including:
+// - hit cooldown and invincibility checks
+// - animation transitions (hit/dead)
+// - knockback application
+// - triggering death logic and audio feedback
 // -----------------------------------------------------------------------------
 void Enemy_OnHit(Enemy& enemy, float damage, float knockbackDir, Player* attacker)
 {
@@ -1360,6 +1410,9 @@ void Enemy_OnHit(Enemy& enemy, float damage, float knockbackDir, Player* attacke
         Enemy_ApplyKnockback(enemy, knockbackDir);
 }
 
+// -----------------------------------------------------------------------------
+// Handles enemy death effects such as dropping buffs
+// -----------------------------------------------------------------------------
 void Enemy_OnDeath(Enemy& enemy)
 {
     //// for debugging (to be removed)
@@ -1371,6 +1424,12 @@ void Enemy_OnDeath(Enemy& enemy)
     ObjectManager::Get().SpawnBuff(droppedBuff, enemy.pos.x, enemy.pos.y);
 }
 
+// -----------------------------------------------------------------------------
+// Handles collision between player and enemy, including:
+// - applying damage and knockback
+// - boss-specific blocking behaviour
+// - triggering melee attacks for hard enemies
+// -----------------------------------------------------------------------------
 void HardEnemy_OnCollision(Enemy& enemy, Player& player)
 {
     if (!enemy.isAlive) return;
@@ -1496,7 +1555,7 @@ void HardEnemy_OnCollision(Enemy& enemy, Player& player)
 }
 
 // -----------------------------------------------------------------------------
-// Free static resources (mesh and texture) remove after spritesheetd
+// Applies horizontal knockback to the enemy based on hit direction.
 // -----------------------------------------------------------------------------
 
 void Enemy_ApplyKnockback(Enemy& enemy, float knockbackDir)

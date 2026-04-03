@@ -3,9 +3,9 @@
 \file AudioManager.h
 \author Tse Xuan Qi Tristin, tse.x, 2503757
 \par tse.x@digipen.edu
-\date Junuary, 24, 2026
-\brief handles loading, caching, and unloading of audio resources and ensures each audio file 
-is created once and owned in a single location.
+\date January, 24, 2026
+\brief Manages loading, caching, playback, and unloading of audio resources.
+Ensures each audio file is created once and centrally owned.
 
 Copyright (C) 2026 DigiPen Institute of Technology.
 Reproduction or disclosure of this file or its contents
@@ -29,22 +29,23 @@ public:
     AudioManager(const AudioManager&) = delete;
     AudioManager& operator=(const AudioManager&) = delete;
 
-    // Load/unload audio by filepath
+    // Audio resource management, load/unload audio by filepath
     AEAudio LoadAudio(const std::string& filepath, bool isMusic = false);
     void UnloadAudio(AEAudio audioHandle);
     void UnloadAll();
 
-    // Load audio from JSON
+    // Configuration loading, oad audio from JSON
     void LoadFromJson(const rapidjson::Value& audioConfig);
 
-    // Access by key
+    // Audio retrieval, access by key
     AEAudio GetAudio(const std::string& key) const;
 
-    // Play/Stop
+    // Playback control
     void PlayAudio(AEAudio audioHandle, bool loop = false);
     void PlayAudio(const std::string& key, bool loop = false);
     void StopAudio(AEAudio audioHandle);
 
+    // Volume control
     void SetMusicVolume(float volume);
     void SetSFXVolume(float volume);
 
@@ -53,10 +54,9 @@ public:
 
 private:
     AudioManager();
-    ~AudioManager();
 
-    std::map<std::string, AEAudio> audioMap;     // filepath -> AEAudio
-    std::map<std::string, AEAudio> audioKeyMap;  // json key -> AEAudio
+    std::map<std::string, AEAudio> audioMap;// maps file paths to loaded audio handles
+    std::map<std::string, AEAudio> audioKeyMap;//maps JSON keys to audio handles for easy lookup
 
     AEAudioGroup musicGroup;
     AEAudioGroup sfxGroup;

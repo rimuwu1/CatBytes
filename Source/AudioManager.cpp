@@ -3,8 +3,9 @@
 \file AudioManager.cpp
 \author Tse Xuan Qi Tristin, tse.x, 2503757
 \par tse.x@digipen.edu
-\date Junuary, 24, 2026
-\brief Implements the audio cache logic and automatically releases all loaded audio
+\date January, 24, 2026
+\brief Implements audio management including loading, caching, playback,
+volume control, and unloading of audio resources.
 
 Copyright (C) 2026 DigiPen Institute of Technology.
 Reproduction or disclosure of this file or its contents
@@ -15,6 +16,7 @@ Technology is prohibited.
 #include "AudioManager.h"
 #include <iostream>
 
+// Clamps a value to the range [0.0f, 1.0f] for safe volume control
 static float Clamp01(float v)
 {
     if (v < 0.0f) return 0.0f;
@@ -22,12 +24,14 @@ static float Clamp01(float v)
     return v;
 }
 
+// Returns the singleton instance of the AudioManager.
 AudioManager& AudioManager::Get()
 {
     static AudioManager instance;
     return instance;
 }
 
+// Initializes audio groups for music and SFX and sets default volume levels
 AudioManager::AudioManager()
 {
     musicGroup = AEAudioCreateGroup();
@@ -39,20 +43,18 @@ AudioManager::AudioManager()
     AEAudioSetGroupVolume(sfxGroup, sfxVolume);
 }
 
-AudioManager::~AudioManager()
-{
-    //UnloadAll();
-    //AEAudioExit();
-}
 
+// Loads an audio file and caches it
+// if already loaded, returns the cached audio handle instead of reloading
 AEAudio AudioManager::LoadAudio(const std::string& filepath, bool isMusic)
 {
     auto it = audioMap.find(filepath);
-    if (it != audioMap.end())
+    if (it != audioMap.end())//return cached audio if already loaded
         return it->second;
 
     AEAudio handle{};
 
+    // load as music or sound depending on flag
     if (isMusic)
         handle = AEAudioLoadMusic(filepath.c_str());
     else
@@ -64,6 +66,7 @@ AEAudio AudioManager::LoadAudio(const std::string& filepath, bool isMusic)
     return handle;
 }
 
+// Loads multiple audio entries from JSON configuration, mapping string keys to audio handles
 void AudioManager::LoadFromJson(const rapidjson::Value& audioConfig)
 {
     if (!audioConfig.IsObject())
@@ -78,7 +81,7 @@ void AudioManager::LoadFromJson(const rapidjson::Value& audioConfig)
 
         const std::string filepath = it->value.GetString();
 
-        // crude music detection by key name
+        // detect music tracks by checking if the key contains "music".
         const bool isMusic = (key.find("music") != std::string::npos);
 
         AEAudio handle = LoadAudio(filepath, isMusic);
@@ -86,6 +89,7 @@ void AudioManager::LoadFromJson(const rapidjson::Value& audioConfig)
     }
 }
 
+// Retrieves an audio handle by key, returns an invalid handle if not found.
 AEAudio AudioManager::GetAudio(const std::string& key) const
 {
     auto it = audioKeyMap.find(key);
@@ -95,12 +99,14 @@ AEAudio AudioManager::GetAudio(const std::string& key) const
     return AEAudio{};
 }
 
+// Unloads a specific audio resource and removes it from all internal maps
 void AudioManager::UnloadAudio(AEAudio audioHandle)
 {
     AEAudioUnloadAudio(audioHandle);
 
     for (auto it = audioMap.begin(); it != audioMap.end(); )
     {
+        // match audio handles using underlying FMOD pointer to remove correct entry
         if (it->second.fmod_sound == audioHandle.fmod_sound)
             it = audioMap.erase(it);
         else
@@ -116,6 +122,7 @@ void AudioManager::UnloadAudio(AEAudio audioHandle)
     }
 }
 
+// Unloads all audio resources and clears internal caches and audio groups.
 void AudioManager::UnloadAll()
 {
     for (auto it = audioMap.begin(); it != audioMap.end(); ++it)
@@ -133,6 +140,8 @@ void AudioManager::UnloadAll()
         AEAudioUnloadAudioGroup(sfxGroup);
 }
 
+// Plays an audio handle, automatically selecting the correct audio group
+// (music or SFX) and applying the corresponding volume.
 void AudioManager::PlayAudio(AEAudio audioHandle, bool loop)
 {
     if (!AEAudioIsValidAudio(audioHandle))
@@ -141,6 +150,7 @@ void AudioManager::PlayAudio(AEAudio audioHandle, bool loop)
     AEAudioGroup group = sfxGroup;
     float volume = sfxVolume;
 
+    // determine whether this audio belongs to music or SFX based on its key.
     for (const auto& pair : audioKeyMap)
     {
         if (pair.second.fmod_sound == audioHandle.fmod_sound)
@@ -160,41 +170,49 @@ void AudioManager::PlayAudio(AEAudio audioHandle, bool loop)
         }
     }
 
+    // loop indefinitely if loop == true, otherwise play once
     AEAudioPlay(audioHandle, group, volume, 1.0f, loop ? -1 : 0);
 }
 
+// Plays audio using a string key by retrieving the corresponding handle.
 void AudioManager::PlayAudio(const std::string& key, bool loop)
 {
     PlayAudio(GetAudio(key), loop);
 }
 
+// Sets music volume (clamped between 0 and 1) and updates the audio group.
 void AudioManager::SetMusicVolume(float volume)
 {
     musicVolume = Clamp01(volume);
     AEAudioSetGroupVolume(musicGroup, musicVolume);
 }
 
+// Sets SFX volume (clamped between 0 and 1) and updates the audio group.
 void AudioManager::SetSFXVolume(float volume)
 {
     sfxVolume = Clamp01(volume);
     AEAudioSetGroupVolume(sfxGroup, sfxVolume);
 }
 
+// Returns current music volume.
 float AudioManager::GetMusicVolume() const
 {
     return musicVolume;
 }
 
+// Returns current SFX volume.
 float AudioManager::GetSFXVolume() const
 {
     return sfxVolume;
 }
 
+// Stops playback of audio by stopping its associated audio group.
 void AudioManager::StopAudio(AEAudio audioHandle)
 {
     if (!AEAudioIsValidAudio(audioHandle))
         return;
 
+    // determine whether this audio belongs to music or SFX based on its key.
     for (const auto& pair : audioKeyMap)
     {
         if (pair.second.fmod_sound == audioHandle.fmod_sound)

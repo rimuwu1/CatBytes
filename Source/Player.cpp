@@ -50,6 +50,7 @@ namespace {
     constexpr float BLOCK_PUSHBACK_VERTICAL = 200.0f;
 }
 
+// Audio assets and state flags for player actions (attacks, jump, damage, weapon switching)
 static AEAudio s_GunAttackSound{};
 static AEAudio s_MeleeAttackSound{};
 static AEAudio s_JumpSound{};
@@ -80,6 +81,13 @@ namespace {
     void Player_UpdateStateTrackers(Player& player, bool isWalking);
 }
 
+// -----------------------------------------------------------------------------
+// Initializes player properties from configuration data, including:
+// - position, movement, and physics values
+// - weapon and combat settings
+// - sprite sheets and animations
+// - audio assets and particle systems
+// -----------------------------------------------------------------------------
 void Player_Init(Player& player, const rapidjson::Value& config)
 {
 	player.facingRight = true; // current player asset faces right on load
@@ -297,6 +305,14 @@ void Player_Init(Player& player, const rapidjson::Value& config)
 	player.dashEmitter = INVALID_EMITTER;
 }
 
+// -----------------------------------------------------------------------------
+// Updates player behaviour each frame, including:
+// - input handling (jump, combat)
+// - physics (gravity, movement)
+// - state handling (hurt, dash, shield)
+// - animation updates
+// - particle and audio effects
+// -----------------------------------------------------------------------------
 void Player_Update(Player& player, float dt)
 {
 	PhysicsManager& physics = PhysicsManager::Get();
@@ -1007,7 +1023,13 @@ void Player_Draw(const Player& player)
 	}
 }
 
-//Apply damage to the player
+// -----------------------------------------------------------------------------
+// Applies damage to the player, including:
+// - health reduction
+// - hurt state and animation
+// - sound and particle effects
+// - death condition handling
+// -----------------------------------------------------------------------------
 void Player_ApplyDamage(Player& player, float damage)
 {
 	if (player.hp <= 0.0f) return;
@@ -1074,6 +1096,10 @@ void Player_ApplyKnockback(Player& player, float sourceX, float sourceY)
 	player.vel.y = player.knockbackVel.y;
 }
 
+// -----------------------------------------------------------------------------
+// Checks collision between player bullets and enemies,
+// applies damage, and handles special cases such as boss blocking
+// -----------------------------------------------------------------------------
 void Player_CheckBulletCollisions(Player& player, Enemy& enemy)
 {
 	for (auto& b : player.bullets)

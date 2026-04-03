@@ -5,7 +5,7 @@
         Sim Hui Min, s.huimin, 2503506
 \par tse.x@digipen.edu
      s.huimin@digipen.edu
-\date Junuary, 24, 2026
+\date January, 24, 2026
 \brief
 
 Copyright (C) 2026 DigiPen Institute of Technology.

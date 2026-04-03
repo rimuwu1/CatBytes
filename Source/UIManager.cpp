@@ -57,6 +57,10 @@ static AEAudio s_PauseHoverSound{};
 static AEAudio s_PauseClickSound{};
 static bool    s_PauseSoundsLoaded = false;
 
+static AEAudio s_PopupHoverSound{};
+static AEAudio s_PopupClickSound{};
+static bool    s_PopupSoundsLoaded = false;
+
 bool g_newGame = false;
 
 static float PxToNdcX(float px, float winW) { return px / (winW * 0.5f); }
@@ -76,6 +80,12 @@ void UIManager::ShowConfirmation(const std::string& title,
         std::cout << "UIManager: popup already active, ignoring.\n";
         return;
     }
+    if (!s_PopupSoundsLoaded) {
+        s_PopupHoverSound = AudioManager::Get().GetAudio("hover_button");
+        s_PopupClickSound = AudioManager::Get().GetAudio("click_button");
+        s_PopupSoundsLoaded = true;
+    }
+
     SetUIAnchor(camX, camY);
 
     m_Popup.title = title;
@@ -176,12 +186,29 @@ void UIManager::UpdateConfirmation(float camX, float camY, bool& consumed)
     float btnYesX = PxToNdcX(BTN_YES_X_PX, winW);
     float btnNoX = PxToNdcX(BTN_NO_X_PX, winW);
 
+    static int s_PopupPrevHover = 0;
+    int popupHover = 0;
+
+    if (IsMouseOverButton(btnYesX, btnYNdc, btnWNdc, btnHNdc, camX, camY))
+        popupHover = 1;
+    else if (IsMouseOverButton(btnNoX, btnYNdc, btnWNdc, btnHNdc, camX, camY))
+        popupHover = 2;
+
+    if (popupHover != 0 && popupHover != s_PopupPrevHover)
+    {
+        AudioManager::Get().PlayAudio(s_PopupHoverSound, false);
+    }
+
+    s_PopupPrevHover = popupHover;
+
     if (AEInputCheckTriggered(AEVK_LBUTTON)) {
         if (IsMouseOverButton(btnYesX, btnYNdc, btnWNdc, btnHNdc, camX, camY)) {
+            AudioManager::Get().PlayAudio(s_PopupClickSound, false);
             if (m_Popup.onConfirm) m_Popup.onConfirm();
             m_PopupActive = false; consumed = true; return;
         }
         if (IsMouseOverButton(btnNoX, btnYNdc, btnWNdc, btnHNdc, camX, camY)) {
+            AudioManager::Get().PlayAudio(s_PopupClickSound, false);
             if (m_Popup.onCancel) m_Popup.onCancel();
             m_PopupActive = false; consumed = true; return;
         }

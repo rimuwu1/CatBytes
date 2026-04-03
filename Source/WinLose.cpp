@@ -34,6 +34,7 @@ Technology is prohibited.
 // ============================================================
 const char* textScreenMessage = "You Lose";
 extern bool g_playerDiedBefore;
+bool g_FromWinToCredits = false;
 
 // ============================================================
 // textures
@@ -52,6 +53,8 @@ static AEAudio s_WinSound{};
 static AEAudio s_LoseSound{};
 static AEAudio s_CutsceneMusic{};
 static AEAudio s_ClickSound{};
+static AEAudio s_WinMusic{};
+static AEAudio s_LoseMusic{};
 
 static bool    s_SoundPlayed = false;
 static bool    s_CutsceneMusicPlaying = false;
@@ -240,10 +243,12 @@ void WinLose_Initialize()
             tryLoad("Assets/Data/GameConfig.json");
     }
 
-    s_WinSound  = AudioManager::Get().GetAudio("win_effect");
+    s_WinSound = AudioManager::Get().GetAudio("win_effect");
     s_LoseSound = AudioManager::Get().GetAudio("lose_effect");
     s_CutsceneMusic = AudioManager::Get().GetAudio("cutscene_music");
     s_ClickSound = AudioManager::Get().GetAudio("click_button");
+    s_WinMusic = AudioManager::Get().GetAudio("win_music");
+    s_LoseMusic = AudioManager::Get().GetAudio("lose_music");
 
     // load textures every entry -- mirrors MainMenu_Initialize loading 
     for (int i = 0; i < (int)s_SlideTex.size(); ++i)
@@ -275,6 +280,7 @@ void WinLose_Initialize()
         AudioManager::Get().StopAudio(AudioManager::Get().GetAudio("main_menu_music"));
         AudioManager::Get().StopAudio(AudioManager::Get().GetAudio("game_music"));
         AudioManager::Get().StopAudio(AudioManager::Get().GetAudio("boss_room_music"));
+        AudioManager::Get().StopAudio(s_WinMusic);
 
         // play intro cutscene music looping
         AudioManager::Get().PlayAudio(s_CutsceneMusic, true);
@@ -282,8 +288,23 @@ void WinLose_Initialize()
     }
     else
     {
-        // if this state is Win or Lose, make sure cutscene music is not still alive
         StopCutsceneMusic();
+
+        // stop all other music first
+        AudioManager::Get().StopAudio(AudioManager::Get().GetAudio("main_menu_music"));
+        AudioManager::Get().StopAudio(AudioManager::Get().GetAudio("game_music"));
+        AudioManager::Get().StopAudio(AudioManager::Get().GetAudio("boss_room_music"));
+
+        if (s_Mode == WLMode::Win)
+        {
+            AudioManager::Get().StopAudio(s_LoseMusic);
+            AudioManager::Get().PlayAudio(s_WinMusic, true);
+        }
+        else // Lose
+        {
+            AudioManager::Get().StopAudio(s_WinMusic);
+            AudioManager::Get().PlayAudio(s_LoseMusic, true);
+        }
     }
 }
 
@@ -342,13 +363,21 @@ void WinLose_Update()
     {
         // space to lshift go to creds
         if (AEInputCheckTriggered(AEVK_SPACE) || AEInputCheckTriggered(VK_LBUTTON))
+        {
+            AudioManager::Get().PlayAudio(s_ClickSound, false);
+            g_FromWinToCredits = true;
             GameStateManager::Get().next = GS_CREDITS;
+        }
         return;
     }
 
     // lose screen
     if (AEInputCheckTriggered(AEVK_SPACE) || AEInputCheckTriggered(VK_LBUTTON))
+    {
+        AudioManager::Get().PlayAudio(s_ClickSound, false);
+        AudioManager::Get().StopAudio(s_LoseMusic);
         GameStateManager::Get().next = GS_MAINMENU;
+    }
 }
 
 // ============================================================

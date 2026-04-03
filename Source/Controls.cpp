@@ -6,7 +6,9 @@
 \par tse.x@digipen.edu
      kerwinjiajie.wong@digipen.edu
 \date January, 24, 2026
-\brief
+\brief Implements the Controls menu and in-game controls overlay, including
+tab switching, button hover/click handling, instruction card rendering,
+and audio settings sliders for music and SFX volume.
 
 Copyright (C) 2026 DigiPen Institute of Technology.
 Reproduction or disclosure of this file or its contents
@@ -30,11 +32,13 @@ Technology is prohibited.
 #include "rapidjson/document.h"
 #include "rapidjson/istreamwrapper.h"
 
+// Controls menu state and button sprite sheet configuration
 bool g_FromPause = false;
 static std::unique_ptr<SpriteSheet> g_ControlButtonSheet = nullptr;
 static float g_ControlButtonWidth = 120.0f;
 static float g_ControlButtonHeight = 60.0f;
 
+// Audio feedback and settings slider state
 static AEAudio g_HoverSound{};
 static AEAudio g_ClickSound{};
 static int g_PreviousHoveredButton = -1;
@@ -43,6 +47,7 @@ static float g_SFXSlider = 1.0f;
 static bool g_DragMusic = false;
 static bool g_DragSFX = false;
 
+// Clamps a floating-point value to the range [0.0f, 1.0f]
 static float Clamp01(float v) noexcept
 {
     if (v < 0.0f) return 0.0f;
@@ -50,7 +55,7 @@ static float Clamp01(float v) noexcept
     return v;
 }
 
-//State
+// Tabs available in the controls menu
 enum ControlTab
 {
     TAB_KEYS = 0,
@@ -58,6 +63,8 @@ enum ControlTab
     TAB_SETTINGS
 };
 
+// Loads the controls menu configuration from GameConfig.json
+// Returns an empty JSON object if the file cannot be opened or parsed
 static rapidjson::Document LoadConfig() noexcept
 {
     rapidjson::Document doc;
@@ -78,6 +85,8 @@ static rapidjson::Document LoadConfig() noexcept
 
     return doc;
 }
+
+// Sprite-sheet frame indices for each controls-menu button state
 enum ControlButtonFrame
 {
     FRAME_KEYS = 0,
@@ -90,6 +99,7 @@ enum ControlButtonFrame
     FRAME_SETTINGS_PRESSED = 6
 };
 
+// Logical button IDs used for hover/click handling
 enum ControlButton
 {
     CONTROLBTN_NONE = -1,
@@ -99,18 +109,20 @@ enum ControlButton
     CONTROLBTN_BACK
 };
 
+// Returns true if the mouse position (in normalized device coordinates)
+// lies within a rectangle centered at (cx, cy)
 static bool IsMouseOverRect(float mx, float my, float cx, float cy, float w, float h) noexcept
 {
     return (fabs(mx - cx) <= w * 0.5f &&
         fabs(my - cy) <= h * 0.5f);
 }
 
+// Current UI tab and currently hovered button
 static ControlTab g_CurrentTab = TAB_KEYS;
-
 static int g_HoveredButton = CONTROLBTN_NONE;
 
 
-// textures, temp
+// Menu textures
 static AEGfxTexture* g_BG = nullptr;
 static AEGfxTexture* g_SettingsPanel = nullptr;
 static AEGfxTexture* g_Background = nullptr;
@@ -185,7 +197,8 @@ static constexpr int g_WeaponCount = static_cast<int>(sizeof(g_CombatCards) / si
 static constexpr int g_InteractionCount = static_cast<int>(sizeof(g_InteractionCards) / sizeof(g_InteractionCards[0]));
 static constexpr int g_BuffCount = static_cast<int>(sizeof(g_BuffCards) / sizeof(g_BuffCards[0]));
 
-//check for hovering
+// Returns true if the mouse position is inside a left-aligned menu button
+// defined by its top-left x position and center y position in Normalized Device Coordinates space
 static bool IsMouseOver(float mx, float my, float x, float y) noexcept
 {
     return (mx >= x && mx <= x + BTN_WIDTH &&
@@ -257,6 +270,9 @@ static void DrawInstructionCard(const InstructionCard& card, float cx, float cy,
     );
 }
 
+// -----------------------------------------------------------------------------
+// Loads textures required by the controls menu and instruction cards.
+// -----------------------------------------------------------------------------
 void Controls_Load()
 {
     g_SettingsPanel = TextureManager::Get().LoadTexture("Assets/Images/sliderbutton.png");
@@ -277,6 +293,10 @@ void Controls_Load()
     std::cout << "Controls:Load" << std::endl;
 }
 
+// -----------------------------------------------------------------------------
+// Initializes controls-menu state, loads button sprite-sheet settings
+// from the config file, and retrieves hover/click audio assets
+// -----------------------------------------------------------------------------
 void Controls_Initialize()
 {
     std::cout << "Controls:Initialize" << std::endl;
@@ -313,6 +333,13 @@ void Controls_Initialize()
     g_CurrentTab = TAB_KEYS;
 }
 
+// -----------------------------------------------------------------------------
+// Updates the standalone controls menu:
+// - handles keyboard exit
+// - detects button hover/click
+// - switches tabs
+// - updates music and SFX sliders in the settings tab
+// -----------------------------------------------------------------------------
 void Controls_Update()
 {
     if (AEInputCheckTriggered(AEVK_ESCAPE))
@@ -335,6 +362,7 @@ void Controls_Update()
     float w = (float)AEGfxGetWindowWidth();
     float h = (float)AEGfxGetWindowHeight();
 
+    // Convert mouse position from screen space to normalized device coordinates
     float nx = (mx / w) * 2.0f - 1.0f;
     float ny = 1.0f - (my / h) * 2.0f;
 
@@ -348,6 +376,8 @@ void Controls_Update()
         g_HoveredButton = CONTROLBTN_SETTINGS;
     else
     {
+        // Convert the back button's pixel-based draw position and size into NDC
+        // so hover detection matches the rendered sprite
         float backCX = -720.0f / (w * 0.5f);
         float backCY = 400.0f / (h * 0.5f);
         float backW = g_ControlButtonWidth / w * 2.0f;
@@ -416,11 +446,12 @@ void Controls_Update()
             g_DragSFX = false;
         }
 
-        // update values
+        // compute the slider's left edge so mouse x can be converted into a 0-1 value
         float sliderLeft = SLIDER_X - SLIDER_WIDTH * 0.5f;
 
         if (g_DragMusic)
         {
+            // map cursor position along the slider bar to a normalized volume value.
             g_MusicSlider = (nx - sliderLeft) / SLIDER_WIDTH;
             g_MusicSlider = Clamp01(g_MusicSlider);
 
@@ -436,6 +467,12 @@ void Controls_Update()
         }
     }
 }
+
+// -----------------------------------------------------------------------------
+// Updates the in-game controls overlay version of the menu.
+// Similar to Controls_Update(), but closes through UIManager instead of
+// changing game state when exiting
+// -----------------------------------------------------------------------------
 void Controls_UpdateOverlay()
 {
     if (AEInputCheckTriggered(AEVK_ESCAPE))
@@ -536,6 +573,10 @@ void Controls_UpdateOverlay()
         }
     }
 }
+
+// -----------------------------------------------------------------------------
+// Renders the keybinding reference page.
+// -----------------------------------------------------------------------------
 void DrawKeysPage()
 {
     AEGfxSetBlendMode(AE_GFX_BM_BLEND);
@@ -574,7 +615,10 @@ void DrawKeysPage()
     Print("Left Click - Attack");
 }
 
+// -----------------------------------------------------------------------------
 // draw instructions page
+// Renders the instructions tab, grouped into combat, interaction, and buff sections
+// -----------------------------------------------------------------------------
 static void DrawInstructionsPage(float halfW, float halfH)
 {
     float cardW = 300.0f;
@@ -626,6 +670,10 @@ static void DrawInstructionsPage(float halfW, float halfH)
 
 }
 
+// -----------------------------------------------------------------------------
+// Draws the shared controls-menu contents, including tab buttons and the
+// currently selected page
+// -----------------------------------------------------------------------------
 static void DrawControlsContents(float w, float h)
 {
     float halfW = w / 2.0f;
@@ -635,6 +683,7 @@ static void DrawControlsContents(float w, float h)
     {
         float btnX = (BTN_X * halfW) + 40.0f;
 
+        // draws one tab button, swapping to the pressed frame and slightly enlarging it on hover
         auto DrawBtn = [&](int normalFrame, int pressedFrame, int btnId, float ndcY)
             {
                 int frame = normalFrame;
@@ -702,7 +751,9 @@ static void DrawControlsContents(float w, float h)
     }
 }
 
-
+// -----------------------------------------------------------------------------
+// Draws the standalone controls menu screen
+// -----------------------------------------------------------------------------
 void Controls_Draw()
 {
     AESysFrameStart();
@@ -734,6 +785,9 @@ void Controls_Draw()
    AESysFrameEnd();
 }
 
+// -----------------------------------------------------------------------------
+// Draws the controls menu as an overlay on top of gameplay.
+// -----------------------------------------------------------------------------
 void Controls_DrawOverlay(float camX, float camY)
 {
     AEGfxSetBlendMode(AE_GFX_BM_BLEND);
@@ -768,6 +822,9 @@ void Controls_Free()
     std::cout << "Controls:Free" << std::endl;
 }
 
+// -----------------------------------------------------------------------------
+// Unloads all textures used by the controls menu and resets cached pointers
+// -----------------------------------------------------------------------------
 void Controls_Unload()
 {
     TextureManager::Get().UnloadTexture("Assets/Images/sliderbutton.png");

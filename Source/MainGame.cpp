@@ -55,6 +55,7 @@ static bool g_liftStartedSoundPlayed = false;
 static bool g_liftLoopPlaying = false;
 static std::unordered_map<const PlatformObstacle*, bool> g_prevSpikeStates;
 static std::unordered_map<const PlatformLaser*, bool> g_prevLaserStates;
+static float g_damageSoundCooldown = 0.0f;
 
 // Camera pan sequence state for button toggles
 static bool  g_pendingToggle      = false;
@@ -175,6 +176,10 @@ void MainGame_Initialize()
     UIManager::Get().Reset();
     g_prevSpikeStates.clear();
 
+    //reset flags so they play
+    g_liftStartedSoundPlayed = false;
+    g_liftLoopPlaying = false;
+
     // Reset camera sequence state
     g_pendingToggle      = false;
     g_pendingToggleTimer = 0.0f;
@@ -238,6 +243,7 @@ void MainGame_Update()
     }
 
     float dt = (float)AEFrameRateControllerGetFrameTime();
+    if (g_damageSoundCooldown > 0.0f) g_damageSoundCooldown -= dt;
     if (DebugManager::Get().Update(dt)) return;
     if (AEInputCheckTriggered(AEVK_ESCAPE)) { //moved from input cos update pause is tweaking
         UIManager::Get().ShowPause(globalCam.x, globalCam.y);
@@ -363,7 +369,12 @@ void MainGame_Update()
             if (canTakeObstacleDamage)
             {
                 Player_ApplyDamage(player, 1.0f);
-                AudioManager::Get().PlayAudio(AudioManager::Get().GetAudio("damage"), false);
+
+                if (g_damageSoundCooldown <= 0.0f)
+                {
+                    AudioManager::Get().PlayAudio(AudioManager::Get().GetAudio("damage"), false);
+                    g_damageSoundCooldown = 0.25f;
+                }
 
                 // Knockback horizontally away from player's movement direction
                 float knockDir = player.facingRight ? -1.0f : 1.0f;
@@ -406,12 +417,12 @@ void MainGame_Update()
 
         // ----- Camera pan sequence for computer toggles (lasers) -----
         if (results.pendingCameraPan) {
+            AudioManager::Get().PlayAudio("computer", false);
             float indicatorTime = 1.5f;
             float beamVisible = 1.0f;
             float camHoldTime = indicatorTime + beamVisible;
-            AudioManager::Get().PlayAudio("computer", false);
-            AudioManager::Get().PlayAudio("laser_on", false);
             Camera_StartSequence(results.cameraPanTargetY, globalCam.y, 0.6f, camHoldTime);
+            AudioManager::Get().PlayAudio("laser_on", false);
         }
 
         // ----- camera pan down to boss door when the pc unlocks it -----
@@ -419,10 +430,10 @@ void MainGame_Update()
             results.pendingComputer.type == CollisionManager::ToggleType::BossDoorUnlock &&
             !g_camSequenceActive && !g_pendingToggle)
         {
-            // pan down to door; unlock fires at midpoint so the player sees it change state
             AudioManager::Get().PlayAudio("computer", false);
-            AudioManager::Get().PlayAudio("elevator_unlocked", false);
+            // pan down to door; unlock fires at midpoint so the player sees it change state
             Camera_StartSequence(results.pendingComputer.targetY, globalCam.y, 0.6f, 2.0f);
+            AudioManager::Get().PlayAudio("elevator_unlocked", false);
             g_pendingToggle      = true;
             g_pendingToggleMidpt = g_camSequenceDuration + g_camHoldDuration * 0.5f;
             g_pendingToggleTimer = 0.0f;
@@ -528,7 +539,15 @@ void MainGame_Update()
                         fabs(btn.y - g_pendingToggleBtnY) < 1.0f) {
                         for (int idx : btn.wallIndices) {
                             if (idx >= 0 && idx < (int)toggleWalls.size())
+                            {
                                 toggleWalls[idx].active = !toggleWalls[idx].active;
+                                AudioManager::Get().PlayAudio(
+                                    AudioManager::Get().GetAudio(
+                                        toggleWalls[idx].active ? "platform_appear" : "platform_disappear"
+                                    ),
+                                    false
+                                );
+                            }
                         }
                         EnvironmentManager::Get().MarkStaticDirty();
                         break;
@@ -764,6 +783,7 @@ void MainGame_Update()
     if (hud.IsPauseButtonClicked(globalCam.x, globalCam.y)) {
         // Trigger press animation for pause button
         hud.TriggerPauseButtonPress();
+        AudioManager::Get().PlayAudio("click_button", false);
 
         UIManager::Get().ShowPause(globalCam.x, globalCam.y);
         return;

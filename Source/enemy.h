@@ -7,7 +7,7 @@
 \par    tse.x@digipen.edu
         joash.ng@digipen.edu
         kerwinjiajie.wong@digipen.edu
-\date Junuary, 24, 2026
+\date January, 24, 2026
 \brief the Enemy struct stores position, size, movement speed, direction, and alive status. 
 Functions initialize the enemy, update its position, draw it on screen, and free static resources
 

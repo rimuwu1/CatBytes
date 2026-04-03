@@ -983,6 +983,10 @@ void BossRoom::Update(float dt)
             e.vel.x = 0.0f;
             e.vel.y = 0.0f;
             e.hitPoints = 0.1f;
+            AudioManager::Get().PlayAudio(
+                AudioManager::Get().GetAudio("boss_dead"),
+                false
+            );
             if (e.spriteSheet) e.spriteSheet->Play("fightover");
 
             // turn monitors off on defeat
@@ -1117,6 +1121,7 @@ void BossRoom::Update(float dt)
                     {
                         active.laserState = MonitorLaserState::LockedOn;
                         active.laserTimer = 0.f;
+                        AudioManager::Get().PlayAudio("laser_off", false);
                     }
                     break;
 
@@ -1126,6 +1131,7 @@ void BossRoom::Update(float dt)
                     {
                         active.laserState = MonitorLaserState::Firing;
                         active.laserTimer = 0.f;
+                        AudioManager::Get().PlayAudio("laser_on", false);
                     }
                     break;
 
