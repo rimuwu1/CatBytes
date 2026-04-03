@@ -121,12 +121,12 @@ void SplashScreen_Draw()
         }
         
         // "ESC to skip" hint in top left during cutscene only
-        FontManager::Get().PrintCentered(FontManager::Get().GetLargeFont(),
+        FontManager::Get().PrintCentered(FontManager::Get().GetMediumFont(),
             "ESC",
-            -0.85f, 0.88f, 0.6f,
+            -0.80f, 0.88f, 0.6f,
             0.5f, 0.4f, 0.75f, 0.5f);   // teal, more transparent
 
-        FontManager::Get().PrintCentered(FontManager::Get().GetLargeFont(),
+        FontManager::Get().PrintCentered(FontManager::Get().GetMediumFont(),
             "to skip",
             -0.68f, 0.88f, 0.6f,
             0.5f, 0.5f, 0.5f, 0.4f);    // grey, more transparent

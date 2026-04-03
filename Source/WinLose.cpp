@@ -148,22 +148,22 @@ static void DrawCutsceneText(int idx)
     // upper left skip hint - separated for the color emphasis
     FontManager::Get().PrintCentered(font,
         "ESC",
-        -0.85f, 0.88f, 0.6f,
+        -0.80f, 0.88f, 0.6f,
         0.5f, 0.4f, 0.75f, 0.9f);   // teal
 
     FontManager::Get().PrintCentered(font,
-        "to skip  -",
+        "to skip",
         -0.68f, 0.88f, 0.6f,
         0.5f, 0.5f, 0.5f, 0.8f);    // grey
 
     FontManager::Get().PrintCentered(font,
         "Space/Click",
-        -0.49f, 0.88f, 0.6f,
+        -0.48f, 0.88f, 0.6f,
         1.0f, 0.6f, 0.75f, 0.9f);   // pink
 
     FontManager::Get().PrintCentered(font,
         "to continue",
-        -0.25f, 0.88f, 0.6f,
+        -0.24f, 0.88f, 0.6f,
         0.5f, 0.5f, 0.5f, 0.8f);    // grey
 }
 
