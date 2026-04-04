@@ -135,6 +135,8 @@ struct Player
 	float knockbackTimer = 0.0f;
 	float knockbackVelocity = 0.0f;
 	float knockbackAirUp = 0.0f;
+	EmitterHandle knockbackEmitter{ INVALID_EMITTER }; // trail effect during knockback
+	bool isStrongKnockback = false; // true for boss block knockback (shows cyan trail)
 
 	// player
 	u32 lastFrame = 0;
@@ -161,3 +163,4 @@ void Player_Free(Player& player);
 void Player_ApplyDamage(Player& player, float damage);
 void Player_CheckBulletCollisions(Player& player, Enemy& enemy);
 void Player_ApplyKnockback(Player& player, float sourceX, float sourceY);
+void Player_ApplyKnockbackOnly(Player& player, float sourceX, float sourceY, float knockbackDuration);
