@@ -48,6 +48,7 @@
     <ClCompile Include="..\Source\SpriteSheet.cpp" />
     <ClCompile Include="..\Source\System.cpp" />
     <ClCompile Include="..\Source\TextureManager.cpp" />
+    <ClCompile Include="..\Source\TransitionManager.cpp" />
     <ClCompile Include="..\Source\UIManager.cpp" />
     <ClCompile Include="..\Source\WinLose.cpp" />
   </ItemGroup>
@@ -89,6 +90,7 @@
     <ClInclude Include="..\Source\SpriteSheet.h" />
     <ClInclude Include="..\Source\System.h" />
     <ClInclude Include="..\Source\TextureManager.h" />
+    <ClInclude Include="..\Source\TransitionManager.h" />
     <ClInclude Include="..\Source\UIManager.h" />
     <ClInclude Include="..\Source\WinLose.h" />
   </ItemGroup>
