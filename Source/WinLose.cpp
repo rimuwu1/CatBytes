@@ -2,9 +2,12 @@
 /*!
 \file       WinLose.cpp
 \author     Sim Hui Min, Huimin, s.huimin, 2503506
+            Joash ng, joash.ng, 2502780
             Tse Xuan Qi Tristin, tse.x, 2503757
 \par        s.huimin@digipen.edu
+            joash.ng@digipen.edu
             tse.x@digipen.edu
+            
 \date       February 01 2026
 \brief      Implements the Win/Lose screen and the new-game intro cutscene.
 

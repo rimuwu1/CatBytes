@@ -1,9 +1,9 @@
 /* Start Header ************************************************************************/
 /*!
 \file TransitionManager.cpp
-\author 
-\par 
-\date 
+\author Joash ng, joash.ng, 2502780
+\par    joash.ng@digipen.edu
+\date   04/04/2026
 \brief This file implements the TransitionManager singleton for handling
        full-screen cyberpunk strip transitions between game states.
 

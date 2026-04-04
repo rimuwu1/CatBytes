@@ -3,8 +3,10 @@
 \file Controls.cpp
 \author Tse Xuan Qi Tristin, tse.x, 2503757
         Kerwin Wong Jia Jie, kerwinjiajie.wong, 2502740
+        Joash Ng, joash.ng, 2502780
 \par tse.x@digipen.edu
      kerwinjiajie.wong@digipen.edu
+     joash.ng@digipen.edu
 \date January, 24, 2026
 \brief Implements the Controls menu and in-game controls overlay, including
 tab switching, button hover/click handling, instruction card rendering,

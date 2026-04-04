@@ -3,8 +3,10 @@
 \file Credits.cpp
 \author Tse Xuan Qi Tristin, tse.x, 2503757
         Sim Hui Min, s.huimin, 2503506
+        Joash ng, joash.ng, 2502780
 \par tse.x@digipen.edu
      s.huimin@digipen.edu
+     joash.ng@digipen.edu
 \date January, 24, 2026
 \brief
 
