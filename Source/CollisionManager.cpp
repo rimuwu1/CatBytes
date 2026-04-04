@@ -218,9 +218,16 @@ namespace CollisionManager
             if (fabsf(projRgt) > radiusRgt) continue;
 
             // Overlap on both axes — hit
-            Player_ApplyDamage(player, boss.laserDamage);
-            const float dir = (player.pos.x >= laser.origin.x) ? 1.0f : -1.0f;
-            player.vel.x = dir * boss.laserKnockback;
+            if (!player.isHurt)
+            {
+                Player_ApplyDamage(player, boss.laserDamage);
+                // Use proper knockback system - standard knockback with damage
+                const float dir = (player.pos.x >= laser.origin.x) ? 1.0f : -1.0f;
+                player.vel.x = dir * boss.laserKnockback;
+                player.knockbackVel.x = player.vel.x;
+                player.knockbackVel.y = player.vel.y;
+                player.knockbackTimer = player.hurtTimer > 0.0f ? player.hurtTimer : 0.6f;
+            }
         }
     }
 

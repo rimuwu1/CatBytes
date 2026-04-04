@@ -31,6 +31,7 @@ Technology is prohibited.
 #include "AudioManager.h"
 #include "Camera.h"
 #include "SpriteSheet.h"
+#include "ParticleManager.h"
 #include <fstream>
 #include <iostream>
 #include <cmath>
@@ -42,6 +43,10 @@ namespace {
     // Constants for player pushback when boss blocks
     constexpr float BOSS_BLOCK_PUSHBACK_HORIZONTAL = 1400.0f;
     constexpr float BOSS_BLOCK_PUSHBACK_VERTICAL = 200.0f;
+    // Enhanced knockback for boss block (2.5x multiplier, 400.0f up, 1.5x timer)
+    constexpr float BOSS_BLOCK_ENHANCED_HORIZONTAL = 3500.0f;
+    constexpr float BOSS_BLOCK_ENHANCED_VERTICAL = 400.0f;
+    constexpr float BOSS_BLOCK_ENHANCED_DURATION = 1.2f;
 }
 
 // Audio assets and playback flags for enemy actions (attack, damage, death)
@@ -1092,7 +1097,11 @@ void HardEnemy_Update(Enemy& enemy, float dt) {
                 Camera_AddTrauma(0.5f);
             }
             enemy.hasAppliedAttackDamage = true;
-            enemy.meleeCooldownTimer = enemy.meleeCooldown;
+            // Only apply cooldown to non-boss enemies (boss has its own AI timing)
+            if (enemy.type != EnemyType::Boss)
+            {
+                enemy.meleeCooldownTimer = enemy.meleeCooldown;
+            }
         }
 
 
@@ -1284,6 +1293,27 @@ void Enemy_OnHit(Enemy& enemy, float damage, float knockbackDir, Player* attacke
     bool killingBlow = (enemy.type == EnemyType::Boss && enemy.hitPoints - damage <= 0.0f);
     if (enemy.isInvincible && !killingBlow)
     {
+        // Apply knockback only when boss is specifically blocking (block animation)
+        bool isBlocking = enemy.type == EnemyType::Boss && 
+                          enemy.spriteSheet && 
+                          enemy.spriteSheet->GetCurrentClip() == "block";
+        
+        if (isBlocking && attacker)
+        {
+            float blockDir = (attacker->pos.x < enemy.pos.x) ? -1.0f : 1.0f;
+            // Standard knockback for melee hitting blocking boss
+            attacker->vel.x = blockDir * BOSS_BLOCK_PUSHBACK_HORIZONTAL;
+            attacker->vel.y = BOSS_BLOCK_PUSHBACK_VERTICAL;
+            attacker->knockbackVel.x = attacker->vel.x;
+            attacker->knockbackVel.y = attacker->vel.y;
+            attacker->knockbackTimer = 0.8f;
+            attacker->isHurt = true;
+            attacker->hurtTimer = 0.8f;
+            attacker->isStrongKnockback = true; // Enable cyan trail
+
+            // Cyan/turquoise neon burst particles at player position when knockback occurs
+            ParticleManager_Emit(attacker->pos.x, attacker->pos.y, 30, 400.0f, 0, 255, 255);
+        }
         if (enemy.spriteSheet)
         {
             const std::string clip = enemy.spriteSheet->GetCurrentClip();
@@ -1312,21 +1342,6 @@ void Enemy_OnHit(Enemy& enemy, float damage, float knockbackDir, Player* attacke
             return;
 
         enemy.hitCooldownTimer = enemy.hitCooldown;
-    }
-
-    if (enemy.type == EnemyType::Boss && enemy.spriteSheet
-        && enemy.spriteSheet->GetCurrentClip() == "block")
-    {
-        if (attacker)
-        {
-            float blockDir = (attacker->pos.x < enemy.pos.x) ? -1.0f : 1.0f;
-            attacker->vel.x = blockDir * BOSS_BLOCK_PUSHBACK_HORIZONTAL;
-            attacker->vel.y = BOSS_BLOCK_PUSHBACK_VERTICAL;
-            attacker->knockbackTimer = 0.8f;
-            attacker->isHurt = true;
-            attacker->hurtTimer = 0.8f;
-        }
-        return;
     }
 
     // Only block damage if already in dead animation (allow knockback to re-trigger)
@@ -1461,11 +1476,20 @@ void HardEnemy_OnCollision(Enemy& enemy, Player& player)
         if (!player.isHurt)
         {
             float blockDir = (player.pos.x < enemy.pos.x) ? -1.0f : 1.0f;
+            // Standard knockback when player collides with blocking boss
             player.vel.x = blockDir * BOSS_BLOCK_PUSHBACK_HORIZONTAL;
             player.vel.y = BOSS_BLOCK_PUSHBACK_VERTICAL;
+            // Also set knockbackVel so Input.cpp system works
+            player.knockbackVel.x = player.vel.x;
+            player.knockbackVel.y = player.vel.y;
             player.knockbackTimer = 0.8f;
+            // Make player invulnerable during knockback
             player.isHurt = true;
             player.hurtTimer = 0.8f;
+            player.isStrongKnockback = true; // Enable cyan trail
+
+            // Cyan/turquoise neon burst particles
+            ParticleManager_Emit(player.pos.x, player.pos.y, 30, 400.0f, 0, 255, 255);
         }
         return;
     }
@@ -1508,7 +1532,7 @@ void HardEnemy_OnCollision(Enemy& enemy, Player& player)
                 if (!enemy.hasAppliedAttackDamage && Enemy_IsInCamera(enemy))
                     AudioManager::Get().PlayAudio(s_BossAttackSound, false);
             }
-            else if (clip == "attackpunch")
+            else if (clip == "attackpunch" || clip == "attackidle")
             {
                 canDamage = true;
                 knockSpeed = 700.0f;
@@ -1523,7 +1547,10 @@ void HardEnemy_OnCollision(Enemy& enemy, Player& player)
             Player_ApplyDamage(player, enemy.damage);
 
             float knockDir = (player.pos.x >= enemy.pos.x) ? 1.0f : -1.0f;
-            player.vel.x = knockDir * knockSpeed;
+            // Standard knockback (same as boss lasers)
+            player.vel.x = knockDir * 400.0f;
+            player.knockbackVel.x = player.vel.x;
+            player.knockbackVel.y = player.vel.y;
             player.knockbackTimer = player.hurtTimer > 0.0f ? player.hurtTimer : 0.6f;
             Camera_AddTrauma(0.5f);
         }

@@ -303,6 +303,7 @@ void Player_Init(Player& player, const rapidjson::Value& config)
 
 	// dash trail particles
 	player.dashEmitter = INVALID_EMITTER;
+	player.knockbackEmitter = INVALID_EMITTER;
 }
 
 // -----------------------------------------------------------------------------
@@ -397,6 +398,25 @@ bool Player_HandleKnockback(Player& player, float dt, PhysicsManager& physics)
 		player.knockbackTimer -= dt;
 		if (player.knockbackTimer < 0.0f) player.knockbackTimer = 0.0f;
 
+		// Only show cyan knockback trail for strong knockback (boss block)
+		if (player.isStrongKnockback)
+		{
+			// Start knockback trail emitter if not already running
+			if (player.knockbackEmitter == INVALID_EMITTER) {
+				player.knockbackEmitter = ParticleManager_EmitterStart(
+					player.pos.x, player.pos.y,
+					60,                         // particles per second
+					100.0f,                     // speed
+					0, 255, 255,                // cyan/turquoise neon trail (RGB)
+					0.1f, 0.3f,                // short life for fast-moving trail
+					3.0f, 6.0f                 // small particles
+				);
+			} else {
+				// Move emitter to player position
+				ParticleManager_EmitterMove(player.knockbackEmitter, player.pos.x, player.pos.y);
+			}
+		}
+
 		if (!player.isDashing) {
 			physics.ApplyGravity(player.vel.y, static_cast<bool>(player.grounded), dt);
 			physics.ClampFallSpeed(player.vel.y);
@@ -415,6 +435,16 @@ bool Player_HandleKnockback(Player& player, float dt, PhysicsManager& physics)
 		s_prevGrounded = player.grounded;
 		return true;
 	}
+
+	// Stop knockback trail emitter when knockback ends
+	if (player.knockbackEmitter != INVALID_EMITTER) {
+		ParticleManager_EmitterStop(player.knockbackEmitter);
+		player.knockbackEmitter = INVALID_EMITTER;
+	}
+
+	// Reset strong knockback flag
+	player.isStrongKnockback = false;
+
 	return false;
 }
 
@@ -1096,10 +1126,36 @@ void Player_ApplyKnockback(Player& player, float sourceX, float sourceY)
 	player.vel.y = player.knockbackVel.y;
 }
 
-// -----------------------------------------------------------------------------
-// Checks collision between player bullets and enemies,
-// applies damage, and handles special cases such as boss blocking
-// -----------------------------------------------------------------------------
+// Apply knockback without damage - used for boss block and similar scenarios
+// Player becomes invulnerable during knockback (isHurt = true blocks other damage)
+void Player_ApplyKnockbackOnly(Player& player, float sourceX, float sourceY, float knockbackDuration)
+{
+	float dirX = player.pos.x - sourceX;
+	float dirY = player.pos.y - sourceY;
+
+	float length = sqrtf(dirX * dirX + dirY * dirY);
+	float dir = 1.0f;
+	if (length > 0.0f)
+	{
+		dirX /= length;
+		dirY /= length;
+		dir = (player.pos.x < sourceX) ? -1.0f : 1.0f;
+	}
+
+	// Use standard knockback velocity from player stats
+	float knockbackForce = player.knockbackVelocity > 0.0f ? player.knockbackVelocity : 500.0f;
+	player.knockbackVel.x = dir * knockbackForce;
+	player.knockbackVel.y = player.grounded ? 0.0f : player.knockbackAirUp;
+
+	player.knockbackTimer = knockbackDuration;
+	player.vel.x = player.knockbackVel.x;
+	player.vel.y = player.knockbackVel.y;
+
+	// Make player invulnerable during knockback (blocks damage in Player_ApplyDamage)
+	player.isHurt = true;
+	player.hurtTimer = knockbackDuration;
+}
+
 void Player_CheckBulletCollisions(Player& player, Enemy& enemy)
 {
 	for (auto& b : player.bullets)
@@ -1124,13 +1180,10 @@ void Player_CheckBulletCollisions(Player& player, Enemy& enemy)
 				&& enemy.spriteSheet
 				&& enemy.spriteSheet->GetCurrentClip() == "block")
 			{
-				// push player back, no damage, no hitStun
-				float blockDir = (player.pos.x < enemy.pos.x) ? -1.0f : 1.0f;
-				player.vel.x = blockDir * BLOCK_PUSHBACK_HORIZONTAL;
-				player.vel.y = BLOCK_PUSHBACK_VERTICAL;
-				player.knockbackTimer = 0.8f;
+				// No knockback for bullets hitting blocking boss
+				// Just make player invulnerable briefly so bullet doesn't hurt
 				player.isHurt = true;
-				player.hurtTimer = 0.8f;
+				player.hurtTimer = 0.1f;
 				continue;
 			}
 			float knockbackDir = (b.vel.x > 0.0f) ? 1.0f : -1.0f;
@@ -1159,6 +1212,12 @@ void Player_Free(Player& player)
 	if (player.dashEmitter != INVALID_EMITTER) {
 		ParticleManager_EmitterStop(player.dashEmitter);
 		player.dashEmitter = INVALID_EMITTER;
+	}
+
+	// free knockback trail particles
+	if (player.knockbackEmitter != INVALID_EMITTER) {
+		ParticleManager_EmitterStop(player.knockbackEmitter);
+		player.knockbackEmitter = INVALID_EMITTER;
 	}
 
 	// free bullets

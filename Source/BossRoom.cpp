@@ -1162,10 +1162,13 @@ void BossRoom::Update(float dt)
                         float dist2    = distX * distX + distY * distY;
                         inBeam = (dist2 <= beamHalfW * beamHalfW);
                     }
-                    if (inBeam)
+                    if (inBeam && !player.isHurt)
                     {
                         player.vel.x = (player.pos.x < active.laserTrackedX ? -1.f : 1.f) * g_laserKnockback;
                         player.vel.y = g_laserKnockback * 0.5f;
+                        player.knockbackVel.x = player.vel.x;
+                        player.knockbackVel.y = player.vel.y;
+                        player.knockbackTimer = player.hurtTimer > 0.0f ? player.hurtTimer : 0.6f;
                         Player_ApplyDamage(player, g_laserDamage);
                     }
 
