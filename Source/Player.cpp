@@ -68,7 +68,7 @@ static const float MELEE_COOLDOWN = 0.3f;
 static int s_prevGrounded = 1;
 
 namespace {
-    void Player_HandleJumpInput(Player& player);
+    void Player_HandleJumpInput(Player& /*player*/);
     void Player_HandlePogoSound(Player& player);
     void Player_HandleHurt(Player& player, float dt);
     bool Player_HandleKnockback(Player& player, float dt, PhysicsManager& physics);
@@ -323,7 +323,7 @@ void Player_Update(Player& player, float dt)
 {
 	PhysicsManager& physics = PhysicsManager::Get();
 
-	Player_HandleJumpInput(player);
+    Player_HandleJumpInput(player);
 	Player_HandlePogoSound(player);
 
 	// Apply gravity (skipped while grounded or dashing so velocity does not accumulate)
@@ -356,14 +356,14 @@ void Player_Update(Player& player, float dt)
 
 namespace {
 
-void Player_HandleJumpInput(Player& player)
+void Player_HandleJumpInput(Player& /*player*/)
 {
-	// Only play jump sound if player actually pressed jump (not just walking off platforms)
-	if (s_JumpPressedThisFrame)
-	{
-		AudioManager::Get().PlayAudio(s_JumpSound, false);
-		s_JumpPressedThisFrame = false;
-	}
+    // Only play jump sound if player actually pressed jump (not just walking off platforms)
+    if (s_JumpPressedThisFrame)
+    {
+        AudioManager::Get().PlayAudio(s_JumpSound, false);
+        s_JumpPressedThisFrame = false;
+    }
 }
 
 void Player_HandlePogoSound(Player& player)
