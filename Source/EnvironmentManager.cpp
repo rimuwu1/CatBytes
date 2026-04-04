@@ -2100,9 +2100,8 @@ void EnvironmentManager::PatchBossDoorLockedInSave()
 {
     if (!m_bossDoorLoaded) return;
 
-    // Wait for any in-progress save to complete before patching
-    // The lift sequence (~3 seconds) provides ample time for async save to finish
-    GameSaveManager::WaitForSaveToFinish();
+    // Fire-and-forget: patch immediately without waiting for save to finish
+    // If save is still in progress, we might read stale data but that's okay for fire-and-forget
 
     // read the whole file as a string
     std::ifstream ifs("Assets/Data/GameSave.json");

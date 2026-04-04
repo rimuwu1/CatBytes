@@ -68,7 +68,8 @@ static float g_bossRoomFadeAlpha = 1.0f; // start fully dark
 static bool  g_bossRoomFadingIn  = true;
 static float g_playerWalkTarget = -500.0f; // static gets overwritten below
 
-static BossAIData g_bossAI;
+// Non-static so it can be accessed from enemy.cpp for pre-emptive block logic
+BossAIData g_bossAI;
 
 // ============================================================
 // monitor state
@@ -703,11 +704,12 @@ void BossRoom_Update()
     // noclip - skip collision handling when active
     if (DebugManager::Get().IsNoclipActive()) {
         player.vel.y = 0.0f;
-        player.grounded = 1;
-        if (AEInputCheckCurr(AEVK_W)) player.pos.y += 400.f * dt;
-        if (AEInputCheckCurr(AEVK_S)) player.pos.y -= 400.f * dt;
-        if (AEInputCheckCurr(AEVK_A)) player.pos.x -= 400.f * dt;
-        if (AEInputCheckCurr(AEVK_D)) player.pos.x += 400.f * dt;
+        player.grounded = 0;
+        const float noclipSpeed = 1000.0f;
+        if (AEInputCheckCurr(AEVK_W)) player.pos.y += noclipSpeed * dt;
+        if (AEInputCheckCurr(AEVK_S)) player.pos.y -= noclipSpeed * dt;
+        if (AEInputCheckCurr(AEVK_A)) player.pos.x -= noclipSpeed * dt;
+        if (AEInputCheckCurr(AEVK_D)) player.pos.x += noclipSpeed * dt;
     }
     
     float playerPrevY = player.pos.y;

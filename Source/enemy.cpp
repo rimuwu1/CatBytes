@@ -32,6 +32,7 @@ Technology is prohibited.
 #include "Camera.h"
 #include "SpriteSheet.h"
 #include "ParticleManager.h"
+#include "BossAI.h"
 #include <fstream>
 #include <iostream>
 #include <cmath>
@@ -1289,6 +1290,71 @@ void BossEnemy_Update(Enemy& enemy, const Player& player, float dt) {
 void Enemy_OnHit(Enemy& enemy, float damage, float knockbackDir, Player* attacker)
 {
     if (!enemy.isAlive) return;
+
+    // Pre-emptive block check for boss: trigger blocking BEFORE damage is applied
+    // This fixes the timing issue where boss would take damage before entering block state
+    if (enemy.type == EnemyType::Boss && attacker)
+    {
+        // Find boss in ObjectManager to get BossAIData
+        auto& enemies = ObjectManager::Get().GetAllEnemies();
+        for (auto& e : enemies)
+        {
+            if (e.type == EnemyType::Boss)
+            {
+                // Only trigger block on fresh hits when boss is in vulnerable states
+                // Don't interrupt attack animations (Jump, ChargeSlam, etc.)
+                bool canBlock = (g_bossAI.attackState == BossAttackState::Idle
+                    || g_bossAI.attackState == BossAttackState::WalkToRange);
+                
+                if (e.hitStunTimer <= 0.0f && e.hitPoints > 0.1f && canBlock)
+                {
+                    // Guarantee system: after 3 blocks, force damage; after 3 damages, force block
+                    bool shouldBlock = false;
+                    
+                    if (g_bossAI.consecutiveBlocks >= 3)
+                    {
+                        // Blocked 3 times in a row - force damage
+                        shouldBlock = false;
+                        g_bossAI.consecutiveBlocks = 0;
+                        g_bossAI.consecutiveDamages++;
+                    }
+                    else if (g_bossAI.consecutiveDamages >= 3)
+                    {
+                        // Took damage 3 times in a row - force block
+                        shouldBlock = true;
+                        g_bossAI.consecutiveDamages = 0;
+                        g_bossAI.consecutiveBlocks++;
+                    }
+                    else
+                    {
+                        // Normal 60% block chance
+                        float roll = (float)rand() / (float)RAND_MAX;
+                        shouldBlock = (roll < 0.60f);
+                        
+                        if (shouldBlock)
+                        {
+                            g_bossAI.consecutiveBlocks++;
+                            g_bossAI.consecutiveDamages = 0;
+                        }
+                        else
+                        {
+                            g_bossAI.consecutiveDamages++;
+                            g_bossAI.consecutiveBlocks = 0;
+                        }
+                    }
+                    
+                    if (shouldBlock)
+                    {
+                        // Force boss into blocking state immediately
+                        g_bossAI.attackState = BossAttackState::Blocking;
+                        g_bossAI.stateTimer = 0.0f;
+                        e.isInvincible = true;
+                    }
+                }
+                break;
+            }
+        }
+    }
 
     bool killingBlow = (enemy.type == EnemyType::Boss && enemy.hitPoints - damage <= 0.0f);
     if (enemy.isInvincible && !killingBlow)

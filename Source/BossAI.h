@@ -2,7 +2,9 @@
 /*!
 \file   BossAI.h
 \author Sim Hui Min, s.huimin, 2503506
+        Joash Ng, joash.ng, 2502780
 \par    s.huimin@digipen.edu
+        joash.ng@digipen.edu
 \date   22/01/2026
 \brief  Boss AI state machine declaration.
 */
@@ -56,6 +58,9 @@ struct BossAIData {
     float idleTimer      = 0.0f;  // time spent in Idle before picking attack
     float consecutiveHits = 0;    // how many hits player has landed recently
     float consecutiveHitTimer = 0.0f; // resets after a window
+    
+    int consecutiveBlocks = 0;    // how many hits boss blocked in a row
+    int consecutiveDamages = 0;   // how many hits boss took in a row
 
     bool blockFacingLeft = false;
 
@@ -85,3 +90,6 @@ bool BossAI_LasersActive (const BossAIData& ai);
 bool BossAI_IsFightOver  (const BossAIData& ai);
 bool BossAI_IsFrozen     (const BossAIData& ai); 
 bool BossAI_TryBlock(BossAIData& ai, Enemy& boss, Player& player); // block
+
+// Boss AI data instance (defined in BossRoom.cpp)
+extern BossAIData g_bossAI;

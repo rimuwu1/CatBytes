@@ -62,9 +62,9 @@ void TransitionManager::Update(float dt)
     {
         if (m_elapsed >= totalCoverTime)
         {
+            // screen is fully covered - change state 
             if (!m_stateChanged)
             {
-                // Queue the state change via GameStateManager
                 GameStateManager::Get().next = m_nextState;
                 m_stateChanged = true;
             }
@@ -101,9 +101,9 @@ void TransitionManager::Draw(float camX, float camY)
     float screenHeight = static_cast<float>(AEGfxGetWindowHeight());
     float stripHeight  = screenHeight / STRIP_COUNT;
 
-    // Strip colors (RGB 0-255 for MeshManager::DrawSquare)
-    const int deepPurpleR = 46,  deepPurpleG = 0,   deepPurpleB = 89;
-    const int cyanR       = 0,   cyanG       = 207, cyanB       = 255;
+    // Strip colors (RGB 0-255 for MeshManager::DrawSquare) - two dark deep purple shades
+    const int darkPurple1R = 20,  darkPurple1G = 0,   darkPurple1B = 40;   // darker shade
+    const int darkPurple2R = 40,   darkPurple2G = 0,   darkPurple2B = 60;   // slightly lighter
 
     for (int i = 0; i < STRIP_COUNT; ++i)
     {
@@ -149,15 +149,15 @@ void TransitionManager::Draw(float camX, float camY)
         // Strip i: bottom strip (i=0) at bottom of screen
         float stripCenterY = (screenHeight * 0.5f) - (static_cast<float>(i) + 0.5f) * stripHeight;
 
-        // Select color based on strip index
+        // Select color based on strip index (alternating dark purple shades)
         int r, g, b;
         if (i % 2 == 0)
         {
-            r = deepPurpleR; g = deepPurpleG; b = deepPurpleB;
+            r = darkPurple1R; g = darkPurple1G; b = darkPurple1B;
         }
         else
         {
-            r = cyanR; g = cyanG; b = cyanB;
+            r = darkPurple2R; g = darkPurple2G; b = darkPurple2B;
         }
 
         // Draw strip using MeshManager, offset by camera to stay in screen space

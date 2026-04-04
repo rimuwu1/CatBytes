@@ -2,7 +2,9 @@
 /*!
 \file   BossAI.cpp
 \author Sim Hui Min, s.huimin, 2503506
+		Joash Ng, joash.ng, 2502780
 \par    s.huimin@digipen.edu
+        joash.ng@digipen.edu
 \date   22/01/2026
 \brief  Boss AI state machine declaration.
 */
@@ -128,7 +130,7 @@ bool BossAI_TryBlock(BossAIData& ai, Enemy& boss, Player& player)
     if (!facingToward)
         return false;
 
-    // block succeeded — apply enhanced knockback (no damage)
+    // block succeeded ï¿½ apply enhanced knockback (no damage)
     Player_ApplyKnockback(player, boss.pos.x, boss.pos.y);
     player.vel.x *= 2.5f;   
     player.vel.y  = 400.0f;  
@@ -211,7 +213,7 @@ void BossAI_Update(BossAIData& ai, Enemy& boss, Player& player, float dt)
         }
         else
         {
-            // in range — do a small back-and-forth pace
+            // in range ï¿½ do a small back-and-forth pace
             PlayIfDifferent(boss, "walk");
             float paceDir = (ai.stateTimer < 0.8f) ? 1.0f : -1.0f;
             boss.vel.x = paceDir * WALK_SPEED * 0.3f;
@@ -282,7 +284,7 @@ void BossAI_Update(BossAIData& ai, Enemy& boss, Player& player, float dt)
 
         if (dist < 20.0f)
         {
-            // reached target — punch
+            // reached target ï¿½ punch
             boss.vel.x     = 0.0f;
             ai.attackState = BossAttackState::Punch;
             ai.stateTimer  = 0.0f;
@@ -479,7 +481,7 @@ void BossAI_Update(BossAIData& ai, Enemy& boss, Player& player, float dt)
 
         if (ai.stateTimer >= USEPC_TIME)
         {
-            // transition complete — Phase 2 begins
+            // transition complete ï¿½ Phase 2 begins
             ai.phaseTransitionDone = true;
             ai.phase               = BossPhase::Phase2;
             ai.lasersEnabled       = false;
@@ -531,16 +533,20 @@ void BossAI_Update(BossAIData& ai, Enemy& boss, Player& player, float dt)
         }
     }
 
-      // apply velocity to position — BossEnemy_Update no longer does this
+      // apply velocity to position ï¿½ BossEnemy_Update no longer does this
     boss.pos.x += boss.vel.x * dt;
     boss.pos.y += boss.vel.y * dt;
 
-    // clamp to floor
-    const float floorY = -325.0f + boss.height * 0.5f;
-    if (boss.pos.y < floorY)
+    // clamp to floor (skip during jump/slam so boss can leave the ground)
+    if (ai.attackState != BossAttackState::Jump 
+        && ai.attackState != BossAttackState::SlamDown)
     {
-        boss.pos.y = floorY;
-        boss.vel.y = 0.0f;
+        const float floorY = -325.0f + boss.height * 0.5f;
+        if (boss.pos.y < floorY)
+        {
+            boss.pos.y = floorY;
+            boss.vel.y = 0.0f;
+        }
     }
 
     // clamp boss to arena bounds
