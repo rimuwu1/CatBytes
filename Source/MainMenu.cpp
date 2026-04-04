@@ -169,7 +169,7 @@ void MainMenu_Load()
 
     // load background texture once at load time
     g_MainMenuBG = TextureManager::Get().LoadTexture("Assets/Images/MainMenuBackground.png");  
-    TransitionManager::GetInstance().Init();
+
 }
 
 void MainMenu_Initialize()
@@ -354,13 +354,13 @@ void MainMenu_Update()
     }
 
     // Handle clicks (disabled during transition)
-    if (!TransitionManager::GetInstance().IsActive() && newHover != BTN_NONE && AEInputCheckTriggered(AEVK_LBUTTON))
+    if (!TransitionManager::Get().IsActive() && newHover != BTN_NONE && AEInputCheckTriggered(AEVK_LBUTTON))
     {
         switch (newHover)
         {
         case BTN_CONTINUE:
             AudioManager::Get().PlayAudio(g_ClickSound, false);
-            TransitionManager::GetInstance().Start(GS_MAINGAME);
+            TransitionManager::Get().Start(GS_MAINGAME);
             break;
         case BTN_NEWGAME:
             AudioManager::Get().PlayAudio(g_ClickSound, false);
@@ -372,7 +372,7 @@ void MainMenu_Update()
                         g_newGame = true;
                         GameSaveManager::ResetSave();
                         textScreenMessage = "Cutscene";
-                        TransitionManager::GetInstance().Start(GS_WINLOSE);
+                        TransitionManager::Get().Start(GS_WINLOSE);
                     },
                     []() { /* cancel – do nothing */ },
                     globalCam.x, globalCam.y
@@ -380,25 +380,25 @@ void MainMenu_Update()
             }
             else {
                 GameSaveManager::ResetSave();
-                /*TransitionManager::GetInstance().Start(GS_MAINGAME);*/
+                /*TransitionManager::Get().Start(GS_MAINGAME);*/
                 textScreenMessage = "Cutscene";
-                TransitionManager::GetInstance().Start(GS_WINLOSE);
+                TransitionManager::Get().Start(GS_WINLOSE);
             }
             break;
         case BTN_CONTROLS:
             AudioManager::Get().PlayAudio(g_ClickSound, false);
-            TransitionManager::GetInstance().Start(GS_CONTROLS);
+            TransitionManager::Get().Start(GS_CONTROLS);
             break;
         case BTN_CREDITS:
             AudioManager::Get().PlayAudio(g_ClickSound, false);
-            TransitionManager::GetInstance().Start(GS_CREDITS);
+            TransitionManager::Get().Start(GS_CREDITS);
             break;
         case BTN_EXIT:
                 UIManager::Get().ShowConfirmation(
                     "Quit Game?",
                     "Are You Sure You Want To Quit?",
                     []() {
-                        TransitionManager::GetInstance().Start(GS_QUIT);
+                        TransitionManager::Get().Start(GS_QUIT);
                     },
                     []() { /* cancel – do nothing */ },
                     globalCam.x, globalCam.y
@@ -429,7 +429,7 @@ void MainMenu_Update()
             g_LogoAnim->Play("intro");
     }
 
-    TransitionManager::GetInstance().Update(AEFrameRateControllerGetFrameTime() / 1000.0f);
+    TransitionManager::Get().Update(AEFrameRateControllerGetFrameTime());
 }
 
 void MainMenu_Draw()
@@ -622,10 +622,9 @@ void MainMenu_Draw()
 
     //pop up draw
     UIManager::Get().Draw(0, 0);
+    TransitionManager::Get().Draw();
     AESysFrameEnd();
     std::cout << "Main Menu:Draw" << std::endl;
-
-    TransitionManager::GetInstance().Draw();
 }
 
 void MainMenu_Free()

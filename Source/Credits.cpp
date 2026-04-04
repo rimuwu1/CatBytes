@@ -28,7 +28,6 @@ static AEGfxTexture* logoTexture = nullptr;
 
 void Credits_Load()
 {
-    TransitionManager::GetInstance().Init();
     std::cout << "Credits:Load" << std::endl;
 }
 
@@ -46,12 +45,12 @@ void Credits_Update()
     float dt = static_cast<float>(AEFrameRateControllerGetFrameTime());
     totalElapsedTime += dt;
 
-    TransitionManager::GetInstance().Update(dt);
+    TransitionManager::Get().Update(dt);
 
     // skip with ESC
     if (totalElapsedTime > 5.0f || AEInputCheckTriggered(AEVK_ESCAPE))
     {
-        TransitionManager::GetInstance().Start(GS_MAINMENU);
+        TransitionManager::Get().Start(GS_MAINMENU);
         totalElapsedTime = 0.0f;
     }
 }
@@ -60,7 +59,7 @@ void Credits_Draw()
     AESysFrameStart();
     AEGfxSetBackgroundColor(0.9f, 0.9f, 0.9f); // light gray background
 
-    TransitionManager::GetInstance().Draw();
+    TransitionManager::Get().Draw();
 
     // screen 1 logo
     if (totalElapsedTime <= 1.0f)

@@ -14,35 +14,39 @@ Technology is prohibited.
 */
 /* End Header **************************************************************************/
 #pragma once
-#include "AEEngine.h"
 
 enum class TransitionPhase { Idle, Covering, Holding, Revealing };
 
 class TransitionManager {
 public:
-    static TransitionManager& GetInstance();
+    // Returns the single instance (Meyer's singleton) - matches codebase pattern
+    static TransitionManager& Get()
+    {
+        static TransitionManager instance;
+        return instance;
+    }
 
-    void Init();    // call once at app startup or first use
-    void Free();    // call once at app shutdown
+    // Delete copy constructor and assignment operator
+    TransitionManager(const TransitionManager&) = delete;
+    TransitionManager& operator=(const TransitionManager&) = delete;
+
     void Update(float dt);
     void Draw();
     void Start(int nextStateId);
     bool IsActive() const;
+    bool IsFullyCovered() const;  // True during Holding phase (screen fully covered)
 
 private:
     TransitionManager() = default;
     ~TransitionManager() = default;
-    TransitionManager(const TransitionManager&) = delete;
-    TransitionManager& operator=(const TransitionManager&) = delete;
 
     static const int   STRIP_COUNT    = 14;
-    static const float STRIP_DURATION;
-    static const float STAGGER_TIME;
-    static const float HOLD_DURATION;
+    static constexpr float STRIP_DURATION = 0.18f;
+    static constexpr float STAGGER_TIME   = 0.04f;
+    static constexpr float HOLD_DURATION  = 0.08f;
 
     TransitionPhase     m_phase        = TransitionPhase::Idle;
     float               m_elapsed      = 0.0f;
     int                 m_nextState    = -1;
     bool                m_stateChanged = false;
-    AEGfxVertexList*    m_pMesh        = nullptr;
 };

@@ -41,7 +41,6 @@ void SplashScreen_Load()
 	Logo = TextureManager::Get().LoadTexture("Assets/Images/titleicon.png");
 	meleeIcon = TextureManager::Get().LoadTexture("Assets/Images/meleeIcon.png");
 	std::cout << "Splash Screen: Load" << std::endl;
-	TransitionManager::GetInstance().Init();
 }
 
 void SplashScreen_Initialize()
@@ -79,7 +78,7 @@ void SplashScreen_Update()
 	opacity = 0.0f;
 	std::cout << "Splash Screen: Update" << std::endl;
 
-	TransitionManager::GetInstance().Update(dt);
+	TransitionManager::Get().Update(dt);
 }
 
 void SplashScreen_Draw()
@@ -171,14 +170,13 @@ void SplashScreen_Draw()
         
         // Transition to main menu when loading complete
         if (loadingDone) {
-            TransitionManager::GetInstance().Start(GS_MAINMENU);
+            TransitionManager::Get().Start(GS_MAINMENU);
         }
     }
     
+	TransitionManager::Get().Draw();
 	AESysFrameEnd();
 	std::cout << "Splash Screen: Draw" << std::endl;
-
-	TransitionManager::GetInstance().Draw();
 }
 
 void SplashScreen_Free()

@@ -185,7 +185,6 @@ static void StopCutsceneMusic()
 // ============================================================
 void WinLose_Load()
 {
-    TransitionManager::GetInstance().Init();
 
     // defaults matching GameConfig.json cutscene_images block
     s_WinTexPath  = "Assets/Images/F8.png";
@@ -318,7 +317,7 @@ void WinLose_Update()
 {
     float dt = (float)AEFrameRateControllerGetFrameTime();
 
-    TransitionManager::GetInstance().Update(dt);
+    TransitionManager::Get().Update(dt);
 
     if (s_Mode == WLMode::Cutscene)
     {
@@ -328,7 +327,7 @@ void WinLose_Update()
             if (s_fadeAlpha >= 1.0f)
             {
                 textScreenMessage = "You Lose";
-                TransitionManager::GetInstance().Start(GS_MAINGAME);
+                TransitionManager::Get().Start(GS_MAINGAME);
             }
             return;
         }
@@ -371,7 +370,7 @@ void WinLose_Update()
         {
             AudioManager::Get().PlayAudio(s_ClickSound, false);
             g_FromWinToCredits = true;
-            TransitionManager::GetInstance().Start(GS_CREDITS);
+            TransitionManager::Get().Start(GS_CREDITS);
         }
         return;
     }
@@ -381,10 +380,10 @@ void WinLose_Update()
     {
         AudioManager::Get().PlayAudio(s_ClickSound, false);
         AudioManager::Get().StopAudio(s_LoseMusic);
-        TransitionManager::GetInstance().Start(GS_MAINMENU);
+        TransitionManager::Get().Start(GS_MAINMENU);
     }
 
-    TransitionManager::GetInstance().Update(dt);
+    TransitionManager::Get().Update(dt);
 }
 
 // ============================================================
@@ -425,6 +424,7 @@ void WinLose_Draw()
 
         DrawFade(s_fadeAlpha);
 
+        TransitionManager::Get().Draw();
         AESysFrameEnd();
         return;
     }
@@ -439,6 +439,7 @@ void WinLose_Draw()
             1.0f, 0.6f, 0.7f, 1.0f);
 
         DrawPromptHint(medFont, 0.2f);
+        TransitionManager::Get().Draw();
         AESysFrameEnd();
         return;
     }
@@ -457,6 +458,7 @@ void WinLose_Draw()
         1.0f, 1.0f, 1.0f, 1.0f);
 
     DrawPromptHint(medFont);
+    TransitionManager::Get().Draw();
     AESysFrameEnd();
 }
 

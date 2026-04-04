@@ -16,53 +16,8 @@ Technology is prohibited.
 #include "pch.h"
 #include "TransitionManager.h"
 #include "GameStateManager.h"
+#include "MeshManager.h"
 #include <cmath>
-
-// ----------------------------------------------------------------------------
-// Constants
-// ----------------------------------------------------------------------------
-const float TransitionManager::STRIP_DURATION = 0.18f;
-const float TransitionManager::STAGGER_TIME   = 0.04f;
-const float TransitionManager::HOLD_DURATION  = 0.08f;
-
-// ----------------------------------------------------------------------------
-// GetInstance - Meyer's singleton
-// ----------------------------------------------------------------------------
-TransitionManager& TransitionManager::GetInstance()
-{
-    static TransitionManager instance;
-    return instance;
-}
-
-// ----------------------------------------------------------------------------
-// Init - Create mesh if not already created
-// ----------------------------------------------------------------------------
-void TransitionManager::Init()
-{
-    if (m_pMesh != nullptr) return;
-
-    AEGfxMeshStart();
-    // Unit quad - will be scaled per strip
-    AEGfxTriAdd(-0.5f, -0.5f, 0xFFFFFFFF, 0.0f, 1.0f,
-                 0.5f, -0.5f, 0xFFFFFFFF, 1.0f, 1.0f,
-                -0.5f,  0.5f, 0xFFFFFFFF, 0.0f, 0.0f);
-    AEGfxTriAdd( 0.5f, -0.5f, 0xFFFFFFFF, 1.0f, 1.0f,
-                 0.5f,  0.5f, 0xFFFFFFFF, 1.0f, 0.0f,
-                -0.5f,  0.5f, 0xFFFFFFFF, 0.0f, 0.0f);
-    m_pMesh = AEGfxMeshEnd();
-}
-
-// ----------------------------------------------------------------------------
-// Free - Release mesh resources
-// ----------------------------------------------------------------------------
-void TransitionManager::Free()
-{
-    if (m_pMesh != nullptr)
-    {
-        AEGfxMeshFree(m_pMesh);
-        m_pMesh = nullptr;
-    }
-}
 
 // ----------------------------------------------------------------------------
 // Start - Begin transition to next state
@@ -83,6 +38,14 @@ void TransitionManager::Start(int nextStateId)
 bool TransitionManager::IsActive() const
 {
     return m_phase != TransitionPhase::Idle;
+}
+
+// ----------------------------------------------------------------------------
+// IsFullyCovered - Check if screen is fully covered (safe to change state)
+// ----------------------------------------------------------------------------
+bool TransitionManager::IsFullyCovered() const
+{
+    return m_phase == TransitionPhase::Holding || m_phase == TransitionPhase::Revealing;
 }
 
 // ----------------------------------------------------------------------------
@@ -127,24 +90,19 @@ void TransitionManager::Update(float dt)
 }
 
 // ----------------------------------------------------------------------------
-// Draw - Render cyberpunk strip transition effect
+// Draw - Render cyberpunk strip transition effect using MeshManager
 // ----------------------------------------------------------------------------
 void TransitionManager::Draw()
 {
     if (m_phase == TransitionPhase::Idle) return;
 
-    float screenWidth  = (float)AEGfxGetWindowWidth();
-    float screenHeight = (float)AEGfxGetWindowHeight();
-    float stripHeight = screenHeight / STRIP_COUNT;
+    float screenWidth  = static_cast<float>(AEGfxGetWindowWidth());
+    float screenHeight = static_cast<float>(AEGfxGetWindowHeight());
+    float stripHeight  = screenHeight / STRIP_COUNT;
 
-    // Strip colors
-    const float deepPurpleR = 0.18f, deepPurpleG = 0.0f,  deepPurpleB = 0.35f;
-    const float cyanR        = 0.0f,  cyanG        = 0.81f, cyanB       = 1.0f;
-
-    AEGfxSetRenderMode(AE_GFX_RM_COLOR);
-    AEGfxSetTransparency(1.0f);
-    AEGfxSetColorToMultiply(1.0f, 1.0f, 1.0f, 1.0f);
-    AEGfxSetColorToAdd(0.0f, 0.0f, 0.0f, 0.0f);
+    // Strip colors (RGB 0-255 for MeshManager::DrawSquare)
+    const int deepPurpleR = 46,  deepPurpleG = 0,   deepPurpleB = 89;
+    const int cyanR       = 0,   cyanG       = 207, cyanB       = 255;
 
     float totalCoverTime = STRIP_DURATION + (STRIP_COUNT - 1) * STAGGER_TIME;
 
@@ -188,13 +146,12 @@ void TransitionManager::Draw()
         }
 
         // Calculate Y position for this strip
-        // Screen space: Y increases upward, center is (0,0)
-        // Strip i spans from bottom=i*stripHeight to top=(i+1)*stripHeight
-        // In screen space: centerY = (screenHeight/2) - (i + 0.5f) * stripHeight
-        float stripCentreY = (screenHeight * 0.5f) - (static_cast<float>(i) + 0.5f) * stripHeight;
+        // Screen space: Y=0 is center, positive up
+        // Strip i: bottom strip (i=0) at bottom of screen
+        float stripCenterY = (screenHeight * 0.5f) - (static_cast<float>(i) + 0.5f) * stripHeight;
 
         // Select color based on strip index
-        float r, g, b;
+        int r, g, b;
         if (i % 2 == 0)
         {
             r = deepPurpleR; g = deepPurpleG; b = deepPurpleB;
@@ -203,14 +160,8 @@ void TransitionManager::Draw()
         {
             r = cyanR; g = cyanG; b = cyanB;
         }
-        AEGfxSetColorToMultiply(r, g, b, 1.0f);
 
-        // Build transformation matrix
-        AEMtx33 scale, trans, transform;
-        AEMtx33Scale(&scale, screenWidth, stripHeight);
-        AEMtx33Trans(&trans, xOffset, stripCentreY);
-        AEMtx33Concat(&transform, &trans, &scale);
-        AEGfxSetTransform(transform.m);
-        AEGfxMeshDraw(m_pMesh, AE_GFX_MDM_TRIANGLES);
+        // Draw strip using MeshManager (no custom mesh needed)
+        MeshManager::Get().DrawSquare(xOffset, stripCenterY, screenWidth, stripHeight, r, g, b, 1.0f);
     }
 }

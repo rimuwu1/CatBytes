@@ -298,7 +298,6 @@ static void LoadMonitors(const rapidjson::Document& doc)
 
 void BossRoom_Load() 
 {
-    TransitionManager::GetInstance().Init();
 }
 
 void BossRoom_Initialize()
@@ -456,7 +455,7 @@ void BossRoom_Update()
     if (AEInputCheckTriggered(AEVK_ESCAPE))
         UIManager::Get().ShowPause(globalCam.x, globalCam.y);
 
-    TransitionManager::GetInstance().Update(dt);
+    TransitionManager::Get().Update(dt);
 
     // fade in from black
     if (g_bossRoomFadingIn)
@@ -874,8 +873,6 @@ void BossRoom_Draw()
     DebugManager::Get().Draw(globalCam.x, globalCam.y);               
     UIManager::Get().Draw(globalCam.x, globalCam.y);
 
-    TransitionManager::GetInstance().Draw();
-
     if (g_bossRoomFadeAlpha > 0.0f)
     {
         float w = (float)AEGfxGetWindowWidth();
@@ -926,6 +923,8 @@ void BossRoom_Draw()
             0.0f, -0.46f, 0.75f,
             1.0f, 1.0f, 1.0f, 1.0f);
     }
+
+    TransitionManager::Get().Draw();
 
     AESysFrameEnd();
 }
