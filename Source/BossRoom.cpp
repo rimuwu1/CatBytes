@@ -712,9 +712,9 @@ void BossRoom_Update()
     
     float playerPrevY = player.pos.y;
 
-    // Restart handling
+    // Restart handling - transition to main game
     if (g_newGame) {
-        BossRoom_Initialize();
+        TransitionManager::Get().Start(GS_MAINGAME);
         g_newGame = false;
         return;
     }
@@ -931,7 +931,7 @@ void BossRoom_Draw()
             1.0f, 1.0f, 1.0f, 1.0f);
     }
 
-    TransitionManager::Get().Draw();
+    TransitionManager::Get().Draw(globalCam.x, globalCam.y);
 
     AESysFrameEnd();
 }

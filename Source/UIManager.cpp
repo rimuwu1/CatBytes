@@ -24,6 +24,7 @@ Technology is prohibited.
 #include "GameSaveManager.h"
 #include "Controls.h"
 #include "AudioManager.h"
+#include "TransitionManager.h"
 
 // Layout constants - ALL positions in pixels (screen center = 0,0).
 // DrawSquare  : pixel center (x,y) + pixel width/height
@@ -317,14 +318,24 @@ void UIManager::UpdatePause(float camX, float camY, bool& consumed)
         case 3: // Restart -- confirm first
             m_PauseActive = false;
             ShowConfirmation("Restart Game?", "All progress will be lost!",
-                []() { g_newGame = true; GameSaveManager::ResetSave(); },
+                []() { 
+                    g_newGame = true; 
+                    GameSaveManager::ResetSave(); 
+                    // Determine which state to restart to based on current state
+                    int currentState = GameStateManager::Get().current;
+                    if (currentState == GS_BOSSROOM) {
+                        TransitionManager::Get().Start(GS_MAINGAME);
+                    } else {
+                        TransitionManager::Get().Start(GS_MAINGAME);
+                    }
+                },
                 []() {},
                 camX, camY);
             break;
         case 4: // Main Menu -- confirm first
             m_PauseActive = false;
             ShowConfirmation("Exit to Main Menu?", "Unsaved progress will be lost!",
-                []() { GameStateManager::Get().next = GS_MAINMENU; },
+                []() { TransitionManager::Get().Start(GS_MAINMENU); },
                 []() {},
                 camX, camY);
             break;

@@ -429,7 +429,7 @@ void MainMenu_Update()
             g_LogoAnim->Play("intro");
     }
 
-    TransitionManager::Get().Update(AEFrameRateControllerGetFrameTime() / 1000.0f);
+    TransitionManager::Get().Update(static_cast<float>(AEFrameRateControllerGetFrameTime()));
 }
 
 void MainMenu_Draw()

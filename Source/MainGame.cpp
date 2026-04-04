@@ -786,7 +786,7 @@ void MainGame_Draw()
     DebugManager::Get().DrawWorldOverlays(globalCam.x, globalCam.y);
     DebugManager::Get().Draw(globalCam.x, globalCam.y);
     UIManager::Get().Draw(globalCam.x, globalCam.y);
-    TransitionManager::Get().Draw();
+    TransitionManager::Get().Draw(globalCam.x, globalCam.y);
 
     AESysFrameEnd();
 }

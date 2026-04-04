@@ -173,8 +173,8 @@ void SplashScreen_Draw()
             TransitionManager::Get().Start(GS_MAINMENU);
         }
     }
-    
-	TransitionManager::Get().Draw();
+
+    TransitionManager::Get().Draw();
 	AESysFrameEnd();
 	std::cout << "Splash Screen: Draw" << std::endl;
 }

@@ -31,7 +31,7 @@ public:
     TransitionManager& operator=(const TransitionManager&) = delete;
 
     void Update(float dt);
-    void Draw();
+    void Draw(float camX = 0.0f, float camY = 0.0f);
     void Start(int nextStateId);
     bool IsActive() const;
     bool IsFullyCovered() const;  // True during Holding phase (screen fully covered)

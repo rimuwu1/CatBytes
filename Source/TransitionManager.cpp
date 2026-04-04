@@ -91,8 +91,9 @@ void TransitionManager::Update(float dt)
 
 // ----------------------------------------------------------------------------
 // Draw - Render cyberpunk strip transition effect using MeshManager
+// camX, camY: camera offset to draw in screen space
 // ----------------------------------------------------------------------------
-void TransitionManager::Draw()
+void TransitionManager::Draw(float camX, float camY)
 {
     if (m_phase == TransitionPhase::Idle) return;
 
@@ -159,7 +160,7 @@ void TransitionManager::Draw()
             r = cyanR; g = cyanG; b = cyanB;
         }
 
-        // Draw strip using MeshManager (no custom mesh needed)
-        MeshManager::Get().DrawSquare(xOffset, stripCenterY, screenWidth, stripHeight, r, g, b, 1.0f);
+        // Draw strip using MeshManager, offset by camera to stay in screen space
+        MeshManager::Get().DrawSquare(camX + xOffset, camY + stripCenterY, screenWidth, stripHeight, r, g, b, 1.0f);
     }
 }
