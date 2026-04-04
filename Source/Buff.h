@@ -36,7 +36,6 @@ public:
     bool active = true;
     AEGfxTexture* texture = nullptr;
 
-    //Buff() = default;
     Buff(BuffType type, float x, float y, float width, float height);
 
     void Activate(Player& player); // activate buff

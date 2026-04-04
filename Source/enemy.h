@@ -144,7 +144,7 @@ void BossEnemy_Init(Enemy& enemy, const rapidjson::Value& config);
 // Update functions (call ObjectManager to spawn bullets)
 void Enemy_Update(Enemy& enemy, float dt);
 void HardEnemy_Update(Enemy& enemy, float dt);
-void BossEnemy_Update(Enemy& enemy, const Player& player, float dt); // TODO: update BossEnemy_Update call site in ObjectManager.cpp to pass the Player
+void BossEnemy_Update(Enemy& enemy, const Player& player, float dt);
 
 // Boss laser update (updates each laser's internal state)
 void BossLasers_Update(Enemy& enemy, const Player& player, float dt);

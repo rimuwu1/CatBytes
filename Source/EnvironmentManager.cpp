@@ -822,15 +822,6 @@ void EnvironmentManager::LoadAssetsFromConfig(const rapidjson::Document& doc)
     // Load parallax layers from config
     if (env.HasMember("parallax") && env["parallax"].IsObject()) {
         const auto& parallax = env["parallax"];
-        /*const char* layerNames[3] = {"back", "middle", "front"};
-        float speeds[3] = {0.3f, 0.6f, 1.0f};
-
-        for (int i = 0; i < 3; i++) {
-        if (parallax.HasMember(layerNames[i]) && parallax[layerNames[i]].IsString()) {
-        m_parallaxLayers[i].texture = TextureManager::Get().LoadTexture(parallax[layerNames[i]].GetString());
-        m_parallaxLayers[i].speed = speeds[i];
-        }
-        }*/
 
         const char* layerNames[10] = {
             "colorgradient", "starback", "starfront", "crescent",
@@ -1446,7 +1437,6 @@ void EnvironmentManager::DrawWorld(float camX, float camY, PlayerWeapon weapon, 
             addHoverForLevel(m_level3Platforms);
             addHoverForLevel(m_bossPlatforms);
             addHoverForLevel(m_wallPlatforms);
-            /*addHoverForLevel(m_level3WallPlatforms);*/
         }
 
         // Checkpoint animations - always dynamic
@@ -1899,25 +1889,6 @@ void EnvironmentManager::DrawWorld(float camX, float camY, PlayerWeapon weapon, 
                     m_bossDoor.liftW, m_bossDoor.liftH);
         }
 
-        //if (m_bossDoor.playerNear && !m_liftSeq.active)
-        //{
-        //    float windowWidth  = (float)AEGfxGetWindowWidth();
-        //    float windowHeight = (float)AEGfxGetWindowHeight();
-        //    // shift text to the right of the door so it clears the lift on the left side of screen
-        //    float textWorldX = m_bossDoor.x + 10.0f;
-        //    float screenX = (textWorldX - camX) / (windowWidth  * 0.5f);
-        //    // anchor text to the bottom of the door instead of top so it stays at player level
-        //    float screenY = (m_bossDoor.y - m_bossDoor.h * 0.5f + 20.0f - camY) / (windowHeight * 0.5f);
-        //    if (screenX >  0.5f) screenX =  0.5f;
-        //    if (screenX < -0.9f) screenX = -0.9f;
-        //    // if the door is locked, show a locked message; otherwise show the normal interact prompt
-        //    const std::string lockedHint = "I need to unlock the office door first before I can go down..";
-        //    const std::string& doorPrompt = m_bossDoor.locked
-        //        ? lockedHint
-        //        : m_bossDoor.prompt;
-        //    FontManager::Get().PrintThemeAligned(FontManager::Get().GetSmallFont(), doorPrompt.c_str(),
-        //        screenX, screenY, 1.0f, TextAlignment::Left, FontTheme::Gold);
-        //}
     }
 
     // fade overlay
@@ -2105,33 +2076,6 @@ void EnvironmentManager::DrawBackground(float camX, float camY) const
             // Calculate parallax offset (negative for proper scrolling direction)
             // Divide by 5 to reduce parallax strength
             float offsetY = -m_parallaxY * m_parallaxLayers[i].speed / 3.0f ;
-
-            //if (i == 0 || i == 2) {
-            //    // First layer (back) - stretch from ground to max world height
-            //    float layerHeight = maxWorldHeight - groundY;
-            //    float layerCenterY = groundY + layerHeight * 0.5f + offsetY;
-            //    mm.DrawTexturedSquare(
-            //        m_parallaxLayers[i].texture,
-            //        0.0f, layerCenterY,
-            //        screenWidth, layerHeight
-            //    );
-            //} else {
-            //    // Layer 1 (middle) - tile by repeating texture as we scroll
-            //    float tileHeight = screenHeight;  // Tile size
-            //    float startY = offsetY;
-            //    
-            //    // Calculate how many tiles we need based on world movement
-            //    int numTiles = static_cast<int>(maxWorldHeight / tileHeight) + 2;
-            //    
-            //    for (int t = 0; t < numTiles; t++) {
-            //        float tileY = startY + (t * tileHeight);
-            //        mm.DrawTexturedSquare(
-            //            m_parallaxLayers[i].texture,
-            //            0.0f, tileY,
-            //            screenWidth, tileHeight
-            //        );
-            //    }
-            //}
 
             float layerHeight = maxWorldHeight - groundY;
             float layerCenterY = groundY + layerHeight * 0.5f + offsetY;
