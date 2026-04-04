@@ -91,8 +91,24 @@
       "cloudtall":      "Assets/Images/MGcloudtall.png",
       "cloudshort":     "Assets/Images/MGcloudshort.png",
       "front":          "Assets/Images/front.png"
-    }
-  },
+    },
+      "advertisement_screen": {
+        "file": "Assets/Images/adscreen.png",
+        "rows": 1,
+        "cols": 12,
+        "total_frames": 12,
+        "frame_duration": 0.25,
+        "x": 0.0,
+        "y": 7000.0,
+        "width": 800.0,
+        "height": 600.0,
+        "clips": [
+          { "name": "ad1", "start": 0, "end": 3, "duration": 0.35, "loop": false },
+          { "name": "transition", "start": 4, "end": 7, "duration": 0.25, "loop": false },
+          { "name": "ad2", "start": 8, "end": 11, "duration": 0.35, "loop": false }
+        ]
+      }
+    },
   "audio": {
     "main_menu_music": "Assets/Audio/MUSIC-STINGER_GEN-HDF-17880.mp3",
     "game_music": "Assets/Audio/DATA DANCE - NewAge MSCNEW2_13.mp3",
@@ -411,7 +427,7 @@
     ]
   },
   "normal_laser_ind": {
-   "file": "Assets/Images/normalLaserIndTEMP.png",
+   "file": "Assets/Images/normalLaserInd.png",
    "rows": 1,
    "cols": 2,
    "total_frames": 2,

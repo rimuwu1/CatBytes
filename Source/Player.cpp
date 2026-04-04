@@ -109,7 +109,6 @@ void Player_Init(Player& player, const rapidjson::Value& config)
 
 	//load player hp & dmg
 	player.hp = config["hp"].GetFloat();
-	/*player.maxHP = player.hp;*/
 	player.meleeDamage = config["melee_damage"].GetFloat();
 
 	// knockback
@@ -656,11 +655,6 @@ void Player_HandleCombat(Player& player, float dt, bool uiClicked)
 void Player_UpdateWeaponSwitchAnimation(Player& player, float dt)
 {
 	(void)dt;
-	// --- Detect weapon switch ---
-	//if (player.weapon != player.previousWeapon) {
-	//	player.weaponSwitchTriggered = true;
-	//	//player.previousWeapon = player.weapon;
-	//}
 	if (!player.weaponSwitchInProgress && player.weapon != player.previousWeapon) {
 		player.weaponSwitchTriggered = true;
 		player.weaponSwitchInProgress = true;
@@ -961,10 +955,6 @@ void Player_Draw(const Player& player)
 		);
 	}
 
-	// drawing player bullets (moved to obj manager)
-	/*for (const auto& b : player.bullets)
-		PlayerBullet_Draw(b);*/
-
 		// Draw player using sprite sheet
 	if (player.spriteSheet) {
 		float scaleX;
@@ -1081,9 +1071,6 @@ void Player_ApplyDamage(Player& player, float damage)
 
 		Camera_AddTrauma(0.6f);
 		ParticleManager_Emit(player.pos.x, player.pos.y, 12, 250.f, 255, 50, 50);
-
-		//show hit text for 0.5 seconds
-		//player.hitTextTimer = 0.5f;
 
 		//TEMPORARY death condition
 		if (player.hp <= 0.0f)

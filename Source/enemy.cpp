@@ -1496,10 +1496,6 @@ void Enemy_OnHit(Enemy& enemy, float damage, float knockbackDir, Player* attacke
 // -----------------------------------------------------------------------------
 void Enemy_OnDeath(Enemy& enemy)
 {
-    //// for debugging (to be removed)
-    //ObjectManager::Get().SpawnBuff(BuffType::SHIELD, enemy.pos.x, enemy.pos.y);
-    //ObjectManager::Get().SpawnBuff(BuffType::FULL_HP, enemy.pos.x + 50.f, enemy.pos.y);
-    //ObjectManager::Get().SpawnBuff(BuffType::DASH , enemy.pos.x - 50.f, enemy.pos.y);
     if (enemy.type == EnemyType::Boss) return;
     BuffType droppedBuff = static_cast<BuffType>(rand() % 3 + 1); // random buff on drop
     ObjectManager::Get().SpawnBuff(droppedBuff, enemy.pos.x, enemy.pos.y);
@@ -1561,24 +1557,6 @@ void HardEnemy_OnCollision(Enemy& enemy, Player& player)
     }
 
     // damage + knockback
-    /*
-    if (!player.isHurt && !player.shieldActive && !player.isDashing)
-    {
-        Player_ApplyDamage(player, enemy.damage);
-
-        float knockDir = (player.pos.x >= enemy.pos.x) ? 1.0f : -1.0f;
-        float knockSpeed = 500.0f;
-        if (enemy.type == EnemyType::Boss)
-        {
-            if (clip == "slamimpact" || clip == "slamdown") knockSpeed = 900.0f;
-            else if (clip == "attackpunch")                  knockSpeed = 700.0f;
-        }
-        player.vel.x = knockDir * knockSpeed;
-        player.knockbackTimer = player.hurtTimer > 0.0f ? player.hurtTimer : 0.6f;
-        Camera_AddTrauma(0.5f);
-    }
-    */
-    // damage + knockback
     if (!player.isHurt && !player.shieldActive && !player.isDashing)
     {
         bool canDamage = false;
@@ -1621,13 +1599,6 @@ void HardEnemy_OnCollision(Enemy& enemy, Player& player)
             Camera_AddTrauma(0.5f);
         }
     }
-    /*
-    if (enemy.type != EnemyType::Boss)
-    {
-        Enemy_SetState(enemy, EnemyState::Attack);
-        AudioManager::Get().PlayAudio(s_HardEnemyAttackSound, false);
-    }
-    */
 
     if (enemy.type == EnemyType::Hard)
     {

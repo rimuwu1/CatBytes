@@ -42,8 +42,8 @@ static void MousePosition(float camX, float camY, float& outX, float& outY)
 	outY = top - (float)my;
 }
 
-// ---- Helper functions for Hearts UI ---- 
-// Clamps hearts (0 to 3)
+// ---- Helper functions for Hearts UI ---- //
+// Clamps hearts (0 to 5)
 int HUD::ClampHeartsStateFromPlayer(const Player& player)
 {
 	int hpInt = static_cast<int>(player.hp);

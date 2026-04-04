@@ -314,6 +314,20 @@ private:
     };
     Colour m_currentColour = m_backgroundColours[0];
 
+    // background advertisement
+	std::unique_ptr<SpriteSheet> m_advertisementSheet;
+	std::string m_advertisementFilePath;
+	int m_advertisementRows = 0;
+	int m_advertisementCols = 0;
+	int m_advertisementTotalFrames = 0;
+	float m_advertisementFrameDuration = 0.0f;
+	std::vector<ButtonClipConfig> m_advertisementClips;
+	float m_advertisementX = 0.0f;
+	float m_advertisementY = 0.0f;
+	float m_advertisementWidth = 0.0f;
+	float m_advertisementHeight = 0.0f;
+    std::string m_nextAd;
+
     static Colour BlendColours(const Colour& a, const Colour& b, float t);
 
     // boss door members

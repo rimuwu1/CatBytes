@@ -60,7 +60,6 @@ void Camera_FollowPlayer(Camera& cam, float /*playerX*/, float playerY, float dt
 
 void Camera_Apply(const Camera& cam)
 {
-	//AEGfxSetCamPosition(cam.x, cam.y);
     float renderX = cam.x;
     float renderY = cam.y;
 
