@@ -873,30 +873,42 @@ bool ContinueMainThreadLoading()
         return false;
     }
     
+    // Safety check: ensure configDoc is valid before proceeding
+    const auto& doc = GetConfigDoc();
+    if (!doc.IsObject()) {
+        // Config failed to parse - skip to done state to avoid crash
+        g_GameDataLoaded.store(true, std::memory_order_release);
+        return true;
+    }
+    
     // Incremental loading on main thread (one step per frame)
     // Each step does OpenGL texture loading which must be on main thread
     switch (g_MainThreadLoadStep) {
         case 0:
             // Step 0: Load audio (fast, no textures)
-            AudioManager::Get().LoadFromJson(GetConfigDoc()["audio"]);
+            if (doc.HasMember("audio") && doc["audio"].IsObject()) {
+                AudioManager::Get().LoadFromJson(doc["audio"]);
+            }
             g_MainThreadLoadStep++;
             break;
             
         case 1:
             // Step 1: Environment manager config parsing (fast)
-            EnvironmentManager::Get().LoadFromConfig(GetConfigDoc());
+            EnvironmentManager::Get().LoadFromConfig(doc);
             g_MainThreadLoadStep++;
             break;
             
         case 2:
             // Step 2: Environment assets (textures - must be on main thread)
-            EnvironmentManager::Get().LoadAssetsFromConfig(GetConfigDoc());
+            EnvironmentManager::Get().LoadAssetsFromConfig(doc);
             g_MainThreadLoadStep++;
             break;
             
         case 3:
             // Step 3: Object manager (may load textures)
-            ObjectManager::Get().LoadFromConfig(GetConfigDoc());
+            if (doc.HasMember("player")) {
+                ObjectManager::Get().LoadFromConfig(doc);
+            }
             g_MainThreadLoadStep++;
             break;
             

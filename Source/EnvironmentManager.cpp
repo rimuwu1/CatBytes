@@ -142,11 +142,28 @@ void EnvironmentManager::LoadFromConfig(const rapidjson::Document& doc)
         {
 			const auto& ad = env["advertisement_screen"];
 
-            m_advertisementFilePath = ad["file"].GetString();
-            m_advertisementRows = ad["rows"].GetInt();
-            m_advertisementCols = ad["cols"].GetInt();
-            m_advertisementTotalFrames = ad["total_frames"].GetInt();
-            m_advertisementFrameDuration = ad["frame_duration"].GetFloat();
+            if (!ad.HasMember("file") || !ad["file"].IsString()) {
+                std::cerr << "ERROR: advertisement_screen missing 'file' field or not a string\n";
+                return;
+            }
+            
+            // Diagnostic: verify this pointer is valid
+            if (this == nullptr) {
+                std::cerr << "FATAL: EnvironmentManager this pointer is null!\n";
+                return;
+            }
+            
+            try {
+                m_advertisementFilePath = ad["file"].GetString();
+                m_advertisementRows = ad["rows"].GetInt();
+                m_advertisementCols = ad["cols"].GetInt();
+                m_advertisementTotalFrames = ad["total_frames"].GetInt();
+                m_advertisementFrameDuration = ad["frame_duration"].GetFloat();
+            }
+            catch (const std::exception& e) {
+                std::cerr << "ERROR parsing advertisement config: " << e.what() << "\n";
+                return;
+            }
 
             m_advertisementClips.clear();
 
@@ -2278,6 +2295,20 @@ void EnvironmentManager::Clear()
     m_liftSeq         = BossLiftSequence{};
     m_bossDoorLoaded  = false;
     m_bossRoomMode = false;
+
+    // Clear advertisement data
+    m_advertisementSheet.reset();
+    m_advertisementFilePath.clear();
+    m_advertisementClips.clear();
+    m_advertisementRows = 0;
+    m_advertisementCols = 0;
+    m_advertisementTotalFrames = 0;
+    m_advertisementFrameDuration = 0.0f;
+    m_advertisementX = 0.0f;
+    m_advertisementY = 0.0f;
+    m_advertisementWidth = 0.0f;
+    m_advertisementHeight = 0.0f;
+    m_nextAd.clear();
 
     // Also clear static cache and mark dirty to avoid stale geometry after a restart/load
     m_staticCache.clear();

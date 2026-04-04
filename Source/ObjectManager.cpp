@@ -86,7 +86,9 @@ void ObjectManager::LoadFromConfig(const rapidjson::Document& doc)
     buffs.clear();
 
     // Player comes from the top-level "player" block
-    Player_Init(player, doc["player"]);
+    if (doc.HasMember("player") && doc["player"].IsObject()) {
+        Player_Init(player, doc["player"]);
+    }
 
     // Gather enemies and buffs from every level key present in the document
     // Load enemies from all levels

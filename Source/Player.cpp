@@ -92,8 +92,24 @@ void Player_Init(Player& player, const rapidjson::Value& config)
 {
 	player.facingRight = true; // current player asset faces right on load
 
-	// player gun bullets
-	player.maxBullets = config["bullet"]["max_count"].GetInt(); // player gun limit
+	// player gun bullets - safely access nested bullet config
+	if (config.HasMember("bullet") && config["bullet"].IsObject()) {
+		const auto& bulletJson = config["bullet"];
+		player.maxBullets = bulletJson.HasMember("max_count") ? bulletJson["max_count"].GetInt() : 5;
+		player.bulletSpeed = bulletJson.HasMember("speed") ? bulletJson["speed"].GetFloat() : 500.0f;
+		player.bulletDamage = bulletJson.HasMember("damage") ? bulletJson["damage"].GetFloat() : 10.0f;
+		player.fireCooldown = bulletJson.HasMember("cooldown") ? bulletJson["cooldown"].GetFloat() : 0.3f;
+		player.bulletWidth = bulletJson.HasMember("width") ? bulletJson["width"].GetFloat() : 20.0f;
+		player.bulletHeight = bulletJson.HasMember("height") ? bulletJson["height"].GetFloat() : 10.0f;
+	} else {
+		// Fallback defaults
+		player.maxBullets = 5;
+		player.bulletSpeed = 500.0f;
+		player.bulletDamage = 10.0f;
+		player.fireCooldown = 0.3f;
+		player.bulletWidth = 20.0f;
+		player.bulletHeight = 10.0f;
+	}
 	player.fireTimer = 0.0f;
 
 	player.bullets.clear();
@@ -107,9 +123,9 @@ void Player_Init(Player& player, const rapidjson::Value& config)
 	player.height = config.HasMember("height") ? config["height"].GetFloat() : 80.0f;
 	player.grounded = 1;
 
-	//load player hp & dmg
-	player.hp = config["hp"].GetFloat();
-	player.meleeDamage = config["melee_damage"].GetFloat();
+	//load player hp & dmg - with fallbacks
+	player.hp = config.HasMember("hp") ? config["hp"].GetFloat() : 100.0f;
+	player.meleeDamage = config.HasMember("melee_damage") ? config["melee_damage"].GetFloat() : 25.0f;
 
 	// knockback
 	player.knockbackVelocity = config.HasMember("knockback_velocity") ? config["knockback_velocity"].GetFloat() : 400.0f;
@@ -128,19 +144,9 @@ void Player_Init(Player& player, const rapidjson::Value& config)
 	player.attackTimer = 0.0f;
 	player.meleeCooldownTimer = 0.0f;
 
-	//gun
-	const auto& playerJson = config;
-	const auto& bulletJson = playerJson["bullet"];
-
-	player.bulletSpeed = bulletJson["speed"].GetFloat();
-	player.bulletDamage = bulletJson["damage"].GetFloat();
-	player.fireCooldown = bulletJson["cooldown"].GetFloat();
-	player.bulletWidth = bulletJson["width"].GetFloat();
-	player.bulletHeight = bulletJson["height"].GetFloat();
-
 	// --- Dynamic SpriteSheet Loading ---
-	if (playerJson.HasMember("animations")) {
-		const auto& anims = playerJson["animations"];
+	if (config.HasMember("animations")) {
+		const auto& anims = config["animations"];
 		player.spriteSheet = std::make_unique<SpriteSheet>(
 			anims["file"].GetString(),
 			anims["rows"].GetInt(),
@@ -173,8 +179,8 @@ void Player_Init(Player& player, const rapidjson::Value& config)
 	player.playingTailAnim = false;
 
 	// --- slash sheet Loading ---
-	if (playerJson.HasMember("slash")) {
-		const auto& anims = playerJson["slash"];
+	if (config.HasMember("slash")) {
+		const auto& anims = config["slash"];
 		player.slashSprite = std::make_unique<SpriteSheet>(
 			anims["file"].GetString(),
 			anims["rows"].GetInt(),
@@ -211,8 +217,8 @@ void Player_Init(Player& player, const rapidjson::Value& config)
 	}
 
 	// player bullet sheet
-	if (playerJson.HasMember("bullet_animations")) {
-		const auto& anims = playerJson["bullet_animations"];
+	if (config.HasMember("bullet_animations")) {
+		const auto& anims = config["bullet_animations"];
 		player.bulletSprite = std::make_unique<SpriteSheet>(
 			anims["file"].GetString(),
 			anims["rows"].GetInt(),
@@ -240,8 +246,8 @@ void Player_Init(Player& player, const rapidjson::Value& config)
 	}
 
 	// shield sheet
-	if (playerJson.HasMember("shield_animations")) {
-		const auto& anims = playerJson["shield_animations"];
+	if (config.HasMember("shield_animations")) {
+		const auto& anims = config["shield_animations"];
 		player.shieldSprite = std::make_unique<SpriteSheet>(
 			anims["file"].GetString(),
 			anims["rows"].GetInt(),
