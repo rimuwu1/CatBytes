@@ -91,8 +91,24 @@
       "cloudtall":      "Assets/Images/MGcloudtall.png",
       "cloudshort":     "Assets/Images/MGcloudshort.png",
       "front":          "Assets/Images/front.png"
-    }
-  },
+    },
+      "advertisement_screen": {
+        "file": "Assets/Images/adscreen.png",
+        "rows": 1,
+        "cols": 12,
+        "total_frames": 12,
+        "frame_duration": 0.25,
+        "x": 0.0,
+        "y": 7000.0,
+        "width": 800.0,
+        "height": 600.0,
+        "clips": [
+          { "name": "ad1", "start": 0, "end": 3, "duration": 0.35, "loop": false },
+          { "name": "transition", "start": 4, "end": 7, "duration": 0.25, "loop": false },
+          { "name": "ad2", "start": 8, "end": 11, "duration": 0.35, "loop": false }
+        ]
+      }
+    },
   "audio": {
     "main_menu_music": "Assets/Audio/MUSIC-STINGER_GEN-HDF-17880.mp3",
     "game_music": "Assets/Audio/DATA DANCE - NewAge MSCNEW2_13.mp3",
@@ -411,7 +427,7 @@
     ]
   },
   "normal_laser_ind": {
-   "file": "Assets/Images/normalLaserIndTEMP.png",
+   "file": "Assets/Images/normalLaserInd.png",
    "rows": 1,
    "cols": 2,
    "total_frames": 2,
@@ -462,10 +478,10 @@
     }
   },
     "checkpoints": [
-        { "x": -350.0, "y": 1790.0, "width": 40.0, "height": 40.0 },
-        { "x": -400.0, "y": 2990.0, "width": 40.0, "height": 40.0 },
-        { "x":  500.0, "y": 3990.0, "width": 40.0, "height": 40.0 },
-        { "x":  560.0, "y": 6640.0, "width": 40.0, "height": 40.0 }
+        { "x": -350.0, "y": 1810.0, "width": 80.0, "height": 80.0 },
+        { "x": -400.0, "y": 3010.0, "width": 80.0, "height": 80.0 },
+        { "x":  500.0, "y": 4010.0, "width": 80.0, "height": 80.0 },
+        { "x":  560.0, "y": 6660.0, "width": 80.0, "height": 80.0 }
     ],
     "level_1": {
         "completed": false,
@@ -495,7 +511,7 @@
             { "x":    0.0,  "y": 1750.0,  "width": 750.0, "height": 40.0, "active":  true }
         ],
         "buttons": [
-            { "x":    0.0,  "y":  590.0,  "width": 40.0, "height": 40.0, "platformIndices": [9, 10, 11, 12, 13] }
+            { "x":    0.0,  "y":  610.0,  "width": 80.0, "height": 80.0, "platformIndices": [9, 10, 11, 12, 13] }
         ],
         "obstacles" : [
             { "x":    0.0,  "y": 1340.0,  "width": 50.0, "height": 40.0, "rotation" : 0.0 },
@@ -768,10 +784,10 @@
             {  "x":  400.0, "y": 4400.0, "width": 100.0, "height": 40.0, "active": false }
         ],
         "buttons": [
-            { "x":    0.0, "y": 1790.0, "width": 40.0, "height": 40.0, "platformIndices": [0, 1] },
-            { "x": -550.0, "y": 2990.0, "width": 40.0, "height": 40.0, "platformIndices": [13, 14, 15, 16, 17] },
-            { "x":    0.0, "y": 3640.0, "width": 40.0, "height": 40.0, "platformIndices": [20, 21, 22, 23, 24] },
-            { "x":  350.0, "y": 3840.0, "width": 40.0, "height": 40.0, "platformIndices": [30, 31] }
+            { "x":    0.0, "y": 1810.0, "width": 80.0, "height": 80.0, "platformIndices": [0, 1] },
+            { "x": -550.0, "y": 3010.0, "width": 80.0, "height": 80.0, "platformIndices": [13, 14, 15, 16, 17] },
+            { "x":    0.0, "y": 3660.0, "width": 80.0, "height": 80.0, "platformIndices": [20, 21, 22, 23, 24] },
+            { "x":  350.0, "y": 3860.0, "width": 80.0, "height": 80.0, "platformIndices": [30, 31] }
         ],
         "obstacles" : [
             { "x": -250.0, "y": 2530.0, "width": 30.0, "height": 20.0, "rotation" : 0.0},
@@ -1536,12 +1552,12 @@
             { "x":   25.0, "y": 8100.0, "width": 100.0, "height": 40.0, "active":  true }
         ],
         "buttons": [
-            { "x": -600.0, "y": 4990.0, "width": 40.0, "height": 40.0, "platformIndices": [10, 11, 12, 13, 14, 15, 16, 17, 18] },
-            { "x":  300.0, "y": 6040.0, "width": 40.0, "height": 40.0, "wallIndices": [0], "prompt": "Press E to toggle wall" },
-            { "x":  700.0, "y": 8590.0, "width": 40.0, "height": 40.0, "platformIndices": [49, 50, 51, 53] },
-            { "x": -350.0, "y": 9040.0, "width": 40.0, "height": 40.0, "platformIndices": [58], "blocks_when_door_locked": true },
-            { "x":   -5.0, "y": 8590.0, "width": 40.0, "height": 40.0, "platformIndices": [59] },
-            { "x":  -60.0, "y": 8140.0, "width": 40.0, "height": 40.0, "platformIndices": [62] }
+            { "x": -600.0, "y": 5010.0, "width": 80.0, "height": 80.0, "platformIndices": [10, 11, 12, 13, 14, 15, 16, 17, 18] },
+            { "x":  300.0, "y": 6060.0, "width": 80.0, "height": 80.0, "wallIndices": [0], "prompt": "Press E to toggle wall" },
+            { "x":  700.0, "y": 8610.0, "width": 80.0, "height": 80.0, "platformIndices": [49, 50, 51, 53] },
+            { "x": -350.0, "y": 9060.0, "width": 80.0, "height": 80.0, "platformIndices": [58], "blocks_when_door_locked": true },
+            { "x":   -5.0, "y": 8610.0, "width": 80.0, "height": 80.0, "platformIndices": [59] },
+            { "x":  -60.0, "y": 8160.0, "width": 80.0, "height": 80.0, "platformIndices": [62] }
         ],
         "obstacles" : [
             { "x": -200.0, "y": 4840.0, "width": 50.0, "height": 40.0, "rotation" : 0.0, "alwaysStatic":  true },

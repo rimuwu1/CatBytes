@@ -133,6 +133,62 @@ void EnvironmentManager::LoadFromConfig(const rapidjson::Document& doc)
         };
     }
 
+    // advertisement screen
+    if (doc.HasMember("environment") && doc["environment"].IsObject())
+    {
+        const auto& env = doc["environment"];
+
+        if (env.HasMember("advertisement_screen") && env["advertisement_screen"].IsObject())
+        {
+			const auto& ad = env["advertisement_screen"];
+
+            m_advertisementFilePath = ad["file"].GetString();
+            m_advertisementRows = ad["rows"].GetInt();
+            m_advertisementCols = ad["cols"].GetInt();
+            m_advertisementTotalFrames = ad["total_frames"].GetInt();
+            m_advertisementFrameDuration = ad["frame_duration"].GetFloat();
+
+            m_advertisementClips.clear();
+
+            for (const auto& clip : ad["clips"].GetArray())
+            {
+                ButtonClipConfig cfg;
+                cfg.name = clip["name"].GetString();
+                cfg.start = clip["start"].GetInt();
+                cfg.end = clip["end"].GetInt();
+                cfg.duration = clip["duration"].GetFloat();
+                cfg.loop = clip["loop"].GetBool();
+                m_advertisementClips.push_back(cfg);
+            }
+
+            m_advertisementSheet = std::make_unique<SpriteSheet>(
+                m_advertisementFilePath.c_str(),
+                m_advertisementRows,
+                m_advertisementCols,
+                m_advertisementTotalFrames,
+                m_advertisementFrameDuration
+            );
+
+            for (const auto& clipCfg : m_advertisementClips)
+            {
+                m_advertisementSheet->AddClip(
+                    clipCfg.name.c_str(),
+                    clipCfg.start,
+                    clipCfg.end,
+                    clipCfg.duration,
+                    clipCfg.loop
+                );
+            }
+
+            m_advertisementSheet->Play("ad1");
+
+            m_advertisementX = ad.HasMember("x") ? ad["x"].GetFloat() : 0.0f;
+            m_advertisementY = ad.HasMember("y") ? ad["y"].GetFloat() : 0.0f;
+            m_advertisementWidth = ad.HasMember("width") ? ad["width"].GetFloat() : 800.0f;
+            m_advertisementHeight = ad.HasMember("height") ? ad["height"].GetFloat() : 600.0f;
+       }
+    }
+
     // ---- Normal Laser Indicators ----
     if (doc.HasMember("normal_laser_ind") && doc["normal_laser_ind"].IsObject())
     {
@@ -1131,6 +1187,31 @@ void EnvironmentManager::Update(float dt, Player& player, float cameraY)
             comp.nowShowBeam = false;
         }
     }
+
+    // update ad screen
+    if (m_advertisementSheet)
+    {
+        m_advertisementSheet->Update(dt);
+
+		std::string currentClip = m_advertisementSheet->GetCurrentClip();
+        if (!m_advertisementSheet->IsPlaying())
+        {      
+            if (currentClip == "ad1") 
+            {
+                m_nextAd = "ad2";
+                m_advertisementSheet->Play("transition");
+            }
+            else if (currentClip == "ad2")
+            {
+                m_nextAd = "ad1";
+                m_advertisementSheet->Play("transition");
+            }
+            else if (currentClip == "transition")
+            {
+                m_advertisementSheet->Play(m_nextAd);
+            }	
+		}
+    }
 }
 
 void EnvironmentManager::LoadBossArenaFromConfig(const rapidjson::Document& doc)
@@ -1851,6 +1932,22 @@ void EnvironmentManager::DrawWorld(float camX, float camY, PlayerWeapon weapon, 
     // 6. Ground (single colored square)
     // --------------------------------------------------------------------
     mm.DrawSquare(0.0f, -350.0f, 1600.0f, 50.0f, 0, 0, 0);
+
+    // --------------------------------------------------------------------
+    // 7. Advertisement Screen
+    // --------------------------------------------------------------------
+    if (m_advertisementSheet && inView(m_advertisementY, m_advertisementHeight * 0.5f))
+    {
+        addSprite(m_advertisementSheet->GetTexture(),
+            m_advertisementSheet->GetSpriteUVWidth(),
+            m_advertisementSheet->GetSpriteUVHeight(),
+            m_advertisementX, m_advertisementY, 
+            m_advertisementWidth, m_advertisementHeight,
+            m_advertisementSheet->GetUVOffsetX(),
+			m_advertisementSheet->GetUVOffsetY());
+    }
+
+    flushBatch();
 }
 
 // ------------------------------------------------------------------------
