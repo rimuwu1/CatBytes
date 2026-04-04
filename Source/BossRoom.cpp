@@ -712,6 +712,13 @@ void BossRoom_Update()
     
     float playerPrevY = player.pos.y;
 
+    // Restart handling
+    if (g_newGame) {
+        BossRoom_Initialize();
+        g_newGame = false;
+        return;
+    }
+
     ObjectManager::Get().Update(dt);
     BossRoom::Get().Update(dt);
     ParticleManager_Update(dt);
