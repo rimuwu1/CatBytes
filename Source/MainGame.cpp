@@ -76,10 +76,6 @@ namespace {
     // ------------------------------------------------------------------------
     static void ParseConfigFromDisk()
     {
-        // Wait for any in-flight async save to finish before reading.
-        // Replaced busy-wait with condition-based wait.
-        GameSaveManager::WaitForSaveToFinish();
-
         // Clear stale data so the previous parse never bleeds into a fresh load
         configDoc.SetObject();
 
@@ -267,7 +263,6 @@ void MainGame_Update()
         const std::vector<Buff>& worldBuffs = ObjectManager::Get().GetAllBuffs();
         const auto& toggleWalls = EnvironmentManager::Get().GetLevel3ToggleWalls();
         GameSaveManager::SaveGameAsync(meta, currentLevel, player, enemies, *currentPlatforms, worldBuffs, toggleWalls, levelMinY, levelMaxY);
-        GameSaveManager::WaitForSaveToFinish();
         GameSaveManager::Notify_Show(GameSaveManager::NotifyType::SAVED);
         AudioManager::Get().PlayAudio(AudioManager::Get().GetAudio("save"), false);
         ParticleManager_Emit(player.pos.x, player.pos.y, 15, 200.f, 255, 255, 255);
@@ -317,21 +312,25 @@ void MainGame_Update()
 
         // Noclip: override gravity and allow free vertical movement
         if (DebugManager::Get().IsNoclipActive()) {
+            player.vel.x = 0.0f;
             player.vel.y = 0.0f;
-            player.grounded = 1;
-            if (AEInputCheckCurr(AEVK_W)) player.pos.y += 400.f * dt;
-            if (AEInputCheckCurr(AEVK_S)) player.pos.y -= 400.f * dt;
+            player.grounded = 0;
+            const float noclipSpeed = 1000.0f;
+            if (AEInputCheckCurr(AEVK_W)) player.pos.y += noclipSpeed * dt;
+            if (AEInputCheckCurr(AEVK_S)) player.pos.y -= noclipSpeed * dt;
+            if (AEInputCheckCurr(AEVK_A)) player.pos.x -= noclipSpeed * dt;
+            if (AEInputCheckCurr(AEVK_D)) player.pos.x += noclipSpeed * dt;
         }
+        else {
+            ObjectManager::Get().RebuildSpatialGrid();
 
-        ObjectManager::Get().RebuildSpatialGrid();
-
-        // ================== COLLISION HANDLING ==================
-        auto results = CollisionManager::HandleAllCollisionsSpatial(
-            player,
-            playerPrevY,
-            EnvironmentManager::Get(),
-            ObjectManager::Get().GetAllEnemies()
-        );
+            // ================== COLLISION HANDLING ==================
+            auto results = CollisionManager::HandleAllCollisionsSpatial(
+                player,
+                playerPrevY,
+                EnvironmentManager::Get(),
+                ObjectManager::Get().GetAllEnemies()
+            );
 
         //obstacle reaction
         if (results.obstacleHit)
@@ -446,7 +445,6 @@ void MainGame_Update()
             const std::vector<Buff>& worldBuffs = ObjectManager::Get().GetAllBuffs();
             const auto& toggleWalls = EnvironmentManager::Get().GetLevel3ToggleWalls();
             GameSaveManager::SaveGameAsync(meta, currentLevel, player, enemies, *currentPlatforms, worldBuffs, toggleWalls, levelMinY, levelMaxY);
-            GameSaveManager::WaitForSaveToFinish();
             GameSaveManager::Notify_Show(GameSaveManager::NotifyType::SAVED);
             AudioManager::Get().PlayAudio(AudioManager::Get().GetAudio("save"), false);
             ParticleManager_Emit(player.pos.x, player.pos.y, 15, 200.f, 255, 255, 255);
@@ -457,6 +455,7 @@ void MainGame_Update()
             textScreenMessage = "You Win";
             GameStateManager::Get().next = GS_WINLOSE;
         }
+        } // end else (normal collision mode)
     }
     // ================== END GAMEPLAY LOGIC ==================
 

@@ -342,7 +342,7 @@ void UIManager::UpdatePause(float camX, float camY, bool& consumed)
         case 5: // Quit -- confirm first
             m_PauseActive = false;
             ShowConfirmation("Quit Game?", "Are you sure you want to quit?",
-                []() { GameStateManager::Get().next = GS_QUIT; },
+                []() { TransitionManager::Get().Start(GS_QUIT); },
                 []() {},
                 camX, camY);
             break;

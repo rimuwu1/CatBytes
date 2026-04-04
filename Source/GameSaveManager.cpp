@@ -87,23 +87,6 @@ bool GameSaveManager::PreloadConfig()
     return true;
 }
 
-void GameSaveManager::WaitForSaveToFinish()
-{
-    // Fast path
-    if (!s_SaveInProgress.load()) return;
-
-    // Use a simple busy-wait timeout to prevent permanent blocking
-    const int MAX_WAIT_FRAMES = 180; // ~3 seconds at 60fps
-    int waitCount = 0;
-    while (s_SaveInProgress.load() && waitCount < MAX_WAIT_FRAMES) {
-        ++waitCount;
-    }
-    if (waitCount >= MAX_WAIT_FRAMES) {
-        std::cout << "[WaitForSaveToFinish] WARNING: Save timeout, forcing reset\n";
-        s_SaveInProgress.store(false);
-    }
-}
-
 void GameSaveManager::Notify_Show(NotifyType type)
 {
     s_NotifyType = type;

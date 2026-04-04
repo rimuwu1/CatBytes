@@ -767,8 +767,6 @@ void Controls_Draw()
     AEGfxSetBackgroundColor(0, 0, 0);
     AEGfxSetBlendMode(AE_GFX_BM_BLEND);
 
-    TransitionManager::Get().Draw();
-
     float w = (float)AEGfxGetWindowWidth();
     float h = (float)AEGfxGetWindowHeight();
 
@@ -790,6 +788,9 @@ void Controls_Draw()
     }
 
     DrawControlsContents(w, h);
+
+    // Draw transition on top so reveal animation is visible
+    TransitionManager::Get().Draw();
 
    AESysFrameEnd();
 }

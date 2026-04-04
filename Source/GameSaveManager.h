@@ -65,8 +65,6 @@ public:
 
     // ----- Save game (async) ----------------------------------------------
     static bool IsSaveInProgress();
-    // Block until any in-progress async save completes. Uses a condition variable.
-    static void WaitForSaveToFinish();
 
     // Asynchronous save - does not block the caller.
     static void SaveGameAsync(

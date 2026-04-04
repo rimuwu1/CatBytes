@@ -62,9 +62,9 @@ void TransitionManager::Update(float dt)
     {
         if (m_elapsed >= totalCoverTime)
         {
+            // screen is fully covered - change state 
             if (!m_stateChanged)
             {
-                // Queue the state change via GameStateManager
                 GameStateManager::Get().next = m_nextState;
                 m_stateChanged = true;
             }
@@ -101,9 +101,8 @@ void TransitionManager::Draw(float camX, float camY)
     float screenHeight = static_cast<float>(AEGfxGetWindowHeight());
     float stripHeight  = screenHeight / STRIP_COUNT;
 
-    // Strip colors (RGB 0-255 for MeshManager::DrawSquare)
-    const int deepPurpleR = 46,  deepPurpleG = 0,   deepPurpleB = 89;
-    const int cyanR       = 0,   cyanG       = 207, cyanB       = 255;
+    // Strip color (RGB 0-255 for MeshManager::DrawSquare) - dark deep purple
+    const int purpleR = 20,  purpleG = 0,   purpleB = 40;
 
     for (int i = 0; i < STRIP_COUNT; ++i)
     {
@@ -149,18 +148,7 @@ void TransitionManager::Draw(float camX, float camY)
         // Strip i: bottom strip (i=0) at bottom of screen
         float stripCenterY = (screenHeight * 0.5f) - (static_cast<float>(i) + 0.5f) * stripHeight;
 
-        // Select color based on strip index
-        int r, g, b;
-        if (i % 2 == 0)
-        {
-            r = deepPurpleR; g = deepPurpleG; b = deepPurpleB;
-        }
-        else
-        {
-            r = cyanR; g = cyanG; b = cyanB;
-        }
-
         // Draw strip using MeshManager, offset by camera to stay in screen space
-        MeshManager::Get().DrawSquare(camX + xOffset, camY + stripCenterY, screenWidth, stripHeight, r, g, b, 1.0f);
+        MeshManager::Get().DrawSquare(camX + xOffset, camY + stripCenterY, screenWidth, stripHeight, purpleR, purpleG, purpleB, 1.0f);
     }
 }

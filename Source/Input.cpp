@@ -32,6 +32,7 @@ Technology is prohibited.
 #include "Camera.h"
 #include "ParticleManager.h"
 #include "Player.h"
+#include "TransitionManager.h"
 
 // ----------------------------------------------------------------------------
 // Handles all user input processing for the current frame
@@ -59,7 +60,7 @@ void Input_Handle() {
 		UIManager::Get().ShowConfirmation(
 			"Quit Game",
 			"Are you sure you want to quit?",
-			[]() { GameStateManager::Get().next = GS_QUIT; },
+			[]() { TransitionManager::Get().Start(GS_QUIT); },
 			[]() {},
 			globalCam.x, globalCam.y// cancel: do nothing
 		);
