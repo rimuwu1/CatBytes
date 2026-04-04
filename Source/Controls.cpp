@@ -23,6 +23,7 @@ Technology is prohibited.
 #include "TextureManager.h"
 #include "MeshManager.h"
 #include "UIManager.h"
+#include "TransitionManager.h"
 #include "AEEngine.h"
 #include "AudioManager.h"
 #include "Fonts.h"
@@ -275,6 +276,8 @@ static void DrawInstructionCard(const InstructionCard& card, float cx, float cy,
 // -----------------------------------------------------------------------------
 void Controls_Load()
 {
+    TransitionManager::GetInstance().Init();
+
     g_SettingsPanel = TextureManager::Get().LoadTexture("Assets/Images/sliderbutton.png");
     g_Background = TextureManager::Get().LoadTexture("Assets/Images/back.png");
 
@@ -346,14 +349,17 @@ void Controls_Update()
     {
         if (g_FromPause)
         {
-            GameStateManager::Get().next = GS_MAINGAME;
+            TransitionManager::GetInstance().Start(GS_MAINGAME);
             g_FromPause = false;
         }
         else
         {
-            GameStateManager::Get().next = GS_MAINMENU;
+            TransitionManager::GetInstance().Start(GS_MAINMENU);
         }
     }
+
+    float dt = (float)AEFrameRateControllerGetFrameTime();
+    TransitionManager::GetInstance().Update(dt);
 
     // mouse position
     s32 mx, my;
@@ -759,6 +765,8 @@ void Controls_Draw()
     AESysFrameStart();
     AEGfxSetBackgroundColor(0, 0, 0);
     AEGfxSetBlendMode(AE_GFX_BM_BLEND);
+
+    TransitionManager::GetInstance().Draw();
 
     float w = (float)AEGfxGetWindowWidth();
     float h = (float)AEGfxGetWindowHeight();

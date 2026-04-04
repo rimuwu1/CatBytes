@@ -23,6 +23,7 @@ Technology is prohibited.
 #include "AudioManager.h"
 #include "TextureManager.h"
 #include "MeshManager.h"
+#include "TransitionManager.h"
 #include <fstream>
 #include <string>
 #include <vector>
@@ -184,6 +185,8 @@ static void StopCutsceneMusic()
 // ============================================================
 void WinLose_Load()
 {
+    TransitionManager::GetInstance().Init();
+
     // defaults matching GameConfig.json cutscene_images block
     s_WinTexPath  = "Assets/Images/F8.png";
     s_LoseTexPath = "Assets/Images/F9.png";
@@ -315,6 +318,8 @@ void WinLose_Update()
 {
     float dt = (float)AEFrameRateControllerGetFrameTime();
 
+    TransitionManager::GetInstance().Update(dt);
+
     if (s_Mode == WLMode::Cutscene)
     {
         if (s_fading)
@@ -323,7 +328,7 @@ void WinLose_Update()
             if (s_fadeAlpha >= 1.0f)
             {
                 textScreenMessage = "You Lose";
-                GameStateManager::Get().next = GS_MAINGAME;
+                TransitionManager::GetInstance().Start(GS_MAINGAME);
             }
             return;
         }
@@ -366,7 +371,7 @@ void WinLose_Update()
         {
             AudioManager::Get().PlayAudio(s_ClickSound, false);
             g_FromWinToCredits = true;
-            GameStateManager::Get().next = GS_CREDITS;
+            TransitionManager::GetInstance().Start(GS_CREDITS);
         }
         return;
     }
@@ -376,8 +381,10 @@ void WinLose_Update()
     {
         AudioManager::Get().PlayAudio(s_ClickSound, false);
         AudioManager::Get().StopAudio(s_LoseMusic);
-        GameStateManager::Get().next = GS_MAINMENU;
+        TransitionManager::GetInstance().Start(GS_MAINMENU);
     }
+
+    TransitionManager::GetInstance().Update(dt);
 }
 
 // ============================================================

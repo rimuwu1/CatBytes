@@ -47,6 +47,7 @@ Technology is prohibited.
 #include "DebugManager.h"
 #include "ParticleManager.h"
 #include "BossRoom.h"
+#include "TransitionManager.h"
 
 AEAudio g_GameMusic{};
 bool g_GameMusicPlaying = false;
@@ -167,6 +168,7 @@ void MainGame_Load()
     // Load is skipped by the GSM on re-entry from another state,
     // so anything that must run every time belongs in Initialize instead.
     EnvironmentManager::Get().Initialize();
+    TransitionManager::GetInstance().Init();
     std::cout << "MainGame:Load" << std::endl;
 }
 
@@ -248,6 +250,8 @@ void MainGame_Update()
     if (AEInputCheckTriggered(AEVK_ESCAPE)) { //moved from input cos update pause is tweaking
         UIManager::Get().ShowPause(globalCam.x, globalCam.y);
     }
+
+    TransitionManager::GetInstance().Update(dt);
 
     Player& player = ObjectManager::Get().GetPlayer();
     auto& enemies = ObjectManager::Get().GetAllEnemies();
@@ -814,6 +818,7 @@ void MainGame_Draw()
     DebugManager::Get().DrawWorldOverlays(globalCam.x, globalCam.y);
     DebugManager::Get().Draw(globalCam.x, globalCam.y);
     UIManager::Get().Draw(globalCam.x, globalCam.y);
+    TransitionManager::GetInstance().Draw();
     std::cout << "MainGame:Draw" << std::endl;
 
     AESysFrameEnd();

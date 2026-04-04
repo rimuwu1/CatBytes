@@ -21,12 +21,14 @@ Technology is prohibited.
 #include "Fonts.h"
 #include "MeshManager.h"
 #include "TextureManager.h"
+#include "TransitionManager.h"
 
 static float totalElapsedTime = 0.0f;
 static AEGfxTexture* logoTexture = nullptr;
 
 void Credits_Load()
 {
+    TransitionManager::GetInstance().Init();
     std::cout << "Credits:Load" << std::endl;
 }
 
@@ -44,10 +46,12 @@ void Credits_Update()
     float dt = static_cast<float>(AEFrameRateControllerGetFrameTime());
     totalElapsedTime += dt;
 
+    TransitionManager::GetInstance().Update(dt);
+
     // skip with ESC
     if (totalElapsedTime > 5.0f || AEInputCheckTriggered(AEVK_ESCAPE))
     {
-        GameStateManager::Get().next = GS_MAINMENU;
+        TransitionManager::GetInstance().Start(GS_MAINMENU);
         totalElapsedTime = 0.0f;
     }
 }
@@ -55,6 +59,8 @@ void Credits_Draw()
 {
     AESysFrameStart();
     AEGfxSetBackgroundColor(0.9f, 0.9f, 0.9f); // light gray background
+
+    TransitionManager::GetInstance().Draw();
 
     // screen 1 logo
     if (totalElapsedTime <= 1.0f)

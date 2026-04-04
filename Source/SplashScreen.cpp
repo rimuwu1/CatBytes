@@ -20,6 +20,7 @@ Technology is prohibited.
 #include <cmath>
 #include "Fonts.h"
 #include "MainGame.h"
+#include "TransitionManager.h"
 
 constexpr float CYCLE_DURATION = 4.0f;
 constexpr int   PHASES = 4;
@@ -40,6 +41,7 @@ void SplashScreen_Load()
 	Logo = TextureManager::Get().LoadTexture("Assets/Images/titleicon.png");
 	meleeIcon = TextureManager::Get().LoadTexture("Assets/Images/meleeIcon.png");
 	std::cout << "Splash Screen: Load" << std::endl;
+	TransitionManager::GetInstance().Init();
 }
 
 void SplashScreen_Initialize()
@@ -76,6 +78,8 @@ void SplashScreen_Update()
 
 	opacity = 0.0f;
 	std::cout << "Splash Screen: Update" << std::endl;
+
+	TransitionManager::GetInstance().Update(dt);
 }
 
 void SplashScreen_Draw()
@@ -167,12 +171,14 @@ void SplashScreen_Draw()
         
         // Transition to main menu when loading complete
         if (loadingDone) {
-            GameStateManager::Get().next = GS_MAINMENU;
+            TransitionManager::GetInstance().Start(GS_MAINMENU);
         }
     }
     
 	AESysFrameEnd();
 	std::cout << "Splash Screen: Draw" << std::endl;
+
+	TransitionManager::GetInstance().Draw();
 }
 
 void SplashScreen_Free()

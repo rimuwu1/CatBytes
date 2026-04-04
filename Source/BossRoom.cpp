@@ -35,6 +35,7 @@ Technology is prohibited.
 #include "LevelIndicator.h"
 #include "TextureManager.h"
 #include "ParticleManager.h"
+#include "TransitionManager.h"
 #include <fstream>
 #include <algorithm>
 #include <numeric>
@@ -295,7 +296,10 @@ static void LoadMonitors(const rapidjson::Document& doc)
 
 // ============================================================
 
-void BossRoom_Load() {}
+void BossRoom_Load() 
+{
+    TransitionManager::GetInstance().Init();
+}
 
 void BossRoom_Initialize()
 {
@@ -451,6 +455,8 @@ void BossRoom_Update()
 
     if (AEInputCheckTriggered(AEVK_ESCAPE))
         UIManager::Get().ShowPause(globalCam.x, globalCam.y);
+
+    TransitionManager::GetInstance().Update(dt);
 
     // fade in from black
     if (g_bossRoomFadingIn)
@@ -867,6 +873,8 @@ void BossRoom_Draw()
     DebugManager::Get().DrawWorldOverlays(globalCam.x, globalCam.y);    
     DebugManager::Get().Draw(globalCam.x, globalCam.y);               
     UIManager::Get().Draw(globalCam.x, globalCam.y);
+
+    TransitionManager::GetInstance().Draw();
 
     if (g_bossRoomFadeAlpha > 0.0f)
     {
