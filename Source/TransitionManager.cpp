@@ -104,8 +104,6 @@ void TransitionManager::Draw()
     const int deepPurpleR = 46,  deepPurpleG = 0,   deepPurpleB = 89;
     const int cyanR       = 0,   cyanG       = 207, cyanB       = 255;
 
-    float totalCoverTime = STRIP_DURATION + (STRIP_COUNT - 1) * STAGGER_TIME;
-
     for (int i = 0; i < STRIP_COUNT; ++i)
     {
         // Calculate animation progress for this strip

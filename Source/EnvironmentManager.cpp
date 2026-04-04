@@ -915,7 +915,6 @@ void EnvironmentManager::Initialize()
 {
     m_currentColour      = m_backgroundColours[0];
     m_previousSelection  = -1;
-    // Assets loaded via LoadAssetsFromConfig — called from ApplyConfigToManagers in MainGame.cpp
     LevelIndicator_Initialize();
 }
 

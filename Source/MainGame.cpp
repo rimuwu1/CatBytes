@@ -130,37 +130,6 @@ static bool SpikeIsInCamera(float x, float y, float w, float h)
 }
 
 // ------------------------------------------------------------------------
-// Applies the already-parsed GetConfigDoc() to all managers + resets camera
-// ------------------------------------------------------------------------
-static void ApplyConfigToManagers()
-{
-    EnvironmentManager::Get().LoadFromConfig(GetConfigDoc());
-    EnvironmentManager::Get().LoadAssetsFromConfig(GetConfigDoc());
-    ObjectManager::Get().LoadFromConfig(GetConfigDoc());
-
-    // Clear HUD inventory before syncing from save to prevent old buffs from persisting
-    HUD& hud = EnvironmentManager::Get().GetHUD();
-    hud.ClearInventory();
-
-    // Sync HUD inventory from restored player buffs
-    Player& player = ObjectManager::Get().GetPlayer();
-    for (const auto& buff : player.buffs) {
-        if (buff.active)
-            hud.AddBuffToInventory(buff.type);
-    }
-
-    const float ground = -350.0f;
-    const float groundHeight = 50.0f;
-    const float halfScreenHeight = 900.0f * 0.5f;
-    float groundTop = ground + groundHeight * 0.5f;
-    Camera_Init(globalCam, ObjectManager::Get().GetPlayer().pos.x, groundTop + halfScreenHeight);
-
-    // Reset camera shake state when (re)starting a run
-    camTrauma = 0.0f;
-    camShakeTime = 0.0f;
-}
-
-// ------------------------------------------------------------------------
 
 void MainGame_Load()
 {
