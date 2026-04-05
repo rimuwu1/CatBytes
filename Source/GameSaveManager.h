@@ -66,6 +66,15 @@ public:
     // ----- Save game (async) ----------------------------------------------
     static bool IsSaveInProgress();
 
+    // Block until any in-progress save completes (call before reading save file)
+    static void WaitForSaveComplete();
+
+    // Get cached metadata (non-blocking, returns nullptr if no save exists)
+    static const Metadata* GetCachedMetadata();
+    
+    // Clear cached metadata (call on new game)
+    static void ClearCachedMetadata();
+
     // Asynchronous save - does not block the caller.
     static void SaveGameAsync(
         const Metadata& metadata,
@@ -110,8 +119,12 @@ private:
 
     // ----- Static members -------------------------------------------------
     static std::atomic<bool>  s_SaveInProgress;
-    static NotifyType         s_NotifyType;
+    static std::atomic<NotifyType> s_NotifyType;  // Atomic to prevent race with worker thread
     static float              s_NotifyTimer;
     static const float        NOTIFY_DURATION;
     static const float        NOTIFY_FADE;
+    
+    // Cached metadata for fast menu loads (updated by save thread)
+    static Metadata           s_CachedMetadata;
+    static std::atomic<bool>  s_HasCachedMetadata;
 };

@@ -198,40 +198,55 @@ void MainMenu_Initialize()
 
     // ----- Check for valid save file -----
     g_ShowContinue = false;
-    std::ifstream saveFile("Assets/Data/GameSave.json");
-    if (saveFile.is_open())
+    
+    // Try cached metadata first (fast, no I/O, non-blocking)
+    const auto* cached = GameSaveManager::GetCachedMetadata();
+    if (cached && cached->save_date != "00-00-0000 00:00:00")
     {
-        std::string content((std::istreambuf_iterator<char>(saveFile)),
-            std::istreambuf_iterator<char>());
-        saveFile.close();
-
-        rapidjson::Document doc;
-        if (!doc.Parse(content.c_str()).HasParseError() && doc.IsObject())
+        g_ShowContinue = true;
+        g_LastSavedDate = cached->save_date;
+        g_CurrentLevel = cached->current_level;
+        g_LevelsCompleted = cached->levels_completed;
+        g_PlayerLives = cached->player_lives;
+    }
+    else
+    {
+        // Fallback to reading file (for cold start, no cached data yet)
+        std::ifstream saveFile("Assets/Data/GameSave.json");
+        if (saveFile.is_open())
         {
-            if (doc.HasMember("metadata") && doc["metadata"].IsObject())
+            std::string content((std::istreambuf_iterator<char>(saveFile)),
+                std::istreambuf_iterator<char>());
+            saveFile.close();
+
+            rapidjson::Document doc;
+            if (!doc.Parse(content.c_str()).HasParseError() && doc.IsObject())
             {
-                const auto& meta = doc["metadata"];
-
-                // Save date
-                if (meta.HasMember("save_date") && meta["save_date"].IsString())
+                if (doc.HasMember("metadata") && doc["metadata"].IsObject())
                 {
-                    std::string date = meta["save_date"].GetString();
-                    if (date != "00-00-0000 00:00:00")
-                    {
-                        g_ShowContinue = true;
-                        g_LastSavedDate = date;
-                    }
-                }
+                    const auto& meta = doc["metadata"];
 
-                // Additional metadata for hover info
-                if (meta.HasMember("current_level") && meta["current_level"].IsInt())
-                    g_CurrentLevel = meta["current_level"].GetInt();
-                if (meta.HasMember("levels_completed") && meta["levels_completed"].IsInt())
-                    g_LevelsCompleted = meta["levels_completed"].GetInt();
-                if (meta.HasMember("player_lives") && meta["player_lives"].IsInt())
-                    g_PlayerLives = meta["player_lives"].GetInt();
-                if (meta.HasMember("total_levels") && meta["total_levels"].IsInt())
-                    g_TotalLevels = meta["total_levels"].GetInt();
+                    // Save date
+                    if (meta.HasMember("save_date") && meta["save_date"].IsString())
+                    {
+                        std::string date = meta["save_date"].GetString();
+                        if (date != "00-00-0000 00:00:00")
+                        {
+                            g_ShowContinue = true;
+                            g_LastSavedDate = date;
+                        }
+                    }
+
+                    // Additional metadata for hover info
+                    if (meta.HasMember("current_level") && meta["current_level"].IsInt())
+                        g_CurrentLevel = meta["current_level"].GetInt();
+                    if (meta.HasMember("levels_completed") && meta["levels_completed"].IsInt())
+                        g_LevelsCompleted = meta["levels_completed"].GetInt();
+                    if (meta.HasMember("player_lives") && meta["player_lives"].IsInt())
+                        g_PlayerLives = meta["player_lives"].GetInt();
+                    if (meta.HasMember("total_levels") && meta["total_levels"].IsInt())
+                        g_TotalLevels = meta["total_levels"].GetInt();
+                }
             }
         }
     }

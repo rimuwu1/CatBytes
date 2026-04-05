@@ -31,10 +31,12 @@ Technology is prohibited.
 
 // ----- Static member definitions ------------------------------------------------
 std::atomic<bool> GameSaveManager::s_SaveInProgress{ false };
-GameSaveManager::NotifyType GameSaveManager::s_NotifyType = NotifyType::NONE;
+std::atomic<GameSaveManager::NotifyType> GameSaveManager::s_NotifyType{ NotifyType::NONE };
 float GameSaveManager::s_NotifyTimer = 0.0f;
 const float GameSaveManager::NOTIFY_DURATION = 2.0f;
 const float GameSaveManager::NOTIFY_FADE = 0.5f;
+GameSaveManager::Metadata GameSaveManager::s_CachedMetadata{};
+std::atomic<bool> GameSaveManager::s_HasCachedMetadata{ false };
 // Synchronization for waiting on save completion
 static std::mutex s_SaveMutex;
 static std::condition_variable s_SaveCv;
@@ -65,6 +67,23 @@ namespace {
 bool GameSaveManager::IsSaveInProgress()
 {
     return s_SaveInProgress.load();
+}
+
+void GameSaveManager::WaitForSaveComplete()
+{
+    std::unique_lock<std::mutex> lk(s_SaveMutex);
+    s_SaveCv.wait(lk, [] { return !s_SaveInProgress.load(); });
+}
+
+const GameSaveManager::Metadata* GameSaveManager::GetCachedMetadata()
+{
+    return s_HasCachedMetadata.load() ? &s_CachedMetadata : nullptr;
+}
+
+void GameSaveManager::ClearCachedMetadata()
+{
+    s_HasCachedMetadata.store(false);
+    s_CachedMetadata = {};
 }
 
 bool GameSaveManager::PreloadConfig()
@@ -170,6 +189,9 @@ void GameSaveManager::ResetSave(const std::string& configPath, const std::string
 {
     // Reset the game data loaded flag so splash screen will reload
     ResetGameDataLoaded();
+    
+    // Clear cached metadata since we're resetting to default
+    ClearCachedMetadata();
 
     std::ifstream src(configPath, std::ios::binary);
     if (!src.is_open())
@@ -412,6 +434,10 @@ void GameSaveManager::SaveGame_Internal(
     }
     outFile << buffer.GetString();
     outFile.close();
+    
+    // Cache metadata for fast menu loads
+    s_CachedMetadata = metadata;
+    s_HasCachedMetadata.store(true);
 }
 
 GameSaveManager::PlayerSaveData GameSaveManager::ExtractPlayerData(const Player& p)

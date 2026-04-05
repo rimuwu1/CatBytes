@@ -263,10 +263,9 @@ void MainGame_Update()
         const std::vector<Buff>& worldBuffs = ObjectManager::Get().GetAllBuffs();
         const auto& toggleWalls = EnvironmentManager::Get().GetLevel3ToggleWalls();
         GameSaveManager::SaveGameAsync(meta, currentLevel, player, enemies, *currentPlatforms, worldBuffs, toggleWalls, levelMinY, levelMaxY);
-        GameSaveManager::Notify_Show(GameSaveManager::NotifyType::SAVED);
+        // Note: Notification is shown by the async save thread (SAVING -> SAVED)
+        // Note: Boss door state is saved automatically by SaveGameAsync (no need for PatchBossDoorLockedInSave)
         AudioManager::Get().PlayAudio(AudioManager::Get().GetAudio("save"), false);
-        ParticleManager_Emit(player.pos.x, player.pos.y, 15, 200.f, 255, 255, 255);
-        EnvironmentManager::Get().PatchBossDoorLockedInSave();
 
         // Restore hidden position after save
         if (bossDoorTriggered) {
@@ -445,10 +444,9 @@ void MainGame_Update()
             const std::vector<Buff>& worldBuffs = ObjectManager::Get().GetAllBuffs();
             const auto& toggleWalls = EnvironmentManager::Get().GetLevel3ToggleWalls();
             GameSaveManager::SaveGameAsync(meta, currentLevel, player, enemies, *currentPlatforms, worldBuffs, toggleWalls, levelMinY, levelMaxY);
-            GameSaveManager::Notify_Show(GameSaveManager::NotifyType::SAVED);
+            // Note: Notification is shown by the async save thread (SAVING -> SAVED)
+            // Note: Boss door state is saved automatically by SaveGameAsync (no need for PatchBossDoorLockedInSave)
             AudioManager::Get().PlayAudio(AudioManager::Get().GetAudio("save"), false);
-            ParticleManager_Emit(player.pos.x, player.pos.y, 15, 200.f, 255, 255, 255);
-            EnvironmentManager::Get().PatchBossDoorLockedInSave();
         }
 
         if (ObjectManager::Get().IsBossDefeated()) {
